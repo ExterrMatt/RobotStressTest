@@ -1,33 +1,110 @@
-[gd_scene format=3 uid="uid://b46o8nu5etd6b"]
+[gd_scene load_steps=2 format=3 uid="uid://b46o8nu5etd6b"]
 
-[ext_resource type="PackedScene" uid="uid://cyie4hrdescw1" path="res://scenes/locations/StubLocation.tscn" id="1"]
+[ext_resource type="Script" path="res://scenes/locations/School.gd" id="1"]
 
-[node name="School" unique_id=2128168618 instance=ExtResource("1")]
-title_text = "School"
-blurb_text = "Attend class. Pay attention. Steal what you can. School is the only place to find manufacturing nanobots."
-outcomes = [{
-"anger": 0,
-"ingredients": {
-"nuts_bolts": 1
-},
-"label": "Attend quietly",
-"money": 0,
-"suspicion": -2
-}, {
-"anger": 0,
-"ingredients": {
-"nanobots": 1,
-"nuts_bolts": 1
-},
-"label": "Attend + steal nanobots (risky)",
-"money": 0,
-"suspicion": 4
-}, {
-"anger": 0,
-"ingredients": {
-"electronics": 1
-},
-"label": "Answer the teacher's question",
-"money": 0,
-"suspicion": -4
-}]
+[node name="School" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBox" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="TeacherColumn" type="VBoxContainer" parent="MarginContainer/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 8
+
+[node name="TeacherPortrait" type="TextureRect" parent="MarginContainer/VBox/HBox/TeacherColumn"]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(256, 256)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TeacherNameLabel" type="Label" parent="MarginContainer/VBox/HBox/TeacherColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 28
+text = "Teacher"
+horizontal_alignment = 1
+
+[node name="SubjectLabel" type="Label" parent="MarginContainer/VBox/HBox/TeacherColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 20
+text = "SUBJECT"
+horizontal_alignment = 1
+
+[node name="DialoguePanel" type="PanelContainer" parent="MarginContainer/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"HUDPanel"
+
+[node name="DialogueMargin" type="MarginContainer" parent="MarginContainer/VBox/HBox/DialoguePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="DialogueLabel" type="RichTextLabel" parent="MarginContainer/VBox/HBox/DialoguePanel/DialogueMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+scroll_following = true
+theme_override_font_sizes/normal_font_size = 22
+
+[node name="PromptLabel" type="Label" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"Prompt"
+theme_override_font_sizes/font_size = 40
+text = "QUESTION?"
+horizontal_alignment = 1
+
+[node name="ChoiceGrid" type="GridContainer" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
+columns = 3
+
+[node name="ContinueButton" type="Button" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "CONTINUE"

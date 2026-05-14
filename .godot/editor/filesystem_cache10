@@ -12,8 +12,9 @@ bedroom_night.png::CompressedTexture2D::1860716824234239661::1778740332::1778740
 scene_placeholder.png::CompressedTexture2D::4714227732508061701::1778713214::1778735161::1::::<><><>0<>0<>2b22da3a0e1a393cb15c9c6bb2a7539d<>res://.godot/imported/scene_placeholder.png-7415d80a8c336806144831e0bc8c0d65.ctex::
 school.png::CompressedTexture2D::1053631147688583913::1778712878::1778735161::1::::<><><>0<>0<>53ae8be18a3d17fd537d7e394a44ebbc<>res://.godot/imported/school.png-2e133461fc94f5a62106abdcc5f53779.ctex::
 ::res://assets/textures/characters/::1778735025
-::res://assets/textures/characters/teachers/::1778735131
+::res://assets/textures/characters/teachers/::1778779195
 Gym.png::CompressedTexture2D::3100835781206783502::1718417818::1778735131::1::::<><><>0<>0<>e9b8568d8ee7aaa1ae97340ac1b91f1d<>res://.godot/imported/Gym.png-fc9b5b653390ed8f93d22377972ebdee.ctex::
+Health.png::CompressedTexture2D::7570285789882029875::1778780889::1778780903::1::::<><><>0<>0<>a8ff517b5a7728e77d71461b510383b5<>res://.godot/imported/Health.png-6a867dd92dd40667dd933555c6bc0c4e.ctex::
 History.png::CompressedTexture2D::6503588728884037427::1706481485::1778735131::1::::<><><>0<>0<>10df1a8069640de25ca3b4fa8a286ef1<>res://.godot/imported/History.png-9d665264dd2839686351a9c2f5c14074.ctex::
 Literature.png::CompressedTexture2D::777311519891044256::1718418066::1778735131::1::::<><><>0<>0<>fe21adf2889e9db1d5d29adbf1c5354f<>res://.godot/imported/Literature.png-4dd43dbdec9a0897f8bde70c8926fb03.ctex::
 Math.png::CompressedTexture2D::5781748074328679937::1718491147::1778735131::1::::<><><>0<>0<>c7479ecda83d7f7f83ea2a41d6cc50d9<>res://.godot/imported/Math.png-aa96fdcc797625f5c56f0e9ec5c6c034.ctex::
@@ -32,10 +33,10 @@ store.tres::Resource/LocationData::-1::1778711437::0::1::::<><><>0<>0<><>::res:/
 stress_test.tres::Resource/LocationData::-1::1778711437::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
 work.tres::Resource/LocationData::-1::1778711437::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
 workshop.tres::Resource/LocationData::-1::1778711437::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
-::res://scenes/::1778739227
+::res://scenes/::1778777093
 Background.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://shaders/space_background.gdshader
-Main.gd::GDScript::6097201816606231282::1778739227::0::1::::<>Control<><>0<>0<><>::
-Main.tscn::PackedScene::1121483062682937::1778739227::0::1::::<><><>0<>0<><>::uid://b8fuv3fb4gis8::::res://assets/textures/backgrounds/scene_placeholder.png<>res://scenes/Background.tscn<>res://scenes/Scanlines.tscn<>uid://cs4sa1yg7dlwc::::res://scenes/Main.gd
+Main.gd::GDScript::6097201816606231282::1778740345::0::1::::<>Control<><>0<>0<><>::
+Main.tscn::PackedScene::1121483062682937::1778777093::0::1::::<><><>0<>0<><>::uid://b8fuv3fb4gis8::::res://assets/textures/backgrounds/scene_placeholder.png<>res://scenes/Background.tscn<>res://scenes/Scanlines.tscn<>uid://cs4sa1yg7dlwc::::res://scenes/Main.gd
 Scanlines.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://shaders/scanlines.gdshader
 ::res://scenes/locations/::1778734558
 LocationBase.gd::GDScript::9172710538260446283::1778711437::0::1::::LocationBase<>Control<><>0<>0<><>::
