@@ -6,3 +6,4 @@ res://scenes/locations/StubLocation.gd
 res://scenes/Main.gd
 res://resources/locations/school.tres
 res://resources/LocationData.gd
+res://scenes/locations/School.gd

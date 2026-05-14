@@ -12,6 +12,10 @@ extends LocationBase
 ##                 (Leave   => no extra delta)
 ##   4. finish() with the combined result.
 ##
+## The teacher portrait is shown by Main's framed image area, not by this
+## scene - we call Main.show_teacher_portrait() so the teacher appears
+## inside the classroom illustration at the top of the screen.
+##
 ## Reward numbers mirror the original StubLocation School outcomes so the
 ## game's pacing doesn't change.
 
@@ -245,9 +249,6 @@ const REWARD_STEAL: Dictionary = {
 }
 
 # --- Scene refs ---
-@onready var teacher_portrait: TextureRect = %TeacherPortrait
-@onready var teacher_name_label: Label = %TeacherNameLabel
-@onready var subject_label: Label = %SubjectLabel
 @onready var dialogue_label: RichTextLabel = %DialogueLabel
 @onready var prompt_label: Label = %PromptLabel
 @onready var choice_grid: GridContainer = %ChoiceGrid
@@ -274,14 +275,12 @@ func _pick_teacher_and_question() -> void:
 	var questions: Array = _current_teacher["questions"]
 	_current_question = questions.pick_random()
 
-	teacher_name_label.text = _current_teacher["name"]
-	subject_label.text = _current_teacher["subject"].to_upper()
-
 	var tex: Texture2D = load(_current_teacher["texture_path"])
-	if tex:
-		teacher_portrait.texture = tex
-	else:
+	if tex == null:
 		push_warning("School: missing teacher texture %s" % _current_teacher["texture_path"])
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("show_teacher_portrait"):
+		main.show_teacher_portrait(tex, _current_teacher["name"], _current_teacher["subject"])
 
 
 # --- Lecture phase ---
@@ -397,6 +396,11 @@ func _on_continue_pressed() -> void:
 
 
 func _finish_school() -> void:
+	# Clear the portrait so the next location starts with a blank frame.
+	# Main also does this as a backstop in _show_selection_screen().
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("hide_teacher_portrait"):
+		main.hide_teacher_portrait()
 	finish(0, _total_suspicion, 0, _total_ingredients, false)
 
 

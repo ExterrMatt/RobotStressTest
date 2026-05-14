@@ -38,6 +38,15 @@ const PHASE_BACKGROUNDS: Dictionary = {
 @onready var suspicion_label: Label = %SuspicionLabel
 @onready var anger_label: Label = %AngerLabel
 @onready var scene_image: TextureRect = %SceneImage
+## Overlay portrait drawn on top of the framed scene image. Location scenes
+## (e.g. School) call show_teacher_portrait() / hide_teacher_portrait(). Main
+## also hides it whenever the selection screen is shown, as a backstop so
+## portraits never leak between locations.
+@onready var teacher_portrait: TextureRect = %TeacherPortrait
+@onready var teacher_tag: PanelContainer = %TeacherTag
+@onready var teacher_name_label: Label = %TeacherNameLabel
+@onready var teacher_subject_label: Label = %SubjectLabel
+
 
 # Selection screen / location host
 @onready var selection_screen: VBoxContainer = %SelectionScreen
@@ -113,6 +122,9 @@ func _on_phase_changed(_v: int) -> void:
 func _show_selection_screen() -> void:
 	# Phase-specific background, or the diagonal placeholder if none.
 	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
+	# Clear any portrait the previous location may have left in the frame.
+	hide_teacher_portrait()
+
 	# Tear down any existing location.
 	if _current_location_node and is_instance_valid(_current_location_node):
 		_current_location_node.queue_free()
@@ -227,3 +239,25 @@ func _on_arrested() -> void:
 
 func _log(text: String) -> void:
 	event_log.append_text(text + "\n")
+
+
+# --- public API for location scenes ---
+
+## Show a portrait centered inside the top framed image. Used by School to
+## put a teacher in their classroom; any other location can use this the
+## same way. Pass null to hide.
+func show_teacher_portrait(tex: Texture2D, character_name: String = "", subject: String = "") -> void:
+	if tex == null:
+		hide_teacher_portrait()
+		return
+	teacher_portrait.texture = tex
+	teacher_portrait.visible = true
+	teacher_name_label.text = character_name
+	teacher_subject_label.text = subject.to_upper()
+	teacher_tag.visible = character_name != ""
+
+
+func hide_teacher_portrait() -> void:
+	teacher_portrait.visible = false
+	teacher_portrait.texture = null
+	teacher_tag.visible = false

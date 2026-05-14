@@ -1,9 +1,9 @@
-[gd_scene format=3 uid="uid://sqac53ieg4"]
+[gd_scene format=3 uid="uid://crxvndkqkiic2"]
 
 [ext_resource type="Texture2D" uid="uid://b8fuv3fb4gis8" path="res://assets/textures/backgrounds/scene_placeholder.png" id="3_rarhs"]
 [ext_resource type="PackedScene" path="res://scenes/Background.tscn" id="scene_bg"]
 [ext_resource type="PackedScene" path="res://scenes/Scanlines.tscn" id="scene_scan"]
-[ext_resource type="Script" uid="uid://cs4sa1yg7dlwc" path="res://scenes/Main.gd" id="script_main"]
+[ext_resource type="Script" uid="uid://bij0sdu6ci27g" path="res://scenes/Main.gd" id="script_main"]
 
 [node name="Main" type="Control" unique_id=519059982]
 layout_mode = 3
@@ -159,6 +159,64 @@ custom_minimum_size = Vector2(900, 225)
 layout_mode = 2
 texture = ExtResource("3_rarhs")
 expand_mode = 1
+
+[node name="TeacherPortrait" type="TextureRect" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=1100000001]
+unique_name_in_owner = true
+visible = false
+z_index = 2
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TeacherTag" type="PanelContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=1461892588]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+pivot_offset = Vector2(0, 40)
+mouse_filter = 2
+theme_type_variation = &"HUDPanel"
+
+[node name="TagMargin" type="MarginContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/TeacherTag" unique_id=903750862]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 4
+
+[node name="TagHBox" type="HBoxContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/TeacherTag/TagMargin" unique_id=237714483]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TeacherNameLabel" type="Label" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/TeacherTag/TagMargin/TagHBox" unique_id=1640629761]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 28
+text = "TEACHER"
+
+[node name="TagDiv" type="PanelContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/TeacherTag/TagMargin/TagHBox" unique_id=1338688489]
+custom_minimum_size = Vector2(3, 22)
+layout_mode = 2
+theme_type_variation = &"PanelDivider"
+
+[node name="SubjectLabel" type="Label" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/TeacherTag/TagMargin/TagHBox" unique_id=312795368]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+text = "SUBJECT"
 
 [node name="RivetTL" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=397116627]
 layout_mode = 2
