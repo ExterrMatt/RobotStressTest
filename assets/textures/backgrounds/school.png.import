@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cbmtms48hkuhu"
-path="res://.godot/imported/scene_placeholder.png-8389de31e07a1b94215bc0b4ec0fb741.ctex"
+uid="uid://panfevpubqnh"
+path="res://.godot/imported/school.png-2e133461fc94f5a62106abdcc5f53779.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/scene_placeholder.png"
-dest_files=["res://.godot/imported/scene_placeholder.png-8389de31e07a1b94215bc0b4ec0fb741.ctex"]
+source_file="res://assets/textures/backgrounds/school.png"
+dest_files=["res://.godot/imported/school.png-2e133461fc94f5a62106abdcc5f53779.ctex"]
 
 [params]
 

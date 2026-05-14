@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LocationData" format=3 uid="uid://bukedreu6nuxd"]
 
-[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Script" uid="uid://d370vjofljuj2" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://panfevpubqnh" path="res://assets/textures/backgrounds/school.png" id="1_s8u58"]
 
 [resource]
 script = ExtResource("1")
@@ -9,4 +10,4 @@ display_name = "School"
 description = "Attend class. Steal nanobots if you're brave."
 allowed_phases = [0]
 scene_path = "res://scenes/locations/School.tscn"
-free_action = false
+preview_texture = ExtResource("1_s8u58")

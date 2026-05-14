@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://csajkk7pp6jvm"
-path="res://.godot/imported/poped.png-b8f1a2a61401341b58bd50eaf1b5aa48.ctex"
+uid="uid://skqwtiy016uk"
+path="res://.godot/imported/Science.png-4ec50c8b273cea34e151333b18a7facf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/poped.png"
-dest_files=["res://.godot/imported/poped.png-b8f1a2a61401341b58bd50eaf1b5aa48.ctex"]
+source_file="res://assets/textures/characters/teachers/Science.png"
+dest_files=["res://.godot/imported/Science.png-4ec50c8b273cea34e151333b18a7facf.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dcrxe1w25i65m"
-path="res://.godot/imported/scene_placeholder.svg-d05f4b517cfdc4227b7dcd1b7552d201.ctex"
+uid="uid://in75f1i6uvtc"
+path="res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/scene_placeholder.svg"
-dest_files=["res://.godot/imported/scene_placeholder.svg-d05f4b517cfdc4227b7dcd1b7552d201.ctex"]
+source_file="res://assets/textures/backgrounds/bedroom_morning.png"
+dest_files=["res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

@@ -24,6 +24,10 @@ class_name LocationData
 ## Activity-button icon. Pixel art goes here later.
 @export var icon: Texture2D
 
+## Image shown in the top frame on the main screen while this
+## location is active. Optional — falls back to the default placeholder.
+@export var preview_texture: Texture2D
+
 ## Optional: if true, visiting this location does NOT consume the phase.
 ## (Reserved for things like checking inventory; nothing uses it yet.)
 @export var free_action: bool = false

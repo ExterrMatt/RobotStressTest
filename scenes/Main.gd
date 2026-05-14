@@ -22,12 +22,22 @@ const LOCATION_RESOURCE_PATHS: Array[String] = [
 	"res://resources/locations/personality_training.tres",
 ]
 
+## Background shown on the selection screen for each phase.
+## Keyed by DayCycle.Phase int values (0=Morning, 1=Evening, 2=Night).
+## Missing entries fall back to the default placeholder.
+const PHASE_BACKGROUNDS: Dictionary = {
+	0: preload("res://assets/textures/backgrounds/bedroom_morning.png"),
+	1: preload("res://assets/textures/backgrounds/bedroom_evening.png"),
+	2: preload("res://assets/textures/backgrounds/bedroom_night.png"),
+}
+
 # HUD labels
 @onready var day_label: Label = %DayLabel
 @onready var phase_label: Label = %PhaseLabel
 @onready var money_label: Label = %MoneyLabel
 @onready var suspicion_label: Label = %SuspicionLabel
 @onready var anger_label: Label = %AngerLabel
+@onready var scene_image: TextureRect = %SceneImage
 
 # Selection screen / location host
 @onready var selection_screen: VBoxContainer = %SelectionScreen
@@ -40,9 +50,13 @@ const LOCATION_RESOURCE_PATHS: Array[String] = [
 
 var _locations: Array[LocationData] = []
 var _current_location_node: Node = null
+var _default_scene_image: Texture2D
 
 
 func _ready() -> void:
+	# Cache the placeholder texture BEFORE anything else can swap it.
+	_default_scene_image = scene_image.texture
+	
 	_load_locations()
 
 	GameState.money_changed.connect(_on_money_changed)
@@ -55,6 +69,7 @@ func _ready() -> void:
 
 	_refresh_hud()
 	_show_selection_screen()
+	_default_scene_image = scene_image.texture
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -96,6 +111,8 @@ func _on_phase_changed(_v: int) -> void:
 # --- selection screen ---
 
 func _show_selection_screen() -> void:
+	# Phase-specific background, or the diagonal placeholder if none.
+	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 	# Tear down any existing location.
 	if _current_location_node and is_instance_valid(_current_location_node):
 		_current_location_node.queue_free()
@@ -121,6 +138,7 @@ func _build_location_button(loc: LocationData) -> Button:
 	btn.tooltip_text = loc.description
 	btn.custom_minimum_size = Vector2(0, 80)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.add_theme_font_size_override("font_size", 58)
 	if loc.icon:
 		btn.icon = loc.icon
 		btn.expand_icon = true
@@ -135,6 +153,8 @@ func _on_location_picked(loc: LocationData) -> void:
 		return
 
 	_current_location_node = packed.instantiate()
+	if loc.preview_texture:
+		scene_image.texture = loc.preview_texture
 	location_host.add_child(_current_location_node)
 
 	if _current_location_node.has_signal("finished"):
