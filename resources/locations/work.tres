@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"work"
+display_name = "Work"
+description = "Earn money. Source of synth-skin and scrap metal."
+allowed_phases = [0]
+scene_path = "res://scenes/locations/Work.tscn"
+free_action = false

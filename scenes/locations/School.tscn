@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://b46o8nu5etd6b"]
+
+[ext_resource type="PackedScene" uid="uid://cyie4hrdescw1" path="res://scenes/locations/StubLocation.tscn" id="1"]
+
+[node name="School" unique_id=2128168618 instance=ExtResource("1")]
+title_text = "School"
+blurb_text = "Attend class. Pay attention. Steal what you can. School is the only place to find manufacturing nanobots."
+outcomes = [{
+"anger": 0,
+"ingredients": {
+"nuts_bolts": 1
+},
+"label": "Attend quietly",
+"money": 0,
+"suspicion": -2
+}, {
+"anger": 0,
+"ingredients": {
+"nanobots": 1,
+"nuts_bolts": 1
+},
+"label": "Attend + steal nanobots (risky)",
+"money": 0,
+"suspicion": 4
+}, {
+"anger": 0,
+"ingredients": {
+"electronics": 1
+},
+"label": "Answer the teacher's question",
+"money": 0,
+"suspicion": -4
+}]

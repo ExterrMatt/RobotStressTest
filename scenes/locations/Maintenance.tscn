@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+
+[node name="Maintenance" instance=ExtResource("1")]
+title_text = "Maintenance"
+blurb_text = "Repair damage. Apply upgrades. Equip body parts. Buff and shine."
+outcomes = [{
+"label": "Quick patch (spend ingredients)",
+"money": 0,
+"suspicion": 0,
+"anger": -5,
+"ingredients": {}
+}, {
+"label": "Exchange anger — zap her (relief now, debt later)",
+"money": 0,
+"suspicion": 0,
+"anger": 8,
+"ingredients": {}
+}, {
+"label": "Buff & shine (cheap calm)",
+"money": -5,
+"suspicion": 0,
+"anger": -2,
+"ingredients": {}
+}]

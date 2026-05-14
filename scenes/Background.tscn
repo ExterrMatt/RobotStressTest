@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://shaders/space_background.gdshader" id="shader_bg"]
+
+[sub_resource type="ShaderMaterial" id="mat_bg"]
+shader = ExtResource("shader_bg")
+
+[node name="Background" type="ColorRect"]
+material = SubResource("mat_bg")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2

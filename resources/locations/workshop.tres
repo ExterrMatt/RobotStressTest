@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"workshop"
+display_name = "Workshop"
+description = "Craft ingredients into body parts."
+allowed_phases = [1]
+scene_path = "res://scenes/locations/Workshop.tscn"
+free_action = false

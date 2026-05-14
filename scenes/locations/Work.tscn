@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+
+[node name="Work" instance=ExtResource("1")]
+title_text = "Work"
+blurb_text = "Sort shapes. Watch the valves. Clean the vents. Source of synth-skin and scrap metal."
+outcomes = [{
+"label": "Standard shift",
+"money": 30,
+"suspicion": -1,
+"anger": 0,
+"ingredients": {"scrap_metal": 1, "synth_skin": 1}
+}, {
+"label": "Push the fifth valve (harder, more pay)",
+"money": 55,
+"suspicion": -1,
+"anger": 0,
+"ingredients": {"scrap_metal": 2}
+}, {
+"label": "Standard shift + steal supplies",
+"money": 30,
+"suspicion": 4,
+"anger": 0,
+"ingredients": {"scrap_metal": 2, "synth_skin": 1, "electronics": 1}
+}]

@@ -1,0 +1,5 @@
+res://scenes/Main.tscn
+res://themes/main_theme.tres
+res://scenes/locations/StubLocation.tscn
+res://scenes/locations/School.tscn
+res://scenes/locations/StubLocation.gd

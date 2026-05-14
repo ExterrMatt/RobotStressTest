@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+
+[node name="Workshop" instance=ExtResource("1")]
+title_text = "Workshop"
+blurb_text = "Craft ingredients into body parts. Real crafting UI coming later."
+outcomes = [{
+"label": "Craft a simple limb",
+"money": 0,
+"suspicion": 0,
+"anger": 0,
+"ingredients": {"scrap_metal": -2, "nuts_bolts": -1}
+}, {
+"label": "Tinker (no result yet)",
+"money": 0,
+"suspicion": 0,
+"anger": 0,
+"ingredients": {}
+}]

@@ -1,0 +1,281 @@
+[gd_scene format=3 uid="uid://sqac53ieg4"]
+
+[ext_resource type="Texture2D" uid="uid://cbmtms48hkuhu" path="res://assets/textures/scene_placeholder.png" id="3_rarhs"]
+[ext_resource type="PackedScene" path="res://scenes/Background.tscn" id="scene_bg"]
+[ext_resource type="PackedScene" path="res://scenes/Scanlines.tscn" id="scene_scan"]
+[ext_resource type="Script" uid="uid://cs4sa1yg7dlwc" path="res://scenes/Main.gd" id="script_main"]
+
+[node name="Main" type="Control" unique_id=519059982]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("script_main")
+
+[node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=1679746771]
+layer = -10
+
+[node name="Background" parent="BackgroundLayer" unique_id=917377141 instance=ExtResource("scene_bg")]
+
+[node name="UI" type="MarginContainer" parent="." unique_id=2037000831]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 64
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 64
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="UI" unique_id=257630707]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HUDBar" type="PanelContainer" parent="UI/VBox" unique_id=1119628134]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDPanel"
+
+[node name="HUDMargin" type="MarginContainer" parent="UI/VBox/HUDBar" unique_id=1470116196]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="HUDLayout" type="HBoxContainer" parent="UI/VBox/HUDBar/HUDMargin" unique_id=161432122]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="DayPrefix" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=896291678]
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 36
+text = "DAY"
+
+[node name="DayLabel" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1950093398]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 36
+text = "1"
+
+[node name="Div1" type="PanelContainer" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1449404439]
+custom_minimum_size = Vector2(3, 28)
+layout_mode = 2
+theme_type_variation = &"PanelDivider"
+
+[node name="PhaseLabel" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=960445780]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 36
+text = "MORNING"
+
+[node name="Div2" type="PanelContainer" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=730121585]
+custom_minimum_size = Vector2(3, 28)
+layout_mode = 2
+theme_type_variation = &"PanelDivider"
+
+[node name="MoneyLabel" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=490756253]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 36
+text = "$0"
+
+[node name="Div3" type="PanelContainer" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=162893796]
+custom_minimum_size = Vector2(3, 28)
+layout_mode = 2
+theme_type_variation = &"PanelDivider"
+
+[node name="Spacer" type="Control" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1096462408]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Div4" type="PanelContainer" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=579153030]
+custom_minimum_size = Vector2(3, 28)
+layout_mode = 2
+theme_type_variation = &"PanelDivider"
+
+[node name="SuspicionPrefix" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1846202919]
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 36
+text = "SUSPICION:"
+
+[node name="SuspicionLabel" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=2008557879]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 36
+text = "0"
+
+[node name="Div5" type="PanelContainer" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=219143141]
+custom_minimum_size = Vector2(3, 28)
+layout_mode = 2
+theme_type_variation = &"PanelDivider"
+
+[node name="AngerPrefix" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1229245657]
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 36
+text = "ANGER:"
+
+[node name="AngerLabel" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1011427538]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 36
+text = "0"
+
+[node name="FrameWrap" type="CenterContainer" parent="UI/VBox" unique_id=857694113]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FrameOuter" type="PanelContainer" parent="UI/VBox/FrameWrap" unique_id=1133958314]
+custom_minimum_size = Vector2(1100, 275)
+layout_mode = 2
+theme_type_variation = &"FrameOuter"
+
+[node name="FrameInsetDark" type="PanelContainer" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=1977178553]
+layout_mode = 2
+theme_type_variation = &"FrameInsetDark"
+
+[node name="FrameInsetMid" type="PanelContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark" unique_id=1359773724]
+layout_mode = 2
+theme_type_variation = &"FrameInsetMid"
+
+[node name="SceneImage" type="TextureRect" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid" unique_id=1548457432]
+unique_name_in_owner = true
+z_index = 1
+texture_filter = 1
+custom_minimum_size = Vector2(900, 225)
+layout_mode = 2
+texture = ExtResource("3_rarhs")
+expand_mode = 1
+
+[node name="RivetTL" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=397116627]
+layout_mode = 2
+color = Color(0.541, 0.443, 0.251, 1)
+
+[node name="RivetHighlightTL" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter/RivetTL" unique_id=282569911]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 4.0
+offset_bottom = 4.0
+color = Color(0.788, 0.663, 0.416, 1)
+
+[node name="RivetTR" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=2101020832]
+layout_mode = 2
+color = Color(0.541, 0.443, 0.251, 1)
+
+[node name="RivetHighlightTR" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter/RivetTR" unique_id=825531315]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 4.0
+offset_bottom = 4.0
+color = Color(0.788, 0.663, 0.416, 1)
+
+[node name="RivetBL" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=156994123]
+layout_mode = 2
+color = Color(0.541, 0.443, 0.251, 1)
+
+[node name="RivetHighlightBL" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter/RivetBL" unique_id=580688530]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 4.0
+offset_bottom = 4.0
+color = Color(0.788, 0.663, 0.416, 1)
+
+[node name="RivetBR" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=992845264]
+layout_mode = 2
+color = Color(0.541, 0.443, 0.251, 1)
+
+[node name="RivetHighlightBR" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter/RivetBR" unique_id=1820270533]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 4.0
+offset_bottom = 4.0
+color = Color(0.788, 0.663, 0.416, 1)
+
+[node name="SelectionScreen" type="VBoxContainer" parent="UI/VBox" unique_id=768997018]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="PromptLabel" type="Label" parent="UI/VBox/SelectionScreen" unique_id=897881135]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Prompt"
+text = "WHERE WILL YOU GO?"
+horizontal_alignment = 1
+
+[node name="LocationGrid" type="GridContainer" parent="UI/VBox/SelectionScreen" unique_id=692500410]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
+columns = 3
+
+[node name="LocationHost" type="Control" parent="UI/VBox" unique_id=482344626]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LogOverlay" type="PanelContainer" parent="." unique_id=24629623]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -360.0
+offset_top = 100.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_type_variation = &"HUDPanel"
+
+[node name="LogMargin" type="MarginContainer" parent="LogOverlay" unique_id=149117718]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="LogVBox" type="VBoxContainer" parent="LogOverlay/LogMargin" unique_id=1199404087]
+layout_mode = 2
+
+[node name="LogHeader" type="Label" parent="LogOverlay/LogMargin/LogVBox" unique_id=400298559]
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+text = "EVENT LOG  (Tab to hide)"
+
+[node name="EventLog" type="RichTextLabel" parent="LogOverlay/LogMargin/LogVBox" unique_id=567131207]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "[i]Day 1 — Morning.[/i]
+"
+scroll_following = true
+
+[node name="ScanlineLayer" type="CanvasLayer" parent="." unique_id=471987540]
+layer = 10
+
+[node name="Scanlines" parent="ScanlineLayer" unique_id=735767209 instance=ExtResource("scene_scan")]
+grow_horizontal = 2
+grow_vertical = 2

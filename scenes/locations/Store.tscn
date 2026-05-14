@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+
+[node name="Store" instance=ExtResource("1")]
+title_text = "Store"
+blurb_text = "Buy ingredients, tools, gadgets. Real shop UI coming later."
+outcomes = [{
+"label": "Buy scrap metal bundle (−40)",
+"money": -40,
+"suspicion": 0,
+"anger": 0,
+"ingredients": {"scrap_metal": 3}
+}, {
+"label": "Buy electronics bundle (−40)",
+"money": -40,
+"suspicion": 0,
+"anger": 0,
+"ingredients": {"electronics": 3}
+}, {
+"label": "Buy sneaky shoes (−80, future steal buff)",
+"money": -80,
+"suspicion": 0,
+"anger": 0,
+"ingredients": {}
+}, {
+"label": "Window shop and leave",
+"money": 0,
+"suspicion": 0,
+"anger": 0,
+"ingredients": {}
+}]

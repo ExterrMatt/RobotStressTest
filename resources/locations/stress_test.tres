@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"stress_test"
+display_name = "Stress Test"
+description = "Reduce tomorrow's anger. Don't wake the robot."
+allowed_phases = [2]
+scene_path = "res://scenes/locations/StressTest.tscn"
+free_action = false

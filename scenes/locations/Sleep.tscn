@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+
+[node name="Sleep" instance=ExtResource("1")]
+title_text = "Sleep"
+blurb_text = "Skip the stress-test. Tomorrow's anger reflects tonight's neglect."
+outcomes = [{
+"label": "Sleep through the night",
+"money": 0,
+"suspicion": 0,
+"anger": 0,
+"ingredients": {}
+}]
