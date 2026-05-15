@@ -6,6 +6,10 @@ extends LocationBase
 ## Each button's rewards are configured via @export below so we can tune
 ## per-location feel without changing code.
 ##
+## The back action lives in Main's bottom-right corner button (inside the
+## picture frame), mounted on _ready and torn down when the location ends
+## or when the transition's midpoint clears it.
+##
 ## Replace this entire script with a real minigame scene script when ready.
 
 ## Title shown at the top of the screen.
@@ -29,7 +33,6 @@ extends LocationBase
 @onready var blurb_label: Label = %BlurbLabel
 @onready var background_rect: TextureRect = %BackgroundRect
 @onready var button_container: HFlowContainer = %ButtonContainer
-@onready var back_button: Button = %BackButton
 
 
 func _ready() -> void:
@@ -50,7 +53,10 @@ func _ready() -> void:
 		btn.pressed.connect(_on_outcome_pressed.bind(outcome))
 		button_container.add_child(btn)
 
-	back_button.pressed.connect(_on_back_pressed)
+	# Mount the back button inside the picture frame (bottom-right corner).
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("show_corner_button"):
+		main.show_corner_button("← BACK", _on_back_pressed)
 
 
 func _on_outcome_pressed(outcome: Dictionary) -> void:
@@ -65,4 +71,5 @@ func _on_outcome_pressed(outcome: Dictionary) -> void:
 
 func _on_back_pressed() -> void:
 	# Free action - return to selection without advancing the phase.
+	# (Main hides the corner button at the transition midpoint.)
 	finish(0, 0, 0, {}, true)

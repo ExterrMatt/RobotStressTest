@@ -255,7 +255,6 @@ const REWARD_STEAL: Dictionary = {
 @onready var dialogue_label: RichTextLabel = %DialogueLabel
 @onready var prompt_label: Label = %PromptLabel
 @onready var choice_grid: GridContainer = %ChoiceGrid
-@onready var continue_button: Button = %ContinueButton
 
 # --- Run state ---
 var _current_teacher: Dictionary = {}
@@ -270,7 +269,6 @@ var _total_ingredients: Dictionary = {}
 func _ready() -> void:
 	_pick_teacher_and_question()
 	_enter_lecture()
-	continue_button.pressed.connect(_on_continue_pressed)
 
 
 func _pick_teacher_and_question() -> void:
@@ -299,8 +297,7 @@ func _enter_lecture() -> void:
 	prompt_label.visible = false
 	_clear_choice_buttons()
 	choice_grid.visible = false
-	continue_button.text = "CONTINUE"
-	continue_button.visible = true
+	_show_corner("CONTINUE")
 
 
 # --- Question phase ---
@@ -312,7 +309,7 @@ func _enter_question() -> void:
 	prompt_label.text = _current_question["prompt"]
 	prompt_label.visible = true
 
-	continue_button.visible = false
+	_hide_corner()
 	_clear_choice_buttons()
 	choice_grid.visible = true
 
@@ -349,8 +346,7 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 	dialogue_label.append_text("\n\n%s" % feedback)
 
 	prompt_label.visible = false
-	continue_button.text = "CLASS ENDS  →"
-	continue_button.visible = true
+	_show_corner("CLASS ENDS  →")
 
 
 # --- Post-class phase ---
@@ -363,7 +359,7 @@ func _enter_post_class() -> void:
 	prompt_label.text = "WHAT DO YOU DO?"
 	prompt_label.visible = true
 
-	continue_button.visible = false
+	_hide_corner()
 	_clear_choice_buttons()
 	choice_grid.visible = true
 
@@ -394,8 +390,22 @@ func _on_continue_pressed() -> void:
 		SchoolPhase.QUESTION:
 			_enter_post_class()
 		SchoolPhase.POST_CLASS:
-			# Should never hit - continue button is hidden in this phase.
+			# Should never hit - corner button is hidden in this phase.
 			_finish_school()
+
+
+## Mount the bottom-right corner button on Main with `label`, bound to
+## _on_continue_pressed. Main owns the button node; we just request it.
+func _show_corner(label: String) -> void:
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("show_corner_button"):
+		main.show_corner_button(label, _on_continue_pressed)
+
+
+func _hide_corner() -> void:
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("hide_corner_button"):
+		main.hide_corner_button()
 
 
 func _finish_school() -> void:

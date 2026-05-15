@@ -49,6 +49,10 @@ const PHASE_BACKGROUNDS: Dictionary = {
 @onready var teacher_tag: PanelContainer = %TeacherTag
 @onready var teacher_name_label: Label = %TeacherNameLabel
 @onready var teacher_subject_label: Label = %SubjectLabel
+## Bottom-right pill button inside the picture frame, mirroring the teacher
+## tag in the bottom-left. Locations call show_corner_button() to mount a
+## "Back"/"Continue"/etc. action here; Main hides it at transition midpoints.
+@onready var corner_button: Button = %CornerButton
 
 # Selection screen / location host
 @onready var selection_screen: VBoxContainer = %SelectionScreen
@@ -169,6 +173,7 @@ func _apply_selection_screen_swap() -> void:
 
 	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 	hide_teacher_portrait()
+	hide_corner_button()
 
 
 func _build_location_button(loc: LocationData) -> Button:
@@ -314,3 +319,25 @@ func hide_teacher_portrait() -> void:
 	teacher_portrait.visible = false
 	teacher_portrait.texture = null
 	teacher_tag.visible = false
+
+
+## Show a button in the bottom-right of the framed picture, mirroring the
+## teacher tag in the bottom-left. Use for back/continue/finish actions
+## that should live inside the frame instead of in the location's layout.
+##
+## Calling this with a different label/callback while the button is already
+## visible replaces the previous binding cleanly - no stale handlers.
+func show_corner_button(label: String, on_pressed: Callable) -> void:
+	# Drop any previous connection so we don't fire stale callbacks.
+	for conn in corner_button.pressed.get_connections():
+		corner_button.pressed.disconnect(conn["callable"])
+	corner_button.text = label
+	if on_pressed.is_valid():
+		corner_button.pressed.connect(on_pressed)
+	corner_button.visible = true
+
+
+func hide_corner_button() -> void:
+	for conn in corner_button.pressed.get_connections():
+		corner_button.pressed.disconnect(conn["callable"])
+	corner_button.visible = false
