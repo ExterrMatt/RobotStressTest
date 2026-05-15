@@ -69,6 +69,13 @@ const PHASE_BACKGROUNDS: Dictionary = {
 var _locations: Array[LocationData] = []
 var _current_location_node: Node = null
 var _default_scene_image: Texture2D
+## Toggle for the alternate teacher portrait (e.g., Health.png → Health2.png).
+## Flipped with the X key. Persists across teachers within a session.
+var _alt_portrait: bool = false
+
+## Base texture path of the currently-shown teacher portrait (no "2" suffix),
+## so we can swap variants when the toggle changes.
+var _portrait_base_path: String = ""
 
 ## Set true on the very first selection-screen show, so we don't play a
 ## transition before the player has even seen anything.
@@ -98,6 +105,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_TAB:
 			log_overlay.visible = not log_overlay.visible
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_X:
+			_alt_portrait = not _alt_portrait
+			_refresh_teacher_portrait_variant()
 			get_viewport().set_input_as_handled()
 
 
@@ -304,21 +315,52 @@ func _log(text: String) -> void:
 ## Show a portrait centered inside the top framed image. Used by School to
 ## put a teacher in their classroom; any other location can use this the
 ## same way. Pass null to hide.
+##
+## When the X-key toggle is active, this will load the "2" variant of the
+## texture (e.g., Health.png -> Health2.png) instead of the base texture.
 func show_teacher_portrait(tex: Texture2D, character_name: String = "", subject: String = "") -> void:
 	if tex == null:
 		hide_teacher_portrait()
 		return
-	teacher_portrait.texture = tex
-	teacher_portrait.visible = true
+
+	# Record the base (non-"2") path so we can flip variants on the X toggle.
+	# tex.resource_path is the imported texture's res:// path.
+	_portrait_base_path = tex.resource_path
+
 	teacher_name_label.text = character_name
 	teacher_subject_label.text = subject.to_upper()
 	teacher_tag.visible = character_name != ""
+	teacher_portrait.visible = true
+
+	# Apply the current toggle (loads either base or "2" variant).
+	_refresh_teacher_portrait_variant()
 
 
 func hide_teacher_portrait() -> void:
 	teacher_portrait.visible = false
 	teacher_portrait.texture = null
 	teacher_tag.visible = false
+	_portrait_base_path = ""
+
+
+## Re-applies the current teacher portrait texture based on _alt_portrait.
+## Called when the X toggle flips, and whenever a new teacher is shown.
+## If the "2" variant doesn't exist, falls back to the base texture so we
+## never end up with a missing portrait.
+func _refresh_teacher_portrait_variant() -> void:
+	if _portrait_base_path == "":
+		return
+
+	var path_to_load: String = _portrait_base_path
+	if _alt_portrait:
+		path_to_load = _portrait_base_path.get_basename() + "2." + _portrait_base_path.get_extension()
+		if not ResourceLoader.exists(path_to_load):
+			# No "2" variant on disk - silently fall back to the base.
+			path_to_load = _portrait_base_path
+
+	var tex: Texture2D = load(path_to_load)
+	if tex:
+		teacher_portrait.texture = tex
 
 
 ## Show a button in the bottom-right of the framed picture, mirroring the

@@ -182,10 +182,12 @@ theme_type_variation = &"FrameOuter"
 
 [node name="FrameInsetDark" type="PanelContainer" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=1977178553]
 layout_mode = 2
+mouse_filter = 1
 theme_type_variation = &"FrameInsetDark"
 
 [node name="FrameInsetMid" type="PanelContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark" unique_id=1359773724]
 layout_mode = 2
+mouse_filter = 1
 theme_type_variation = &"FrameInsetMid"
 
 [node name="SceneImage" type="TextureRect" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid" unique_id=1548457432]
@@ -194,7 +196,6 @@ z_index = 1
 texture_filter = 1
 custom_minimum_size = Vector2(900, 225)
 layout_mode = 2
-mouse_filter = 2
 texture = ExtResource("3_rarhs")
 expand_mode = 1
 
@@ -266,28 +267,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CornerButton" type="Button" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=126284436]
-unique_name_in_owner = true
-visible = false
-z_index = 2
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -95.0
-offset_top = -39.0
-grow_horizontal = 0
-grow_vertical = 0
-mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("sb_corner_normal")
-theme_override_styles/pressed = SubResource("sb_corner_pressed")
-theme_override_styles/hover = SubResource("sb_corner_hover")
-theme_override_styles/focus = SubResource("sb_corner_hover")
-text = "BUTTON"
-
 [node name="RivetTL" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=397116627]
 layout_mode = 2
 color = Color(0.541, 0.443, 0.251, 1)
@@ -335,6 +314,31 @@ offset_top = 1.0
 offset_right = 4.0
 offset_bottom = 4.0
 color = Color(0.788, 0.663, 0.416, 1)
+
+[node name="CornerButtonLayer" type="Control" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=205893524]
+layout_mode = 2
+mouse_filter = 1
+
+[node name="CornerButton" type="Button" parent="UI/VBox/FrameWrap/FrameOuter/CornerButtonLayer" unique_id=126284436]
+unique_name_in_owner = true
+z_index = 2
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -95.0
+offset_top = -39.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("sb_corner_normal")
+theme_override_styles/pressed = SubResource("sb_corner_pressed")
+theme_override_styles/hover = SubResource("sb_corner_hover")
+theme_override_styles/focus = SubResource("sb_corner_hover")
+text = "BUTTON"
 
 [node name="SelectionScreen" type="VBoxContainer" parent="UI/VBox" unique_id=768997018]
 unique_name_in_owner = true
