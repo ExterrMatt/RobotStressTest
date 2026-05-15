@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://b8fuv3fb4gis8" path="res://assets/textures/backgrounds/scene_placeholder.png" id="3_rarhs"]
 [ext_resource type="PackedScene" path="res://scenes/Background.tscn" id="scene_bg"]
 [ext_resource type="PackedScene" path="res://scenes/Scanlines.tscn" id="scene_scan"]
-[ext_resource type="PackedScene" path="res://scenes/Transition.tscn" id="scene_transition"]
+[ext_resource type="PackedScene" uid="uid://cqwrabia7ynum" path="res://scenes/Transition.tscn" id="scene_transition"]
 [ext_resource type="Script" uid="uid://bij0sdu6ci27g" path="res://scenes/Main.gd" id="script_main"]
 
 [sub_resource type="StyleBoxFlat" id="sb_corner_normal"]
@@ -256,7 +256,7 @@ layout_mode = 2
 theme_type_variation = &"HUDLabel"
 text = "SUBJECT"
 
-[node name="Transition" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=1360254190 instance=ExtResource("scene_transition")]
+[node name="Transition" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=1926002557 instance=ExtResource("scene_transition")]
 unique_name_in_owner = true
 z_index = 3
 layout_mode = 1
@@ -266,13 +266,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CornerButton" type="Button" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=1931877156]
+[node name="CornerButton" type="Button" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=126284436]
 unique_name_in_owner = true
 visible = false
 z_index = 2
-layout_mode = 0
-offset_right = 1094.0
-offset_bottom = 269.0
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -95.0
+offset_top = -39.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_default_cursor_shape = 2
