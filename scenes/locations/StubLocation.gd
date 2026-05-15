@@ -56,7 +56,7 @@ func _ready() -> void:
 	# Mount the back button inside the picture frame (bottom-right corner).
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("show_corner_button"):
-		main.show_corner_button("← BACK", _on_back_pressed)
+		main.show_corner_button("<- BACK", _on_back_pressed)
 
 
 func _on_outcome_pressed(outcome: Dictionary) -> void:

@@ -1,0 +1,100 @@
+# =============================================================================
+# School dialogue file.
+#
+# FORMAT
+#   #               -> comment line (full line only). Ignored.
+#   [some.key]      -> starts a new entry. Other code looks up by this key.
+#
+#   Inside an entry:
+#     Each non-blank line is ONE click in-game.
+#       (i.e. the player sees the sentence type out, then clicks for the next.)
+#     Blank lines are decorative - they don't affect the game, you can use
+#       them to group sentences visually while editing.
+#     A trailing  \  joins this line with the next so they appear on the same
+#       click (use for short sentences you want shown two-at-once).
+#
+# Inline formatting (passed through to Godot's RichTextLabel):
+#   [i]italic[/i]    [b]bold[/b]    [color=#7fdf7f]green[/color]    etc.
+#
+# Placeholders (filled in by code with String.format):
+#   {name}          -> teacher name
+#   {correct}       -> correct answer text (only valid in wrong-answer entries)
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# GYM - Mr. Caldera
+# -----------------------------------------------------------------------------
+
+[gym.intro]
+[i]Drop your bags.[/i]
+[i]Today we're talking about something every one of you will need: not pulling a muscle.[/i]
+
+[gym.warmup.lecture]
+Warm-ups raise your muscle temperature and increase blood flow before exertion.
+A cold muscle is a brittle muscle - it tears under load that a warm one would shrug off.
+Five minutes of light cardio is enough to make a measurable difference.
+Skip the warm-up and you're betting your week on a coin flip.
+
+[gym.sprint.lecture]
+When you sprint, your body switches to anaerobic energy production - burning glucose without oxygen.
+That's why you can only hold a top sprint for ten or fifteen seconds before your legs start screaming.
+Long, slow runs are aerobic; they use oxygen and last for hours.
+Different systems, different fuels.
+
+
+# -----------------------------------------------------------------------------
+# SCIENCE - Ms. Okorie
+# -----------------------------------------------------------------------------
+
+[science.intro]
+[i]Goggles on the desk.[/i]
+[i]Today's topic is the smallest building blocks we know about.[/i]
+
+[science.atom.lecture]
+An atom has three kinds of particles.
+Protons carry a positive charge and live in the nucleus.
+Neutrons carry no charge and also live in the nucleus.
+Electrons carry a negative charge and orbit around the nucleus at much greater distances.
+The number of protons defines what element the atom is - change the proton count and you change the element entirely.
+
+[science.photo.lecture]
+Photosynthesis is how plants make their own food.
+They take in carbon dioxide from the air through tiny pores in their leaves, absorb water through their roots, and use sunlight to convert these into glucose.
+Oxygen is released as a byproduct, which is convenient for the rest of us.
+Without photosynthesis, almost no complex life on Earth would exist.
+
+[science.newton.lecture]
+Newton's third law of motion says that for every action, there is an equal and opposite reaction.
+When you push off the ground to jump, the ground pushes back on you with the same force - that reaction is what actually lifts you.
+Rockets work the same way: hot gas is pushed out the back, and the rocket is pushed forward in response.
+
+
+# -----------------------------------------------------------------------------
+# FEEDBACK - shown after the player answers. Uses {name} placeholder.
+# Short sentences are paired with a trailing backslash so they show together.
+# -----------------------------------------------------------------------------
+
+[feedback.correct]
+[color=#7fdf7f]Correct.[/color] \
+{name} nods.
+"Good. Pay attention to the rest of you."
+
+[feedback.wrong]
+[color=#df7f7f]Wrong.[/color] \
+{name} sighs.
+"The answer was: {correct}. Try to keep up."
+
+
+# -----------------------------------------------------------------------------
+# POST-CLASS - the steal-or-leave moment.
+# -----------------------------------------------------------------------------
+
+[post_class]
+[i]The bell rings.[/i] \
+[i]Chairs scrape.[/i] \
+[i]Students start filing out.[/i]
+
+[i]The supply cabinet at the back is unlocked.[/i]
+[i]You can see the small case of manufacturing nanobots inside.[/i]
+[i]Nobody's looking right now.[/i]

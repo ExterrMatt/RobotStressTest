@@ -1,5 +1,2 @@
-res://scenes/Main.gd
-res://scenes/locations/School.gd
-res://scenes/Main.tscn
+res://scenes/ui/DialogueBox.tscn
 res://themes/main_theme.tres
-res://scenes/locations/StubLocation.gd

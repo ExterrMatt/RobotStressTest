@@ -23,6 +23,7 @@ config/icon="res://icon.svg"
 
 GameState="*res://autoload/GameState.gd"
 DayCycle="*res://autoload/DayCycle.gd"
+Dialogue="*res://autoload/Dialogue.gd"
 
 [display]
 
