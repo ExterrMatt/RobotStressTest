@@ -8,6 +8,9 @@ extends Control
 ## - Apply the location's result to GameState
 ## - Advance the day cycle (unless skip_advance was set)
 ## - Toggle the debug event-log overlay with Tab.
+## - Run a FlowerLoad transition INSIDE THE PICTURE BOX between scene swaps.
+##   HUD and buttons snap instantly; the framed background change happens at
+##   frame 9/18, while the wipe hides it.
 ##
 ## Locations themselves are dumb - they emit a result dict and Main applies it.
 
@@ -47,7 +50,6 @@ const PHASE_BACKGROUNDS: Dictionary = {
 @onready var teacher_name_label: Label = %TeacherNameLabel
 @onready var teacher_subject_label: Label = %SubjectLabel
 
-
 # Selection screen / location host
 @onready var selection_screen: VBoxContainer = %SelectionScreen
 @onready var location_grid: GridContainer = %LocationGrid
@@ -57,15 +59,22 @@ const PHASE_BACKGROUNDS: Dictionary = {
 @onready var log_overlay: PanelContainer = %LogOverlay
 @onready var event_log: RichTextLabel = %EventLog
 
+# In-frame FlowerLoad wipe (TextureRect parented inside the picture box).
+@onready var transition: TextureRect = %Transition
+
 var _locations: Array[LocationData] = []
 var _current_location_node: Node = null
 var _default_scene_image: Texture2D
+
+## Set true on the very first selection-screen show, so we don't play a
+## transition before the player has even seen anything.
+var _has_shown_initial: bool = false
 
 
 func _ready() -> void:
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
-	
+
 	_load_locations()
 
 	GameState.money_changed.connect(_on_money_changed)
@@ -78,7 +87,6 @@ func _ready() -> void:
 
 	_refresh_hud()
 	_show_selection_screen()
-	_default_scene_image = scene_image.texture
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -118,22 +126,19 @@ func _on_phase_changed(_v: int) -> void:
 
 
 # --- selection screen ---
+#
+# Behavior with the transition:
+# - HUD updates and the button grid rebuild are outside the picture box
+#   and snap instantly when called.
+# - The picture box texture, portrait, and the SelectionScreen/LocationHost
+#   visibility flips all happen at frame 9 of the wipe - so the player sees
+#   the OLD content under the frame, the wipe plays, and the NEW content is
+#   revealed when the wipe lifts.
 
 func _show_selection_screen() -> void:
-	# Phase-specific background, or the diagonal placeholder if none.
-	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
-	# Clear any portrait the previous location may have left in the frame.
-	hide_teacher_portrait()
-
-	# Tear down any existing location.
-	if _current_location_node and is_instance_valid(_current_location_node):
-		_current_location_node.queue_free()
-		_current_location_node = null
-
-	selection_screen.visible = true
-	location_host.visible = false
-
-	# Rebuild button list filtered by current phase.
+	# Rebuild the button grid NOW. The grid sits below the picture frame
+	# and isn't visible until the location host is hidden, which happens
+	# at the midpoint - so the rebuild is invisible until then anyway.
 	for child in location_grid.get_children():
 		child.queue_free()
 
@@ -142,6 +147,28 @@ func _show_selection_screen() -> void:
 			continue
 		var btn := _build_location_button(loc)
 		location_grid.add_child(btn)
+
+	# First load: no transition (nothing to wipe from).
+	if not _has_shown_initial:
+		_has_shown_initial = true
+		_apply_selection_screen_swap()
+		return
+	_play_transition_then(_apply_selection_screen_swap)
+
+
+## Runs at the wipe midpoint when returning to the selection screen.
+## Everything visible in the frame area changes together.
+func _apply_selection_screen_swap() -> void:
+	# Tear down the previous location's UI.
+	if _current_location_node and is_instance_valid(_current_location_node):
+		_current_location_node.queue_free()
+		_current_location_node = null
+
+	selection_screen.visible = true
+	location_host.visible = false
+
+	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
+	hide_teacher_portrait()
 
 
 func _build_location_button(loc: LocationData) -> Button:
@@ -159,14 +186,26 @@ func _build_location_button(loc: LocationData) -> Button:
 
 
 func _on_location_picked(loc: LocationData) -> void:
+	# Guard against rapid double-click stacking transitions.
+	if transition.has_method("is_playing") and transition.is_playing():
+		return
+
+	# Validate the scene up-front so we can bail before starting the wipe
+	# if something's wrong. The actual instantiation + swap-in happens at
+	# the midpoint so the player doesn't see the location UI snap in.
 	var packed: PackedScene = load(loc.scene_path)
 	if packed == null:
 		_log("ERROR: could not load %s" % loc.scene_path)
 		return
 
+	_log("[b]→ %s[/b]" % loc.display_name)
+	_play_transition_then(_apply_location_pick_swap.bind(loc, packed))
+
+
+## Runs at the wipe midpoint when picking a location.
+## All frame-area changes happen together so the wipe hides them.
+func _apply_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
 	_current_location_node = packed.instantiate()
-	if loc.preview_texture:
-		scene_image.texture = loc.preview_texture
 	location_host.add_child(_current_location_node)
 
 	if _current_location_node.has_signal("finished"):
@@ -176,7 +215,21 @@ func _on_location_picked(loc: LocationData) -> void:
 
 	selection_screen.visible = false
 	location_host.visible = true
-	_log("[b]→ %s[/b]" % loc.display_name)
+
+	if loc.preview_texture:
+		scene_image.texture = loc.preview_texture
+
+
+# --- transitions ---
+
+## Play the FlowerLoad wipe, invoking `swap_callback` at frame 9/18 (when
+## the picture is fully covered). Falls back to immediate invocation if
+## the transition node isn't ready / missing for any reason.
+func _play_transition_then(swap_callback: Callable) -> void:
+	if transition == null or not transition.has_method("play"):
+		swap_callback.call()
+		return
+	transition.play(swap_callback)
 
 
 # --- result handling ---

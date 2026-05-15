@@ -15,6 +15,9 @@ extends LocationBase
 ## The teacher portrait is shown by Main's framed image area, not by this
 ## scene - we call Main.show_teacher_portrait() so the teacher appears
 ## inside the classroom illustration at the top of the screen.
+## Hiding the portrait is Main's responsibility too: it runs at the
+## transition's midpoint as part of _apply_selection_screen_swap, so the
+## portrait stays visible until the wipe is covering the frame.
 ##
 ## Reward numbers mirror the original StubLocation School outcomes so the
 ## game's pacing doesn't change.
@@ -396,11 +399,10 @@ func _on_continue_pressed() -> void:
 
 
 func _finish_school() -> void:
-	# Clear the portrait so the next location starts with a blank frame.
-	# Main also does this as a backstop in _show_selection_screen().
-	var main: Node = get_tree().current_scene
-	if main and main.has_method("hide_teacher_portrait"):
-		main.hide_teacher_portrait()
+	# NOTE: do NOT hide the teacher portrait here. Main hides it at the
+	# transition's midpoint as part of _apply_selection_screen_swap, so the
+	# portrait stays visible until the wipe is covering the frame. Hiding it
+	# now would make the portrait vanish before the wipe even begins.
 	finish(0, _total_suspicion, 0, _total_ingredients, false)
 
 
