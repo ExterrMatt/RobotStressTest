@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LocationData" format=3 uid="uid://ba41smrmgsb6k"]
 
-[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Script" uid="uid://d370vjofljuj2" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dw8o41rww4dht" path="res://assets/textures/backgrounds/work.png" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -9,4 +10,5 @@ display_name = "Work"
 description = "Earn money. Source of synth-skin and scrap metal."
 allowed_phases = [0]
 scene_path = "res://scenes/locations/Work.tscn"
-free_action = false
+preview_texture = ExtResource("2")
+frame_size = Vector2(800, 640)

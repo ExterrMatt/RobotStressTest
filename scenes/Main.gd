@@ -11,6 +11,12 @@ extends Control
 ## - Run a FlowerLoad transition INSIDE THE PICTURE BOX between scene swaps.
 ##   HUD and buttons snap instantly; the framed background change happens at
 ##   frame 9/18, while the wipe hides it.
+## - Animate the SceneImage's frame size between locations whose preferred
+##   sizes differ (e.g. School at 900x225 -> Work at 900x720). Eases in/out
+##   over ANIM_DURATION seconds.
+## - Expose animate_layout_change() so locations can wrap layout-changing
+##   operations (text box / choice grid appearing or disappearing) in a
+##   tweened slide instead of letting the container chain snap.
 ##
 ## Locations themselves are dumb - they emit a result dict and Main applies it.
 
@@ -34,6 +40,19 @@ const PHASE_BACKGROUNDS: Dictionary = {
 	2: preload("res://assets/textures/backgrounds/bedroom_night.png"),
 }
 
+## Default rendered size of the framed scene image. Matches the size hard-
+## coded in Main.tscn for SceneImage.custom_minimum_size, and the 1.8x
+## upscaling of standard 500x125 backgrounds (500*1.8 = 900, 125*1.8 = 225).
+## Locations with taller source art override via LocationData.frame_size.
+const DEFAULT_FRAME_SIZE: Vector2 = Vector2(900, 225)
+
+## Duration and easing for both the scale animation (frame resize between
+## locations) and the slide animation (layout shifts inside a location).
+## TRANS_QUAD + EASE_IN_OUT gives the "soft start, soft stop" feel.
+const ANIM_DURATION: float = 0.2
+const ANIM_TRANS: int = Tween.TRANS_QUAD
+const ANIM_EASE: int = Tween.EASE_IN_OUT
+
 # HUD labels
 @onready var day_label: Label = %DayLabel
 @onready var phase_label: Label = %PhaseLabel
@@ -41,6 +60,14 @@ const PHASE_BACKGROUNDS: Dictionary = {
 @onready var suspicion_label: Label = %SuspicionLabel
 @onready var anger_label: Label = %AngerLabel
 @onready var scene_image: TextureRect = %SceneImage
+## The outer panel of the picture frame. We animate its minimum width
+## separately from SceneImage so a location can declare both a smaller
+## image AND a slimmer outer frame (otherwise FrameOuter's hardcoded
+## minimum width in Main.tscn would prevent the frame from shrinking).
+## Path-based instead of a unique_name_in_owner so we don't require
+## editor toggles to land this — keep an eye on the path if the tree
+## ever changes shape.
+@onready var frame_outer: PanelContainer = $UI/VBox/FrameWrap/FrameOuter
 ## Overlay portrait drawn on top of the framed scene image. Location scenes
 ## (e.g. School) call show_teacher_portrait() / hide_teacher_portrait(). Main
 ## also hides it whenever the selection screen is shown, as a backstop so
@@ -81,10 +108,40 @@ var _portrait_base_path: String = ""
 ## transition before the player has even seen anything.
 var _has_shown_initial: bool = false
 
+## Active tween animating SceneImage.custom_minimum_size between
+## DEFAULT_FRAME_SIZE and a location's preferred frame_size. Kept as a
+## field so we can kill it if a new transition starts mid-animation.
+var _frame_size_tween: Tween = null
+
+## Active tween animating FrameOuter.custom_minimum_size.x. Separate from
+## _frame_size_tween so kills are independent (each can be replaced
+## individually if a location changes one but not the other).
+var _frame_outer_tween: Tween = null
+
+## Default minimum width of the outer frame, captured from the .tscn at
+## _ready so we can animate back to it when leaving a location that
+## declared its own frame_outer_width. Height is left alone — the outer
+## frame's container chain accommodates whatever inner height it gets.
+var _default_frame_outer_width: float = 0.0
+
+## Active tween for the slide animation. Started by animate_layout_change()
+## when content below the frame changes height.
+var _slide_tween: Tween = null
+
 
 func _ready() -> void:
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
+
+	# Make sure we start at the canonical default size — defensive in case
+	# the .tscn ever drifts from DEFAULT_FRAME_SIZE.
+	scene_image.custom_minimum_size = DEFAULT_FRAME_SIZE
+
+	# Cache FrameOuter's editor-set minimum width as the "default" we
+	# animate back to. Unlike the scene image, we don't hardcode this
+	# constant — the .tscn is the source of truth so it can be tweaked
+	# in the editor without touching code.
+	_default_frame_outer_width = frame_outer.custom_minimum_size.x
 
 	_load_locations()
 
@@ -149,6 +206,10 @@ func _on_phase_changed(_v: int) -> void:
 #   visibility flips all happen at frame 9 of the wipe - so the player sees
 #   the OLD content under the frame, the wipe plays, and the NEW content is
 #   revealed when the wipe lifts.
+# - The frame SIZE change (scale animation) is kicked off at the same
+#   midpoint but plays out across ~0.2s of the wipe's second half + slightly
+#   beyond if needed. The eased size change overlaps the tail of the wipe
+#   so the frame's already at its new size as the wipe lifts.
 
 func _show_selection_screen() -> void:
 	# Rebuild the button grid NOW. The grid sits below the picture frame
@@ -185,6 +246,11 @@ func _apply_selection_screen_swap() -> void:
 	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 	hide_teacher_portrait()
 	hide_corner_button()
+
+	# Selection screen always uses the default frame size. Animate back to
+	# it in case we were just inside a location with a larger frame.
+	_animate_frame_size_to(DEFAULT_FRAME_SIZE)
+	_animate_frame_outer_width_to(_default_frame_outer_width)
 
 
 func _build_location_button(loc: LocationData) -> Button:
@@ -234,6 +300,153 @@ func _apply_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
 
 	if loc.preview_texture:
 		scene_image.texture = loc.preview_texture
+
+	# Resize the frame to this location's preferred size (or default if
+	# the resource doesn't declare one). Eases in/out over ANIM_DURATION.
+	var target: Vector2 = loc.frame_size if loc.frame_size != Vector2.ZERO else DEFAULT_FRAME_SIZE
+	_animate_frame_size_to(target)
+
+	# Same for the outer frame width — independent so locations can
+	# declare just one or the other. frame_outer_width <= 0 means "use
+	# the .tscn default", which we cached at _ready.
+	var target_outer: float = loc.frame_outer_width if loc.frame_outer_width > 0.0 else _default_frame_outer_width
+	_animate_frame_outer_width_to(target_outer)
+
+
+# --- frame size (scale) animation ---
+
+## Tween SceneImage.custom_minimum_size to `target` with ease-in/ease-out.
+## Snaps immediately if we're already there. Kills any in-flight tween so
+## a fast back-to-back location change doesn't fight itself.
+func _animate_frame_size_to(target: Vector2) -> void:
+	if scene_image == null:
+		return
+
+	if _frame_size_tween and _frame_size_tween.is_valid():
+		_frame_size_tween.kill()
+
+	# Already at the target — nothing to animate. (Common case: leaving
+	# a default-sized location back to the selection screen.)
+	if scene_image.custom_minimum_size.is_equal_approx(target):
+		return
+
+	_frame_size_tween = create_tween()
+	_frame_size_tween.set_trans(ANIM_TRANS)
+	_frame_size_tween.set_ease(ANIM_EASE)
+	_frame_size_tween.tween_property(
+		scene_image, "custom_minimum_size", target, ANIM_DURATION
+	)
+
+
+## Tween FrameOuter's minimum width to `target_width` with the same easing
+## as the scene image. Runs concurrently with _animate_frame_size_to() so
+## both the outer frame and the inner picture grow/shrink together.
+## Height of the outer frame is not animated — it's container-driven and
+## will accommodate whatever inner height the SceneImage demands.
+func _animate_frame_outer_width_to(target_width: float) -> void:
+	if frame_outer == null:
+		return
+
+	if _frame_outer_tween and _frame_outer_tween.is_valid():
+		_frame_outer_tween.kill()
+
+	if is_equal_approx(frame_outer.custom_minimum_size.x, target_width):
+		return
+
+	_frame_outer_tween = create_tween()
+	_frame_outer_tween.set_trans(ANIM_TRANS)
+	_frame_outer_tween.set_ease(ANIM_EASE)
+	_frame_outer_tween.tween_property(
+		frame_outer, "custom_minimum_size:x", target_width, ANIM_DURATION
+	)
+
+
+# --- layout slide animation (public API for locations) ---
+
+## Wrap a layout-changing operation in an eased slide animation.
+##
+## How it works:
+##   1. Capture the SceneImage's current global rect.
+##   2. Run `mutator` synchronously — this is where the location toggles
+##      a DialogueBox visible, adds choice buttons, etc. The container
+##      chain reflows and the frame snaps to its new position.
+##   3. Use position-only offsets: the frame is instantly placed back at
+##      its OLD position via a Control offset, then tweened to zero so
+##      the player sees a smooth slide from where it WAS to where it now
+##      IS.
+##
+## This is a no-op for changes that don't actually move the frame, so
+## locations can call it liberally without worrying about jitter.
+##
+## Usage from a location script:
+##     main.animate_layout_change(func():
+##         dialogue_box.visible = true
+##         choice_grid.visible = false
+##     )
+func animate_layout_change(mutator: Callable) -> void:
+	if not mutator.is_valid():
+		push_warning("Main.animate_layout_change: invalid mutator callable")
+		return
+
+	# Capture the FrameWrap's global position before the mutation. We
+	# animate the wrap (the CenterContainer that holds the framed image),
+	# not the SceneImage itself, because the slide we want to show is the
+	# whole picture frame moving — rivets, corner button, everything.
+	var frame_wrap: Control = scene_image.get_parent().get_parent().get_parent().get_parent() as Control
+	# That walks: SceneImage -> FrameInsetMid -> FrameInsetDark ->
+	# FrameOuter -> FrameWrap. If the tree shape ever changes, this needs
+	# to keep up — kept as a chain instead of a hardcoded path so it
+	# breaks loudly rather than silently animating the wrong node.
+	if frame_wrap == null:
+		mutator.call()
+		return
+
+	var old_global_y: float = frame_wrap.global_position.y
+
+	# Apply the mutation. The container chain reflows synchronously.
+	mutator.call()
+
+	# Force the layout to settle NOW so global_position reflects the new
+	# target. Without this the new position isn't known until the end of
+	# the frame.
+	frame_wrap.get_tree().process_frame  # touch to prevent linter unused
+	# In Godot 4, queue_sort + update_minimum_size is the recommended
+	# nudge. The deferred call below resolves the actual tween once layout
+	# has settled this frame.
+	frame_wrap.queue_sort()
+
+	call_deferred("_finish_slide_animation", frame_wrap, old_global_y)
+
+
+## Deferred half of animate_layout_change. Runs AFTER the reflow has
+## settled (next idle frame), at which point frame_wrap.global_position
+## reflects the new spot. We tween the difference using an offset so the
+## container layout itself isn't fought.
+func _finish_slide_animation(frame_wrap: Control, old_global_y: float) -> void:
+	if frame_wrap == null or not is_instance_valid(frame_wrap):
+		return
+
+	var new_global_y: float = frame_wrap.global_position.y
+	var delta_y: float = old_global_y - new_global_y
+
+	# No movement — no animation needed.
+	if absf(delta_y) < 0.5:
+		return
+
+	# Kill any in-flight slide so back-to-back layout changes don't stack.
+	if _slide_tween and _slide_tween.is_valid():
+		_slide_tween.kill()
+
+	# Pre-offset the frame to its OLD position, then tween the offset to
+	# zero. position is a Control property (independent of the container's
+	# resolved layout), so this gives a smooth visual slide without
+	# breaking the layout system.
+	frame_wrap.position.y = delta_y
+
+	_slide_tween = create_tween()
+	_slide_tween.set_trans(ANIM_TRANS)
+	_slide_tween.set_ease(ANIM_EASE)
+	_slide_tween.tween_property(frame_wrap, "position:y", 0.0, ANIM_DURATION)
 
 
 # --- transitions ---

@@ -28,6 +28,26 @@ class_name LocationData
 ## location is active. Optional — falls back to the default placeholder.
 @export var preview_texture: Texture2D
 
+## Preferred size of the framed scene image while this location is active.
+## Leave at (0, 0) to use the default (900, 225). Locations whose source art
+## is taller than the standard 500x125 should declare the matching scaled
+## size here — e.g. Work uses 500x400 source, so frame_size = (800, 640).
+##
+## Main animates the SceneImage's custom_minimum_size to this value at the
+## transition midpoint, and back to the default when leaving the location.
+@export var frame_size: Vector2 = Vector2.ZERO
+
+## Preferred width of the OUTER FRAME (FrameOuter) while this location is
+## active. The outer frame normally has a hard minimum width set in
+## Main.tscn that's wide enough for the standard 900px-wide picture plus
+## padding; locations whose picture is narrower than that need to declare
+## a smaller minimum here, or the outer frame won't shrink to match.
+##
+## Leave at 0 to use the default width from Main.tscn. Height of the
+## outer frame is not customizable per location — its container-driven
+## minimum will accommodate whatever frame_size.y you ask for.
+@export var frame_outer_width: float = 0.0
+
 ## Optional: if true, visiting this location does NOT consume the phase.
 ## (Reserved for things like checking inventory; nothing uses it yet.)
 @export var free_action: bool = false

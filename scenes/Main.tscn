@@ -316,6 +316,7 @@ offset_bottom = 4.0
 color = Color(0.788, 0.663, 0.416, 1)
 
 [node name="CornerButtonLayer" type="Control" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=205893524]
+visible = false
 layout_mode = 2
 mouse_filter = 1
 

@@ -1,2 +1,6 @@
 res://scenes/ui/DialogueBox.tscn
 res://themes/main_theme.tres
+res://scenes/Main.gd
+res://resources/LocationData.gd
+res://scenes/Main.tscn
+res://resources/locations/work.tres
