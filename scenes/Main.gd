@@ -128,6 +128,11 @@ var _default_frame_outer_width: float = 0.0
 ## when content below the frame changes height.
 var _slide_tween: Tween = null
 
+## Overlay node currently parented to SceneImage (e.g. Work's furniture
+## layer). Tracked so we can clear it on selection-screen swap, the same
+## way we backstop the teacher portrait. Locations call show_scene_overlay()
+## / hide_scene_overlay(); Main clears it automatically on location exit.
+var _scene_overlay: Control = null
 
 func _ready() -> void:
 	# Cache the placeholder texture BEFORE anything else can swap it.
@@ -246,6 +251,7 @@ func _apply_selection_screen_swap() -> void:
 	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 	hide_teacher_portrait()
 	hide_corner_button()
+	hide_scene_overlay() 
 
 	# Selection screen always uses the default frame size. Animate back to
 	# it in case we were just inside a location with a larger frame.
@@ -596,3 +602,51 @@ func hide_corner_button() -> void:
 	for conn in corner_button.pressed.get_connections():
 		corner_button.pressed.disconnect(conn["callable"])
 	corner_button.visible = false
+
+## Mount a Control as a child of SceneImage so its internal layout (bottom-
+## anchored offsets, etc.) lines up with the framed picture. Used by Work
+## to drop pixel-art furniture on top of the work-floor background.
+##
+## The overlay is anchored full-rect to SceneImage but explicitly does NOT
+## participate in minimum-size calculations — it's decorative only, so it
+## can never push FrameOuter's width around.
+##
+## If the node already has a parent, it's reparented (not duplicated).
+## Calling this while another overlay is already shown replaces the old one.
+func show_scene_overlay(node: Control) -> void:
+	if node == null:
+		hide_scene_overlay()
+		return
+
+	# Tear down any existing overlay first.
+	hide_scene_overlay()
+
+	# Reparent so callers can hand us a node from their own scene tree.
+	var prev_parent: Node = node.get_parent()
+	if prev_parent:
+		prev_parent.remove_child(node)
+	scene_image.add_child(node)
+
+	# Anchor full-rect to SceneImage.
+	node.anchor_left = 0.0
+	node.anchor_top = 0.0
+	node.anchor_right = 1.0
+	node.anchor_bottom = 1.0
+	node.offset_left = 0.0
+	node.offset_top = 0.0
+	node.offset_right = 0.0
+	node.offset_bottom = 0.0
+
+	# Critical: the overlay must NOT push the container chain around.
+	# Zero out the minimum size and don't let children influence it.
+	node.custom_minimum_size = Vector2.ZERO
+	# Don't eat clicks meant for buttons in the location UI below.
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_scene_overlay = node
+
+
+func hide_scene_overlay() -> void:
+	if _scene_overlay and is_instance_valid(_scene_overlay):
+		_scene_overlay.queue_free()
+	_scene_overlay = null

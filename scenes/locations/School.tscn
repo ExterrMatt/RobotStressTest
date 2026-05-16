@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://b46o8nu5etd6b"]
+[gd_scene format=3 uid="uid://b46o8nu5etd6b"]
 
 [ext_resource type="Script" uid="uid://dgdk002rw8p48" path="res://scenes/locations/School.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://b8dlgbox4dlg0" path="res://scenes/ui/DialogueBox.tscn" id="2"]
@@ -28,10 +28,9 @@ theme_override_constants/margin_bottom = 12
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="DialogueBox" parent="MarginContainer/VBox" instance=ExtResource("2") unique_id=1117417166]
+[node name="DialogueBox" parent="MarginContainer/VBox" unique_id=1117417166 instance=ExtResource("2")]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 size_flags_vertical = 0
 
 [node name="PromptLabel" type="Label" parent="MarginContainer/VBox" unique_id=309140494]

@@ -9,6 +9,11 @@ extends LocationBase
 ##
 ## Replace the buttons-as-outcomes flow with a real minigame when ready;
 ## the table + panel sprites can stay as the backdrop.
+##
+## The FurnitureLayer subtree is reparented onto Main's SceneImage at
+## runtime via show_scene_overlay() so its bottom-anchored children sit
+## on the bottom edge of the framed picture. Main clears the overlay on
+## the selection-screen swap, so no teardown is needed here.
 
 ## Title shown at the top of the screen.
 @export var title_text: String = "Work"
@@ -27,6 +32,9 @@ extends LocationBase
 @onready var title_label: Label = %TitleLabel
 @onready var blurb_label: Label = %BlurbLabel
 @onready var button_container: HFlowContainer = %ButtonContainer
+## Furniture subtree built in Work.tscn for editor previewing; handed to
+## Main at _ready so it renders inside the framed picture.
+@onready var furniture_layer: Control = $FurnitureLayer
 
 
 func _ready() -> void:
@@ -44,8 +52,14 @@ func _ready() -> void:
 		btn.pressed.connect(_on_outcome_pressed.bind(outcome))
 		button_container.add_child(btn)
 
-	# Mount the back button inside Main's picture frame (bottom-right corner).
 	var main: Node = get_tree().current_scene
+
+	# Hand the furniture layer off to Main so it sits inside the framed
+	# picture instead of below it. Main clears it on selection-screen swap.
+	if main and main.has_method("show_scene_overlay") and furniture_layer:
+		main.show_scene_overlay(furniture_layer)
+
+	# Mount the back button inside Main's picture frame (bottom-right corner).
 	if main and main.has_method("show_corner_button"):
 		main.show_corner_button("<- BACK", _on_back_pressed)
 

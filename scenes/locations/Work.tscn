@@ -4,6 +4,10 @@
 [ext_resource type="Texture2D" uid="uid://4sq4i7qirh41" path="res://assets/textures/icons/empty_table.png" id="2"]
 [ext_resource type="Texture2D" uid="uid://ddsxrsuwn8rxx" path="res://assets/textures/icons/work_panel_1.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://ba22xms6g704r" path="res://assets/textures/icons/work_shadow_panel_1.png" id="3_vc08x"]
+[ext_resource type="Texture2D" uid="uid://caqnawe8nt6ai" path="res://assets/textures/icons/gear_panel_1.png" id="5_0mtdy"]
+[ext_resource type="Texture2D" uid="uid://euqnriph6tkx" path="res://assets/textures/icons/arc_panel_1.png" id="6_g70va"]
+[ext_resource type="Texture2D" uid="uid://ba7h5xerc1wbg" path="res://assets/textures/icons/tri_panel_1.png" id="7_gq28n"]
+[ext_resource type="Texture2D" uid="uid://cmq33204e2x1b" path="res://assets/textures/icons/tess_panel_1.png" id="8_s4uie"]
 
 [node name="Work" type="Control" unique_id=695973071]
 layout_mode = 3
@@ -78,32 +82,20 @@ theme_override_constants/separation = 0
 
 [node name="EmptyTable" type="TextureRect" parent="FurnitureLayer" unique_id=1421632866]
 texture_filter = 1
-layout_mode = 0
-offset_left = 390.0
-offset_top = 595.0
-offset_right = 890.0
-offset_bottom = 720.0
-size_flags_horizontal = 4
-mouse_filter = 2
-texture = ExtResource("2")
-
-[node name="WorkPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1128051867]
-texture_filter = 1
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -180.0
-offset_top = -116.0
-offset_right = 180.0
-offset_bottom = -36.0
+offset_left = -400.0
+offset_top = -200.0
+offset_right = 400.0
 grow_horizontal = 2
 grow_vertical = 0
 size_flags_horizontal = 4
 mouse_filter = 2
-texture = ExtResource("3")
+texture = ExtResource("2")
 
 [node name="WorkShadowPanel" type="TextureRect" parent="FurnitureLayer" unique_id=267856367]
 modulate = Color(1, 1, 1, 0.47058824)
@@ -114,15 +106,105 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -179.0
-offset_top = -105.0
-offset_right = 181.0
-offset_bottom = -25.0
+offset_left = -286.0
+offset_top = -168.0
+offset_right = 290.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
 size_flags_horizontal = 4
 mouse_filter = 2
 texture = ExtResource("3_vc08x")
+
+[node name="WorkPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1128051867]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -288.0
+offset_top = -181.0
+offset_right = 288.0
+offset_bottom = -53.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("3")
+
+[node name="GearPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1095973621]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -288.0
+offset_top = -181.0
+offset_right = 288.0
+offset_bottom = -53.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("5_0mtdy")
+
+[node name="ArcPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1938251367]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -288.0
+offset_top = -181.0
+offset_right = 288.0
+offset_bottom = -53.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("6_g70va")
+
+[node name="TriPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1790041917]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -288.0
+offset_top = -181.0
+offset_right = 288.0
+offset_bottom = -53.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("7_gq28n")
+
+[node name="TessPanel" type="TextureRect" parent="FurnitureLayer" unique_id=710924955]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -288.0
+offset_top = -180.0
+offset_right = 288.0
+offset_bottom = -52.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("8_s4uie")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=2008299399]
 layout_mode = 1
