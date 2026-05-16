@@ -65,12 +65,28 @@ func _ready() -> void:
 func _on_slots_changed(filled_count: int) -> void:
 	# Show the finish/steal choices only when all four slots are filled.
 	if filled_count >= 4 and work_inventory.is_complete():
-		_show_completion_choices()
-	else:
-		# Player pulled an item back out — hide the choices again.
-		button_container.visible = false
-		for child in button_container.get_children():
-			child.queue_free()
+		_enter_completion_screen()
+
+
+func _enter_completion_screen() -> void:
+	var main: Node = get_tree().current_scene
+
+	# Tear down the in-frame minigame visuals so the buttons have room below.
+	if main and main.has_method("hide_scene_overlay"):
+		main.hide_scene_overlay()
+	if main and main.has_method("hide_inventory_overlay"):
+		main.hide_inventory_overlay()
+
+	# Swap the picture to the placeholder and shrink the frame back to default
+	# so the button row below the picture comes into view.
+	if main and "scene_image" in main:
+		var placeholder: Texture2D = load("res://assets/textures/backgrounds/work_placeholder.png")
+		if placeholder:
+			main.scene_image.texture = placeholder
+	if main and main.has_method("_animate_frame_size_to"):
+		main._animate_frame_size_to(Vector2(900, 225))
+
+	_show_completion_choices()
 
 
 func _show_completion_choices() -> void:
