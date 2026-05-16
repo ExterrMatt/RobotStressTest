@@ -134,6 +134,12 @@ var _slide_tween: Tween = null
 ## / hide_scene_overlay(); Main clears it automatically on location exit.
 var _scene_overlay: Control = null
 
+## Overlay node currently parented to FrameOuter (e.g. Work's inventory
+## columns that flank the picture). Tracked separately from _scene_overlay
+## so the two can coexist — Work uses both: FurnitureLayer sits inside the
+## picture, WorkInventory flanks it. Cleared on selection-screen swap.
+var _inventory_overlay: Control = null
+
 func _ready() -> void:
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
@@ -251,7 +257,8 @@ func _apply_selection_screen_swap() -> void:
 	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 	hide_teacher_portrait()
 	hide_corner_button()
-	hide_scene_overlay() 
+	hide_scene_overlay()
+	hide_inventory_overlay()
 
 	# Selection screen always uses the default frame size. Animate back to
 	# it in case we were just inside a location with a larger frame.
@@ -650,3 +657,50 @@ func hide_scene_overlay() -> void:
 	if _scene_overlay and is_instance_valid(_scene_overlay):
 		_scene_overlay.queue_free()
 	_scene_overlay = null
+
+## Mount a Control as a sibling layer over FrameOuter so it can render
+## in the strips of frame to the left and right of SceneImage. Used by
+## Work for the draggable-shape inventory columns.
+##
+## Anchored full-rect to FrameOuter. Like show_scene_overlay, the overlay
+## is reparented (not duplicated) and is forced not to participate in
+## minimum-size calculations so it can't widen the frame.
+##
+## Mouse filter is left at the caller's discretion here — the inventory
+## DOES want to receive clicks on its draggable items, unlike the purely
+## decorative FurnitureLayer overlay.
+func show_inventory_overlay(node: Control) -> void:
+	if node == null:
+		hide_inventory_overlay()
+		return
+
+	hide_inventory_overlay()
+
+	var prev_parent: Node = node.get_parent()
+	if prev_parent:
+		prev_parent.remove_child(node)
+	add_child(node)
+
+	# Anchor full-rect to FrameOuter so the node's own LeftColumn /
+	# RightColumn anchoring (offsets from FrameOuter's edges) puts them
+	# in the strips beside the picture.
+	node.anchor_left = 0.0
+	node.anchor_top = 0.0
+	node.anchor_right = 1.0
+	node.anchor_bottom = 1.0
+	node.offset_left = 0.0
+	node.offset_top = 0.0
+	node.offset_right = 0.0
+	node.offset_bottom = 0.0
+
+	# Don't let inventory contents push FrameOuter's minimum size around.
+	node.custom_minimum_size = Vector2.ZERO
+
+	node.z_index = 10
+	_inventory_overlay = node
+
+
+func hide_inventory_overlay() -> void:
+	if _inventory_overlay and is_instance_valid(_inventory_overlay):
+		_inventory_overlay.queue_free()
+	_inventory_overlay = null

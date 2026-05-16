@@ -47,19 +47,14 @@ var _grab_offset: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
-	# Stop the texture stretching to the Control's rect — we want pixel-exact
-	# rendering so the hit-test below corresponds to the visible shape.
-	stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	# Scale the texture to fit the Control's rect while preserving aspect ratio.
+	# The rect is set by the parent slot's anchoring in WorkInventory.tscn.
+	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	# Allow clicks; PASS lets clicks fall through transparent pixels of the
 	# Control's rect to whatever's underneath, but we still get clicks on
 	# our visible area because _gui_input fires on press anywhere in the rect.
 	# (If you want strictly pixel-perfect picking, set this on the parent.)
 	mouse_filter = Control.MOUSE_FILTER_PASS
-	# Snap our Control rect to the texture's natural size so positioning math
-	# below is straightforward.
-	if texture:
-		custom_minimum_size = texture.get_size()
-		size = texture.get_size()
 
 
 func _gui_input(event: InputEvent) -> void:

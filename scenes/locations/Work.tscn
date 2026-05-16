@@ -9,12 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://ba7h5xerc1wbg" path="res://assets/textures/icons/tri_panel_1.png" id="7_gq28n"]
 [ext_resource type="Texture2D" uid="uid://cmq33204e2x1b" path="res://assets/textures/icons/tess_panel_1.png" id="8_s4uie"]
 [ext_resource type="Script" uid="uid://1a7lwki0cg0i" path="res://scenes/locations/DropSlot.gd" id="9_toxbf"]
-[ext_resource type="Texture2D" uid="uid://ctsx2t07jy36k" path="res://assets/textures/icons/gear.png" id="10_gsaal"]
-[ext_resource type="Script" uid="uid://b283qqu0wyy6e" path="res://scenes/locations/DraggableItem.gd" id="10_tfavq"]
-[ext_resource type="Script" uid="uid://dubeqvg4d682w" path="res://scenes/locations/WorkInventory.gd" id="11_apd3f"]
-[ext_resource type="Texture2D" uid="uid://cqlptxbcsowjf" path="res://assets/textures/icons/arc.png" id="12_th0ms"]
-[ext_resource type="Texture2D" uid="uid://cp2p7ceclacbs" path="res://assets/textures/icons/tri.png" id="13_c0cbb"]
-[ext_resource type="Texture2D" uid="uid://6d1kddnknsbv" path="res://assets/textures/icons/tesseract.png" id="14_u5tty"]
+[ext_resource type="PackedScene" uid="uid://csahv8rgde8lk" path="res://scenes/locations/WorkInventory.tscn" id="10_tfavq"]
 
 [node name="Work" type="Control" unique_id=695973071]
 layout_mode = 3
@@ -24,35 +19,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
-blurb_text = "Sort shapes. Watch the valves. Clean the vents. Source of synth-skin and scrap metal."
-outcomes = [{
-"anger": 0,
-"ingredients": {
-"scrap_metal": 1,
-"synth_skin": 1
-},
-"label": "Standard shift",
-"money": 30,
-"suspicion": -1
-}, {
-"anger": 0,
-"ingredients": {
-"scrap_metal": 2
-},
-"label": "Push the fifth valve (harder, more pay)",
-"money": 55,
-"suspicion": -1
-}, {
-"anger": 0,
-"ingredients": {
-"electronics": 1,
-"scrap_metal": 2,
-"synth_skin": 1
-},
-"label": "Standard shift + steal supplies",
-"money": 30,
-"suspicion": 4
-}]
 
 [node name="ColorBackground" type="ColorRect" parent="." unique_id=2137581385]
 show_behind_parent = true
@@ -232,57 +198,57 @@ grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
 
-[node name="GearDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=545164923]
+[node name="GearDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=545164923 node_paths=PackedStringArray("revealed_sprite")]
 layout_mode = 1
 anchors_preset = 0
 offset_left = 80.0
-offset_top = 9.0
+offset_top = 61.0
 offset_right = 176.0
-offset_bottom = 105.0
+offset_bottom = 157.0
 scale = Vector2(0.86, 0.86)
 mouse_filter = 2
 script = ExtResource("9_toxbf")
 accepts_item_id = &"gear"
-debug_draw = true
+revealed_sprite = NodePath("../../GearPanel")
 
-[node name="ArcDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=47224101]
+[node name="ArcDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=47224101 node_paths=PackedStringArray("revealed_sprite")]
 layout_mode = 1
 anchors_preset = 0
 offset_left = 199.0
-offset_top = 10.0
+offset_top = 61.0
 offset_right = 295.0
-offset_bottom = 106.0
+offset_bottom = 157.0
 scale = Vector2(0.825, 0.825)
 mouse_filter = 2
 script = ExtResource("9_toxbf")
 accepts_item_id = &"arc"
-debug_draw = true
+revealed_sprite = NodePath("../../ArcPanel")
 
-[node name="TriDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=442185823]
+[node name="TriDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=442185823 node_paths=PackedStringArray("revealed_sprite")]
 layout_mode = 1
 anchors_preset = 0
 offset_left = 311.99994
-offset_top = 9.0
+offset_top = 60.0
 offset_right = 407.99994
-offset_bottom = 105.0
+offset_bottom = 156.0
 scale = Vector2(0.805, 0.805)
 mouse_filter = 2
 script = ExtResource("9_toxbf")
 accepts_item_id = &"tri"
-debug_draw = true
+revealed_sprite = NodePath("../../TriPanel")
 
-[node name="TessDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=854362820]
+[node name="TessDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=854362820 node_paths=PackedStringArray("revealed_sprite")]
 layout_mode = 1
 anchors_preset = 0
-offset_left = 417.0
-offset_top = 8.0
-offset_right = 513.0
-offset_bottom = 104.0
+offset_left = 418.0
+offset_top = 59.99997
+offset_right = 514.0
+offset_bottom = 155.99997
 scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 script = ExtResource("9_toxbf")
 accepts_item_id = &"tess"
-debug_draw = true
+revealed_sprite = NodePath("../../TessPanel")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=2008299399]
 layout_mode = 1
@@ -322,101 +288,5 @@ theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 12
 alignment = 1
 
-[node name="LeftColumn" type="Control" parent="." unique_id=840477977]
-custom_minimum_size = Vector2(120, 0)
+[node name="WorkInventory" parent="." unique_id=1580867852 instance=ExtResource("10_tfavq")]
 layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
-grow_vertical = 2
-pivot_offset = Vector2(16, 16)
-
-[node name="GearSlot" type="TextureRect" parent="LeftColumn" unique_id=623958392]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-pivot_offset = Vector2(0, -23)
-texture = ExtResource("10_gsaal")
-script = ExtResource("10_tfavq")
-item_id = &"gear"
-
-[node name="ArcSlot" type="TextureRect" parent="LeftColumn" unique_id=272446446]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-pivot_offset = Vector2(0, 32)
-texture = ExtResource("12_th0ms")
-script = ExtResource("10_tfavq")
-item_id = &"arc"
-
-[node name="RightColumn" type="Control" parent="." unique_id=582909604]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -40.0
-offset_bottom = 40.0
-grow_horizontal = 0
-pivot_offset = Vector2(-16, 0)
-
-[node name="TriSlot" type="TextureRect" parent="RightColumn" unique_id=1468137316]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-pivot_offset = Vector2(0, 32)
-texture = ExtResource("13_c0cbb")
-script = ExtResource("10_tfavq")
-item_id = &"tri"
-
-[node name="TessSlot" type="TextureRect" parent="RightColumn" unique_id=493770346]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-grow_horizontal = 2
-grow_vertical = 2
-pivot_offset = Vector2(0, -32)
-texture = ExtResource("14_u5tty")
-script = ExtResource("10_tfavq")
-item_id = &"tess"
-
-[node name="WorkInventory" type="Control" parent="." unique_id=16054207]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("11_apd3f")

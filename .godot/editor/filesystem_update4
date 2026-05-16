@@ -4,3 +4,6 @@ res://scenes/locations/WorkInventory.gd
 res://scenes/locations/Work.tscn
 res://scenes/locations/DropSlot.gd
 res://scenes/locations/Work.gd
+res://scenes/Main.tscn
+res://scenes/Main.gd
+res://scenes/locations/DraggableItem.gd

@@ -21,21 +21,20 @@ script = ExtResource("1")
 layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_right = 120.0
+offset_left = 66.0
+offset_right = 170.0
 grow_vertical = 2
 mouse_filter = 2
 
 [node name="GearSlot" type="Panel" parent="LeftColumn" unique_id=1493854726]
-modulate = Color(1, 1, 1, 0.35)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -52.0
-offset_top = 80.0
+offset_top = 156.5
 offset_right = 52.0
-offset_bottom = 184.0
+offset_bottom = 260.5
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -58,15 +57,14 @@ script = ExtResource("2")
 item_id = &"gear"
 
 [node name="ArcSlot" type="Panel" parent="LeftColumn" unique_id=755833685]
-modulate = Color(1, 1, 1, 0.35)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -52.0
-offset_top = 224.0
+offset_top = 469.5
 offset_right = 52.0
-offset_bottom = 328.0
+offset_bottom = 573.5
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -94,22 +92,21 @@ anchors_preset = 11
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -120.0
-offset_right = -16.0
+offset_left = -164.0
+offset_right = -60.0
 grow_horizontal = 0
 grow_vertical = 2
 mouse_filter = 2
 
 [node name="TriSlot" type="Panel" parent="RightColumn" unique_id=1105493824]
-modulate = Color(1, 1, 1, 0.35)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -52.0
-offset_top = 80.0
+offset_top = 156.5
 offset_right = 52.0
-offset_bottom = 184.0
+offset_bottom = 260.5
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -132,15 +129,14 @@ script = ExtResource("2")
 item_id = &"tri"
 
 [node name="TessSlot" type="Panel" parent="RightColumn" unique_id=2117704117]
-modulate = Color(1, 1, 1, 0.35)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -52.0
-offset_top = 224.0
+offset_top = 469.5
 offset_right = 52.0
-offset_bottom = 328.0
+offset_bottom = 573.5
 grow_horizontal = 2
 mouse_filter = 2
 
