@@ -1,0 +1,18 @@
+# Work dialogue.
+# Format: see data/dialogue/school.dlg for the full spec.
+# Trailing backslash joins onto the next line into one page (one click).
+
+
+# -----------------------------------------------------------------------------
+# COMPLETION - shown after the player fills all four slots, before the
+# "what do you do?" steal-or-leave prompt.
+# -----------------------------------------------------------------------------
+
+[completion]
+[i]Your shift's almost over.[/i] \
+[i]The line's emptied out.[/i] \
+[i]The supervisor wandered off ten minutes ago.[/i]
+
+[i]A spare scrap of metal sits at the edge of the bin.[/i]
+[i]It wouldn't be missed.[/i]
+[i]Nobody's looking right now.[/i]

@@ -181,9 +181,6 @@ func _enter_lecture() -> void:
 
 # --- Question phase ---
 
-## Type the question prompt out in the dialog box as the most recent line.
-## When the box emits `finished`, _show_question_choices wires up the buttons.
-## Uses autosize so the prompt is as eye-catching as the box width allows.
 func _enter_question_prompt() -> void:
 	_scene_phase = SchoolPhase.QUESTION_PROMPT
 	_clear_choice_buttons()
@@ -192,7 +189,16 @@ func _enter_question_prompt() -> void:
 	var prompt: String = _current_question["prompt"]
 	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt]
 	dialogue_box.play_pages_autosized([[gold_prompt]], [64, 48, 36, 24], 2)
+	_auto_advance_question_prompt(prompt)
 
+
+func _auto_advance_question_prompt(prompt_text: String) -> void:
+	var type_duration: float = float(prompt_text.length()) / dialogue_box.chars_per_second
+	await get_tree().create_timer(type_duration + 1.0).timeout
+	if _scene_phase != SchoolPhase.QUESTION_PROMPT:
+		return
+	dialogue_box.hide_advance_arrow()
+	_show_question_choices()
 
 func _show_question_choices() -> void:
 	_scene_phase = SchoolPhase.QUESTION_CHOICES
@@ -247,10 +253,20 @@ func _enter_post_class_intro() -> void:
 
 func _enter_post_class_prompt() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_PROMPT
-	var gold_prompt: String = "[center][color=%s]What do you do?[/color][/center]" % PROMPT_COLOR
+	var prompt_text: String = "What do you do?"
+	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt_text]
 	dialogue_box.play_pages_autosized([[gold_prompt]], [48, 36, 24, 16], 2)
+	_auto_advance_post_class_prompt(prompt_text)
 
 
+func _auto_advance_post_class_prompt(prompt_text: String) -> void:
+	var type_duration: float = float(prompt_text.length()) / dialogue_box.chars_per_second
+	await get_tree().create_timer(type_duration + 1.0).timeout
+	if _scene_phase != SchoolPhase.POST_CLASS_PROMPT:
+		return
+	dialogue_box.hide_advance_arrow()
+	_show_post_class_choices()
+	
 func _show_post_class_choices() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_CHOICES
 	_hide_corner()

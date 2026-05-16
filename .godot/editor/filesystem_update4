@@ -7,3 +7,6 @@ res://scenes/locations/Work.gd
 res://scenes/Main.tscn
 res://scenes/Main.gd
 res://scenes/locations/DraggableItem.gd
+res://scenes/locations/School.gd
+res://scenes/locations/School.tscn
+res://scenes/ui/DialogueBox.gd

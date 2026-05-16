@@ -348,3 +348,9 @@ func _advance_click() -> void:
 
 func _set_arrow_visible(v: bool) -> void:
 	_arrow.visible = v
+
+## Hide the click-to-advance arrow. Useful when an external timer auto-
+## advances the dialog so the arrow doesn't sit there inviting a click
+## that does nothing.
+func hide_advance_arrow() -> void:
+	_set_arrow_visible(false)
