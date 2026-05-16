@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cy8ramrt6hrm2"
-path="res://.godot/imported/NextArrow.png-26a2173fec8bd424a7695d5a4725ef66.ctex"
+uid="uid://4sq4i7qirh41"
+path="res://.godot/imported/empty_table.png-8de55116b3c2a183e200c075f8c8d34e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/icons/NextArrow.png"
-dest_files=["res://.godot/imported/NextArrow.png-26a2173fec8bd424a7695d5a4725ef66.ctex"]
+source_file="res://assets/textures/icons/empty_table.png"
+dest_files=["res://.godot/imported/empty_table.png-8de55116b3c2a183e200c075f8c8d34e.ctex"]
 
 [params]
 
