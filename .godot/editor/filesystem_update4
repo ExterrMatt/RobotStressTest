@@ -2,3 +2,5 @@ res://scenes/locations/WorkInventory.tscn
 res://themes/main_theme.tres
 res://scenes/locations/WorkInventory.gd
 res://scenes/locations/Work.tscn
+res://scenes/locations/DropSlot.gd
+res://scenes/locations/Work.gd

@@ -38,8 +38,9 @@ extends LocationBase
 
 
 func _ready() -> void:
-	title_label.text = title_text
-	blurb_label.text = blurb_text
+	title_label.visible = false
+	blurb_label.visible = false
+	button_container.visible = false
 
 	# Build one button per outcome (same pattern as StubLocation).
 	for child in button_container.get_children():
