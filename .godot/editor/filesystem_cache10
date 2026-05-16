@@ -1,5 +1,5 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1778853832
+::res://::1778908719
 icon.svg::CompressedTexture2D::4062773066978308223::1778711437::1778711482::1::::<><><>0<>0<>b271856429f96701842f8c0834522098<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
 ::res://assets/::1778711437
 ::res://assets/fonts/::1778718817
@@ -30,7 +30,7 @@ Math2.png::CompressedTexture2D::8006610474616234884::1718491154::1778813666::1::
 Math.png::CompressedTexture2D::5781748074328679937::1718491147::1778735131::1::::<><><>0<>0<>c7479ecda83d7f7f83ea2a41d6cc50d9<>res://.godot/imported/Math.png-aa96fdcc797625f5c56f0e9ec5c6c034.ctex::
 Science2.png::CompressedTexture2D::125912650113251015::1723075010::1778813666::1::::<><><>0<>0<>cc3a82c240e4518a0096a12b3682a7bb<>res://.godot/imported/Science2.png-bc661411ddd2e874a162487f05ec49ae.ctex::
 Science.png::CompressedTexture2D::1285054733802356878::1723074892::1778735131::1::::<><><>0<>0<>0b1c856eac34498a3b62e4045795dcaf<>res://.godot/imported/Science.png-4ec50c8b273cea34e151333b18a7facf.ctex::
-::res://assets/textures/icons/::1778906675
+::res://assets/textures/icons/::1778906706
 arc.png::CompressedTexture2D::5919516915562426399::1778899717::1778899720::1::::<><><>0<>0<>0285d4b1add2f60a90aa538fac90d6ed<>res://.godot/imported/arc.png-91e8e2f473dd75804f25cef648f0557e.ctex::
 arc_panel_1.png::CompressedTexture2D::323038522785866367::1778899700::1778899720::1::::<><><>0<>0<>ca3a0a1540921e8823ac90feddd38c2d<>res://.godot/imported/arc_panel_1.png-266eec1ceb8e911fd232ad71dd2b20df.ctex::
 empty_table.png::CompressedTexture2D::2073658995342397720::1778890121::1778890129::1::::<><><>0<>0<>eb2e398ea35f47fcf566d7c87cbdca0a<>res://.godot/imported/empty_table.png-8de55116b3c2a183e200c075f8c8d34e.ctex::
@@ -68,7 +68,9 @@ Main.tscn::PackedScene::6014830843503735391::1778895949::0::1::::<><><>0<>0<><>:
 Scanlines.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://shaders/scanlines.gdshader
 Transition.gd::GDScript::6657196936549354663::1778800437::0::1::::<>TextureRect<><>0<>0<><>::
 Transition.tscn::PackedScene::5942311429986572456::1778799880::0::1::::<><><>0<>0<><>::res://scenes/Transition.gd<>uid://cexl7748vgoji::::res://assets/textures/backgrounds/load/FlowerLoad.png
-::res://scenes/locations/::1778900498
+::res://scenes/locations/::1778908706
+DraggableItem.gd::GDScript::4351373448739835074::1778908116::0::1::::DraggableItem<>TextureRect<><>0<>0<><>::
+DropSlot.gd::GDScript::1826873693449048210::1778908116::0::1::::DropSlot<>Control<><>0<>0<><>::
 LocationBase.gd::GDScript::9172710538260446283::1778711437::0::1::::LocationBase<>Control<><>0<>0<><>::
 Maintenance.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
 PersonalityTraining.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
@@ -81,7 +83,9 @@ StressTest.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scen
 StubLocation.gd::GDScript::1883750545589139112::1778816615::0::1::::<>LocationBase<><>0<>0<><>::
 StubLocation.tscn::PackedScene::6474183686793253630::1778811889::0::1::::<><><>0<>0<><>::uid://13rdjjwlfkua::::res://scenes/locations/StubLocation.gd
 Work.gd::GDScript::3642143372528671624::1778896148::0::1::::<>LocationBase<><>0<>0<><>::
-Work.tscn::PackedScene::8523178736077590333::1778900498::0::1::::<><><>0<>0<><>::uid://br5jtmaxrfegu::::res://scenes/locations/Work.gd<>uid://4sq4i7qirh41::::res://assets/textures/icons/empty_table.png<>uid://ddsxrsuwn8rxx::::res://assets/textures/icons/work_panel_1.png<>uid://ba22xms6g704r::::res://assets/textures/icons/work_shadow_panel_1.png<>uid://caqnawe8nt6ai::::res://assets/textures/icons/gear_panel_1.png<>uid://euqnriph6tkx::::res://assets/textures/icons/arc_panel_1.png<>uid://ba7h5xerc1wbg::::res://assets/textures/icons/tri_panel_1.png
+Work.tscn::PackedScene::8523178736077590333::1778908444::0::1::::<><><>0<>0<><>::uid://br5jtmaxrfegu::::res://scenes/locations/Work.gd<>uid://4sq4i7qirh41::::res://assets/textures/icons/empty_table.png<>uid://ddsxrsuwn8rxx::::res://assets/textures/icons/work_panel_1.png<>uid://ba22xms6g704r::::res://assets/textures/icons/work_shadow_panel_1.png<>uid://caqnawe8nt6ai::::res://assets/textures/icons/gear_panel_1.png<>uid://euqnriph6tkx::::res://assets/textures/icons/arc_panel_1.png<>uid://ba7h5xerc1wbg::::res://assets/textures/icons/tri_panel_1.png<>uid://cmq33204e2x1b::::res://assets/textures/icons/tess_panel_1.png<>res://scenes/locations/WorkInventory.tscn
+WorkInventory.gd::GDScript::8565375855849628152::1778908116::0::1::::WorkInventory<>Control<><>0<>0<><>::
+WorkInventory.tscn::PackedScene::6036704833301200212::1778908706::0::1::::<><><>0<>0<><>::uid://dubeqvg4d682w::::res://scenes/locations/WorkInventory.gd<>uid://b283qqu0wyy6e::::res://scenes/locations/DraggableItem.gd<>uid://1a7lwki0cg0i::::res://scenes/locations/DropSlot.gd<>uid://ctsx2t07jy36k::::res://assets/textures/icons/gear.png<>uid://cqlptxbcsowjf::::res://assets/textures/icons/arc.png<>uid://cp2p7ceclacbs::::res://assets/textures/icons/tri.png<>uid://6d1kddnknsbv::::res://assets/textures/icons/tesseract.png
 Workshop.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
 ::res://scenes/ui/::1778890893
 DialogueBox.gd::GDScript::4742499655677657949::1778819408::0::1::::DialogueBox<>PanelContainer<><>0<>0<><>::

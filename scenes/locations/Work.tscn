@@ -8,6 +8,8 @@
 [ext_resource type="Texture2D" uid="uid://euqnriph6tkx" path="res://assets/textures/icons/arc_panel_1.png" id="6_g70va"]
 [ext_resource type="Texture2D" uid="uid://ba7h5xerc1wbg" path="res://assets/textures/icons/tri_panel_1.png" id="7_gq28n"]
 [ext_resource type="Texture2D" uid="uid://cmq33204e2x1b" path="res://assets/textures/icons/tess_panel_1.png" id="8_s4uie"]
+[ext_resource type="Script" uid="uid://1a7lwki0cg0i" path="res://scenes/locations/DropSlot.gd" id="9_toxbf"]
+[ext_resource type="Script" uid="uid://b283qqu0wyy6e" path="res://scenes/locations/DraggableItem.gd" id="10_tfavq"]
 
 [node name="Work" type="Control" unique_id=695973071]
 layout_mode = 3
@@ -135,6 +137,7 @@ mouse_filter = 2
 texture = ExtResource("3")
 
 [node name="GearPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1095973621]
+visible = false
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 7
@@ -153,6 +156,7 @@ mouse_filter = 2
 texture = ExtResource("5_0mtdy")
 
 [node name="ArcPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1938251367]
+visible = false
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 7
@@ -171,6 +175,7 @@ mouse_filter = 2
 texture = ExtResource("6_g70va")
 
 [node name="TriPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1790041917]
+visible = false
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 7
@@ -189,6 +194,7 @@ mouse_filter = 2
 texture = ExtResource("7_gq28n")
 
 [node name="TessPanel" type="TextureRect" parent="FurnitureLayer" unique_id=710924955]
+visible = false
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 7
@@ -205,6 +211,73 @@ grow_vertical = 0
 size_flags_horizontal = 4
 mouse_filter = 2
 texture = ExtResource("8_s4uie")
+
+[node name="DropTargets" type="Control" parent="FurnitureLayer" unique_id=210608368]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -288.0
+offset_top = -233.0
+offset_right = 288.0
+offset_bottom = -105.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="GearDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=545164923]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 80.0
+offset_top = 9.0
+offset_right = 176.0
+offset_bottom = 105.0
+scale = Vector2(0.86, 0.86)
+mouse_filter = 2
+script = ExtResource("9_toxbf")
+accepts_item_id = &"gear"
+debug_draw = true
+
+[node name="ArcDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=47224101]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 199.0
+offset_top = 10.0
+offset_right = 295.0
+offset_bottom = 106.0
+scale = Vector2(0.825, 0.825)
+mouse_filter = 2
+script = ExtResource("9_toxbf")
+accepts_item_id = &"arc"
+debug_draw = true
+
+[node name="TriDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=442185823]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 311.99994
+offset_top = 9.0
+offset_right = 407.99994
+offset_bottom = 105.0
+scale = Vector2(0.805, 0.805)
+mouse_filter = 2
+script = ExtResource("9_toxbf")
+accepts_item_id = &"tri"
+debug_draw = true
+
+[node name="TessDrop" type="Control" parent="FurnitureLayer/DropTargets" unique_id=854362820]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 417.0
+offset_top = 8.0
+offset_right = 513.0
+offset_bottom = 104.0
+scale = Vector2(0.8, 0.8)
+mouse_filter = 2
+script = ExtResource("9_toxbf")
+accepts_item_id = &"tess"
+debug_draw = true
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=2008299399]
 layout_mode = 1
@@ -243,3 +316,93 @@ layout_mode = 2
 theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 12
 alignment = 1
+
+[node name="LeftColumn" type="Control" parent="." unique_id=840477977]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_vertical = 2
+pivot_offset = Vector2(16, 16)
+
+[node name="GearSlot" type="Control" parent="LeftColumn" unique_id=369065856]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(0, -23)
+script = ExtResource("10_tfavq")
+item_id = &"\"gear\""
+
+[node name="ArcSlot" type="Control" parent="LeftColumn" unique_id=1898545378]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(0, 32)
+script = ExtResource("10_tfavq")
+item_id = &"\"arc\""
+
+[node name="RightColumn" type="Control" parent="." unique_id=582909604]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -40.0
+offset_top = -20.0
+offset_bottom = 20.0
+grow_horizontal = 0
+grow_vertical = 2
+pivot_offset = Vector2(-16, 0)
+
+[node name="TriSlot" type="Control" parent="RightColumn" unique_id=1520507785]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(0, 32)
+script = ExtResource("10_tfavq")
+item_id = &"\"tri\""
+
+[node name="TessSlot" type="Control" parent="RightColumn" unique_id=1822234154]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(0, -32)
+script = ExtResource("10_tfavq")
+item_id = &"\"tess\""

@@ -1,9 +1,4 @@
-res://scenes/ui/DialogueBox.tscn
+res://scenes/locations/WorkInventory.tscn
 res://themes/main_theme.tres
-res://scenes/Main.gd
-res://resources/LocationData.gd
-res://scenes/Main.tscn
-res://resources/locations/work.tres
-res://scenes/locations/Work.gd
+res://scenes/locations/WorkInventory.gd
 res://scenes/locations/Work.tscn
-res://scenes/locations/School.tscn
