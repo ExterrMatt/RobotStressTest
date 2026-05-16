@@ -35,8 +35,8 @@ class_name WorkInventory
 signal slots_changed(filled_count: int)
 
 
-@onready var draggables: Array = _collect_draggables()
-@onready var drop_slots: Array[DropSlot] = _collect_drop_slots()
+@onready var draggables: Array = _collect_draggables_from_root()
+@onready var drop_slots: Array = _collect_drop_slots_from_root()
 
 ## The item currently being dragged, or null. There can only be one.
 var _active_drag: DraggableItem = null
@@ -120,18 +120,17 @@ func _filled_count() -> int:
 	return n
 
 
-## Walk the subtree and collect every DraggableItem.
-func _collect_draggables() -> Array:
+## Walk from the scene root to collect every DraggableItem.
+func _collect_draggables_from_root() -> Array:
 	var out: Array = []
-	_gather_recursive(self, out, "DraggableItem")
+	_gather_recursive(get_tree().current_scene, out, "DraggableItem")
 	return out
 
 
-func _collect_drop_slots() -> Array[DropSlot]:
-	var out: Array[DropSlot] = []
-	_gather_recursive(self, out, "DropSlot")
+func _collect_drop_slots_from_root() -> Array:
+	var out: Array = []
+	_gather_recursive(get_tree().current_scene, out, "DropSlot")
 	return out
-
 
 func _gather_recursive(node: Node, out: Array, class_name_str: String) -> void:
 	for child in node.get_children():

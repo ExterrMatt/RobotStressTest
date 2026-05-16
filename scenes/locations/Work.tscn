@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://cmq33204e2x1b" path="res://assets/textures/icons/tess_panel_1.png" id="8_s4uie"]
 [ext_resource type="Script" uid="uid://1a7lwki0cg0i" path="res://scenes/locations/DropSlot.gd" id="9_toxbf"]
 [ext_resource type="Script" uid="uid://b283qqu0wyy6e" path="res://scenes/locations/DraggableItem.gd" id="10_tfavq"]
+[ext_resource type="Script" uid="uid://dubeqvg4d682w" path="res://scenes/locations/WorkInventory.gd" id="11_apd3f"]
 
 [node name="Work" type="Control" unique_id=695973071]
 layout_mode = 3
@@ -406,3 +407,12 @@ grow_vertical = 2
 pivot_offset = Vector2(0, -32)
 script = ExtResource("10_tfavq")
 item_id = &"\"tess\""
+
+[node name="WorkInventory" type="Control" parent="." unique_id=16054207]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("11_apd3f")
