@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://dtoxrj4ksx2hl"]
 
 [ext_resource type="Script" uid="uid://br5jtmaxrfegu" path="res://scenes/locations/Work.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://4sq4i7qirh41" path="res://assets/textures/icons/empty_table.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://ddsxrsuwn8rxx" path="res://assets/textures/icons/work_panel_1.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://ba22xms6g704r" path="res://assets/textures/icons/work_shadow_panel_1.png" id="3_vc08x"]
 
 [node name="Work" type="Control" unique_id=695973071]
 layout_mode = 3
@@ -50,6 +53,76 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.12, 0.13, 0.18, 1)
+
+[node name="FurnitureLayer" type="Control" parent="." unique_id=696613427]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BottomStack" type="VBoxContainer" parent="FurnitureLayer" unique_id=175226332]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="EmptyTable" type="TextureRect" parent="FurnitureLayer" unique_id=1421632866]
+texture_filter = 1
+layout_mode = 0
+offset_left = 390.0
+offset_top = 595.0
+offset_right = 890.0
+offset_bottom = 720.0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("2")
+
+[node name="WorkPanel" type="TextureRect" parent="FurnitureLayer" unique_id=1128051867]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -180.0
+offset_top = -116.0
+offset_right = 180.0
+offset_bottom = -36.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("3")
+
+[node name="WorkShadowPanel" type="TextureRect" parent="FurnitureLayer" unique_id=267856367]
+modulate = Color(1, 1, 1, 0.47058824)
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -179.0
+offset_top = -105.0
+offset_right = 181.0
+offset_bottom = -25.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("3_vc08x")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=2008299399]
 layout_mode = 1

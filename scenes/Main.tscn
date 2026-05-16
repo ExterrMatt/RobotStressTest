@@ -1,9 +1,6 @@
 [gd_scene format=3 uid="uid://crxvndkqkiic2"]
 
 [ext_resource type="Texture2D" uid="uid://b8fuv3fb4gis8" path="res://assets/textures/backgrounds/scene_placeholder.png" id="3_rarhs"]
-[ext_resource type="Texture2D" uid="uid://4sq4i7qirh41" path="res://assets/textures/icons/empty_table.png" id="5_jlsqs"]
-[ext_resource type="Texture2D" uid="uid://ba22xms6g704r" path="res://assets/textures/icons/work_shadow_panel_1.png" id="6_q8u5g"]
-[ext_resource type="Texture2D" uid="uid://ddsxrsuwn8rxx" path="res://assets/textures/icons/work_panel_1.png" id="7_lhr70"]
 [ext_resource type="PackedScene" path="res://scenes/Background.tscn" id="scene_bg"]
 [ext_resource type="PackedScene" path="res://scenes/Scanlines.tscn" id="scene_scan"]
 [ext_resource type="PackedScene" uid="uid://cqwrabia7ynum" path="res://scenes/Transition.tscn" id="scene_transition"]
@@ -269,77 +266,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="FurnitureLayer" type="Control" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=129401255]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="BottomStack" type="VBoxContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/FurnitureLayer" unique_id=1011460483]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 0
-size_flags_horizontal = 4
-mouse_filter = 2
-theme_override_constants/separation = 0
-
-[node name="EmptyTable" type="TextureRect" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/FurnitureLayer" unique_id=887347243]
-texture_filter = 1
-layout_mode = 0
-offset_left = 390.0
-offset_top = 595.0
-offset_right = 890.0
-offset_bottom = 720.0
-size_flags_horizontal = 4
-mouse_filter = 2
-texture = ExtResource("5_jlsqs")
-
-[node name="WorkShadowPanel" type="TextureRect" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/FurnitureLayer" unique_id=1349837614]
-modulate = Color(1, 1, 1, 0.47058824)
-texture_filter = 1
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -179.0
-offset_top = -105.0
-offset_right = 181.0
-offset_bottom = -25.0
-grow_horizontal = 2
-grow_vertical = 0
-size_flags_horizontal = 4
-mouse_filter = 2
-texture = ExtResource("6_q8u5g")
-
-[node name="WorkPanel" type="TextureRect" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/FurnitureLayer" unique_id=145888870]
-texture_filter = 1
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -180.0
-offset_top = -116.0
-offset_right = 180.0
-offset_bottom = -36.0
-grow_horizontal = 2
-grow_vertical = 0
-size_flags_horizontal = 4
-mouse_filter = 2
-texture = ExtResource("7_lhr70")
 
 [node name="RivetTL" type="ColorRect" parent="UI/VBox/FrameWrap/FrameOuter" unique_id=397116627]
 layout_mode = 2
