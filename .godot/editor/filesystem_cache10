@@ -30,10 +30,11 @@ Math2.png::CompressedTexture2D::8006610474616234884::1718491154::1778813666::1::
 Math.png::CompressedTexture2D::5781748074328679937::1718491147::1778735131::1::::<><><>0<>0<>c7479ecda83d7f7f83ea2a41d6cc50d9<>res://.godot/imported/Math.png-aa96fdcc797625f5c56f0e9ec5c6c034.ctex::
 Science2.png::CompressedTexture2D::125912650113251015::1723075010::1778813666::1::::<><><>0<>0<>cc3a82c240e4518a0096a12b3682a7bb<>res://.godot/imported/Science2.png-bc661411ddd2e874a162487f05ec49ae.ctex::
 Science.png::CompressedTexture2D::1285054733802356878::1723074892::1778735131::1::::<><><>0<>0<>0b1c856eac34498a3b62e4045795dcaf<>res://.godot/imported/Science.png-4ec50c8b273cea34e151333b18a7facf.ctex::
-::res://assets/textures/icons/::1778892595
+::res://assets/textures/icons/::1778895114
 empty_table.png::CompressedTexture2D::2073658995342397720::1778890121::1778890129::1::::<><><>0<>0<>eb2e398ea35f47fcf566d7c87cbdca0a<>res://.godot/imported/empty_table.png-8de55116b3c2a183e200c075f8c8d34e.ctex::
 next_arrow.png::CompressedTexture2D::2503889848473051565::1778814431::1778890129::1::::<><><>0<>0<>e77e46f8b9c4399fcd10e1537c4b88d0<>res://.godot/imported/next_arrow.png-a8f0881d8f3488d2b6f92353fcd1ca99.ctex::
-work_panel_1.png::CompressedTexture2D::7408415208231148289::1778892595::1778892620::1::::<><><>0<>0<>39647c1efb09bdb93cbf0865479dc174<>res://.godot/imported/work_panel_1.png-70e6fa649ea12380a75816a7a18b4e43.ctex::
+work_panel_1.png::CompressedTexture2D::7408415208231148289::1778894552::1778894553::1::::<><><>0<>0<>39647c1efb09bdb93cbf0865479dc174<>res://.godot/imported/work_panel_1.png-70e6fa649ea12380a75816a7a18b4e43.ctex::
+work_shadow_panel_1.png::CompressedTexture2D::2443839974621707151::1778895135::1778895136::1::::<><><>0<>0<>356e2c411fa493e7658b2ef3c59792ea<>res://.godot/imported/work_shadow_panel_1.png-113febffe2e698750435f504aa75c93d.ctex::
 ::res://autoload/::1778815314
 DayCycle.gd::GDScript::3858844134871978528::1778711437::0::1::::<>Node<><>0<>0<><>::
 Dialogue.gd::GDScript::1579250776617910140::1778815314::0::1::::<>Node<><>0<>0<><>::
@@ -59,7 +60,7 @@ Main.tscn::PackedScene::6014830843503735391::1778884202::0::1::::<><><>0<>0<><>:
 Scanlines.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://shaders/scanlines.gdshader
 Transition.gd::GDScript::6657196936549354663::1778800437::0::1::::<>TextureRect<><>0<>0<><>::
 Transition.tscn::PackedScene::5942311429986572456::1778799880::0::1::::<><><>0<>0<><>::res://scenes/Transition.gd<>uid://cexl7748vgoji::::res://assets/textures/backgrounds/load/FlowerLoad.png
-::res://scenes/locations/::1778819344
+::res://scenes/locations/::1778894578
 LocationBase.gd::GDScript::9172710538260446283::1778711437::0::1::::LocationBase<>Control<><>0<>0<><>::
 Maintenance.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
 PersonalityTraining.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
@@ -71,7 +72,8 @@ StressTest.gd::GDScript::2334747868029222209::1778711437::0::1::::<>LocationBase
 StressTest.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StressTest.gd
 StubLocation.gd::GDScript::1883750545589139112::1778816615::0::1::::<>LocationBase<><>0<>0<><>::
 StubLocation.tscn::PackedScene::6474183686793253630::1778811889::0::1::::<><><>0<>0<><>::uid://13rdjjwlfkua::::res://scenes/locations/StubLocation.gd
-Work.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
+Work.gd::GDScript::3642143372528671624::1778893899::0::1::::<>LocationBase<><>0<>0<><>::
+Work.tscn::PackedScene::8523178736077590333::1778894578::0::1::::<><><>0<>0<><>::uid://br5jtmaxrfegu::::res://scenes/locations/Work.gd<>uid://4sq4i7qirh41::::res://assets/textures/icons/empty_table.png<>uid://ddsxrsuwn8rxx::::res://assets/textures/icons/work_panel_1.png
 Workshop.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
 ::res://scenes/ui/::1778890893
 DialogueBox.gd::GDScript::4742499655677657949::1778819408::0::1::::DialogueBox<>PanelContainer<><>0<>0<><>::
