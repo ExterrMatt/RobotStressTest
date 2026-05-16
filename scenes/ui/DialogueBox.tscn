@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b8dlgbox4dlg0"]
 
 [ext_resource type="Script" uid="uid://b8tkjntiint4p" path="res://scenes/ui/DialogueBox.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bbw5x2gcox3g0" path="res://assets/textures/icons/next_arrow.png" id="2_ggoq5"]
 
 [node name="DialogueBox" type="PanelContainer" unique_id=801001875]
 custom_minimum_size = Vector2(0, 80)
@@ -54,5 +55,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = ExtResource("2_ggoq5")
 expand_mode = 3
 stretch_mode = 5

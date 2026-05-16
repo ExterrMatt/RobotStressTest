@@ -5,7 +5,7 @@ icon.svg::CompressedTexture2D::4062773066978308223::1778711437::1778711482::1:::
 ::res://assets/fonts/::1778718817
 Jersey10-Regular.ttf::FontFile::8216688361414985612::1778712572::1778718817::1::::<><><>0<>0<>a4319c4db0ecdbc93bf4d1a2a8a5c724<>res://.godot/imported/Jersey10-Regular.ttf-200460e514ca6d2634756f713ee1b38e.fontdata::
 ::res://assets/textures/::1778890100
-::res://assets/textures/asepritefiles/::1778878989
+::res://assets/textures/asepritefiles/::1778892409
 ::res://assets/textures/backgrounds/::1778882086
 bedroom_evening.png::CompressedTexture2D::5016043500698100473::1778738314::1778738561::1::::<><><>0<>0<>18997cb137fa485a700645a9ec965f86<>res://.godot/imported/bedroom_evening.png-5d2783d6dd788185447c9940aaa2af38.ctex::
 bedroom_morning.png::CompressedTexture2D::590344480680096236::1778739094::1778739094::1::::<><><>0<>0<>f91af4342c0e1daba29db589d0c81d54<>res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex::
@@ -30,9 +30,10 @@ Math2.png::CompressedTexture2D::8006610474616234884::1718491154::1778813666::1::
 Math.png::CompressedTexture2D::5781748074328679937::1718491147::1778735131::1::::<><><>0<>0<>c7479ecda83d7f7f83ea2a41d6cc50d9<>res://.godot/imported/Math.png-aa96fdcc797625f5c56f0e9ec5c6c034.ctex::
 Science2.png::CompressedTexture2D::125912650113251015::1723075010::1778813666::1::::<><><>0<>0<>cc3a82c240e4518a0096a12b3682a7bb<>res://.godot/imported/Science2.png-bc661411ddd2e874a162487f05ec49ae.ctex::
 Science.png::CompressedTexture2D::1285054733802356878::1723074892::1778735131::1::::<><><>0<>0<>0b1c856eac34498a3b62e4045795dcaf<>res://.godot/imported/Science.png-4ec50c8b273cea34e151333b18a7facf.ctex::
-::res://assets/textures/icons/::1778890121
+::res://assets/textures/icons/::1778892595
 empty_table.png::CompressedTexture2D::2073658995342397720::1778890121::1778890129::1::::<><><>0<>0<>eb2e398ea35f47fcf566d7c87cbdca0a<>res://.godot/imported/empty_table.png-8de55116b3c2a183e200c075f8c8d34e.ctex::
 next_arrow.png::CompressedTexture2D::2503889848473051565::1778814431::1778890129::1::::<><><>0<>0<>e77e46f8b9c4399fcd10e1537c4b88d0<>res://.godot/imported/next_arrow.png-a8f0881d8f3488d2b6f92353fcd1ca99.ctex::
+work_panel_1.png::CompressedTexture2D::7408415208231148289::1778892595::1778892620::1::::<><><>0<>0<>39647c1efb09bdb93cbf0865479dc174<>res://.godot/imported/work_panel_1.png-70e6fa649ea12380a75816a7a18b4e43.ctex::
 ::res://autoload/::1778815314
 DayCycle.gd::GDScript::3858844134871978528::1778711437::0::1::::<>Node<><>0<>0<><>::
 Dialogue.gd::GDScript::1579250776617910140::1778815314::0::1::::<>Node<><>0<>0<><>::
@@ -72,9 +73,9 @@ StubLocation.gd::GDScript::1883750545589139112::1778816615::0::1::::<>LocationBa
 StubLocation.tscn::PackedScene::6474183686793253630::1778811889::0::1::::<><><>0<>0<><>::uid://13rdjjwlfkua::::res://scenes/locations/StubLocation.gd
 Work.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
 Workshop.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
-::res://scenes/ui/::1778853962
+::res://scenes/ui/::1778890893
 DialogueBox.gd::GDScript::4742499655677657949::1778819408::0::1::::DialogueBox<>PanelContainer<><>0<>0<><>::
-DialogueBox.tscn::PackedScene::4709524333928720857::1778853962::0::1::::<><><>0<>0<><>::uid://b8tkjntiint4p::::res://scenes/ui/DialogueBox.gd
+DialogueBox.tscn::PackedScene::4709524333928720857::1778890893::0::1::::<><><>0<>0<><>::uid://b8tkjntiint4p::::res://scenes/ui/DialogueBox.gd<>uid://bbw5x2gcox3g0::::res://assets/textures/icons/next_arrow.png
 ::res://shaders/::1778711481
 scanlines.gdshader::Shader::9146818663449568541::1778711437::0::1::::<><><>0<>0<><>::
 space_background.gdshader::Shader::6580967694393618778::1778711437::0::1::::<><><>0<>0<><>::
