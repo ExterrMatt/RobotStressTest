@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LocationData" format=3 uid="uid://dtaev76qnynde"]
 
-[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Script" uid="uid://d370vjofljuj2" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bbbb4bk4ane8p" path="res://assets/textures/backgrounds/store.png" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -9,4 +10,6 @@ display_name = "Store"
 description = "Buy ingredients, tools, and stat-buff gadgets."
 allowed_phases = [1]
 scene_path = "res://scenes/locations/Store.tscn"
-free_action = false
+preview_texture = ExtResource("2")
+frame_size = Vector2(800, 640)
+frame_outer_width = 800.0
