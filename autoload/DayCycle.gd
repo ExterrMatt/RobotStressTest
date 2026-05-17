@@ -68,6 +68,9 @@ func end_day() -> void:
 
 	nightly_wakes = 0
 	nightly_stress_test_completed = false
+	# Wipe the per-day store-purchase ledger so the player can buy each
+	# item again tomorrow.
+	GameState.reset_daily_purchases()
 
 	GameState.day += 1
 	GameState.phase = Phase.MORNING

@@ -40,6 +40,8 @@ const PHASE_BACKGROUNDS: Dictionary = {
 	2: preload("res://assets/textures/backgrounds/bedroom_night.png"),
 }
 
+const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryOverlay.tscn")
+
 ## Default rendered size of the framed scene image. Matches the size hard-
 ## coded in Main.tscn for SceneImage.custom_minimum_size, and the 1.8x
 ## upscaling of standard 500x125 backgrounds (500*1.8 = 900, 125*1.8 = 225).
@@ -140,6 +142,11 @@ var _scene_overlay: Control = null
 ## picture, WorkInventory flanks it. Cleared on selection-screen swap.
 var _inventory_overlay: Control = null
 
+## The player-wide inventory overlay (the Space-key one). Separate from
+## _inventory_overlay above, which is the per-location work-minigame
+## inventory that flanks the picture frame.
+var _player_inventory_overlay: InventoryOverlay = null
+
 func _ready() -> void:
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
@@ -169,15 +176,33 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	var key_event: InputEventKey = event
+
 	# Tab toggles the debug event log overlay.
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_TAB:
-			log_overlay.visible = not log_overlay.visible
+	if key_event.keycode == KEY_TAB:
+		log_overlay.visible = not log_overlay.visible
+		get_viewport().set_input_as_handled()
+		return
+
+	# X swaps the alt teacher portrait variant.
+	if key_event.keycode == KEY_X:
+		_alt_portrait = not _alt_portrait
+		_refresh_teacher_portrait_variant()
+		get_viewport().set_input_as_handled()
+		return
+
+	# Space toggles the player inventory overlay — but ONLY when we're
+	# inside a location scene (i.e. not on the selection screen / "in
+	# your room"). Dialogue boxes consume input before it reaches us
+	# via _unhandled_input, so an active dialogue typing-out naturally
+	# blocks Space without us having to special-case it.
+	if key_event.keycode == KEY_SPACE:
+		if _can_open_inventory():
+			_toggle_inventory_overlay()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_X:
-			_alt_portrait = not _alt_portrait
-			_refresh_teacher_portrait_variant()
-			get_viewport().set_input_as_handled()
+		return
 
 
 func _load_locations() -> void:
@@ -609,6 +634,30 @@ func hide_corner_button() -> void:
 	for conn in corner_button.pressed.get_connections():
 		corner_button.pressed.disconnect(conn["callable"])
 	corner_button.visible = false
+
+# --- player inventory overlay (Space key) ---
+
+## Open the overlay only when we're inside a location — i.e. not on the
+## selection screen (which represents "your room"). If a dialogue is
+## currently typing or waiting for a click, _unhandled_input won't fire
+## anyway because DialogueBox handles input first.
+func _can_open_inventory() -> bool:
+	# If the inventory is already up, ALWAYS allow closing it — wherever
+	# we are, the player should be able to dismiss it.
+	if _player_inventory_overlay and _player_inventory_overlay.visible:
+		return true
+	# Otherwise: only open while a location is running. Selection screen =
+	# "in your room".
+	return _current_location_node != null
+
+
+func _toggle_inventory_overlay() -> void:
+	# Lazy-create on first open so we don't pay for it on a session that
+	# never hits Space.
+	if _player_inventory_overlay == null:
+		_player_inventory_overlay = INVENTORY_OVERLAY_SCENE.instantiate()
+		add_child(_player_inventory_overlay)
+	_player_inventory_overlay.toggle()
 
 ## Mount a Control as a child of SceneImage so its internal layout (bottom-
 ## anchored offsets, etc.) lines up with the framed picture. Used by Work

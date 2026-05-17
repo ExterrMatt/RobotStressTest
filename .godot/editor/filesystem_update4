@@ -10,3 +10,7 @@ res://scenes/locations/DraggableItem.gd
 res://scenes/locations/School.gd
 res://scenes/locations/School.tscn
 res://scenes/ui/DialogueBox.gd
+res://autoload/DayCycle.gd
+res://autoload/GameState.gd
+res://scenes/ui/DialogueBox.tscn
+res://scenes/locations/Store.tscn
