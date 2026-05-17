@@ -32,7 +32,7 @@ Math2.png::CompressedTexture2D::8006610474616234884::1718491154::1778813666::1::
 Math.png::CompressedTexture2D::5781748074328679937::1718491147::1778735131::1::::<><><>0<>0<>c7479ecda83d7f7f83ea2a41d6cc50d9<>res://.godot/imported/Math.png-aa96fdcc797625f5c56f0e9ec5c6c034.ctex::
 Science2.png::CompressedTexture2D::125912650113251015::1723075010::1778813666::1::::<><><>0<>0<>cc3a82c240e4518a0096a12b3682a7bb<>res://.godot/imported/Science2.png-bc661411ddd2e874a162487f05ec49ae.ctex::
 Science.png::CompressedTexture2D::1285054733802356878::1723074892::1778735131::1::::<><><>0<>0<>0b1c856eac34498a3b62e4045795dcaf<>res://.godot/imported/Science.png-4ec50c8b273cea34e151333b18a7facf.ctex::
-::res://assets/textures/icons/::1778996969
+::res://assets/textures/icons/::1778999700
 arc.png::CompressedTexture2D::5919516915562426399::1778899717::1778899720::1::::<><><>0<>0<>0285d4b1add2f60a90aa538fac90d6ed<>res://.godot/imported/arc.png-91e8e2f473dd75804f25cef648f0557e.ctex::
 arc_panel_1.png::CompressedTexture2D::323038522785866367::1778899700::1778899720::1::::<><><>0<>0<>ca3a0a1540921e8823ac90feddd38c2d<>res://.godot/imported/arc_panel_1.png-266eec1ceb8e911fd232ad71dd2b20df.ctex::
 electronics.png::CompressedTexture2D::6185131581690683105::1778995291::1778995324::1::::<><><>0<>0<>fe61395c40bbe44b8bd95a8679ada4df<>res://.godot/imported/electronics.png-edb87d8ec604fed792d1c2a3eebbbf4e.ctex::
@@ -45,6 +45,8 @@ oil.png::CompressedTexture2D::8643870159691212840::1778996969::1778996977::1::::
 placeholder_item.png::CompressedTexture2D::2415538430929768411::1778988492::1778989288::1::::<><><>0<>0<>9f645f51ca47c542b5ab1af407b1d86c<>res://.godot/imported/placeholder_item.png-6840fc9613201e3e932d0d978b76b60e.ctex::
 scrap_metal.png::CompressedTexture2D::707932699699937187::1778994525::1778994532::1::::<><><>0<>0<>a46d6ec3c684419e44a2fe602a8d13f2<>res://.godot/imported/scrap_metal.png-abc18c03cf02db70c1d7aaf35fe9ec08.ctex::
 scrap_metal_placeholder.png::CompressedTexture2D::4428105923177043654::1778991145::1778994532::1::::<><><>0<>0<>6936d79a8885de0eee4abdaaa4a3e163<>res://.godot/imported/scrap_metal_placeholder.png-949d9820c01583cf1c423165aecf7e99.ctex::
+sneaky_shoes.png::CompressedTexture2D::6441815419461910091::1778999700::1778999705::1::::<><><>0<>0<>7ac44fdc0746acc50dc5ee1813723660<>res://.godot/imported/sneaky_shoes.png-427050484489724c77bce706e2e13a22.ctex::
+synth_skin.png::CompressedTexture2D::7659841009332823027::1778999052::1778999059::1::::<><><>0<>0<>1e446dc52634c5cb576bc99e6557d06c<>res://.godot/imported/synth_skin.png-e8d830a56bc62b02ae2525b8a0fd4b0f.ctex::
 tesseract.png::CompressedTexture2D::2183643948601179623::1778906675::1778906706::1::::<><><>0<>0<>4e113ce68adc7797d455d1190f17e2c4<>res://.godot/imported/tesseract.png-ae661e01a25129d2d98392dfe964e1eb.ctex::
 tess_panel_1.png::CompressedTexture2D::5649889071208970825::1778906644::1778906706::1::::<><><>0<>0<>09a2ff86fa84d284a73d92aaae87b1c3<>res://.godot/imported/tess_panel_1.png-a3bccac36871a09247fe3e4a91fa7144.ctex::
 tri.png::CompressedTexture2D::5882380232944246316::1778900355::1778900451::1::::<><><>0<>0<>391b8a264e410bf05f4a9afb6a923ef6<>res://.godot/imported/tri.png-270f6baefab2c175e613b9e087c55554.ctex::
