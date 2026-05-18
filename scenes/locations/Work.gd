@@ -80,10 +80,6 @@ func _ready() -> void:
 	if work_inventory:
 		work_inventory.slots_changed.connect(_on_slots_changed)
 
-	# Mount the back button inside Main's picture frame (bottom-right corner).
-	if main and main.has_method("show_corner_button"):
-		main.show_corner_button("<- BACK", _on_back_pressed)
-
 
 func _on_slots_changed(filled_count: int) -> void:
 	# Show the finish/steal choices only when all four slots are filled.
@@ -195,11 +191,6 @@ func _on_finish_pressed() -> void:
 
 func _on_steal_pressed() -> void:
 	_finish_work(true)
-
-
-func _on_back_pressed() -> void:
-	# Free action — return to selection without advancing the phase.
-	finish(0, 0, 0, {}, true)
 
 
 # --- Helpers ---

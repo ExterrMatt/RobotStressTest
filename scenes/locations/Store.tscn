@@ -1,6 +1,85 @@
 [gd_scene format=3 uid="uid://beq2g06twsnvn"]
 
 [ext_resource type="Script" uid="uid://c2bv0w5te4pab" path="res://scenes/locations/Store.gd" id="1"]
+[ext_resource type="Script" uid="uid://dqmk6gwpmj4t5" path="res://scenes/locations/StoreItemData.gd" id="2"]
+[ext_resource type="Texture2D" uid="uid://barmwpo16jixi" path="res://assets/textures/icons/store_table.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://dp58wrjwdao53" path="res://assets/textures/icons/scrap_metal_shadow.png" id="3_dhal8"]
+[ext_resource type="Texture2D" uid="uid://kc6svv36o12f" path="res://assets/textures/icons/scrap_metal.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://cueehi2ci3kcv" path="res://assets/textures/icons/electronics.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://b0mm5po1716p0" path="res://assets/textures/icons/electronics_shadow.png" id="5_ac5hg"]
+[ext_resource type="Texture2D" uid="uid://csfnti8djo51s" path="res://assets/textures/icons/nuts_bolts.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://dheqpyornt1pf" path="res://assets/textures/icons/synth_skin.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://hsboqquq420j" path="res://assets/textures/icons/nuts_bolts_shadow.png" id="7_opsjd"]
+[ext_resource type="Texture2D" uid="uid://dvffjqd4ghp41" path="res://assets/textures/icons/oil.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://cx1p02f1plngd" path="res://assets/textures/icons/sneaky_shoes.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://c3nx2bc14dbj5" path="res://assets/textures/icons/synth_skin_shadow.png" id="9_2s6c6"]
+[ext_resource type="Texture2D" uid="uid://bmcju3teotbbx" path="res://assets/textures/icons/oil_shadow.png" id="11_nsxlk"]
+[ext_resource type="Texture2D" uid="uid://bv307mhr5qy2i" path="res://assets/textures/icons/sneaky_shoes_shadow.png" id="13_886yl"]
+
+[sub_resource type="Resource" id="Item_ScrapMetal"]
+script = ExtResource("2")
+id = &"scrap_metal"
+display_name = "Scrap Metal x3"
+cost = 40
+amount = 3
+texture = ExtResource("4")
+shadow_texture = ExtResource("3_dhal8")
+shadow_offset = Vector2(-15, -10)
+shadow_modulate = Color(1, 1, 1, 0.48235294)
+
+[sub_resource type="Resource" id="Item_Electronics"]
+script = ExtResource("2")
+id = &"electronics"
+display_name = "Electronics x3"
+cost = 40
+amount = 3
+texture = ExtResource("5")
+shadow_texture = ExtResource("5_ac5hg")
+shadow_offset = Vector2(-40, 0)
+shadow_modulate = Color(1, 1, 1, 0.49019608)
+
+[sub_resource type="Resource" id="Item_NutsBolts"]
+script = ExtResource("2")
+id = &"nuts_bolts"
+display_name = "Nuts & Bolts x5"
+cost = 25
+amount = 5
+texture = ExtResource("6")
+shadow_texture = ExtResource("7_opsjd")
+shadow_offset = Vector2(-15, -10)
+shadow_modulate = Color(1, 1, 1, 0.4862745)
+
+[sub_resource type="Resource" id="Item_SynthSkin"]
+script = ExtResource("2")
+id = &"synth_skin"
+display_name = "Synth-Skin x2"
+cost = 60
+amount = 2
+texture = ExtResource("7")
+shadow_texture = ExtResource("9_2s6c6")
+shadow_offset = Vector2(-5, -10)
+shadow_modulate = Color(1, 1, 1, 0.48235294)
+
+[sub_resource type="Resource" id="Item_Oil"]
+script = ExtResource("2")
+id = &"oil"
+display_name = "Bottle of Oil"
+cost = 30
+texture = ExtResource("8")
+shadow_texture = ExtResource("11_nsxlk")
+shadow_offset = Vector2(-12, -7)
+shadow_modulate = Color(1, 1, 1, 0.49019608)
+
+[sub_resource type="Resource" id="Item_SneakyShoes"]
+script = ExtResource("2")
+id = &"sneaky_shoes"
+display_name = "Sneaky Shoes"
+cost = 80
+is_tool = true
+texture = ExtResource("9")
+shadow_texture = ExtResource("13_886yl")
+shadow_offset = Vector2(-15, -14)
+shadow_modulate = Color(1, 1, 1, 0.49411765)
 
 [node name="Store" type="Control" unique_id=1801225549]
 layout_mode = 3
@@ -10,9 +89,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+items = Array[ExtResource("2")]([SubResource("Item_ScrapMetal"), SubResource("Item_Electronics"), SubResource("Item_NutsBolts"), SubResource("Item_SynthSkin"), SubResource("Item_Oil"), SubResource("Item_SneakyShoes")])
 
 [node name="ColorBackground" type="ColorRect" parent="." unique_id=1858140866]
-visible = false
 show_behind_parent = true
 layout_mode = 1
 anchors_preset = 15
@@ -22,44 +101,44 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.12, 0.13, 0.18, 1)
 
-[node name="MarginContainer" type="MarginContainer" parent="." unique_id=280672284]
+[node name="FurnitureLayer" type="Control" parent="." unique_id=696613427]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 48
-theme_override_constants/margin_top = 48
-theme_override_constants/margin_right = 48
-theme_override_constants/margin_bottom = 48
+mouse_filter = 2
 
-[node name="VBox" type="VBoxContainer" parent="MarginContainer" unique_id=1980310268]
-layout_mode = 2
-theme_override_constants/separation = 16
+[node name="StoreTable" type="TextureRect" parent="FurnitureLayer" unique_id=1421632866]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -400.0
+offset_right = 400.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2
+texture = ExtResource("3")
 
-[node name="TitleLabel" type="Label" parent="MarginContainer/VBox" unique_id=1806072831]
+[node name="ItemGrid" type="Control" parent="FurnitureLayer" unique_id=80549159]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 36
-text = "Store"
-horizontal_alignment = 1
-
-[node name="BlurbLabel" type="Label" parent="MarginContainer/VBox" unique_id=1937961965]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "Click an item to buy it. One of each per day."
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="GridWrap" type="CenterContainer" parent="MarginContainer/VBox" unique_id=542570624]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="ItemGrid" type="GridContainer" parent="MarginContainer/VBox/GridWrap" unique_id=80549159]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/h_separation = 16
-theme_override_constants/v_separation = 16
-columns = 3
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -400.0
+offset_right = 400.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_horizontal = 4
+mouse_filter = 2

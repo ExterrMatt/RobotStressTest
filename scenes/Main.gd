@@ -136,6 +136,10 @@ var _slide_tween: Tween = null
 ## / hide_scene_overlay(); Main clears it automatically on location exit.
 var _scene_overlay: Control = null
 
+## Sentinel: SceneImage.mouse_filter before an interactive overlay flipped
+## it. -1 = no override active; hide_scene_overlay restores it back.
+var _prev_scene_image_mouse_filter: int = -1
+
 ## Overlay node currently parented to FrameOuter (e.g. Work's inventory
 ## columns that flank the picture). Tracked separately from _scene_overlay
 ## so the two can coexist — Work uses both: FurnitureLayer sits inside the
@@ -621,13 +625,18 @@ func _refresh_teacher_portrait_variant() -> void:
 ## Calling this with a different label/callback while the button is already
 ## visible replaces the previous binding cleanly - no stale handlers.
 func show_corner_button(label: String, on_pressed: Callable) -> void:
-	# Drop any previous connection so we don't fire stale callbacks.
 	for conn in corner_button.pressed.get_connections():
 		corner_button.pressed.disconnect(conn["callable"])
 	corner_button.text = label
 	if on_pressed.is_valid():
 		corner_button.pressed.connect(on_pressed)
 	corner_button.visible = true
+	# Ensure the parent CornerButtonLayer is also visible — the .tscn
+	# sets it visible = false by default, which would hide the button
+	# regardless of its own visible flag.
+	var layer: Control = corner_button.get_parent() as Control
+	if layer:
+		layer.visible = true
 
 
 func hide_corner_button() -> void:
@@ -661,15 +670,20 @@ func _toggle_inventory_overlay() -> void:
 
 ## Mount a Control as a child of SceneImage so its internal layout (bottom-
 ## anchored offsets, etc.) lines up with the framed picture. Used by Work
-## to drop pixel-art furniture on top of the work-floor background.
+## to drop pixel-art furniture on top of the work-floor background, and
+## by Store to mount its (clickable) item grid on top of the store image.
 ##
 ## The overlay is anchored full-rect to SceneImage but explicitly does NOT
-## participate in minimum-size calculations — it's decorative only, so it
-## can never push FrameOuter's width around.
+## participate in minimum-size calculations — it can never push FrameOuter's
+## width around.
 ##
-## If the node already has a parent, it's reparented (not duplicated).
-## Calling this while another overlay is already shown replaces the old one.
-func show_scene_overlay(node: Control) -> void:
+## If `interactive` is true, the overlay needs to receive clicks for its
+## children. SceneImage is a TextureRect with mouse_filter = STOP by default,
+## which eats clicks before they reach the overlay's children — so when
+## `interactive` is set we flip SceneImage to IGNORE for the lifetime of
+## this overlay, and restore on hide. Pure decoration (Work) leaves it
+## STOP since clicks should pass straight through to the location UI behind.
+func show_scene_overlay(node: Control, interactive: bool = false) -> void:
 	if node == null:
 		hide_scene_overlay()
 		return
@@ -696,8 +710,17 @@ func show_scene_overlay(node: Control) -> void:
 	# Critical: the overlay must NOT push the container chain around.
 	# Zero out the minimum size and don't let children influence it.
 	node.custom_minimum_size = Vector2.ZERO
-	# Don't eat clicks meant for buttons in the location UI below.
+
+	# Don't let the overlay root itself swallow clicks — children that
+	# want them set their own mouse_filter. IGNORE on the root is
+	# correct for both interactive and decorative use.
 	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	if interactive:
+		# Open a click path from the viewport down into the overlay's
+		# children. SceneImage sits between them and the input router.
+		_prev_scene_image_mouse_filter = scene_image.mouse_filter
+		scene_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	_scene_overlay = node
 
@@ -706,18 +729,11 @@ func hide_scene_overlay() -> void:
 	if _scene_overlay and is_instance_valid(_scene_overlay):
 		_scene_overlay.queue_free()
 	_scene_overlay = null
-
-## Mount a Control as a sibling layer over FrameOuter so it can render
-## in the strips of frame to the left and right of SceneImage. Used by
-## Work for the draggable-shape inventory columns.
-##
-## Anchored full-rect to FrameOuter. Like show_scene_overlay, the overlay
-## is reparented (not duplicated) and is forced not to participate in
-## minimum-size calculations so it can't widen the frame.
-##
-## Mouse filter is left at the caller's discretion here — the inventory
-## DOES want to receive clicks on its draggable items, unlike the purely
-## decorative FurnitureLayer overlay.
+	# Restore SceneImage's filter if an interactive overlay flipped it.
+	if _prev_scene_image_mouse_filter != -1:
+		scene_image.mouse_filter = _prev_scene_image_mouse_filter
+		_prev_scene_image_mouse_filter = -1
+		
 func show_inventory_overlay(node: Control) -> void:
 	if node == null:
 		hide_inventory_overlay()

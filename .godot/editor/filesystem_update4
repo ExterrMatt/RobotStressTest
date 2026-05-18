@@ -15,3 +15,4 @@ res://autoload/GameState.gd
 res://scenes/ui/DialogueBox.tscn
 res://scenes/locations/Store.tscn
 res://resources/locations/store.tres
+res://scenes/locations/Store.gd
