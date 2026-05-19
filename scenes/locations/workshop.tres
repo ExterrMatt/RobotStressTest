@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"workshop"
+display_name = "Workshop"
+description = "Craft ingredients into body parts."
+allowed_phases = [1]
+scene_path = "res://scenes/locations/Workshop.tscn"
+free_action = false
+; Entry size: 500x150 to match the intro region of the source image
+; (which is 500x600 total). Workshop.gd drives the pan-and-expand to
+; 500x400 when the player commits to a build. Width stays at 500 in
+; both states so the frame doesn't horizontally hop during the pan.
+;
+; frame_outer_width is tightened to 500 + some padding so the outer
+; frame chrome shrinks to fit the narrower picture. If you want the
+; outer frame to keep its default wider width, set this to 0.
+frame_size = Vector2(500, 150)
+frame_outer_width = 540.0

@@ -10,3 +10,9 @@ description = "Craft ingredients into body parts."
 allowed_phases = [1]
 scene_path = "res://scenes/locations/Workshop.tscn"
 free_action = false
+; Frame size left at default (0, 0) so the scene OPENS at the standard
+; 900x225. Workshop.gd drives the expansion to 800x640 when the player
+; commits to a build (the inverse of Work, which opens big and shrinks
+; on completion). Same for frame_outer_width.
+frame_size = Vector2(0, 0)
+frame_outer_width = 0.0

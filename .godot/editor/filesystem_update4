@@ -16,3 +16,7 @@ res://scenes/ui/DialogueBox.tscn
 res://scenes/locations/Store.tscn
 res://resources/locations/store.tres
 res://scenes/locations/Store.gd
+res://scenes/locations/Workshop.gd
+res://scenes/locations/WorkshopMinigame.gd
+res://scenes/locations/WorkshopMinigame.tscn
+res://scenes/locations/WorkshopPiece.gd

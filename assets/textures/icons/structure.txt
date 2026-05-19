@@ -1,0 +1,117 @@
+Folder PATH listing for volume Windows
+Volume serial number is 6E83-A13F
+C:.
+|   arc.png
+|   arc.png.import
+|   arc_panel_1.png
+|   arc_panel_1.png.import
+|   electronics.png
+|   electronics.png.import
+|   electronics_shadow.png
+|   electronics_shadow.png.import
+|   empty_table.png
+|   empty_table.png.import
+|   folder_structure.txt
+|   gear.png
+|   gear.png.import
+|   gear_panel_1.png
+|   gear_panel_1.png.import
+|   leg.png
+|   leg.png.import
+|   list_structure.bat
+|   nanobots.png
+|   nanobots.png.import
+|   nanobots_placeholder.png
+|   nanobots_placeholder.png.import
+|   next_arrow.png
+|   next_arrow.png.import
+|   nuts_bolts.png
+|   nuts_bolts.png.import
+|   nuts_bolts_shadow.png
+|   nuts_bolts_shadow.png.import
+|   oil.png
+|   oil.png.import
+|   oil_shadow.png
+|   oil_shadow.png.import
+|   placeholder_item.png
+|   placeholder_item.png.import
+|   placeholder_workshop_leg.png
+|   placeholder_workshop_leg.png.import
+|   scrap_metal.png
+|   scrap_metal.png.import
+|   scrap_metal_placeholder.png
+|   scrap_metal_placeholder.png.import
+|   scrap_metal_shadow.png
+|   scrap_metal_shadow.png.import
+|   scrap_metal_small.png
+|   scrap_metal_small.png.import
+|   sneaky_shoes.png
+|   sneaky_shoes.png.import
+|   sneaky_shoes_shadow.png
+|   sneaky_shoes_shadow.png.import
+|   store_example.png
+|   store_example.png.import
+|   store_table.png
+|   store_table.png.import
+|   structure.txt
+|   synth_skin.png
+|   synth_skin.png.import
+|   synth_skin_shadow.png
+|   synth_skin_shadow.png.import
+|   tesseract.png
+|   tesseract.png.import
+|   tess_panel_1.png
+|   tess_panel_1.png.import
+|   tri.png
+|   tri.png.import
+|   tri_panel_1.png
+|   tri_panel_1.png.import
+|   work_panel_1.png
+|   work_panel_1.png.import
+|   work_shadow_panel_1.png
+|   work_shadow_panel_1.png.import
+|   
+\---workshop robot leg
+    |   robot_leg_ankle_cap.png
+    |   
+    +---robot_leg_foot
+    |       ankle_axel.png
+    |       heel.png
+    |       middle_foot.png
+    |       toes.png
+    |       toes_border.png
+    |       upper_foot.png
+    |       
+    +---robot_leg_lower_legs
+    |       calf.png
+    |       inner_gears.png
+    |       lower_leg.png
+    |       shin.png
+    |       
+    +---robot_leg_shadow
+    |       ankle_shadow.png
+    |       butt_shadow.png
+    |       calf_shadow.png
+    |       heel_shadow.png
+    |       inner_gear_side_thigh_shadow.png
+    |       knee_joint_shadow.png
+    |       knee_shadow.png
+    |       lower_leg_shadow.png
+    |       middle_foot_shadow.png
+    |       mid_thighs_gear_shadow.png
+    |       shin_shadow.png
+    |       side_thigh_shadow.png
+    |       toes_shadow.png
+    |       upper_foot_shadow.png
+    |       upper_thigh_shadow.png
+    |       
+    \---robot_leg_thighs
+            butt.png
+            knee.png
+            knee_joint.png
+            knee_joint_axel.png
+            mid_thigh_gears.png
+            side_thigh.png
+            upper_thigh.png
+            upper_thigh_gears.png
+            

@@ -1,0 +1,235 @@
+[gd_scene load_steps=4 format=3 uid="uid://c5gxw8m9p3rkx"]
+
+[ext_resource type="Script" path="res://scenes/locations/WorkshopMinigame.gd" id="1"]
+[ext_resource type="Script" path="res://scenes/locations/WorkshopBin.gd" id="2"]
+[ext_resource type="Script" path="res://scenes/locations/WorkshopAssemblySlot.gd" id="3"]
+
+[node name="WorkshopMinigame" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1")
+
+; Coords are NATIVE 500x400 pixels (workshop renders 1:1).
+;   Ingredients tray: ( 12,  12) -> (240, 184)
+;   Craft bin       : ( 12, 196) -> (240, 384)
+;       CRAFT button: (170, 354) -> (232, 380)
+;   Assembly area   : (252,  12) -> (488, 384)
+;       9 segment slots stacked
+;       COLLECT btn : (390, 354) -> (480, 380)
+
+; ---------------- INGREDIENTS TRAY ----------------
+[node name="IngredientsTray" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 240.0
+offset_bottom = 184.0
+mouse_filter = 2
+
+[node name="TrayLabel" type="Label" parent="IngredientsTray"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = -14.0
+offset_right = 160.0
+offset_bottom = 0.0
+text = "INGREDIENTS"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+
+; ---------------- CRAFT BIN ----------------
+[node name="CraftBin" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 12.0
+offset_top = 196.0
+offset_right = 240.0
+offset_bottom = 384.0
+mouse_filter = 2
+script = ExtResource("2")
+
+[node name="BinLabel" type="Label" parent="CraftBin"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = -14.0
+offset_right = 160.0
+offset_bottom = 0.0
+text = "CRAFT BIN"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+
+[node name="BinBorder" type="Panel" parent="CraftBin"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+self_modulate = Color(1, 1, 1, 0.25)
+mouse_filter = 2
+
+[node name="CraftButton" type="Button" parent="CraftBin"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -58.0
+offset_top = -22.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "CRAFT"
+disabled = true
+theme_override_font_sizes/font_size = 11
+
+; ---------------- ASSEMBLY ----------------
+[node name="AssemblyArea" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 252.0
+offset_top = 12.0
+offset_right = 488.0
+offset_bottom = 384.0
+mouse_filter = 2
+
+[node name="AssemblyLabel" type="Label" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = -14.0
+offset_right = 160.0
+offset_bottom = 0.0
+text = "ASSEMBLY"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+
+[node name="AssemblyBorder" type="Panel" parent="AssemblyArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+self_modulate = Color(1, 1, 1, 0.25)
+mouse_filter = 2
+
+; 9 segment slots, 70x32 each, stacked vertically in the assembly area.
+; Slot positions are first-pass; tune against the art.
+
+[node name="ButtSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 6.0
+offset_right = 153.0
+offset_bottom = 38.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"butt"
+
+[node name="UpperThighSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 40.0
+offset_right = 153.0
+offset_bottom = 72.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"upper_thigh"
+
+[node name="MidThighSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 74.0
+offset_right = 153.0
+offset_bottom = 106.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"mid_thigh"
+
+[node name="SideThighSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 108.0
+offset_right = 153.0
+offset_bottom = 140.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"side_thigh"
+
+[node name="KneeSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 142.0
+offset_right = 153.0
+offset_bottom = 174.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"knee"
+
+[node name="CalfSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 176.0
+offset_right = 153.0
+offset_bottom = 208.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"calf"
+
+[node name="LowerLegSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 210.0
+offset_right = 153.0
+offset_bottom = 242.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"lower_leg"
+
+[node name="AnkleSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 244.0
+offset_right = 153.0
+offset_bottom = 276.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"ankle"
+
+[node name="FootSlot" type="Control" parent="AssemblyArea"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 278.0
+offset_right = 153.0
+offset_bottom = 310.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"foot"
+
+; ---------------- COLLECT ----------------
+[node name="CollectButton" type="Button" parent="AssemblyArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -68.0
+offset_top = -22.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "COLLECT"
+disabled = true
+visible = false
+theme_override_font_sizes/font_size = 11

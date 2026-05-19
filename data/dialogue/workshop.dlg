@@ -1,0 +1,54 @@
+# Workshop dialogue.
+# Format: see data/dialogue/school.dlg for the full spec.
+# Trailing backslash joins onto the next line into one page (one click).
+
+
+# -----------------------------------------------------------------------------
+# INTRO - shown when the player enters the workshop, before the
+# tinker / proceed choice.
+# -----------------------------------------------------------------------------
+
+[intro]
+[i]The workbench is cluttered the way you left it.[/i] \
+[i]Stripped wire, half-bent brackets, a coffee ring on the schematics.[/i]
+
+[i]You can feel the shape of what comes next in your hands.[/i]
+
+
+# -----------------------------------------------------------------------------
+# TINKER - placeholder flavor when the player picks the tinker option.
+# Returns to the selection screen without consuming the phase.
+# -----------------------------------------------------------------------------
+
+[tinker]
+[i]You poke at a junction box for a while.[/i] \
+[i]Nothing useful happens.[/i]
+
+[i]Still — it's nice to feel your fingers move.[/i]
+
+
+# -----------------------------------------------------------------------------
+# PROCEED - typed out when the player chooses to commit to a build.
+# Bridges the small-image phase and the expanded minigame.
+# -----------------------------------------------------------------------------
+
+[proceed]
+[i]Right. Time to build a leg.[/i]
+
+
+# -----------------------------------------------------------------------------
+# MISSING - shown if the player presses CRAFT without the required inputs.
+# -----------------------------------------------------------------------------
+
+[craft.missing]
+[i]Not enough in the bin.[/i] \
+[i]You need at least 1 nanobot, 1 scrap, 1 nuts & bolts.[/i]
+
+
+# -----------------------------------------------------------------------------
+# COMPLETE - shown when the player presses COLLECT with a finished leg.
+# -----------------------------------------------------------------------------
+
+[complete]
+[i]A whole leg, laid out and ready.[/i] \
+[i]You wrap it in cloth and set it aside.[/i]

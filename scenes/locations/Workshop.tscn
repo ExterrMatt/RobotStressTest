@@ -1,20 +1,46 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3 uid="uid://cwk5h0p9lwksh"]
 
-[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+[ext_resource type="Script" path="res://scenes/locations/Workshop.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://b8dlgbox4dlg0" path="res://scenes/ui/DialogueBox.tscn" id="2"]
 
-[node name="Workshop" instance=ExtResource("1")]
-title_text = "Workshop"
-blurb_text = "Craft ingredients into body parts. Real crafting UI coming later."
-outcomes = [{
-"label": "Craft a simple limb",
-"money": 0,
-"suspicion": 0,
-"anger": 0,
-"ingredients": {"scrap_metal": -2, "nuts_bolts": -1}
-}, {
-"label": "Tinker (no result yet)",
-"money": 0,
-"suspicion": 0,
-"anger": 0,
-"ingredients": {}
-}]
+[node name="Workshop" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DialogueBox" parent="MarginContainer/VBox" instance=ExtResource("2")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="ChoiceGrid" type="GridContainer" parent="MarginContainer/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
+columns = 2
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
