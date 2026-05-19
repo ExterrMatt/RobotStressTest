@@ -1,3 +1,4 @@
+@tool
 extends Control
 class_name WorkshopAssemblySlot
 ## A single segment's home on the assembly side of the workshop.
@@ -22,6 +23,18 @@ signal placed(slot: WorkshopAssemblySlot)
 ## For debug — flips a colored rect so we can see hitbox bounds in dev.
 @export var debug_draw: bool = false
 
+## OPTIONAL tight hitbox in LOCAL coords. When this has a non-zero size,
+## drop detection uses this rect instead of the full Control rect — so you
+## can shape the drop zone around just the part of the diagram where this
+## segment is supposed to land, without resizing the slot Control itself
+## (which would shift any child pieces).
+##
+## Leave as the default Rect2() (size 0,0) for the full-rect behavior.
+@export var hitbox_rect: Rect2 = Rect2():
+	set(value):
+		hitbox_rect = value if typeof(value) == TYPE_RECT2 else Rect2()
+		queue_redraw()
+
 ## True once the segment has been placed. The minigame uses this to
 ## determine when the leg is complete (all assembly slots filled).
 var filled: bool = false
@@ -34,9 +47,24 @@ func _ready() -> void:
 func _draw() -> void:
 	if not debug_draw:
 		return
+	var local: Rect2 = _effective_local_hitbox()
 	var color: Color = Color(0.2, 1.0, 0.4, 0.35) if not filled else Color(1.0, 0.6, 0.2, 0.35)
-	draw_rect(Rect2(Vector2.ZERO, size), color, true)
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.7), false, 2.0)
+	draw_rect(local, color, true)
+	draw_rect(local, Color(0, 0, 0, 0.7), false, 2.0)
+
+
+func _effective_local_hitbox() -> Rect2:
+	if hitbox_rect.size.x > 0.0 and hitbox_rect.size.y > 0.0:
+		return hitbox_rect
+	return Rect2(Vector2.ZERO, size)
+
+
+func get_global_hitbox() -> Rect2:
+	var local: Rect2 = _effective_local_hitbox()
+	var xform: Transform2D = get_global_transform()
+	var top_left: Vector2 = xform * local.position
+	var bottom_right: Vector2 = xform * (local.position + local.size)
+	return Rect2(top_left, bottom_right - top_left).abs()
 
 
 ## Does this piece belong to this slot's segment, AND did the drop
@@ -46,7 +74,7 @@ func is_valid_drop(piece: WorkshopPiece, release_global_pos: Vector2) -> bool:
 		return false
 	if piece.segment_id != accepts_segment_id:
 		return false
-	return get_global_rect().has_point(release_global_pos)
+	return get_global_hitbox().has_point(release_global_pos)
 
 
 ## Mark filled and lay out the pieces. `all_pieces` is the array of every

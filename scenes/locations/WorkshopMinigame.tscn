@@ -116,146 +116,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="ButtSlot" type="Control" parent="AssemblyArea" unique_id=753166753]
-anchors_preset = 0
-offset_right = 70.0
-offset_bottom = 32.0
-mouse_filter = 2
-script = ExtResource("3")
-accepts_segment_id = &"butt"
-debug_draw = true
-
-[node name="butt_piece" type="Control" parent="AssemblyArea/ButtSlot" unique_id=2063088160]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"butt"
-texture = ExtResource("5_yxkyj")
-shadow_texture = ExtResource("6_uvhpo")
-visual_offset = null
-auto_center = null
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="UpperThighSlot" type="Control" parent="AssemblyArea" unique_id=903077695]
-anchors_preset = 0
-offset_right = 70.0
-offset_bottom = 32.0
-mouse_filter = 2
-script = ExtResource("3")
-accepts_segment_id = &"upper_thigh"
-debug_draw = true
-
-[node name="upper_thigh" type="Control" parent="AssemblyArea/UpperThighSlot" unique_id=1263028035]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"upper_thigh"
-texture = ExtResource("7_qh8ti")
-shadow_texture = ExtResource("8_geguh")
-visual_offset = null
-auto_center = null
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="upper_thigh_gears" type="Control" parent="AssemblyArea/UpperThighSlot" unique_id=401060967]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"upper_thigh_gears"
-texture = ExtResource("9_yw1xm")
-visual_offset = null
-auto_center = null
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="MidThighSlot" type="Control" parent="AssemblyArea" unique_id=1742280269]
-anchors_preset = 0
-offset_right = 70.0
-offset_bottom = 32.0
-mouse_filter = 2
-script = ExtResource("3")
-accepts_segment_id = &"mid_thigh"
-debug_draw = true
-
-[node name="mid_thigh_gears" type="Control" parent="AssemblyArea/MidThighSlot" unique_id=1924878747]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"upper_thigh"
-texture = ExtResource("10_g0bh1")
-visual_offset = null
-auto_center = null
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="mid_thigh" type="Control" parent="AssemblyArea/MidThighSlot" unique_id=2075452651]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"mid_thigh"
-texture = ExtResource("11_kl8h8")
-shadow_texture = ExtResource("8_geguh")
-visual_offset = null
-auto_center = null
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="SideThighSlot" type="Control" parent="AssemblyArea" unique_id=1520272026]
-anchors_preset = 0
-offset_right = 70.0
-offset_bottom = 32.0
-mouse_filter = 2
-script = ExtResource("3")
-accepts_segment_id = &"side_thigh"
-debug_draw = true
-
-[node name="side_thigh" type="Control" parent="AssemblyArea/SideThighSlot" unique_id=895148640]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"side_thigh"
-texture = ExtResource("12_0s8cq")
-shadow_texture = ExtResource("13_y4i5t")
-visual_offset = null
-auto_center = null
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="KneeSlot" type="Control" parent="AssemblyArea" unique_id=312987006]
-anchors_preset = 0
-offset_right = 70.0
-offset_bottom = 32.0
-mouse_filter = 2
-script = ExtResource("3")
-accepts_segment_id = &"knee"
-debug_draw = true
-
-[node name="knee" type="Control" parent="AssemblyArea/KneeSlot" unique_id=599878234]
-layout_mode = 1
-anchor_left = 0.286
-anchor_top = 6.9990005
-anchor_right = 1.1340001
-anchor_bottom = 7.774
-offset_left = -20.02
-offset_top = -223.96802
-offset_right = -14.380005
-offset_bottom = -188.768
-pivot_offset = Vector2(-132, 38)
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"knee"
-texture = ExtResource("14_tkmvw")
-shadow_texture = ExtResource("15_vt70f")
-auto_center = null
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
 [node name="CalfSlot" type="Control" parent="AssemblyArea" unique_id=1288607803]
 anchors_preset = 0
 offset_left = 83.0
@@ -318,3 +178,163 @@ grow_vertical = 0
 theme_override_font_sizes/font_size = 11
 disabled = true
 text = "COLLECT"
+
+[node name="AssemblyLeg" type="Control" parent="AssemblyArea" unique_id=282533586]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1")
+
+[node name="ButtSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=753166753]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"butt"
+debug_draw = true
+
+[node name="butt_piece" type="Control" parent="AssemblyArea/AssemblyLeg/ButtSlot" unique_id=2063088160]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"butt"
+texture = ExtResource("5_yxkyj")
+shadow_texture = ExtResource("6_uvhpo")
+visual_offset = null
+auto_center = null
+hitbox_rect = null
+debug_draw_hitbox = null
+auto_fit_hitbox = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="UpperThighSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=903077695]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"upper_thigh"
+debug_draw = true
+
+[node name="upper_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/UpperThighSlot" unique_id=1263028035]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"upper_thigh"
+texture = ExtResource("7_qh8ti")
+shadow_texture = ExtResource("8_geguh")
+visual_offset = null
+auto_center = null
+hitbox_rect = null
+debug_draw_hitbox = null
+auto_fit_hitbox = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="upper_thigh_gears" type="Control" parent="AssemblyArea/AssemblyLeg/UpperThighSlot" unique_id=401060967]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"upper_thigh_gears"
+texture = ExtResource("9_yw1xm")
+visual_offset = null
+auto_center = null
+hitbox_rect = null
+debug_draw_hitbox = null
+auto_fit_hitbox = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="MidThighSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=1742280269]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"mid_thigh"
+debug_draw = true
+
+[node name="mid_thigh_gears" type="Control" parent="AssemblyArea/AssemblyLeg/MidThighSlot" unique_id=1924878747]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"upper_thigh"
+texture = ExtResource("10_g0bh1")
+visual_offset = null
+auto_center = null
+hitbox_rect = null
+debug_draw_hitbox = null
+auto_fit_hitbox = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="mid_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/MidThighSlot" unique_id=2075452651]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"mid_thigh"
+texture = ExtResource("11_kl8h8")
+shadow_texture = ExtResource("8_geguh")
+visual_offset = null
+auto_center = null
+hitbox_rect = null
+debug_draw_hitbox = null
+auto_fit_hitbox = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="SideThighSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=1520272026]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"side_thigh"
+debug_draw = true
+
+[node name="side_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/SideThighSlot" unique_id=895148640]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"side_thigh"
+texture = ExtResource("12_0s8cq")
+shadow_texture = ExtResource("13_y4i5t")
+visual_offset = null
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="KneeSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=312987006]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"knee"
+debug_draw = true
+
+[node name="knee" type="Control" parent="AssemblyArea/AssemblyLeg/KneeSlot" unique_id=599878234]
+layout_mode = 1
+anchor_left = 0.286
+anchor_top = 6.9990005
+anchor_right = 1.1340001
+anchor_bottom = 7.774
+offset_left = -20.02
+offset_top = -223.96802
+offset_right = -14.380005
+offset_bottom = -188.768
+pivot_offset = Vector2(-132, 38)
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"knee"
+texture = ExtResource("14_tkmvw")
+shadow_texture = ExtResource("15_vt70f")
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"

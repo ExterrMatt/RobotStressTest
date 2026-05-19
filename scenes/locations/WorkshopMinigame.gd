@@ -115,6 +115,29 @@ func _hit_button(btn: Button, global_pos: Vector2) -> bool:
 		return false
 	return btn.get_global_rect().has_point(global_pos)
 
+func _make_piece_from_def(piece_def: Dictionary, seg_id: StringName) -> WorkshopPiece:
+	var tex: Texture2D = piece_def.get("texture")
+	if tex == null:
+		push_warning("WorkshopMinigame: piece def for segment '%s' has no texture." % [seg_id])
+		return null
+ 
+	var piece := WorkshopPiece.new()
+	piece.item_id = StringName(piece_def.get("id", ""))
+	piece.segment_id = seg_id
+	piece.texture = tex
+	piece.shadow_texture = piece_def.get("shadow")
+ 
+	piece.piece_offset = piece_def.get("offset", Vector2.ZERO)
+	piece.visual_offset = piece_def.get("visual_offset", Vector2.ZERO)
+	piece.shadow_offset = piece_def.get("shadow_offset", Vector2.ZERO)
+	piece.size = piece_def.get("size", tex.get_size())
+ 
+	# NEW: carry the editor-tuned hitbox into the runtime piece.
+	piece.hitbox_rect = piece_def.get("hitbox_rect", Rect2())
+ 
+	return piece
+
+
 func _find_topmost_piece_at(global_pos: Vector2) -> WorkshopPiece:
 	var hits: Array = []
 	_collect_pieces(self, hits)
@@ -394,13 +417,13 @@ func _on_collect_pressed() -> void:
 func _collect_assembly_slots() -> void:
 	_assembly_slots.clear()
 	_segments.clear()
-
+ 
 	for child in assembly.get_children():
 		if child is WorkshopAssemblySlot:
 			var slot_id: String = String(child.accepts_segment_id)
 			_assembly_slots[slot_id] = child
 			child.placed.connect(_on_slot_placed)
-
+ 
 			var pieces: Array = []
 			for i in range(child.get_child_count() - 1, -1, -1):
 				var p: Node = child.get_child(i)
@@ -412,17 +435,19 @@ func _collect_assembly_slots() -> void:
 						"offset": p.position,
 						"visual_offset": p.visual_offset,
 						"shadow_offset": p.shadow_offset,
-						"size": p.size
+						"size": p.size,
+						"hitbox_rect": p.hitbox_rect,  # NEW
 					}
 					pieces.append(def)
 					child.remove_child(p)
 					p.queue_free()
-
+ 
 			if pieces.size() > 0:
 				_segments[StringName(slot_id)] = {
 					"anchor": child.position,
 					"pieces": pieces
 				}
+
 
 func _on_slot_placed(_slot: WorkshopAssemblySlot) -> void:
 	_refresh_collect_button()
