@@ -1,29 +1,6 @@
 extends LocationBase
 ## Workshop location — craft ingredients into a leg, then jigsaw the leg
 ## segments into place.
-##
-## STRUCTURE (mirrors Work.gd but flipped: small frame first, big frame
-## during the minigame). What makes this scene distinctive is the
-## ONE-IMAGE PAN: the framed picture is a window onto a single 500x600
-## source image. We start showing the top 150px (intro phase) and slide
-## down to show the bottom 400px (minigame phase). Between those two
-## states, the player sees a vertical strip of art that's intentionally
-## never fully visible in either resting state.
-##
-## All rendering is 1:1 — no upscale. The frame is literally 500 source
-## pixels wide and 150 or 400 source pixels tall at any given time.
-##
-## PAN MECHANICS
-## We swap SceneImage.texture for an AtlasTexture wrapping the 500x600
-## source. The atlas's `region` field controls what slice of the source
-## we draw. We tween a float `t` from 0..1; its setter recomputes both
-## the atlas region AND the frame's custom_minimum_size on every
-## assignment, so a single tween drives both the slide and the expand
-## in lockstep.
-##
-## At t=0:   region = (0, 0, 500, 150),     frame = 500x150
-## At t=0.5: region = (0, 100, 500, 275),   frame = 500x275  (buffer zone)
-## At t=1:   region = (0, 200, 500, 400),   frame = 500x400
 
 const REWARD_COLLECT: Dictionary = {
 	"money": 0,
@@ -35,12 +12,9 @@ const CHOICE_BUTTON_HEIGHT: int = 110
 const CHOICE_FONT_SIZE: int = 36
 const PROMPT_COLOR: String = "#e8c468"
 
-# --- pan geometry (native source pixels, 1:1 with display) ---
+# --- pan geometry ---
+const SCALE_MULT: float = 1.8
 
-## Search list for the 500x600 pan source. We try each path in order;
-## first one that exists wins. This is defensive against the asset
-## moving between assets/textures/icons/ and assets/textures/backgrounds/
-## (the project has examples in both folders).
 const PAN_IMAGE_PATHS: Array[String] = [
 	"res://assets/textures/backgrounds/large_workshop.png",
 	"res://assets/textures/icons/large_workshop.png",
@@ -52,7 +26,7 @@ const PAN_WIDTH: float = 500.0
 const PAN_SOURCE_HEIGHT: float = 600.0
 
 const INTRO_REGION_Y: float = 0.0
-const INTRO_REGION_HEIGHT: float = 150.0
+const INTRO_REGION_HEIGHT: float = 125.0
 
 const MINIGAME_REGION_Y: float = PAN_SOURCE_HEIGHT - 400.0  # = 200
 const MINIGAME_REGION_HEIGHT: float = 400.0
@@ -63,7 +37,6 @@ const PAN_EASE: int = Tween.EASE_IN_OUT
 
 const WORKSHOP_MINIGAME_SCENE: PackedScene = preload("res://scenes/locations/WorkshopMinigame.tscn")
 
-
 enum WorkshopPhase {
 	INTRO,
 	INTRO_PROMPT,
@@ -73,26 +46,18 @@ enum WorkshopPhase {
 	TINKER_DIALOGUE,
 }
 
-
 @onready var dialogue_box: DialogueBox = %DialogueBox
 @onready var choice_grid: GridContainer = %ChoiceGrid
 
 var _scene_phase: WorkshopPhase = WorkshopPhase.INTRO
 var _minigame: Node = null
-
-## The atlas wrapping our source. Held so the pan tween can mutate its
-## region directly.
 var _atlas: AtlasTexture = null
+var _pan_tween: Tween = null
 
-## Pan progress. 0 = intro region, 1 = minigame region. The setter
-## recomputes both atlas region and frame size on every assignment, so
-## a single tween drives both the slide and the expand together.
 var _pan_t: float = 0.0:
 	set(value):
 		_pan_t = clamp(value, 0.0, 1.0)
 		_apply_pan(_pan_t)
-
-var _pan_tween: Tween = null
 
 
 func _ready() -> void:
@@ -103,10 +68,6 @@ func _ready() -> void:
 
 	dialogue_box.finished.connect(_on_dialogue_finished)
 
-	# Install the atlas BEFORE the player sees anything. workshop.tres
-	# declares frame_size = (500, 150) so Main has already animated the
-	# frame to that size during the FlowerLoad wipe; we just need to put
-	# the atlas in place and set t=0 to render the intro slice.
 	_install_pan_atlas()
 	_pan_t = 0.0
 
@@ -118,29 +79,22 @@ func _ready() -> void:
 func _install_pan_atlas() -> void:
 	var main: Node = get_tree().current_scene
 	if main == null or not "scene_image" in main:
-		push_error("Workshop: Main.scene_image is unavailable. Pan atlas not installed.")
 		return
+
+	# Take manual control of the frame size so Main's default tweens don't fight us
+	if main.get("_frame_size_tween") is Tween and main._frame_size_tween.is_valid():
+		main._frame_size_tween.kill()
+	if main.get("_frame_outer_tween") is Tween and main._frame_outer_tween.is_valid():
+		main._frame_outer_tween.kill()
+	
+	# Lock the outer frame to the upscaled width (900)
+	if "frame_outer" in main and main.frame_outer:
+		main.frame_outer.custom_minimum_size.x = PAN_WIDTH * SCALE_MULT
 
 	var source_tex: Texture2D = _load_pan_source()
 	if source_tex == null:
-		push_error(
-			"Workshop: NONE of the candidate pan source paths exist on disk.\n" +
-			"Looked in: %s\n" +
-			"Place your 500x600 image at one of those paths or edit " +
-			"PAN_IMAGE_PATHS at the top of Workshop.gd." % [PAN_IMAGE_PATHS]
-		)
-		# Leave the existing scene_image.texture in place — at least the
-		# player sees something (even if it's the wrong thing). Better
-		# than a blank picture.
+		push_error("Workshop: NONE of the candidate pan source paths exist on disk.")
 		return
-
-	# Verify dimensions so a wrong-size image trips loudly.
-	var actual_size: Vector2 = source_tex.get_size()
-	if actual_size != Vector2(PAN_WIDTH, PAN_SOURCE_HEIGHT):
-		push_warning(
-			"Workshop: pan source has size %s, expected %s. Pan may look wrong." %
-			[actual_size, Vector2(PAN_WIDTH, PAN_SOURCE_HEIGHT)]
-		)
 
 	_atlas = AtlasTexture.new()
 	_atlas.atlas = source_tex
@@ -148,20 +102,15 @@ func _install_pan_atlas() -> void:
 	_atlas.filter_clip = true
 
 	main.scene_image.texture = _atlas
-	# Defensive: also force scene_image's min size to the intro window.
-	# workshop.tres already does this via Main's resize animation, but
-	# this guards against the case where Main applied a different size
-	# first or the .tres value drifted.
-	main.scene_image.custom_minimum_size = Vector2(PAN_WIDTH, INTRO_REGION_HEIGHT)
+	# Set inner frame to 900x225 (500x125 * 1.8)
+	main.scene_image.custom_minimum_size = Vector2(PAN_WIDTH * SCALE_MULT, INTRO_REGION_HEIGHT * SCALE_MULT)
 
 
-## Try each candidate path in order; return the first texture that loads.
 func _load_pan_source() -> Texture2D:
 	for path in PAN_IMAGE_PATHS:
 		if ResourceLoader.exists(path):
 			var tex: Texture2D = load(path)
 			if tex:
-				print("Workshop: pan source loaded from ", path)
 				return tex
 	return null
 
@@ -172,11 +121,16 @@ func _apply_pan(t: float) -> void:
 
 	var y: float = lerp(INTRO_REGION_Y, MINIGAME_REGION_Y, t)
 	var h: float = lerp(INTRO_REGION_HEIGHT, MINIGAME_REGION_HEIGHT, t)
+	
+	# The atlas region reads native 500x400 source pixels
 	_atlas.region = Rect2(0, y, PAN_WIDTH, h)
 
 	var main: Node = get_tree().current_scene
 	if main and "scene_image" in main:
-		main.scene_image.custom_minimum_size = Vector2(PAN_WIDTH, h)
+		# The visual container stays multiplied by 1.8
+		main.scene_image.custom_minimum_size = Vector2(PAN_WIDTH * SCALE_MULT, h * SCALE_MULT)
+		if "frame_outer" in main and main.frame_outer:
+			main.frame_outer.custom_minimum_size.x = PAN_WIDTH * SCALE_MULT
 
 
 func _start_pan_to_minigame(on_complete: Callable) -> void:
@@ -265,13 +219,17 @@ func _enter_minigame() -> void:
 
 
 func _on_pan_complete() -> void:
-	# Belt-and-suspenders: snap the final state in case the tween got
-	# killed early and t didn't reach exactly 1.0.
 	_pan_t = 1.0
 
 	var main: Node = get_tree().current_scene
 
 	_minigame = WORKSHOP_MINIGAME_SCENE.instantiate()
+	
+	# --- THE MAGIC FIX ---
+	# The UI was built for 500x400. To make it perfectly fit the 900x720 
+	# upscaled background, we scale the entire UI layer by 1.8 before mounting it!
+	_minigame.scale = Vector2(SCALE_MULT, SCALE_MULT)
+	
 	if _minigame.has_signal("collected"):
 		_minigame.collected.connect(_on_minigame_collected)
 	if main and main.has_method("show_scene_overlay"):

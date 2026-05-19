@@ -1,10 +1,22 @@
-[gd_scene load_steps=4 format=3 uid="uid://c5gxw8m9p3rkx"]
+[gd_scene format=3 uid="uid://c5gxw8nap3rkx"]
 
-[ext_resource type="Script" path="res://scenes/locations/WorkshopMinigame.gd" id="1"]
-[ext_resource type="Script" path="res://scenes/locations/WorkshopBin.gd" id="2"]
-[ext_resource type="Script" path="res://scenes/locations/WorkshopAssemblySlot.gd" id="3"]
+[ext_resource type="Script" uid="uid://cx0u8mdh6iy8w" path="res://scenes/locations/WorkshopMinigame.gd" id="1"]
+[ext_resource type="Script" uid="uid://b1a6f581y8i2h" path="res://scenes/locations/WorkshopBin.gd" id="2"]
+[ext_resource type="Script" uid="uid://cg01f011fwtyo" path="res://scenes/locations/WorkshopAssemblySlot.gd" id="3"]
+[ext_resource type="Script" uid="uid://48i7jx7w0l7j" path="res://scenes/locations/WorkshopPiece.gd" id="4_8jev8"]
+[ext_resource type="Texture2D" uid="uid://e7s6k3l2wj6f" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/butt.png" id="5_yxkyj"]
+[ext_resource type="Texture2D" uid="uid://d1ffgn71w4akt" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/butt_shadow.png" id="6_uvhpo"]
+[ext_resource type="Texture2D" uid="uid://6axq5liay715" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/upper_thigh.png" id="7_qh8ti"]
+[ext_resource type="Texture2D" uid="uid://ct7h3j5r63ee4" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/upper_thigh_shadow.png" id="8_geguh"]
+[ext_resource type="Texture2D" uid="uid://cyf1lhspj8ti3" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/upper_thigh_gears.png" id="9_yw1xm"]
+[ext_resource type="Texture2D" uid="uid://d0xhcju1pang5" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/mid_thigh_gears.png" id="10_g0bh1"]
+[ext_resource type="Texture2D" uid="uid://duw6t48vddya4" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/mid_thigh.png" id="11_kl8h8"]
+[ext_resource type="Texture2D" uid="uid://cj5tq6qfbfyq4" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/side_thigh.png" id="12_0s8cq"]
+[ext_resource type="Texture2D" uid="uid://c77w5hvvuits0" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/side_thigh_shadow.png" id="13_y4i5t"]
+[ext_resource type="Texture2D" uid="uid://b4exx4qxb7tos" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/knee.png" id="14_tkmvw"]
+[ext_resource type="Texture2D" uid="uid://dn6cwfsnmqtgn" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/knee_shadow.png" id="15_vt70f"]
 
-[node name="WorkshopMinigame" type="Control"]
+[node name="WorkshopMinigame" type="Control" unique_id=3875111]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -14,38 +26,26 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1")
 
-; Coords are NATIVE 500x400 pixels (workshop renders 1:1).
-;   Ingredients tray: ( 12,  12) -> (240, 184)
-;   Craft bin       : ( 12, 196) -> (240, 384)
-;       CRAFT button: (170, 354) -> (232, 380)
-;   Assembly area   : (252,  12) -> (488, 384)
-;       9 segment slots stacked
-;       COLLECT btn : (390, 354) -> (480, 380)
-
-; ---------------- INGREDIENTS TRAY ----------------
-[node name="IngredientsTray" type="Control" parent="."]
+[node name="IngredientsTray" type="Control" parent="." unique_id=1800495483]
 unique_name_in_owner = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 12.0
 offset_top = 12.0
 offset_right = 240.0
 offset_bottom = 184.0
 mouse_filter = 2
 
-[node name="TrayLabel" type="Label" parent="IngredientsTray"]
+[node name="TrayLabel" type="Label" parent="IngredientsTray" unique_id=1465148120]
 layout_mode = 0
-offset_left = 0.0
 offset_top = -14.0
 offset_right = 160.0
-offset_bottom = 0.0
-text = "INGREDIENTS"
-theme_override_font_sizes/font_size = 10
 theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "INGREDIENTS"
 
-; ---------------- CRAFT BIN ----------------
-[node name="CraftBin" type="Control" parent="."]
+[node name="CraftBin" type="Control" parent="." unique_id=1263889982]
 unique_name_in_owner = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 12.0
 offset_top = 196.0
 offset_right = 240.0
@@ -53,27 +53,25 @@ offset_bottom = 384.0
 mouse_filter = 2
 script = ExtResource("2")
 
-[node name="BinLabel" type="Label" parent="CraftBin"]
+[node name="BinLabel" type="Label" parent="CraftBin" unique_id=968598289]
 layout_mode = 0
-offset_left = 0.0
 offset_top = -14.0
 offset_right = 160.0
-offset_bottom = 0.0
-text = "CRAFT BIN"
-theme_override_font_sizes/font_size = 10
 theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "CRAFT BIN"
 
-[node name="BinBorder" type="Panel" parent="CraftBin"]
+[node name="BinBorder" type="Panel" parent="CraftBin" unique_id=1911154387]
+self_modulate = Color(1, 1, 1, 0.25)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-self_modulate = Color(1, 1, 1, 0.25)
 mouse_filter = 2
 
-[node name="CraftButton" type="Button" parent="CraftBin"]
+[node name="CraftButton" type="Button" parent="CraftBin" unique_id=1665007788]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 3
@@ -87,95 +85,179 @@ offset_right = -4.0
 offset_bottom = -4.0
 grow_horizontal = 0
 grow_vertical = 0
-text = "CRAFT"
-disabled = true
 theme_override_font_sizes/font_size = 11
+disabled = true
+text = "CRAFT"
 
-; ---------------- ASSEMBLY ----------------
-[node name="AssemblyArea" type="Control" parent="."]
+[node name="AssemblyArea" type="Control" parent="." unique_id=1396360039]
 unique_name_in_owner = true
-layout_mode = 0
+anchors_preset = 0
 offset_left = 252.0
 offset_top = 12.0
 offset_right = 488.0
 offset_bottom = 384.0
 mouse_filter = 2
 
-[node name="AssemblyLabel" type="Label" parent="AssemblyArea"]
+[node name="AssemblyLabel" type="Label" parent="AssemblyArea" unique_id=1018689831]
 layout_mode = 0
-offset_left = 0.0
 offset_top = -14.0
 offset_right = 160.0
-offset_bottom = 0.0
-text = "ASSEMBLY"
-theme_override_font_sizes/font_size = 10
 theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "ASSEMBLY"
 
-[node name="AssemblyBorder" type="Panel" parent="AssemblyArea"]
+[node name="AssemblyBorder" type="Panel" parent="AssemblyArea" unique_id=970173424]
+self_modulate = Color(1, 1, 1, 0.25)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-self_modulate = Color(1, 1, 1, 0.25)
 mouse_filter = 2
 
-; 9 segment slots, 70x32 each, stacked vertically in the assembly area.
-; Slot positions are first-pass; tune against the art.
-
-[node name="ButtSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
-offset_left = 83.0
-offset_top = 6.0
-offset_right = 153.0
-offset_bottom = 38.0
+[node name="ButtSlot" type="Control" parent="AssemblyArea" unique_id=753166753]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"butt"
+debug_draw = true
 
-[node name="UpperThighSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
-offset_left = 83.0
-offset_top = 40.0
-offset_right = 153.0
-offset_bottom = 72.0
+[node name="butt_piece" type="Control" parent="AssemblyArea/ButtSlot" unique_id=2063088160]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"butt"
+texture = ExtResource("5_yxkyj")
+shadow_texture = ExtResource("6_uvhpo")
+visual_offset = null
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="UpperThighSlot" type="Control" parent="AssemblyArea" unique_id=903077695]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"upper_thigh"
+debug_draw = true
 
-[node name="MidThighSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
-offset_left = 83.0
-offset_top = 74.0
-offset_right = 153.0
-offset_bottom = 106.0
+[node name="upper_thigh" type="Control" parent="AssemblyArea/UpperThighSlot" unique_id=1263028035]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"upper_thigh"
+texture = ExtResource("7_qh8ti")
+shadow_texture = ExtResource("8_geguh")
+visual_offset = null
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="upper_thigh_gears" type="Control" parent="AssemblyArea/UpperThighSlot" unique_id=401060967]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"upper_thigh_gears"
+texture = ExtResource("9_yw1xm")
+visual_offset = null
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="MidThighSlot" type="Control" parent="AssemblyArea" unique_id=1742280269]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"mid_thigh"
+debug_draw = true
 
-[node name="SideThighSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
-offset_left = 83.0
-offset_top = 108.0
-offset_right = 153.0
-offset_bottom = 140.0
+[node name="mid_thigh_gears" type="Control" parent="AssemblyArea/MidThighSlot" unique_id=1924878747]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"upper_thigh"
+texture = ExtResource("10_g0bh1")
+visual_offset = null
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="mid_thigh" type="Control" parent="AssemblyArea/MidThighSlot" unique_id=2075452651]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"mid_thigh"
+texture = ExtResource("11_kl8h8")
+shadow_texture = ExtResource("8_geguh")
+visual_offset = null
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="SideThighSlot" type="Control" parent="AssemblyArea" unique_id=1520272026]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"side_thigh"
+debug_draw = true
 
-[node name="KneeSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
-offset_left = 83.0
-offset_top = 142.0
-offset_right = 153.0
-offset_bottom = 174.0
+[node name="side_thigh" type="Control" parent="AssemblyArea/SideThighSlot" unique_id=895148640]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"side_thigh"
+texture = ExtResource("12_0s8cq")
+shadow_texture = ExtResource("13_y4i5t")
+visual_offset = null
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="KneeSlot" type="Control" parent="AssemblyArea" unique_id=312987006]
+anchors_preset = 0
+offset_right = 70.0
+offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"knee"
+debug_draw = true
 
-[node name="CalfSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
+[node name="knee" type="Control" parent="AssemblyArea/KneeSlot" unique_id=599878234]
+layout_mode = 1
+anchor_left = 0.286
+anchor_top = 6.9990005
+anchor_right = 1.1340001
+anchor_bottom = 7.774
+offset_left = -20.02
+offset_top = -223.96802
+offset_right = -14.380005
+offset_bottom = -188.768
+pivot_offset = Vector2(-132, 38)
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"knee"
+texture = ExtResource("14_tkmvw")
+shadow_texture = ExtResource("15_vt70f")
+auto_center = null
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="CalfSlot" type="Control" parent="AssemblyArea" unique_id=1288607803]
+anchors_preset = 0
 offset_left = 83.0
 offset_top = 176.0
 offset_right = 153.0
@@ -183,9 +265,10 @@ offset_bottom = 208.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"calf"
+debug_draw = true
 
-[node name="LowerLegSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
+[node name="LowerLegSlot" type="Control" parent="AssemblyArea" unique_id=1951683847]
+anchors_preset = 0
 offset_left = 83.0
 offset_top = 210.0
 offset_right = 153.0
@@ -193,9 +276,10 @@ offset_bottom = 242.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"lower_leg"
+debug_draw = true
 
-[node name="AnkleSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
+[node name="AnkleSlot" type="Control" parent="AssemblyArea" unique_id=127950303]
+anchors_preset = 0
 offset_left = 83.0
 offset_top = 244.0
 offset_right = 153.0
@@ -203,9 +287,10 @@ offset_bottom = 276.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"ankle"
+debug_draw = true
 
-[node name="FootSlot" type="Control" parent="AssemblyArea"]
-layout_mode = 0
+[node name="FootSlot" type="Control" parent="AssemblyArea" unique_id=101051628]
+anchors_preset = 0
 offset_left = 83.0
 offset_top = 278.0
 offset_right = 153.0
@@ -213,10 +298,11 @@ offset_bottom = 310.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"foot"
+debug_draw = true
 
-; ---------------- COLLECT ----------------
-[node name="CollectButton" type="Button" parent="AssemblyArea"]
+[node name="CollectButton" type="Button" parent="AssemblyArea" unique_id=754093379]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -229,7 +315,6 @@ offset_right = -4.0
 offset_bottom = -4.0
 grow_horizontal = 0
 grow_vertical = 0
-text = "COLLECT"
-disabled = true
-visible = false
 theme_override_font_sizes/font_size = 11
+disabled = true
+text = "COLLECT"

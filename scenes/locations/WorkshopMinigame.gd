@@ -1,60 +1,12 @@
 extends Control
 class_name WorkshopMinigame
-## The crafting + assembly minigame, mounted inside the picture frame.
-##
-## INPUT MODEL
-## -----------
-## We sit deep under SceneImage, where Control's mouse_filter chain
-## breaks both press and release events. Following Store.gd's pattern,
-## we handle ALL input through the global _input pipe and do our own
-## hit-testing against global rects.
-##
-##   Click (left press):
-##     1. Walk pieces in reverse z-order (topmost first). First piece
-##        whose global_rect contains the click is picked up.
-##     2. If no piece was hit, test the CRAFT button (in the bin), then
-##        the COLLECT button. Either click is routed manually.
-##
-##   Motion while _active_drag is set:
-##     Forward the global mouse position into _active_drag.update_drag().
-##
-##   Left release while _active_drag is set:
-##     Finish the drag. Try each assembly slot, then the craft bin,
-##     then snap home.
-##
-## LAYOUT
-## ------
-## Authored in NATIVE source pixels (500x400) since Workshop renders 1:1.
-##
-##   Ingredients tray:  ( 12,  12) to (240, 184)
-##   Craft bin:         ( 12, 196) to (240, 384)
-##     CRAFT button:    (170, 354) to (232, 380)
-##   Assembly area:     (252,  12) to (488, 384)
-##     9 segment slots stacked top->bottom
-##     COLLECT button:  (390, 354) to (480, 380)
-##
-## CRAFT FLOW
-## ----------
-## Player drags ingredients from tray to bin. CRAFT enables when the bin
-## contains at least the recipe inputs (currently 1 nanobot, 1 scrap, 1
-## nuts_bolts). On press, we consume from GameState, clear the bin, and
-## spawn EVERY segment piece in a loose grid centered in the bin. Player
-## then drags pieces to assembly slots. Dropping any piece of a segment
-## on its slot places the whole segment (all pieces in the bin that
-## share the segment_id snap to their authored offsets). COLLECT
-## enables when all slots are filled.
 
 signal collected
 
-
-## Recipe inputs. Editable in the editor on a per-instance basis.
 @export var recipe_inputs: Dictionary = {
-	"nanobots": 1,
 	"scrap_metal": 1,
-	"nuts_bolts": 1,
 }
 
-## Ingredient art paths, keyed by GameState ingredient id.
 const INGREDIENT_PATHS: Dictionary = {
 	"scrap_metal":   "res://assets/textures/icons/scrap_metal.png",
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts.png",
@@ -71,34 +23,21 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"oil":           "res://assets/textures/icons/oil_shadow.png",
 }
 
-const LEG_PART_ROOT: String = "res://assets/textures/icons/workshop robot leg/"
-
-
 @onready var ingredients_tray: Control = %IngredientsTray
 @onready var craft_bin: WorkshopBin = %CraftBin
 @onready var craft_button: Button = %CraftButton
 @onready var assembly: Control = %AssemblyArea
 @onready var collect_button: Button = %CollectButton
 
-# segment_id (String) -> {anchor: Vector2, pieces: Array of Dictionaries}
 var _segments: Dictionary = {}
-
-# segment_id (String) -> WorkshopAssemblySlot node
 var _assembly_slots: Dictionary = {}
-
-# Currently dragged piece, or null.
 var _active_drag: WorkshopPiece = null
-
-# Has CRAFT fired? Used for input-routing decisions (e.g. ignore CRAFT
-# button after it's been pressed).
 var _crafted: bool = false
 
-
 func _ready() -> void:
-	# Root passes clicks through; we hit-test in _input ourselves.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	_build_segment_table()
+	# Reads the manually placed pieces out of the editor tree!
 	_collect_assembly_slots()
 	_populate_ingredients_tray()
 
@@ -108,12 +47,9 @@ func _ready() -> void:
 	collect_button.disabled = true
 	collect_button.visible = false
 
-
-# --- global input pipe (Store pattern) ---
+# --- global input pipe ---
 
 func _input(event: InputEvent) -> void:
-	# Bail out during scene transitions so we don't fire clicks while
-	# the picture is wiping.
 	var main: Node = get_tree().current_scene
 	if main and "transition" in main:
 		var tr = main.transition
@@ -134,14 +70,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and _active_drag:
 		_active_drag.update_drag(event.global_position)
 
-
 func _handle_left_press(global_pos: Vector2) -> void:
-	# Already dragging? Ignore extra presses.
 	if _active_drag:
 		return
 
-	# 1. Buttons first — they sit "on top" of the bins. Buttons only
-	#    fire if they're enabled and visible.
 	if _hit_button(craft_button, global_pos):
 		if not craft_button.disabled:
 			_on_craft_pressed()
@@ -151,13 +83,10 @@ func _handle_left_press(global_pos: Vector2) -> void:
 			_on_collect_pressed()
 		return
 
-	# 2. Pieces — walk in reverse z-order. We collect every piece in our
-	#    tree (tray slots, bin, anywhere) and pick the topmost hit.
 	var hit: WorkshopPiece = _find_topmost_piece_at(global_pos)
 	if hit == null:
 		return
 	_pick_up(hit, global_pos)
-
 
 func _handle_left_release(global_pos: Vector2) -> void:
 	if _active_drag == null:
@@ -166,14 +95,6 @@ func _handle_left_release(global_pos: Vector2) -> void:
 	_active_drag = null
 	piece.end_drag()
 
-	# Tray-originated piece logic — see _on_tray_grab. If the player
-	# pulled from a tray slot but never moved, snap home rather than
-	# trying to drop on something. We approximate "never moved" via the
-	# piece's home_parent being a tray slot AND the cursor still being
-	# inside that slot's rect. (Tray slots' names start with "Tray_".)
-	# Most cases this just falls through to the normal drop logic.
-
-	# 1. Assembly slot? Only for segment pieces.
 	if piece.segment_id != &"":
 		for slot_id in _assembly_slots:
 			var slot: WorkshopAssemblySlot = _assembly_slots[slot_id]
@@ -181,14 +102,11 @@ func _handle_left_release(global_pos: Vector2) -> void:
 				_place_segment(slot, piece)
 				return
 
-	# 2. Craft bin?
 	if craft_bin.accepts_point(global_pos):
 		_drop_into_bin(piece, global_pos)
 		return
 
-	# 3. Nothing — snap home.
 	piece.snap_home()
-
 
 # --- hit testing helpers ---
 
@@ -197,22 +115,14 @@ func _hit_button(btn: Button, global_pos: Vector2) -> bool:
 		return false
 	return btn.get_global_rect().has_point(global_pos)
 
-
-## Walk every piece in our subtree and return the topmost (latest in
-## sibling order = drawn on top) whose global rect contains the point.
 func _find_topmost_piece_at(global_pos: Vector2) -> WorkshopPiece:
 	var hits: Array = []
 	_collect_pieces(self, hits)
-	# `hits` is in tree-walk order. The Control draw order is sibling
-	# order, with later siblings drawing on top. The simplest correct
-	# pick is to walk hits in reverse and take the first that contains
-	# the point.
 	for i in range(hits.size() - 1, -1, -1):
 		var piece: WorkshopPiece = hits[i]
 		if piece.hit_test(global_pos):
 			return piece
 	return null
-
 
 func _collect_pieces(node: Node, out: Array) -> void:
 	for child in node.get_children():
@@ -220,32 +130,21 @@ func _collect_pieces(node: Node, out: Array) -> void:
 			out.append(child)
 		_collect_pieces(child, out)
 
-
-# --- pick-up ---
+# --- pick-up / drop ---
 
 func _pick_up(piece: WorkshopPiece, global_pos: Vector2) -> void:
 	_active_drag = piece
-
-	# Lift to top of the minigame so we draw above bins/slots.
 	if piece.get_parent() != self:
 		var gp: Vector2 = piece.global_position
 		piece.get_parent().remove_child(piece)
 		add_child(piece)
 		piece.global_position = gp
 	move_child(piece, get_child_count() - 1)
-
 	piece.start_drag(global_pos)
 
-	# Tray-side bookkeeping: if the piece was pulled from a tray slot,
-	# the tray needs to know so it can spawn a replacement tile (if the
-	# player still has more of that ingredient).
 	if piece.home_parent and piece.home_parent.get_parent() == ingredients_tray:
-		# home_parent is the tray slot Control; its name encodes the id.
 		var id: String = String(piece.home_parent.name).trim_prefix("Tray_")
 		call_deferred("_maybe_replace_tray_tile", id, piece.home_parent)
-
-
-# --- drop into bin ---
 
 func _drop_into_bin(piece: WorkshopPiece, global_drop_pos: Vector2) -> void:
 	if piece.get_parent() != craft_bin:
@@ -254,16 +153,13 @@ func _drop_into_bin(piece: WorkshopPiece, global_drop_pos: Vector2) -> void:
 			current_parent.remove_child(piece)
 		craft_bin.add_child(piece)
 
-	# Place so the piece's CENTER lands on the drop position.
 	var local_pos: Vector2 = craft_bin.get_global_transform().affine_inverse() * global_drop_pos
 	piece.position = local_pos - piece.size * 0.5
-	# Clamp inside the bin so a piece doesn't bleed off-edge.
 	piece.position.x = clamp(piece.position.x, 0, max(0, craft_bin.size.x - piece.size.x))
 	piece.position.y = clamp(piece.position.y, 0, max(0, craft_bin.size.y - piece.size.y))
 
 	piece.home_parent = craft_bin
 	craft_bin.contents_changed.emit()
-
 
 # --- ingredients tray ---
 
@@ -271,7 +167,6 @@ func _populate_ingredients_tray() -> void:
 	for child in ingredients_tray.get_children():
 		child.queue_free()
 
-	# Native pixel sizes — we're rendering 1:1 so these are real pixels.
 	const SLOT_SIZE: Vector2 = Vector2(40, 40)
 	const SLOT_PAD: Vector2 = Vector2(6, 6)
 	const MAX_COLS: int = 4
@@ -318,7 +213,6 @@ func _populate_ingredients_tray() -> void:
 			col = 0
 			row += 1
 
-
 func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	var tex_path: String = String(INGREDIENT_PATHS.get(id, ""))
 	if tex_path == "" or not ResourceLoader.exists(tex_path):
@@ -330,6 +224,9 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	piece.item_id = StringName(id)
 	piece.segment_id = &""
 	piece.texture = load(tex_path)
+	
+	# Ingredients auto-center themselves inside the 40x40 tray slots
+	piece.auto_center = true
 
 	var shadow_path: String = String(INGREDIENT_SHADOW_PATHS.get(id, ""))
 	if shadow_path != "" and ResourceLoader.exists(shadow_path):
@@ -337,11 +234,9 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 
 	return piece
 
-
 func _maybe_replace_tray_tile(id: String, source_slot: Control) -> void:
 	if source_slot == null or not is_instance_valid(source_slot):
 		return
-	# Already has a piece? Don't stack.
 	for child in source_slot.get_children():
 		if child is WorkshopPiece:
 			return
@@ -362,9 +257,6 @@ func _maybe_replace_tray_tile(id: String, source_slot: Control) -> void:
 	source_slot.add_child(tile)
 	tile.position = Vector2.ZERO
 
-
-## How many of `id` are visually available (= total owned minus what's
-## currently sitting in the bin queued for craft).
 func _available_count(id: String) -> int:
 	var total: int = int(GameState.ingredients.get(id, 0))
 	var in_bin: int = 0
@@ -373,8 +265,6 @@ func _available_count(id: String) -> int:
 			in_bin += 1
 	return total - in_bin
 
-
-## After CRAFT, refresh all tray badges (since counts decreased).
 func _refresh_tray_counts() -> void:
 	for slot in ingredients_tray.get_children():
 		var id: String = String(slot.name).trim_prefix("Tray_")
@@ -390,7 +280,6 @@ func _refresh_tray_counts() -> void:
 		if not has_piece and available > 0:
 			_maybe_replace_tray_tile(id, slot)
 
-
 # --- craft ---
 
 func _refresh_craft_button() -> void:
@@ -398,7 +287,6 @@ func _refresh_craft_button() -> void:
 		craft_button.disabled = true
 		return
 	craft_button.disabled = not _bin_has_recipe()
-
 
 func _bin_has_recipe() -> bool:
 	var counts: Dictionary = craft_bin.count_items()
@@ -409,13 +297,11 @@ func _bin_has_recipe() -> bool:
 			return false
 	return true
 
-
 func _on_craft_pressed() -> void:
 	if _crafted or not _bin_has_recipe():
 		return
 	_crafted = true
 
-	# Consume from GameState (the source of truth).
 	for id_key in recipe_inputs:
 		var id: String = String(id_key)
 		var need: int = int(recipe_inputs[id_key])
@@ -429,10 +315,8 @@ func _on_craft_pressed() -> void:
 	craft_button.disabled = true
 	collect_button.visible = true
 
-
 func _spawn_segment_pieces_into_bin() -> void:
 	var center: Vector2 = craft_bin.local_center()
-	# Native pixel grid since we're 1:1.
 	var grid_cols: int = 4
 	var spacing: float = 24.0
 	var i: int = 0
@@ -455,7 +339,6 @@ func _spawn_segment_pieces_into_bin() -> void:
 
 	craft_bin.contents_changed.emit()
 
-
 func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopPiece:
 	var tex: Texture2D = piece_def.get("texture")
 	if tex == null:
@@ -468,11 +351,13 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 	piece.segment_id = seg_id
 	piece.texture = tex
 	piece.shadow_texture = piece_def.get("shadow")
+	
 	piece.piece_offset = piece_def.get("offset", Vector2.ZERO)
+	piece.visual_offset = piece_def.get("visual_offset", Vector2.ZERO)
 	piece.shadow_offset = piece_def.get("shadow_offset", Vector2.ZERO)
-	piece.size = tex.get_size()
+	piece.size = piece_def.get("size", tex.get_size())
+	
 	return piece
-
 
 # --- place a segment ---
 
@@ -486,15 +371,11 @@ func _place_segment(slot: WorkshopAssemblySlot, _dropped_piece: WorkshopPiece) -
 	craft_bin.contents_changed.emit()
 	_refresh_collect_button()
 
-
 func _gather_pieces_for_segment(node: Node, seg_id: StringName, out: Array) -> void:
 	for child in node.get_children():
 		if child is WorkshopPiece and child.segment_id == seg_id and not child.locked:
 			out.append(child)
 		_gather_pieces_for_segment(child, seg_id, out)
-
-
-# --- collect ---
 
 func _refresh_collect_button() -> void:
 	var all_filled: bool = true
@@ -505,176 +386,43 @@ func _refresh_collect_button() -> void:
 			break
 	collect_button.disabled = not all_filled
 
-
 func _on_collect_pressed() -> void:
 	collected.emit()
 
-
-# --- segment table construction (unchanged from previous version) ---
-
-func _build_segment_table() -> void:
-	# Anchors in NATIVE source pixels (Workshop renders 1:1 in the 500x400
-	# bottom slice of the pan image). Assembly area lives at x in [252, 488]
-	# and y in [12, 384]. We pin segments around x = 374 (center of that
-	# range relative to assembly local space, which is x in [0, 236]).
-	var anchor_x: float = 118.0
-
-	var add = func(seg_id: String, anchor: Vector2, pieces: Array) -> void:
-		_segments[StringName(seg_id)] = {
-			"anchor": anchor,
-			"pieces": pieces,
-		}
-
-	var tex = func(rel_path: String) -> Texture2D:
-		var full: String = LEG_PART_ROOT + rel_path
-		if not ResourceLoader.exists(full):
-			push_warning("Workshop: missing texture %s" % full)
-			return null
-		return load(full)
-
-	var sha = func(rel_path: String) -> Texture2D:
-		var full: String = LEG_PART_ROOT + rel_path
-		if not ResourceLoader.exists(full):
-			return null
-		return load(full)
-
-	add.call("butt", Vector2(anchor_x, 10), [
-		{"id": &"butt",
-		 "texture": tex.call("robot_leg_thighs/butt.png"),
-		 "shadow":  sha.call("robot_leg_shadow/butt_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-	])
-
-	add.call("upper_thigh", Vector2(anchor_x, 40), [
-		{"id": &"upper_thigh",
-		 "texture": tex.call("robot_leg_thighs/upper_thigh.png"),
-		 "shadow":  sha.call("robot_leg_shadow/upper_thigh_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"upper_thigh_gears",
-		 "texture": tex.call("robot_leg_thighs/upper_thigh_gears.png"),
-		 "shadow":  null,
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2.ZERO},
-	])
-
-	add.call("mid_thigh", Vector2(anchor_x, 80), [
-		{"id": &"mid_thigh",
-		 "texture": tex.call("robot_leg_thighs/mid_thigh.png"),
-		 "shadow":  sha.call("robot_leg_shadow/mid_thighs_gear_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"mid_thigh_gears",
-		 "texture": tex.call("robot_leg_thighs/mid_thigh_gears.png"),
-		 "shadow":  null,
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2.ZERO},
-	])
-
-	add.call("side_thigh", Vector2(anchor_x, 120), [
-		{"id": &"side_thigh",
-		 "texture": tex.call("robot_leg_thighs/side_thigh.png"),
-		 "shadow":  sha.call("robot_leg_shadow/side_thigh_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-	])
-
-	add.call("knee", Vector2(anchor_x, 160), [
-		{"id": &"knee_joint",
-		 "texture": tex.call("robot_leg_thighs/knee_joint.png"),
-		 "shadow":  sha.call("robot_leg_shadow/knee_joint_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"knee_joint_axel",
-		 "texture": tex.call("robot_leg_thighs/knee_joint_axel.png"),
-		 "shadow":  null,
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2.ZERO},
-		{"id": &"knee",
-		 "texture": tex.call("robot_leg_thighs/knee.png"),
-		 "shadow":  sha.call("robot_leg_shadow/knee_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-	])
-
-	add.call("calf", Vector2(anchor_x, 200), [
-		{"id": &"calf",
-		 "texture": tex.call("robot_leg_lower_legs/calf.png"),
-		 "shadow":  sha.call("robot_leg_shadow/calf_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"inner_gears",
-		 "texture": tex.call("robot_leg_lower_legs/inner_gears.png"),
-		 "shadow":  sha.call("robot_leg_shadow/inner_gear_side_thigh_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-	])
-
-	add.call("lower_leg", Vector2(anchor_x, 235), [
-		{"id": &"lower_leg",
-		 "texture": tex.call("robot_leg_lower_legs/lower_leg.png"),
-		 "shadow":  sha.call("robot_leg_shadow/lower_leg_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"shin",
-		 "texture": tex.call("robot_leg_lower_legs/shin.png"),
-		 "shadow":  sha.call("robot_leg_shadow/shin_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-	])
-
-	add.call("ankle", Vector2(anchor_x, 270), [
-		{"id": &"ankle_cap",
-		 "texture": tex.call("robot_leg_ankle_cap.png"),
-		 "shadow":  sha.call("robot_leg_shadow/ankle_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"ankle_axel",
-		 "texture": tex.call("robot_leg_foot/ankle_axel.png"),
-		 "shadow":  null,
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2.ZERO},
-	])
-
-	add.call("foot", Vector2(anchor_x, 305), [
-		{"id": &"upper_foot",
-		 "texture": tex.call("robot_leg_foot/upper_foot.png"),
-		 "shadow":  sha.call("robot_leg_shadow/upper_foot_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"heel",
-		 "texture": tex.call("robot_leg_foot/heel.png"),
-		 "shadow":  sha.call("robot_leg_shadow/heel_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"middle_foot",
-		 "texture": tex.call("robot_leg_foot/middle_foot.png"),
-		 "shadow":  sha.call("robot_leg_shadow/middle_foot_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"toes",
-		 "texture": tex.call("robot_leg_foot/toes.png"),
-		 "shadow":  sha.call("robot_leg_shadow/toes_shadow.png"),
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2(-2, 2)},
-		{"id": &"toes_border",
-		 "texture": tex.call("robot_leg_foot/toes_border.png"),
-		 "shadow":  null,
-		 "offset":  Vector2(0, 0),
-		 "shadow_offset": Vector2.ZERO},
-	])
-
-
-# --- assembly slot lookup ---
+# --- EDITOR HARVESTING ---
 
 func _collect_assembly_slots() -> void:
 	_assembly_slots.clear()
+	_segments.clear()
+
 	for child in assembly.get_children():
 		if child is WorkshopAssemblySlot:
-			_assembly_slots[String(child.accepts_segment_id)] = child
+			var slot_id: String = String(child.accepts_segment_id)
+			_assembly_slots[slot_id] = child
 			child.placed.connect(_on_slot_placed)
 
+			var pieces: Array = []
+			for i in range(child.get_child_count() - 1, -1, -1):
+				var p: Node = child.get_child(i)
+				if p is WorkshopPiece:
+					var def: Dictionary = {
+						"id": p.item_id,
+						"texture": p.texture,
+						"shadow": p.shadow_texture,
+						"offset": p.position,
+						"visual_offset": p.visual_offset,
+						"shadow_offset": p.shadow_offset,
+						"size": p.size
+					}
+					pieces.append(def)
+					child.remove_child(p)
+					p.queue_free()
+
+			if pieces.size() > 0:
+				_segments[StringName(slot_id)] = {
+					"anchor": child.position,
+					"pieces": pieces
+				}
 
 func _on_slot_placed(_slot: WorkshopAssemblySlot) -> void:
 	_refresh_collect_button()
