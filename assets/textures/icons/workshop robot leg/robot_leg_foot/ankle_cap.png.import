@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://568xp477f7gx"
-path="res://.godot/imported/robot_leg_ankle_cap.png-e0e807a7657296868ec3ffda73b3501a.ctex"
+path="res://.godot/imported/ankle_cap.png-a6c8acade80db0e24c957feaa011e79a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/icons/workshop robot leg/robot_leg_ankle_cap.png"
-dest_files=["res://.godot/imported/robot_leg_ankle_cap.png-e0e807a7657296868ec3ffda73b3501a.ctex"]
+source_file="res://assets/textures/icons/workshop robot leg/robot_leg_foot/ankle_cap.png"
+dest_files=["res://.godot/imported/ankle_cap.png-a6c8acade80db0e24c957feaa011e79a.ctex"]
 
 [params]
 

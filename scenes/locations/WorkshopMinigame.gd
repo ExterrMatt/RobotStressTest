@@ -31,13 +31,16 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 
 var _segments: Dictionary = {}
 var _assembly_slots: Dictionary = {}
-var _active_drag: WorkshopPiece = null
+
+var _active_drag_segment: WorkshopSegment = null
+var _active_drag_piece: WorkshopPiece = null
+
 var _crafted: bool = false
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Reads the manually placed pieces out of the editor tree!
 	_collect_assembly_slots()
 	_populate_ingredients_tray()
 
@@ -46,6 +49,7 @@ func _ready() -> void:
 	craft_button.disabled = true
 	collect_button.disabled = true
 	collect_button.visible = false
+
 
 # --- global input pipe ---
 
@@ -67,11 +71,15 @@ func _input(event: InputEvent) -> void:
 			_handle_left_release(mb.global_position)
 		return
 
-	if event is InputEventMouseMotion and _active_drag:
-		_active_drag.update_drag(event.global_position)
+	if event is InputEventMouseMotion:
+		if _active_drag_segment:
+			_active_drag_segment.update_drag(event.global_position)
+		elif _active_drag_piece:
+			_active_drag_piece.update_drag(event.global_position)
+
 
 func _handle_left_press(global_pos: Vector2) -> void:
-	if _active_drag:
+	if _active_drag_segment or _active_drag_piece:
 		return
 
 	if _hit_button(craft_button, global_pos):
@@ -83,30 +91,42 @@ func _handle_left_press(global_pos: Vector2) -> void:
 			_on_collect_pressed()
 		return
 
+	var seg: WorkshopSegment = _find_topmost_segment_at(global_pos)
+	if seg != null:
+		_pick_up_segment(seg, global_pos)
+		return
+
 	var hit: WorkshopPiece = _find_topmost_piece_at(global_pos)
 	if hit == null:
 		return
-	_pick_up(hit, global_pos)
+	_pick_up_piece(hit, global_pos)
+
 
 func _handle_left_release(global_pos: Vector2) -> void:
-	if _active_drag == null:
-		return
-	var piece: WorkshopPiece = _active_drag
-	_active_drag = null
-	piece.end_drag()
+	if _active_drag_segment != null:
+		var segment: WorkshopSegment = _active_drag_segment
+		_active_drag_segment = null
+		segment.end_drag()
 
-	if piece.segment_id != &"":
 		for slot_id in _assembly_slots:
 			var slot: WorkshopAssemblySlot = _assembly_slots[slot_id]
-			if slot.is_valid_drop(piece, global_pos):
-				_place_segment(slot, piece)
+			if slot.is_valid_drop_for_segment(segment, global_pos):
+				slot.accept_segment(segment)
+				_refresh_collect_button()
 				return
-
-	if craft_bin.accepts_point(global_pos):
-		_drop_into_bin(piece, global_pos)
 		return
 
-	piece.snap_home()
+	if _active_drag_piece != null:
+		var piece: WorkshopPiece = _active_drag_piece
+		_active_drag_piece = null
+		piece.end_drag()
+
+		if craft_bin.accepts_point(global_pos):
+			_drop_into_bin(piece, global_pos)
+			return
+
+		piece.snap_home()
+
 
 # --- hit testing helpers ---
 
@@ -115,27 +135,22 @@ func _hit_button(btn: Button, global_pos: Vector2) -> bool:
 		return false
 	return btn.get_global_rect().has_point(global_pos)
 
-func _make_piece_from_def(piece_def: Dictionary, seg_id: StringName) -> WorkshopPiece:
-	var tex: Texture2D = piece_def.get("texture")
-	if tex == null:
-		push_warning("WorkshopMinigame: piece def for segment '%s' has no texture." % [seg_id])
-		return null
- 
-	var piece := WorkshopPiece.new()
-	piece.item_id = StringName(piece_def.get("id", ""))
-	piece.segment_id = seg_id
-	piece.texture = tex
-	piece.shadow_texture = piece_def.get("shadow")
- 
-	piece.piece_offset = piece_def.get("offset", Vector2.ZERO)
-	piece.visual_offset = piece_def.get("visual_offset", Vector2.ZERO)
-	piece.shadow_offset = piece_def.get("shadow_offset", Vector2.ZERO)
-	piece.size = piece_def.get("size", tex.get_size())
- 
-	# NEW: carry the editor-tuned hitbox into the runtime piece.
-	piece.hitbox_rect = piece_def.get("hitbox_rect", Rect2())
- 
-	return piece
+
+func _find_topmost_segment_at(global_pos: Vector2) -> WorkshopSegment:
+	var hits: Array = []
+	_collect_segments(self, hits)
+	for i in range(hits.size() - 1, -1, -1):
+		var seg: WorkshopSegment = hits[i]
+		if seg.hit_test(global_pos):
+			return seg
+	return null
+
+
+func _collect_segments(node: Node, out: Array) -> void:
+	for child in node.get_children():
+		if child is WorkshopSegment:
+			out.append(child)
+		_collect_segments(child, out)
 
 
 func _find_topmost_piece_at(global_pos: Vector2) -> WorkshopPiece:
@@ -143,9 +158,12 @@ func _find_topmost_piece_at(global_pos: Vector2) -> WorkshopPiece:
 	_collect_pieces(self, hits)
 	for i in range(hits.size() - 1, -1, -1):
 		var piece: WorkshopPiece = hits[i]
+		if _piece_is_inside_segment(piece):
+			continue
 		if piece.hit_test(global_pos):
 			return piece
 	return null
+
 
 func _collect_pieces(node: Node, out: Array) -> void:
 	for child in node.get_children():
@@ -153,10 +171,31 @@ func _collect_pieces(node: Node, out: Array) -> void:
 			out.append(child)
 		_collect_pieces(child, out)
 
-# --- pick-up / drop ---
 
-func _pick_up(piece: WorkshopPiece, global_pos: Vector2) -> void:
-	_active_drag = piece
+func _piece_is_inside_segment(piece: WorkshopPiece) -> bool:
+	var n: Node = piece.get_parent()
+	while n != null:
+		if n is WorkshopSegment:
+			return true
+		n = n.get_parent()
+	return false
+
+
+# --- pick-up ---
+
+func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
+	_active_drag_segment = segment
+	if segment.get_parent() != self:
+		var gp: Vector2 = segment.global_position
+		segment.get_parent().remove_child(segment)
+		add_child(segment)
+		segment.global_position = gp
+	move_child(segment, get_child_count() - 1)
+	segment.start_drag(global_pos)
+
+
+func _pick_up_piece(piece: WorkshopPiece, global_pos: Vector2) -> void:
+	_active_drag_piece = piece
 	if piece.get_parent() != self:
 		var gp: Vector2 = piece.global_position
 		piece.get_parent().remove_child(piece)
@@ -168,6 +207,7 @@ func _pick_up(piece: WorkshopPiece, global_pos: Vector2) -> void:
 	if piece.home_parent and piece.home_parent.get_parent() == ingredients_tray:
 		var id: String = String(piece.home_parent.name).trim_prefix("Tray_")
 		call_deferred("_maybe_replace_tray_tile", id, piece.home_parent)
+
 
 func _drop_into_bin(piece: WorkshopPiece, global_drop_pos: Vector2) -> void:
 	if piece.get_parent() != craft_bin:
@@ -183,6 +223,7 @@ func _drop_into_bin(piece: WorkshopPiece, global_drop_pos: Vector2) -> void:
 
 	piece.home_parent = craft_bin
 	craft_bin.contents_changed.emit()
+
 
 # --- ingredients tray ---
 
@@ -236,6 +277,7 @@ func _populate_ingredients_tray() -> void:
 			col = 0
 			row += 1
 
+
 func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	var tex_path: String = String(INGREDIENT_PATHS.get(id, ""))
 	if tex_path == "" or not ResourceLoader.exists(tex_path):
@@ -247,8 +289,6 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	piece.item_id = StringName(id)
 	piece.segment_id = &""
 	piece.texture = load(tex_path)
-	
-	# Ingredients auto-center themselves inside the 40x40 tray slots
 	piece.auto_center = true
 
 	var shadow_path: String = String(INGREDIENT_SHADOW_PATHS.get(id, ""))
@@ -256,6 +296,7 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 		piece.shadow_texture = load(shadow_path)
 
 	return piece
+
 
 func _maybe_replace_tray_tile(id: String, source_slot: Control) -> void:
 	if source_slot == null or not is_instance_valid(source_slot):
@@ -280,6 +321,7 @@ func _maybe_replace_tray_tile(id: String, source_slot: Control) -> void:
 	source_slot.add_child(tile)
 	tile.position = Vector2.ZERO
 
+
 func _available_count(id: String) -> int:
 	var total: int = int(GameState.ingredients.get(id, 0))
 	var in_bin: int = 0
@@ -287,6 +329,7 @@ func _available_count(id: String) -> int:
 		if String(piece.item_id) == id:
 			in_bin += 1
 	return total - in_bin
+
 
 func _refresh_tray_counts() -> void:
 	for slot in ingredients_tray.get_children():
@@ -303,6 +346,7 @@ func _refresh_tray_counts() -> void:
 		if not has_piece and available > 0:
 			_maybe_replace_tray_tile(id, slot)
 
+
 # --- craft ---
 
 func _refresh_craft_button() -> void:
@@ -310,6 +354,7 @@ func _refresh_craft_button() -> void:
 		craft_button.disabled = true
 		return
 	craft_button.disabled = not _bin_has_recipe()
+
 
 func _bin_has_recipe() -> bool:
 	var counts: Dictionary = craft_bin.count_items()
@@ -319,6 +364,7 @@ func _bin_has_recipe() -> bool:
 		if have < need:
 			return false
 	return true
+
 
 func _on_craft_pressed() -> void:
 	if _crafted or not _bin_has_recipe():
@@ -332,40 +378,74 @@ func _on_craft_pressed() -> void:
 
 	craft_bin.clear_pieces()
 	craft_bin.output_mode = true
-	_spawn_segment_pieces_into_bin()
+	_spawn_segments_stacked_at_bin_center()
 
 	_refresh_tray_counts()
 	craft_button.disabled = true
 	collect_button.visible = true
 
-func _spawn_segment_pieces_into_bin() -> void:
-	var center: Vector2 = craft_bin.local_center()
-	var grid_cols: int = 4
-	var spacing: float = 24.0
-	var i: int = 0
+
+# Spawn every segment overlapping at the center of the craft bin.
+# Parented under the minigame root (NOT the bin) because segments are
+# typically much larger than the bin's rect — placing them under the
+# minigame lets them visually overflow the bin without layout problems.
+# Stacking order: dictionary iteration order in GDScript preserves
+# insertion order, so the last segment added is on top.
+func _spawn_segments_stacked_at_bin_center() -> void:
+	# Compute the bin's center in the minigame's local coordinate space,
+	# since segments will be parented under the minigame.
+	var bin_center_global: Vector2 = craft_bin.get_global_transform() \
+		* craft_bin.local_center()
+	var bin_center_local: Vector2 = get_global_transform().affine_inverse() \
+		* bin_center_global
 
 	for seg_id in _segments:
-		var seg: Dictionary = _segments[seg_id]
-		for piece_def in seg["pieces"]:
+		var seg_data: Dictionary = _segments[seg_id]
+		var pieces_defs: Array = seg_data["pieces"]
+
+		var segment := WorkshopSegment.new()
+		segment.name = "Segment_" + String(seg_id)
+		segment.segment_id = seg_id
+		segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		var bounds: Rect2 = Rect2()
+		var found_any: bool = false
+
+		for piece_def in pieces_defs:
 			var piece: WorkshopPiece = _make_segment_piece(seg_id, piece_def)
 			if piece == null:
 				continue
-			craft_bin.add_child(piece)
-			piece.home_parent = craft_bin
+			segment.add_child(piece)
+			piece.position = Vector2.ZERO
 
-			var col: int = i % grid_cols
-			var row: int = i / grid_cols
-			var grid_origin: Vector2 = center - Vector2(grid_cols - 1, 0) * (spacing * 0.5)
-			piece.position = grid_origin + Vector2(col * spacing, row * spacing) \
-				- piece.size * 0.5
-			i += 1
+			if piece.texture != null:
+				var tex_rect := Rect2(Vector2.ZERO, piece.texture.get_size())
+				if not found_any:
+					bounds = tex_rect
+					found_any = true
+				else:
+					bounds = bounds.merge(tex_rect)
+
+		if not found_any:
+			push_warning("Workshop: segment '%s' has no pieces with textures — skipped spawn." % seg_id)
+			segment.queue_free()
+			continue
+
+		segment.size = bounds.size
+
+		add_child(segment)
+		# Center the segment's visual bounds on the bin's center.
+		segment.position = bin_center_local - segment.size * 0.5
+
+		segment.auto_fit_grab_hitbox = true
 
 	craft_bin.contents_changed.emit()
+
 
 func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopPiece:
 	var tex: Texture2D = piece_def.get("texture")
 	if tex == null:
-		push_warning("Workshop: missing texture for piece %s in segment %s" % [
+		push_warning("Workshop: piece '%s' in segment '%s' has no texture in the .tscn — skipping." % [
 			piece_def.get("id", "?"), seg_id])
 		return null
 
@@ -374,31 +454,18 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 	piece.segment_id = seg_id
 	piece.texture = tex
 	piece.shadow_texture = piece_def.get("shadow")
-	
-	piece.piece_offset = piece_def.get("offset", Vector2.ZERO)
-	piece.visual_offset = piece_def.get("visual_offset", Vector2.ZERO)
-	piece.shadow_offset = piece_def.get("shadow_offset", Vector2.ZERO)
-	piece.size = piece_def.get("size", tex.get_size())
-	
+
+	piece.piece_offset = Vector2.ZERO
+	piece.visual_offset = Vector2.ZERO
+	piece.shadow_offset = Vector2.ZERO
+	piece.auto_center = false
+
+	piece.size = tex.get_size()
+
 	return piece
 
-# --- place a segment ---
 
-func _place_segment(slot: WorkshopAssemblySlot, _dropped_piece: WorkshopPiece) -> void:
-	var seg_id: StringName = slot.accepts_segment_id
-
-	var gathered: Array = []
-	_gather_pieces_for_segment(self, seg_id, gathered)
-
-	slot.place_segment(gathered)
-	craft_bin.contents_changed.emit()
-	_refresh_collect_button()
-
-func _gather_pieces_for_segment(node: Node, seg_id: StringName, out: Array) -> void:
-	for child in node.get_children():
-		if child is WorkshopPiece and child.segment_id == seg_id and not child.locked:
-			out.append(child)
-		_gather_pieces_for_segment(child, seg_id, out)
+# --- collect ---
 
 func _refresh_collect_button() -> void:
 	var all_filled: bool = true
@@ -409,44 +476,51 @@ func _refresh_collect_button() -> void:
 			break
 	collect_button.disabled = not all_filled
 
+
 func _on_collect_pressed() -> void:
 	collected.emit()
+
 
 # --- EDITOR HARVESTING ---
 
 func _collect_assembly_slots() -> void:
 	_assembly_slots.clear()
 	_segments.clear()
- 
-	for child in assembly.get_children():
+	_collect_slots_recursive(assembly)
+
+
+func _collect_slots_recursive(node: Node) -> void:
+	for child in node.get_children():
 		if child is WorkshopAssemblySlot:
-			var slot_id: String = String(child.accepts_segment_id)
-			_assembly_slots[slot_id] = child
-			child.placed.connect(_on_slot_placed)
- 
+			var slot: WorkshopAssemblySlot = child
+			var slot_id: String = String(slot.accepts_segment_id)
+			_assembly_slots[slot_id] = slot
+			slot.placed.connect(_on_slot_placed)
+
 			var pieces: Array = []
-			for i in range(child.get_child_count() - 1, -1, -1):
-				var p: Node = child.get_child(i)
+			# Iterate in reverse so remove_child during iteration is safe.
+			for i in range(slot.get_child_count() - 1, -1, -1):
+				var p: Node = slot.get_child(i)
 				if p is WorkshopPiece:
+					if p.texture == null:
+						push_warning("Workshop: piece '%s' under slot '%s' has no texture set in the .tscn." % [p.name, slot.name])
 					var def: Dictionary = {
 						"id": p.item_id,
 						"texture": p.texture,
 						"shadow": p.shadow_texture,
-						"offset": p.position,
-						"visual_offset": p.visual_offset,
-						"shadow_offset": p.shadow_offset,
-						"size": p.size,
-						"hitbox_rect": p.hitbox_rect,  # NEW
 					}
 					pieces.append(def)
-					child.remove_child(p)
+					slot.remove_child(p)
 					p.queue_free()
- 
-			if pieces.size() > 0:
+
+			if pieces.size() == 0:
+				push_warning("Workshop: slot '%s' (segment '%s') has no WorkshopPiece children — no segment will spawn for it." % [slot.name, slot_id])
+			else:
 				_segments[StringName(slot_id)] = {
-					"anchor": child.position,
 					"pieces": pieces
 				}
+		else:
+			_collect_slots_recursive(child)
 
 
 func _on_slot_placed(_slot: WorkshopAssemblySlot) -> void:
