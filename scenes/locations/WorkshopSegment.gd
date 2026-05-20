@@ -19,6 +19,12 @@ class_name WorkshopSegment
 ## True once placed on its goal. Locked segments ignore clicks.
 var locked: bool = false
 
+## Other segments that must be dragged and dropped together with this one.
+## Populated by WorkshopMinigame from the paired_with property on the
+## owning slot. Always symmetric — if A.pair_partners contains B then
+## B.pair_partners contains A.
+var pair_partners: Array = []
+
 
 @export_group("Hitbox")
 ## Tight clickable rect in LOCAL coords. The player can grab the segment

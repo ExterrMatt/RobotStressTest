@@ -21,3 +21,4 @@ res://scenes/locations/WorkshopMinigame.gd
 res://scenes/locations/WorkshopMinigame.tscn
 res://scenes/locations/WorkshopPiece.gd
 res://scenes/locations/WorkshopAssemblySlot.gd
+res://scenes/locations/WorkshopSegment.gd

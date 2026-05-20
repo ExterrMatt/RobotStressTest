@@ -17,6 +17,18 @@ signal placed(slot: WorkshopAssemblySlot)
 
 @export var accepts_segment_id: StringName = &""
 
+## Optional. If set, the segment for this slot is dragged and dropped as
+## one unit with the segment whose accepts_segment_id matches this value.
+## Set on BOTH paired slots so the pairing is symmetric.
+##
+## Example: to chain the knee joint axel and cap so they move and place
+## together, set:
+##   KneeJointAxelSlot.paired_with = &"knee_joint"
+##   KneeJointCapSlot.paired_with  = &"knee_joint_axel"
+##
+## Leave empty (&"") for normal solo segments.
+@export var paired_with: StringName = &""
+
 
 @export_group("Hitbox")
 ## Tight drop-zone rect in LOCAL coords. A drop counts as landing on this

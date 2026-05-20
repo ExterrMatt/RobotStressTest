@@ -207,7 +207,41 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_inventory_overlay()
 			get_viewport().set_input_as_handled()
 		return
+	
+	# 1 (debug): grant one scrap_metal and jump to the workshop.
+	# Bypasses phase restrictions on purpose so it works any time of day.
+	if key_event.keycode == KEY_1 or key_event.keycode == KEY_KP_1:
+		_debug_grant_scrap_and_open_workshop()
+		get_viewport().set_input_as_handled()
+		return
 
+
+func _debug_grant_scrap_and_open_workshop() -> void:
+	# Give one scrap_metal.
+	GameState.add_ingredient("scrap_metal", 1)
+	_log("[color=#88ff88]+ scrap_metal x1 (debug)[/color]")
+
+	# Find the workshop LocationData we already loaded at startup,
+	# then reuse the normal pick path so the wipe + frame animation
+	# behave exactly like a button press.
+	var workshop_loc: LocationData = null
+	for loc in _locations:
+		if String(loc.id) == "workshop":
+			workshop_loc = loc
+			break
+
+	if workshop_loc == null:
+		push_warning("Debug: workshop LocationData not found in _locations.")
+		return
+
+	# If we're already inside the workshop, don't restart it.
+	if _current_location_node and is_instance_valid(_current_location_node):
+		if _current_location_node.scene_file_path == workshop_loc.scene_path:
+			return
+
+	# Reuse the existing pick handler. It already guards against
+	# double-firing while a transition is mid-wipe.
+	_on_location_picked(workshop_loc)
 
 func _load_locations() -> void:
 	for path in LOCATION_RESOURCE_PATHS:
