@@ -226,6 +226,16 @@ script = ExtResource("3")
 accepts_segment_id = &"mid_thigh"
 hitbox_rect = Rect2(37, 89, 137, 132)
 
+[node name="mid_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/MidThighSlot" unique_id=2075452651]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"mid_thigh"
+texture = ExtResource("11_kl8h8")
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
 [node name="mid_thigh_gears" type="Control" parent="AssemblyArea/AssemblyLeg/MidThighSlot" unique_id=1924878747]
 anchors_preset = 0
 offset_right = 40.0
@@ -235,16 +245,6 @@ script = ExtResource("4_8jev8")
 item_id = &"mid_thigh_gears"
 texture = ExtResource("10_g0bh1")
 shadow_texture = ExtResource("11_sg66r")
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="mid_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/MidThighSlot" unique_id=2075452651]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"mid_thigh"
-texture = ExtResource("11_kl8h8")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
 [node name="KneeJointSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=994053114]
@@ -476,7 +476,6 @@ texture = ExtResource("25_sl77s")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
 [node name="ankle_axel" type="Control" parent="AssemblyArea/AssemblyLeg/AnkleSlot" unique_id=1410862627]
-z_index = -1
 layout_mode = 1
 anchor_left = 0.286
 anchor_top = 6.999

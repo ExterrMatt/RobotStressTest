@@ -481,6 +481,9 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 	piece.auto_center = false
 
 	piece.size = tex.get_size()
+	
+	piece.z_index = piece_def.get("z_index", 0)
+	piece.z_as_relative = piece_def.get("z_as_relative", true)
 
 	return piece
 
@@ -527,6 +530,8 @@ func _collect_slots_recursive(node: Node) -> void:
 						"id": p.item_id,
 						"texture": p.texture,
 						"shadow": p.shadow_texture,
+						"z_index": p.z_index,
+						"z_as_relative": p.z_as_relative,
 					}
 					pieces.append(def)
 					slot.remove_child(p)
