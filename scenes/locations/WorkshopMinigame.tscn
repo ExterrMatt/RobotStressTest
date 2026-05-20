@@ -17,6 +17,7 @@
 [ext_resource type="Texture2D" uid="uid://c77w5hvvuits0" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/side_thigh_shadow.png" id="13_y4i5t"]
 [ext_resource type="Texture2D" uid="uid://b4exx4qxb7tos" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/knee.png" id="14_tkmvw"]
 [ext_resource type="Texture2D" uid="uid://pl55i5pyadx2" path="res://assets/textures/icons/workshop robot leg/robot_leg_thighs/knee_joint.png" id="15_2di0h"]
+[ext_resource type="Texture2D" uid="uid://u1pt063o4k3t" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/knee_joint_shadow.png" id="15_d2w2h"]
 [ext_resource type="Texture2D" uid="uid://dn6cwfsnmqtgn" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/knee_shadow.png" id="15_vt70f"]
 [ext_resource type="Texture2D" uid="uid://dtjw3g5dx0uhx" path="res://assets/textures/icons/workshop robot leg/robot_leg_lower_legs/calf.png" id="16_qh8ti"]
 [ext_resource type="Texture2D" uid="uid://chm11d6f74wpy" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/calf_shadow.png" id="17_geguh"]
@@ -36,6 +37,7 @@
 [ext_resource type="Texture2D" uid="uid://bcvr8ypogrhb6" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/middle_foot_shadow.png" id="31_d2w2h"]
 [ext_resource type="Texture2D" uid="uid://c8mxb4vqh5ykb" path="res://assets/textures/icons/workshop robot leg/robot_leg_foot/toes.png" id="32_kpbgc"]
 [ext_resource type="Texture2D" uid="uid://ddg15pxcpgb1c" path="res://assets/textures/icons/workshop robot leg/robot_leg_shadow/toes_shadow.png" id="33_7ix5h"]
+[ext_resource type="Texture2D" uid="uid://dcnwe77f3gouq" path="res://assets/textures/icons/workshop robot leg/robot_leg_foot/toes_border.png" id="37_2di0h"]
 
 [node name="WorkshopMinigame" type="Control" unique_id=3875111]
 layout_mode = 3
@@ -182,7 +184,6 @@ mouse_filter = 2
 script = ExtResource("4_8jev8")
 item_id = &"upper_thigh"
 texture = ExtResource("7_qh8ti")
-shadow_texture = ExtResource("8_geguh")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
 [node name="upper_thigh_gears" type="Control" parent="AssemblyArea/AssemblyLeg/UpperThighSlot" unique_id=401060967]
@@ -193,6 +194,7 @@ mouse_filter = 2
 script = ExtResource("4_8jev8")
 item_id = &"upper_thigh_gears"
 texture = ExtResource("9_yw1xm")
+shadow_texture = ExtResource("8_geguh")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
 [node name="ButtSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=753166753]
@@ -230,7 +232,7 @@ offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
 script = ExtResource("4_8jev8")
-item_id = &"upper_thigh"
+item_id = &"mid_thigh_gears"
 texture = ExtResource("10_g0bh1")
 shadow_texture = ExtResource("11_sg66r")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
@@ -251,19 +253,8 @@ offset_right = 70.0
 offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
-accepts_segment_id = &"mid_thigh"
+accepts_segment_id = &"knee_joint"
 hitbox_rect = Rect2(37, 176, 63, 45)
-
-[node name="knee_joint_axel" type="Control" parent="AssemblyArea/AssemblyLeg/KneeJointSlot" unique_id=1836141923]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"knee_joint_axel"
-texture = ExtResource("13_3plsc")
-shadow_texture = ExtResource("24_fdnsq")
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
 [node name="knee_joint" type="Control" parent="AssemblyArea/AssemblyLeg/KneeJointSlot" unique_id=106612159]
 anchors_preset = 0
@@ -273,6 +264,17 @@ mouse_filter = 2
 script = ExtResource("4_8jev8")
 item_id = &"knee_joint"
 texture = ExtResource("15_2di0h")
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="knee_joint_axel" type="Control" parent="AssemblyArea/AssemblyLeg/KneeJointSlot" unique_id=1836141923]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"knee_joint_axel"
+texture = ExtResource("13_3plsc")
+shadow_texture = ExtResource("15_d2w2h")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
 [node name="SideThighSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=1520272026]
@@ -331,6 +333,23 @@ script = ExtResource("3")
 accepts_segment_id = &"calf"
 hitbox_rect = Rect2(71, 193, 122, 81)
 
+[node name="calf" type="Control" parent="AssemblyArea/AssemblyLeg/CalfSlot" unique_id=1793469768]
+layout_mode = 1
+anchor_left = 0.286
+anchor_top = 6.999
+anchor_right = 1.1340001
+anchor_bottom = 7.774
+offset_left = -20.02
+offset_top = -223.968
+offset_right = -14.38002
+offset_bottom = -188.76799
+pivot_offset = Vector2(-132, 38)
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"calf"
+texture = ExtResource("16_qh8ti")
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
 [node name="calf_gears" type="Control" parent="AssemblyArea/AssemblyLeg/CalfSlot" unique_id=449305160]
 layout_mode = 1
 anchor_left = 0.286
@@ -344,25 +363,8 @@ offset_bottom = -188.76799
 pivot_offset = Vector2(-132, 38)
 mouse_filter = 2
 script = ExtResource("4_8jev8")
-item_id = &"calf"
+item_id = &"calf_gears"
 texture = ExtResource("18_yw1xm")
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
-[node name="calf" type="Control" parent="AssemblyArea/AssemblyLeg/CalfSlot" unique_id=1793469768]
-layout_mode = 1
-anchor_left = 0.286
-anchor_top = 6.999
-anchor_right = 1.1340001
-anchor_bottom = 7.774
-offset_left = -20.02
-offset_top = -223.968
-offset_right = -14.38002
-offset_bottom = -188.768
-pivot_offset = Vector2(-132, 38)
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"calf"
-texture = ExtResource("16_qh8ti")
 shadow_texture = ExtResource("17_geguh")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
@@ -399,7 +401,7 @@ offset_right = 70.0
 offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
-accepts_segment_id = &"lower_leg"
+accepts_segment_id = &"shin"
 hitbox_rect = Rect2(84, 234, 146, 69)
 
 [node name="shin" type="Control" parent="AssemblyArea/AssemblyLeg/ShinLegSlot" unique_id=1180152038]
@@ -426,7 +428,7 @@ offset_right = 70.0
 offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
-accepts_segment_id = &"foot"
+accepts_segment_id = &"heel"
 hitbox_rect = Rect2(246, 263, 49, 56)
 
 [node name="heel" type="Control" parent="AssemblyArea/AssemblyLeg/HeelSlot" unique_id=71548926]
@@ -456,6 +458,23 @@ script = ExtResource("3")
 accepts_segment_id = &"ankle"
 hitbox_rect = Rect2(217, 260, 42, 44)
 
+[node name="ankle_cap" type="Control" parent="AssemblyArea/AssemblyLeg/AnkleSlot" unique_id=316519858]
+layout_mode = 1
+anchor_left = 0.286
+anchor_top = 6.999
+anchor_right = 1.1340001
+anchor_bottom = 7.774
+offset_left = -20.02
+offset_top = -223.968
+offset_right = -14.38002
+offset_bottom = -188.768
+pivot_offset = Vector2(-132, 38)
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"ankle_cap"
+texture = ExtResource("25_sl77s")
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
 [node name="ankle_axel" type="Control" parent="AssemblyArea/AssemblyLeg/AnkleSlot" unique_id=1410862627]
 z_index = -1
 layout_mode = 1
@@ -475,30 +494,13 @@ texture = ExtResource("23_ygfpx")
 shadow_texture = ExtResource("24_fdnsq")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
 
-[node name="ankle_cap" type="Control" parent="AssemblyArea/AssemblyLeg/AnkleSlot" unique_id=316519858]
-layout_mode = 1
-anchor_left = 0.286
-anchor_top = 6.999
-anchor_right = 1.1340001
-anchor_bottom = 7.774
-offset_left = -20.02
-offset_top = -223.968
-offset_right = -14.38002
-offset_bottom = -188.768
-pivot_offset = Vector2(-132, 38)
-mouse_filter = 2
-script = ExtResource("4_8jev8")
-item_id = &"ankle_cap"
-texture = ExtResource("25_sl77s")
-metadata/_custom_type_script = "uid://48i7jx7w0l7j"
-
 [node name="UpperFootSlot" type="Control" parent="AssemblyArea/AssemblyLeg" unique_id=195697597]
 anchors_preset = 0
 offset_right = 70.0
 offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
-accepts_segment_id = &"foot"
+accepts_segment_id = &"upper_foot"
 hitbox_rect = Rect2(221, 284, 60, 57)
 
 [node name="upper_foot" type="Control" parent="AssemblyArea/AssemblyLeg/UpperFootSlot" unique_id=1704965705]
@@ -525,7 +527,7 @@ offset_right = 70.0
 offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
-accepts_segment_id = &"foot"
+accepts_segment_id = &"middle_foot"
 hitbox_rect = Rect2(230, 303, 51, 62)
 
 [node name="middle_foot" type="Control" parent="AssemblyArea/AssemblyLeg/MiddleFootSlot" unique_id=908355151]
@@ -541,7 +543,7 @@ offset_bottom = -188.768
 pivot_offset = Vector2(-132, 38)
 mouse_filter = 2
 script = ExtResource("4_8jev8")
-item_id = &"upper_foot"
+item_id = &"middle_foot"
 texture = ExtResource("30_2di0h")
 shadow_texture = ExtResource("31_d2w2h")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"
@@ -552,7 +554,7 @@ offset_right = 70.0
 offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
-accepts_segment_id = &"foot"
+accepts_segment_id = &"toes"
 hitbox_rect = Rect2(227, 333, 44, 43)
 
 [node name="toes" type="Control" parent="AssemblyArea/AssemblyLeg/ToesSlot" unique_id=867889422]
@@ -570,5 +572,22 @@ mouse_filter = 2
 script = ExtResource("4_8jev8")
 item_id = &"toes"
 texture = ExtResource("32_kpbgc")
+metadata/_custom_type_script = "uid://48i7jx7w0l7j"
+
+[node name="toes_border" type="Control" parent="AssemblyArea/AssemblyLeg/ToesSlot" unique_id=930974427]
+layout_mode = 1
+anchor_left = 0.286
+anchor_top = 6.999
+anchor_right = 1.1340001
+anchor_bottom = 7.774
+offset_left = -21.450008
+offset_top = -27.996002
+offset_right = -15.810028
+offset_bottom = 7.2039948
+pivot_offset = Vector2(-132, 38)
+mouse_filter = 2
+script = ExtResource("4_8jev8")
+item_id = &"toes_border"
+texture = ExtResource("37_2di0h")
 shadow_texture = ExtResource("33_7ix5h")
 metadata/_custom_type_script = "uid://48i7jx7w0l7j"

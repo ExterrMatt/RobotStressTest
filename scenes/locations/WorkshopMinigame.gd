@@ -386,14 +386,13 @@ func _on_craft_pressed() -> void:
 
 
 # Spawn every segment overlapping at the center of the craft bin.
-# Parented under the minigame root (NOT the bin) because segments are
-# typically much larger than the bin's rect — placing them under the
-# minigame lets them visually overflow the bin without layout problems.
-# Stacking order: dictionary iteration order in GDScript preserves
-# insertion order, so the last segment added is on top.
+# IMPORTANT: We center using the segment's GRAB HITBOX (the tight bounds
+# of the visible art) — NOT the segment's Control size, which is the
+# full texture canvas. Texture canvases are usually huge with most of
+# the canvas being transparent, and the visible art lives at a different
+# spot within each canvas. Centering by canvas size would just lay the
+# textures down in their authored positions, reconstructing the leg.
 func _spawn_segments_stacked_at_bin_center() -> void:
-	# Compute the bin's center in the minigame's local coordinate space,
-	# since segments will be parented under the minigame.
 	var bin_center_global: Vector2 = craft_bin.get_global_transform() \
 		* craft_bin.local_center()
 	var bin_center_local: Vector2 = get_global_transform().affine_inverse() \
@@ -408,6 +407,9 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 		segment.segment_id = seg_id
 		segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+		# Build the segment Control sized to the full texture canvas
+		# (pieces draw into their own texture coordinates, so we need
+		# the Control big enough to contain those draws).
 		var bounds: Rect2 = Rect2()
 		var found_any: bool = false
 
@@ -434,10 +436,28 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 		segment.size = bounds.size
 
 		add_child(segment)
-		# Center the segment's visual bounds on the bin's center.
-		segment.position = bin_center_local - segment.size * 0.5
 
+		# Fit the grab hitbox to the union of every piece's
+		# non-transparent pixels. This runs synchronously (it's a setter
+		# that calls _auto_fit_grab_hitbox immediately), so grab_hitbox_rect
+		# is populated before the next line.
 		segment.auto_fit_grab_hitbox = true
+
+		# Center the segment so the CENTER OF THE GRAB HITBOX (i.e. the
+		# visible art) lands on the bin's center. The hitbox is in
+		# segment-local coords, so:
+		#   art_center_global = segment.position + hitbox.position + hitbox.size * 0.5
+		# Solving for segment.position to put art_center at bin_center_local:
+		var hb: Rect2 = segment.grab_hitbox_rect
+		if hb.size.x > 0.0 and hb.size.y > 0.0:
+			var hb_center_in_segment: Vector2 = hb.position + hb.size * 0.5
+			segment.position = bin_center_local - hb_center_in_segment
+		else:
+			# Hitbox didn't get computed (e.g. all pieces transparent).
+			# Fall back to canvas-center positioning so the segment is
+			# at least somewhere visible.
+			segment.position = bin_center_local - segment.size * 0.5
+			push_warning("Workshop: segment '%s' has no usable grab hitbox — fell back to canvas-center positioning." % seg_id)
 
 	craft_bin.contents_changed.emit()
 
@@ -498,7 +518,6 @@ func _collect_slots_recursive(node: Node) -> void:
 			slot.placed.connect(_on_slot_placed)
 
 			var pieces: Array = []
-			# Iterate in reverse so remove_child during iteration is safe.
 			for i in range(slot.get_child_count() - 1, -1, -1):
 				var p: Node = slot.get_child(i)
 				if p is WorkshopPiece:
