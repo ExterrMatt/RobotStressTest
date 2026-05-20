@@ -32,25 +32,57 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 var _segments: Dictionary = {}
 var _assembly_slots: Dictionary = {}
 
-# Active drag state.
-# - _active_drag_segment is the MASTER: the segment the user actually clicked.
-#   It's the only one that tracks its own drag bookkeeping.
-# - _passenger_segments are non-master paired members. They do NOT
-#   compute their own positions — they're teleported relative to the
-#   master every frame using offsets captured at pickup time.
-# - This guarantees zero drift (Issue 1) and that only the topmost
-#   clicked segment becomes the drag root (Issue 4).
 var _active_drag_segment: WorkshopSegment = null
 var _passenger_segments: Array = []
-var _passenger_offsets: Dictionary = {}  # WorkshopSegment -> Vector2 offset from master
+var _passenger_offsets: Dictionary = {} 
 
 var _active_drag_piece: WorkshopPiece = null
 
 var _crafted: bool = false
 
+var _shadow_group: CanvasGroup = null
+var _shadow_drawer: Control = null
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Set up global shadow rendering layer (drawn entirely behind pieces)
+	_shadow_group = CanvasGroup.new()
+	_shadow_group.name = "ShadowLayer"
+	# CanvasGroup modulates the compiled intersection of textures dynamically
+	_shadow_group.modulate = Color(1, 1, 1, 0.5)
+	_shadow_group.fit_margin = 250.0 
+	add_child(_shadow_group)
+	move_child(_shadow_group, 0)
+
+	_shadow_drawer = Control.new()
+	_shadow_drawer.name = "ShadowDrawer"
+	_shadow_drawer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Guarantee the CanvasGroup never culls our custom draws
+	_shadow_drawer.position = Vector2(-2000, -2000)
+	_shadow_drawer.size = Vector2(6000, 6000)
+	
+	# THE NEW FIX: Use a shader to force the drawn shadow textures to be 
+	# 100% opaque. This stops baked-in transparency from accumulating 
+	# on overlaps. The CanvasGroup will uniformly apply 50% opacity to the result.
+	var shadow_mat := ShaderMaterial.new()
+	var shadow_shader := Shader.new()
+	shadow_shader.code = """
+	shader_type canvas_item;
+	void fragment() {
+		vec4 tex = texture(TEXTURE, UV);
+		// Multiply alpha to force the core to 1.0 (fully opaque), ensuring overlaps don't darken.
+		// (Using 5.0 ensures even very faint soft edges are caught and boosted to opaque)
+		COLOR = vec4(0.0, 0.0, 0.0, clamp(tex.a * 5.0, 0.0, 1.0));
+	}
+	"""
+	shadow_mat.shader = shadow_shader
+	_shadow_drawer.material = shadow_mat
+	
+	_shadow_drawer.draw.connect(_on_shadow_drawer_draw)
+	_shadow_group.add_child(_shadow_drawer)
 
 	_collect_assembly_slots()
 	_populate_ingredients_tray()
@@ -60,6 +92,45 @@ func _ready() -> void:
 	craft_button.disabled = true
 	collect_button.disabled = true
 	collect_button.visible = false
+
+
+func _process(_delta: float) -> void:
+	# Force shadow drawer to redraw every frame so shadows follow smoothly while dragging
+	if is_instance_valid(_shadow_drawer):
+		_shadow_drawer.queue_redraw()
+
+
+func _on_shadow_drawer_draw() -> void:
+	_draw_shadows_recursive(self)
+	_shadow_drawer.draw_set_transform_matrix(Transform2D()) # Clean up standard bounds
+
+
+func _draw_shadows_recursive(node: Node) -> void:
+	for child in node.get_children():
+		if child == _shadow_group:
+			continue # Do not recursively render inside the shadow drawer
+			
+		if child is WorkshopPiece and child.shadow_texture != null and child.is_visible_in_tree():
+			# Matrix transform guarantees scale/rotation/translations align perfectly identically
+			var s_xform: Transform2D = _shadow_drawer.get_global_transform().affine_inverse() * child.get_global_transform()
+			_shadow_drawer.draw_set_transform_matrix(s_xform)
+			
+			var v_off: Vector2 = child.visual_offset if typeof(child.visual_offset) == TYPE_VECTOR2 else Vector2.ZERO
+			var s_off: Vector2 = child.shadow_offset if typeof(child.shadow_offset) == TYPE_VECTOR2 else Vector2.ZERO
+			
+			var tex_pos: Vector2 = v_off
+			if child.auto_center and child.texture != null:
+				tex_pos = (child.size - child.texture.get_size()) / 2.0
+				
+			var s_pos: Vector2 = tex_pos
+			if child.auto_center:
+				s_pos = (child.size - child.shadow_texture.get_size()) / 2.0
+			
+			# Draw FULLY opaque white. If drawn full black, intersections remain max black. 
+			# The CanvasGroup applies the 50% opacity uniformly to the resulting combined shapes later!
+			_shadow_drawer.draw_texture(child.shadow_texture, s_pos + s_off, Color(1, 1, 1, 1))
+			
+		_draw_shadows_recursive(child)
 
 
 # --- global input pipe ---
@@ -84,9 +155,6 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion:
 		if _active_drag_segment:
-			# Move the master via its normal drag bookkeeping. Then snap
-			# every passenger to its locked offset from the master. No
-			# independent drag math on passengers = no drift (Issue 1).
 			_active_drag_segment.update_drag(event.global_position)
 			var master_pos: Vector2 = _active_drag_segment.position
 			for passenger in _passenger_segments:
@@ -109,8 +177,6 @@ func _handle_left_press(global_pos: Vector2) -> void:
 			_on_collect_pressed()
 		return
 
-	# ONLY the topmost segment under the cursor gets picked up (Issue 4).
-	# Paired partners come along as passengers, never as independent drags.
 	var seg: WorkshopSegment = _find_topmost_segment_at(global_pos)
 	if seg != null:
 		_pick_up_segment(seg, global_pos)
@@ -127,19 +193,16 @@ func _handle_left_release(global_pos: Vector2) -> void:
 		var master: WorkshopSegment = _active_drag_segment
 		var passengers: Array = _passenger_segments.duplicate()
 
-		# Clear active drag state up front so nothing can re-enter.
 		_active_drag_segment = null
 		_passenger_segments = []
 		_passenger_offsets.clear()
 
-		# Build the full group in master-first order.
 		var group: Array = [master]
 		for p in passengers:
 			if p is WorkshopSegment and is_instance_valid(p):
 				group.append(p)
 
-		# All-or-nothing drop: every member must land in a valid goal.
-		var drops: Array = []  # parallel array of [seg, target_slot_or_null]
+		var drops: Array = []
 		var all_valid: bool = true
 		for seg in group:
 			seg.end_drag()
@@ -159,7 +222,6 @@ func _handle_left_release(global_pos: Vector2) -> void:
 				var placing_slot: WorkshopAssemblySlot = entry[1]
 				placing_slot.accept_segment(placing_seg)
 			_refresh_collect_button()
-		# else: leave every group member where the player let go.
 		return
 
 	if _active_drag_piece != null:
@@ -227,7 +289,6 @@ func _piece_is_inside_segment(piece: WorkshopPiece) -> bool:
 	return false
 
 
-# Find the assembly slot whose accepts_segment_id matches this segment.
 func _slot_for_segment(segment: WorkshopSegment) -> WorkshopAssemblySlot:
 	for slot_id in _assembly_slots:
 		var slot: WorkshopAssemblySlot = _assembly_slots[slot_id]
@@ -236,8 +297,6 @@ func _slot_for_segment(segment: WorkshopSegment) -> WorkshopAssemblySlot:
 	return null
 
 
-# This segment's slot's index in the AssemblyLeg's child list.
-# Lower = drawn earlier (underneath). Returns -1 if not found.
 func _slot_tree_index(segment: WorkshopSegment) -> int:
 	var slot: WorkshopAssemblySlot = _slot_for_segment(segment)
 	if slot == null:
@@ -250,41 +309,30 @@ func _slot_tree_index(segment: WorkshopSegment) -> int:
 # --- pick-up ---
 
 func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
-	# Build the passenger list: every non-locked pair partner of the
-	# clicked segment. Self and locked partners are excluded.
 	var passengers: Array = []
 	for partner in segment.pair_partners:
 		if partner is WorkshopSegment and is_instance_valid(partner) and not partner.locked:
 			if partner != segment and not passengers.has(partner):
 				passengers.append(partner)
 
-	# Order ALL members (master + passengers) by slot tree position under
-	# AssemblyLeg so the stacking is deterministic and matches the
-	# authored layering. Earlier slot index = drawn underneath. Later
-	# slot index = drawn on top (Issue 3).
 	var all_members: Array = [segment]
 	for p in passengers:
 		all_members.append(p)
 	all_members.sort_custom(func(a, b): return _slot_tree_index(a) < _slot_tree_index(b))
 
-	# Reparent every member under the minigame root.
 	for seg in all_members:
 		if seg.get_parent() != self:
 			var gp: Vector2 = seg.global_position
 			seg.get_parent().remove_child(seg)
 			add_child(seg)
 			seg.global_position = gp
-	# Now apply final sibling order: iterating bottom-up and moving each
-	# to the end of the sibling list puts them in correct stacking order.
+			
 	for seg in all_members:
 		move_child(seg, get_child_count() - 1)
 
-	# Master state.
 	_active_drag_segment = segment
 	segment.start_drag(global_pos)
 
-	# Lock every passenger's offset to the master at this exact moment.
-	# They're now puppeted by the master in _input mouse-motion handling.
 	_passenger_segments = passengers
 	_passenger_offsets.clear()
 	for p in passengers:
@@ -482,27 +530,13 @@ func _on_craft_pressed() -> void:
 	collect_button.visible = true
 
 
-# Spawn every segment overlapping at the center of the craft bin.
-#
-# For paired groups, the segments must maintain the SAME relative offset
-# they have in the authored leg layout, so the visible art remains
-# properly aligned (Issue 2). We do this in two passes:
-#  1. Create every segment, build pieces inside, fit grab hitbox.
-#  2. Wire pair partners from slot.paired_with.
-#  3. For each pair group, pick the segment whose slot has the lowest
-#     tree index as the "primary". Center its hitbox on the bin. Each
-#     follower's position equals primary.position plus the offset
-#     between their respective slot positions in the authored layout.
-#     Solo (unpaired) segments still center their own hitbox on the bin
-#     like before.
 func _spawn_segments_stacked_at_bin_center() -> void:
 	var bin_center_global: Vector2 = craft_bin.get_global_transform() \
 		* craft_bin.local_center()
 	var bin_center_local: Vector2 = get_global_transform().affine_inverse() \
 		* bin_center_global
 
-	# --- Pass 1: create segments and pieces ---
-	var segments_by_id: Dictionary = {}  # StringName -> WorkshopSegment
+	var segments_by_id: Dictionary = {} 
 
 	for seg_id in _segments:
 		var seg_data: Dictionary = _segments[seg_id]
@@ -542,7 +576,6 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 
 		segments_by_id[seg_id] = segment
 
-	# --- Pass 2: wire pair partners from slot.paired_with ---
 	for slot_id in _assembly_slots:
 		var slot: WorkshopAssemblySlot = _assembly_slots[slot_id]
 		if String(slot.paired_with) == "":
@@ -552,23 +585,19 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 		if this_seg and other_seg and not this_seg.pair_partners.has(other_seg):
 			this_seg.pair_partners.append(other_seg)
 
-	# --- Pass 3: position each segment ---
-	var positioned: Dictionary = {}  # WorkshopSegment -> bool
+	var positioned: Dictionary = {} 
 
 	for seg_id in segments_by_id:
 		var segment: WorkshopSegment = segments_by_id[seg_id]
 		if positioned.get(segment, false):
 			continue
 
-		# Build this segment's full pair group (including itself).
 		var group: Array = [segment]
 		for partner in segment.pair_partners:
 			if partner is WorkshopSegment and is_instance_valid(partner):
 				if not group.has(partner):
 					group.append(partner)
 
-		# Pick the primary: lowest slot tree index. Stable regardless of
-		# dictionary iteration order.
 		var primary: WorkshopSegment = group[0]
 		var primary_idx: int = _slot_tree_index(primary)
 		for member in group:
@@ -577,7 +606,6 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 				primary = member
 				primary_idx = idx
 
-		# Center the primary's hitbox on the bin center.
 		var primary_hb: Rect2 = primary.grab_hitbox_rect
 		if primary_hb.size.x > 0.0 and primary_hb.size.y > 0.0:
 			var hb_center: Vector2 = primary_hb.position + primary_hb.size * 0.5
@@ -587,9 +615,6 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 			push_warning("Workshop: segment '%s' has no usable grab hitbox — fell back to canvas-center positioning." % primary.segment_id)
 		positioned[primary] = true
 
-		# Position each follower at the same offset from primary as the
-		# offset between their slots in the authored layout. This
-		# preserves the visual alignment of the assembled leg (Issue 2).
 		var primary_slot: WorkshopAssemblySlot = _slot_for_segment(primary)
 		if primary_slot == null:
 			continue
@@ -603,8 +628,6 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 				continue
 			var member_slot_global: Vector2 = member_slot.get_global_transform().origin
 			var offset_global: Vector2 = member_slot_global - primary_slot_global
-			# Both segments live under the minigame Control (no scale/rotate)
-			# so global offset equals local offset in pixels.
 			member.position = primary.position + offset_global
 			positioned[member] = true
 

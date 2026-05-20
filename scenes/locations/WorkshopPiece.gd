@@ -59,7 +59,9 @@ func _draw() -> void:
 	if auto_center and texture:
 		tex_pos = (size - texture.get_size()) / 2.0
 
-	if shadow_texture:
+	# Only draw the local shadow in the editor so authoring still looks right.
+	# At runtime, WorkshopMinigame renders all shadows in a unified CanvasGroup.
+	if shadow_texture and Engine.is_editor_hint():
 		var s_pos: Vector2 = tex_pos
 		if auto_center:
 			s_pos = (size - shadow_texture.get_size()) / 2.0
