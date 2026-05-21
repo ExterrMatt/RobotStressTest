@@ -51,7 +51,7 @@ func _ready() -> void:
 	_shadow_group = CanvasGroup.new()
 	_shadow_group.name = "ShadowLayer"
 	# CanvasGroup modulates the compiled intersection of textures dynamically
-	_shadow_group.modulate = Color(1, 1, 1, 0.5)
+	_shadow_group.modulate = Color(1, 1, 1, 0.25)
 	_shadow_group.fit_margin = 250.0 
 	add_child(_shadow_group)
 	move_child(_shadow_group, 0)
