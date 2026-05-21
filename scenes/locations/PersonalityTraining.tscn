@@ -1,14 +1,14 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://b2utmcx04txx5"]
 
-[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://cyie4hrdescw1" path="res://scenes/locations/StubLocation.tscn" id="1"]
 
-[node name="PersonalityTraining" instance=ExtResource("1")]
+[node name="PersonalityTraining" unique_id=816428029 instance=ExtResource("1")]
 title_text = "Personality Training"
 blurb_text = "Train the robot's personality. (To be detailed in design doc.)"
 outcomes = [{
+"anger": -3,
+"ingredients": {},
 "label": "Run a training session (placeholder: anger -3)",
 "money": 0,
-"suspicion": 0,
-"anger": -3,
-"ingredients": {}
+"suspicion": 0
 }]

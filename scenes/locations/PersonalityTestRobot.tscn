@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://dptrobotcharx01"]
+[gd_scene format=3 uid="uid://bfufqgv0boyhc"]
 
 [ext_resource type="Texture2D" uid="uid://bdu0hkh3b5apo" path="res://assets/textures/characters/robot/personalitytest/shadow.png" id="1_shadow"]
 [ext_resource type="Texture2D" uid="uid://8wq8y7pbd77a" path="res://assets/textures/characters/robot/personalitytest/hair_back.png" id="2_hairback"]
