@@ -196,6 +196,7 @@ z_index = 1
 texture_filter = 1
 custom_minimum_size = Vector2(900, 225)
 layout_mode = 2
+clip_contents = true
 texture = ExtResource("3_rarhs")
 expand_mode = 1
 
