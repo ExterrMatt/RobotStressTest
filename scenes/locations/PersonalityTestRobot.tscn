@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bfufqgv0boyhc"]
+[gd_scene format=3 uid="uid://k8jls1dgr68d"]
 
 [ext_resource type="Texture2D" uid="uid://bdu0hkh3b5apo" path="res://assets/textures/characters/robot/personalitytest/shadow.png" id="1_shadow"]
 [ext_resource type="Texture2D" uid="uid://8wq8y7pbd77a" path="res://assets/textures/characters/robot/personalitytest/hair_back.png" id="2_hairback"]
@@ -16,7 +16,7 @@
 [ext_resource type="Texture2D" uid="uid://cy3nlwdmpbv4g" path="res://assets/textures/characters/robot/personalitytest/neck.png" id="14_neck"]
 [ext_resource type="Texture2D" uid="uid://b5x476xeydwkt" path="res://assets/textures/characters/robot/personalitytest/face.png" id="15_face"]
 
-[node name="PersonalityTestRobot" type="Control"]
+[node name="PersonalityTestRobot" type="Control" unique_id=519978909]
 custom_minimum_size = Vector2(300, 450)
 layout_mode = 3
 anchors_preset = 0
@@ -24,8 +24,8 @@ offset_right = 300.0
 offset_bottom = 450.0
 mouse_filter = 2
 
-[node name="Shadow" type="TextureRect" parent="."]
-z_index = -2
+[node name="Shadow" type="TextureRect" parent="." unique_id=715381204]
+modulate = Color(1, 1, 1, 0.5254902)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,7 +36,7 @@ mouse_filter = 2
 texture = ExtResource("1_shadow")
 expand_mode = 1
 
-[node name="Hair" type="Control" parent="."]
+[node name="Hair" type="Control" parent="." unique_id=181983897]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -45,8 +45,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="HairBack" type="TextureRect" parent="Hair"]
-z_index = -1
+[node name="HairBack" type="TextureRect" parent="Hair" unique_id=441234468]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -57,7 +56,7 @@ mouse_filter = 2
 texture = ExtResource("2_hairback")
 expand_mode = 1
 
-[node name="HairFront" type="TextureRect" parent="Hair"]
+[node name="HairFront" type="TextureRect" parent="Hair" unique_id=13918781]
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -69,106 +68,7 @@ mouse_filter = 2
 texture = ExtResource("3_hairfront")
 expand_mode = 1
 
-[node name="LeftLeg" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("4_leftleg")
-expand_mode = 1
-
-[node name="RightLeg" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("5_rightleg")
-expand_mode = 1
-
-[node name="LeftFoot" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("6_leftfoot")
-expand_mode = 1
-
-[node name="RightFoot" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("7_rightfoot")
-expand_mode = 1
-
-[node name="Boobs" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("8_boobs")
-expand_mode = 1
-
-[node name="Nipples" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("9_nipples")
-expand_mode = 1
-
-[node name="Body" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("10_body")
-expand_mode = 1
-
-[node name="BoobCover" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("11_boobcover")
-expand_mode = 1
-
-[node name="LeftArm" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("12_leftarm")
-expand_mode = 1
-
-[node name="RightArm" type="TextureRect" parent="."]
+[node name="RightArm" type="TextureRect" parent="." unique_id=1416738649]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -179,7 +79,106 @@ mouse_filter = 2
 texture = ExtResource("13_rightarm")
 expand_mode = 1
 
-[node name="Neck" type="TextureRect" parent="."]
+[node name="LeftArm" type="TextureRect" parent="." unique_id=17211812]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_leftarm")
+expand_mode = 1
+
+[node name="Body" type="TextureRect" parent="." unique_id=461629791]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_body")
+expand_mode = 1
+
+[node name="LeftLeg" type="TextureRect" parent="." unique_id=1066638884]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_leftleg")
+expand_mode = 1
+
+[node name="RightLeg" type="TextureRect" parent="." unique_id=490777511]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_rightleg")
+expand_mode = 1
+
+[node name="LeftFoot" type="TextureRect" parent="." unique_id=1272947951]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_leftfoot")
+expand_mode = 1
+
+[node name="RightFoot" type="TextureRect" parent="." unique_id=737925564]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_rightfoot")
+expand_mode = 1
+
+[node name="Boobs" type="TextureRect" parent="." unique_id=2117479230]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_boobs")
+expand_mode = 1
+
+[node name="Nipples" type="TextureRect" parent="." unique_id=883653380]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_nipples")
+expand_mode = 1
+
+[node name="BoobCover" type="TextureRect" parent="." unique_id=1098004856]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_boobcover")
+expand_mode = 1
+
+[node name="Neck" type="TextureRect" parent="." unique_id=587239954]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -190,7 +189,7 @@ mouse_filter = 2
 texture = ExtResource("14_neck")
 expand_mode = 1
 
-[node name="Face" type="TextureRect" parent="."]
+[node name="Face" type="TextureRect" parent="." unique_id=1458797228]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

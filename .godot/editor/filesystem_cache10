@@ -6,7 +6,7 @@ icon.svg::CompressedTexture2D::4062773066978308223::1778711437::1778711482::1:::
 Jersey10-Regular.ttf::FontFile::8216688361414985612::1778712572::1778718817::1::::<><><>0<>0<>a4319c4db0ecdbc93bf4d1a2a8a5c724<>res://.godot/imported/Jersey10-Regular.ttf-200460e514ca6d2634756f713ee1b38e.fontdata::
 ::res://assets/textures/::1779326126
 ::res://assets/textures/asepritefiles/::1779349388
-::res://assets/textures/backgrounds/::1779347480
+::res://assets/textures/backgrounds/::1779350110
 bedroom_evening.png::CompressedTexture2D::5016043500698100473::1778738314::1778738561::1::::<><><>0<>0<>18997cb137fa485a700645a9ec965f86<>res://.godot/imported/bedroom_evening.png-5d2783d6dd788185447c9940aaa2af38.ctex::
 bedroom_morning.png::CompressedTexture2D::590344480680096236::1778739094::1778739094::1::::<><><>0<>0<>f91af4342c0e1daba29db589d0c81d54<>res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex::
 bedroom_night.png::CompressedTexture2D::1860716824234239661::1778740332::1778740332::1::::<><><>0<>0<>78f8818fb94781e1748fd191707c0b52<>res://.godot/imported/bedroom_night.png-332efe34657d693e16426d9dd86b614d.ctex::
@@ -22,7 +22,7 @@ FlowerLoad.png::CompressedTexture2D::5101804189681311314::1778798433::1778798862
 ::res://assets/textures/characters/::1779326126
 ::res://assets/textures/characters/robot/::1779349288
 ::res://assets/textures/characters/robot/New folder/::1779349288
-::res://assets/textures/characters/robot/personalitytest/::1779350046
+::res://assets/textures/characters/robot/personalitytest/::1779350110
 body.png::CompressedTexture2D::890509079151108831::1779349589::1779350110::1::::<><><>0<>0<>93fded109a3ef81d11b4501f8b1b2f44<>res://.godot/imported/body.png-d5498e158b85613871b6c89927c43c2a.ctex::
 boobs.png::CompressedTexture2D::1254481926234081061::1779349589::1779350109::1::::<><><>0<>0<>bac1b378799f30e234a5c9df8b69cee7<>res://.godot/imported/boobs.png-ceec1d4b7ec86062cc993422385b8273.ctex::
 boob_cover.png::CompressedTexture2D::7600761202917324097::1779349591::1779350109::1::::<><><>0<>0<>ccdeddcb445d09745ff8aca3bd7ae440<>res://.godot/imported/boob_cover.png-56b58be415a1d6b954334f418e86b7b2.ctex::
@@ -38,8 +38,8 @@ placeholder_personality_test_robot.png::CompressedTexture2D::5737093081304422844
 right_arm.png::CompressedTexture2D::2773722867742942580::1779349588::1779350109::1::::<><><>0<>0<>d2c0f6ed6105b6c194c55fa1dd66a902<>res://.godot/imported/right_arm.png-a0a18efce30e8c90e9a153efd836c0be.ctex::
 right_foot.png::CompressedTexture2D::1016944657225742514::1779349593::1779350109::1::::<><><>0<>0<>adaea469dc1e93cc14ba313189f7b312<>res://.godot/imported/right_foot.png-7bee546e38fd44eab9f1ce3297aa474b.ctex::
 right_leg.png::CompressedTexture2D::537584867043120954::1779349592::1779350109::1::::<><><>0<>0<>8e62fe974818d5e22f58dd2d6eeebd0b<>res://.godot/imported/right_leg.png-735bbe35c7593c77ce13f0f28f884bd7.ctex::
-shadow.png::CompressedTexture2D::2639805732386729804::1779350046::1779350109::1::::<><><>0<>0<>14f127a5b701c114024933b2dd90c7f8<>res://.godot/imported/shadow.png-22a2071de5fd10195c7c78903c2485b4.ctex::
-::res://assets/textures/characters/robot/stresstest/::1779332075
+shadow.png::CompressedTexture2D::2639805732386729804::1779395239::1779395241::1::::<><><>0<>0<>14f127a5b701c114024933b2dd90c7f8<>res://.godot/imported/shadow.png-22a2071de5fd10195c7c78903c2485b4.ctex::
+::res://assets/textures/characters/robot/stresstest/::1779350109
 stress_test_bot_full2.png::CompressedTexture2D::1572027802881034747::1779332075::1779350109::1::::<><><>0<>0<>b1e6c5a35f00a29d8d94d1e859396a2c<>res://.godot/imported/stress_test_bot_full2.png-1d1fa861d704cd7c2af5a4fe37519117.ctex::
 stress_test_bot_full.png::CompressedTexture2D::4130082471108196362::1779326181::1779350109::1::::<><><>0<>0<>bedb8aba5591feb17aa4e77cef519add<>res://.godot/imported/stress_test_bot_full.png-2730ed9951efe32fba279a49cae51286.ctex::
 ::res://assets/textures/characters/teachers/::1778813666
@@ -140,9 +140,9 @@ GameState.gd::GDScript::5967163247929190065::1778989389::0::1::::<>Node<><>0<>0<
 README.md::TextFile::-1::1778814803::0::1::::<><><>0<>0<><>::
 ::res://resources/::1778883494
 LocationData.gd::GDScript::9192165682144954293::1778883494::0::1::::LocationData<>Resource<><>0<>0<><>::
-::res://resources/locations/::1779158573
+::res://resources/locations/::1779393527
 maintenance.tres::Resource/LocationData::-1::1778711437::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
-personality_training.tres::Resource/LocationData::-1::1778711437::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
+personality_training.tres::Resource/LocationData::-1::1779393527::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
 school.tres::Resource/LocationData::3811090459373966905::1778804013::0::1::::<><><>0<>0<><>::uid://d370vjofljuj2::::res://resources/LocationData.gd<>uid://panfevpubqnh::::res://assets/textures/backgrounds/school.png
 sleep.tres::Resource/LocationData::-1::1778711437::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
 store.tres::Resource/LocationData::8493132179226426222::1778999947::0::1::::<><><>0<>0<><>::uid://d370vjofljuj2::::res://resources/LocationData.gd<>uid://bbbb4bk4ane8p::::res://assets/textures/backgrounds/store.png
@@ -156,14 +156,16 @@ Main.tscn::PackedScene::6014830843503735391::1779162380::0::1::::<><><>0<>0<><>:
 Scanlines.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://shaders/scanlines.gdshader
 Transition.gd::GDScript::6657196936549354663::1778800437::0::1::::<>TextureRect<><>0<>0<><>::
 Transition.tscn::PackedScene::5942311429986572456::1778799880::0::1::::<><><>0<>0<><>::res://scenes/Transition.gd<>uid://cexl7748vgoji::::res://assets/textures/backgrounds/load/FlowerLoad.png
-::res://scenes/locations/::1779318061
+::res://scenes/locations/::1779395215
 DraggableItem.gd::GDScript::4351373448739835074::1778950847::0::1::::DraggableItem<>TextureRect<><>0<>0<><>::
 DropSlot.gd::GDScript::1826873693449048210::1778948053::0::1::::DropSlot<>Control<><>0<>0<><>::
 LegRecipe.gd::GDScript::6932216036640604769::1779156969::0::1::::LegRecipe<>Resource<><>0<>0<><>::
 LegSegmentData.gd::GDScript::5317898093808904491::1779156969::0::1::::LegSegmentData<>Resource<><>0<>0<><>::
 LocationBase.gd::GDScript::9172710538260446283::1778711437::0::1::::LocationBase<>Control<><>0<>0<><>::
 Maintenance.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
-PersonalityTraining.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn
+PersonalityTraining.gd::GDScript::2203202251105694777::1779393527::0::1::::<>LocationBase<><>0<>0<><>::
+PersonalityTraining.tscn::PackedScene::4323982211143207888::1779395215::0::1::::<><><>0<>0<><>::uid://cyie4hrdescw1::::res://scenes/locations/StubLocation.tscn<>uid://6nioitupg834::::res://scenes/locations/PersonalityTraining.gd<>uid://k8jls1dgr68d::::res://scenes/locations/PersonalityTestRobot.tscn
+PersonalityTestRobot.tscn::PackedScene::770579984662395305::1779394892::0::1::::<><><>0<>0<><>::uid://bdu0hkh3b5apo::::res://assets/textures/characters/robot/personalitytest/shadow.png<>uid://8wq8y7pbd77a::::res://assets/textures/characters/robot/personalitytest/hair_back.png<>uid://c57162k4qwgfk::::res://assets/textures/characters/robot/personalitytest/hair_front.png<>uid://c66igll647426::::res://assets/textures/characters/robot/personalitytest/left_leg.png<>uid://hwn7drsujm5g::::res://assets/textures/characters/robot/personalitytest/right_leg.png<>uid://c86k127dlo2am::::res://assets/textures/characters/robot/personalitytest/left foot.png<>uid://oqu6u838c38a::::res://assets/textures/characters/robot/personalitytest/right_foot.png<>uid://r4xes7opji10::::res://assets/textures/characters/robot/personalitytest/boobs.png<>uid://bcuxbytivviov::::res://assets/textures/characters/robot/personalitytest/nipples.png<>uid://mxms36i6fk0n::::res://assets/textures/characters/robot/personalitytest/body.png<>uid://dgj4orchkkxl6::::res://assets/textures/characters/robot/personalitytest/boob_cover.png<>uid://dtvgpcx1fcekx::::res://assets/textures/characters/robot/personalitytest/left_arm.png<>uid://bfru2s2nv4oqe::::res://assets/textures/characters/robot/personalitytest/right_arm.png<>uid://cy3nlwdmpbv4g::::res://assets/textures/characters/robot/personalitytest/neck.png<>uid://b5x476xeydwkt::::res://assets/textures/characters/robot/personalitytest/face.png
 School.gd::GDScript::7587241416541553663::1778953458::0::1::::<>LocationBase<><>0<>0<><>::
 School.tscn::PackedScene::4486802543738284867::1778953754::0::1::::<><><>0<>0<><>::uid://dgdk002rw8p48::::res://scenes/locations/School.gd<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
 Sleep.tscn::PackedScene::-1::1778711437::0::1::::<><><>0<>0<><>::res://scenes/locations/StubLocation.tscn

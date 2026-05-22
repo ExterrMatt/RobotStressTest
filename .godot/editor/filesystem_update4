@@ -23,3 +23,4 @@ res://scenes/locations/WorkshopPiece.gd
 res://scenes/locations/WorkshopAssemblySlot.gd
 res://scenes/locations/WorkshopSegment.gd
 res://scenes/locations/PersonalityTraining.tscn
+res://scenes/locations/PersonalityTestRobot.tscn

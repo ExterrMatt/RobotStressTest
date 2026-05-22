@@ -1,8 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://b2utmcx04txx5"]
+[gd_scene format=3 uid="uid://b2utmcx04txx5"]
 
 [ext_resource type="PackedScene" uid="uid://cyie4hrdescw1" path="res://scenes/locations/StubLocation.tscn" id="1"]
-[ext_resource type="Script" path="res://scenes/locations/PersonalityTraining.gd" id="2"]
-[ext_resource type="PackedScene" uid="uid://bfufqgv0boyhc" path="res://scenes/locations/PersonalityTestRobot.tscn" id="3"]
+[ext_resource type="Script" uid="uid://6nioitupg834" path="res://scenes/locations/PersonalityTraining.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://k8jls1dgr68d" path="res://scenes/locations/PersonalityTestRobot.tscn" id="3"]
 
 [node name="PersonalityTraining" unique_id=816428029 instance=ExtResource("1")]
 script = ExtResource("2")
@@ -16,7 +16,7 @@ outcomes = [{
 "suspicion": 0
 }]
 
-[node name="RobotLayer" type="Control" parent="."]
+[node name="RobotLayer" type="Control" parent="." index="3" unique_id=504394048]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,9 +25,10 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PersonalityTestRobot" parent="RobotLayer" instance=ExtResource("3")]
+[node name="PersonalityTestRobot" parent="RobotLayer" index="0" unique_id=120089004 instance=ExtResource("3")]
 layout_mode = 1
-offset_left = 250.0
-offset_top = 160.0
-offset_right = 550.0
-offset_bottom = 610.0
+offset_left = 160.99998
+offset_top = 58.999996
+offset_right = 461.0
+offset_bottom = 509.0
+scale = Vector2(1.6, 1.6)
