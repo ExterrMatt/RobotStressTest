@@ -1,37 +1,33 @@
 extends Control
 ## Main menu scene — shown before Main.tscn at game start.
 ##
-## Translates the HTML reference ("Don't Wake Her" title screen) into Godot.
-## All text, colors, effects, and menu items are exposed as @export so you
-## can tweak them in the Inspector without opening this script.
+## ============================================================================
+## HOW TO EDIT THIS MENU
+## ============================================================================
+## Two kinds of edits, two places to make them:
 ##
-## To make the menu the starting scene, set
+## 1. TEXT and FONT SIZES — edit the Label nodes DIRECTLY in the scene tree.
+##    Click TitleLine1 / TitleLine2 / SubtitleLabel / TagLabel / VersionLabel
+##    / StudioLabel / SubjectTagLabel / Keys in the Scene panel, then change
+##    their `text` property in the Inspector. Same for font sizes (under
+##    Theme Overrides → Font Sizes). Edits there persist; nothing in this
+##    script overrides them.
+##
+## 2. RUNTIME BEHAVIOR — edit the @export properties on the MainMenu root
+##    node (the very top of the Inspector). These cover menu items, the
+##    visual effects toggles, accent colors, robot texture & scale, and
+##    the target scene. They're things that can't be set as plain node
+##    properties because they drive dynamic behavior in code.
+##
+## To make this the starting scene, set
 ##   run/main_scene="res://scenes/ui/MainMenu.tscn"
 ## in project.godot.
 
-# =============================================================================
-# EDITOR-TUNABLE VALUES
-# These are the Godot equivalent of the HTML's /*EDITMODE-BEGIN*/ block.
-# Edit them in the Inspector, or directly in MainMenu.tscn's [node ".."] block.
-# =============================================================================
 
-# --- TEXT ---
-@export_group("Text")
-## Top line of the logo. Rendered in the default ink color.
-@export var title_line_1: String = "DON'T"
-## Bottom line of the logo. Rendered in the accent color, with glow.
-@export var title_line_2: String = "WAKE HER"
-## Subtitle shown beneath the title. The bullet character separates it
-## from the title visually; remove it if your subtitle is short.
-@export var subtitle: String = "•  ROBOT STRESS-TEST PROTOCOL"
-## Small tag above the title.
-@export var tag_line: String = "[ A GAME BY YOU ]"
-## Version string shown at the bottom-right.
-@export var version_string: String = "v0.0.1 // ALPHA BUILD"
-## Copyright / studio line shown beneath the version.
-@export var studio_line: String = "© WAKE-CYCLE STUDIOS — DO NOT DISTRIBUTE"
-## Status tag floating over the robot art.
-@export var subject_tag: String = "SUBJECT 07 // STATUS: DORMANT"
+# =============================================================================
+# RUNTIME-BEHAVIOR EXPORTS
+# Only things that genuinely need code wiring live here.
+# =============================================================================
 
 # --- MENU ITEMS ---
 @export_group("Menu Items")
@@ -43,7 +39,7 @@ extends Control
 ## IDs the script knows about: "new", "endless", "load", "settings", "quit"
 ##
 ## Typed as plain Array (not Array[Array]) because Godot 4 exports don't
-## support nested typed arrays — the inspector would refuse to load it.
+## support nested typed arrays — the Inspector would refuse to load it.
 @export var menu_items: Array = [
 	["new",      "New Game",  "1"],
 	["endless",  "Endless",   "2"],
@@ -56,55 +52,78 @@ extends Control
 @export_group("Visual Effects")
 ## CRT scanline overlay. Already used elsewhere in the game; leave on for
 ## consistency.
-@export var show_scanlines: bool = true
+@export var show_scanlines: bool = true:
+	set(value):
+		show_scanlines = value
+		if is_inside_tree():
+			scanline_layer.visible = value
 ## Subtle brightness flicker, fires every ~7s. Disable for "reduced motion".
 @export var show_flicker: bool = true
 ## Rising ember particles in the background.
-@export var show_embers: bool = true
+@export var show_embers: bool = true:
+	set(value):
+		show_embers = value
+		if is_inside_tree():
+			embers_layer.visible = value
 ## How many embers to spawn. More = denser atmosphere, slightly more CPU.
 @export_range(0, 60, 1) var ember_count: int = 22
-## Accent color used on the second title line, hover states, and warning LED.
-## Default matches HTML reference (#b765d6, a magenta-purple).
-@export var accent_color: Color = Color("b765d6")
-## Soft variant of the accent — pull this slightly off the main accent for a
-## believable glow rather than a flat tint.
-@export var accent_soft_color: Color = Color("f0a060")
+## Color of the rising embers and the warning-tag accent text.
+@export var accent_soft_color: Color = Color("f0a060"):
+	set(value):
+		accent_soft_color = value
+		if is_inside_tree():
+			subject_tag_label.add_theme_color_override("font_color", value)
 
 # --- ROBOT ART ---
 @export_group("Robot Art")
-## Drop your robot character art here. PNG with transparent background, tall
-## portrait. Leave empty to show the placeholder.
-@export var robot_texture: Texture2D = null
+## Drop your robot character art here. PNG with transparent background.
+## Leave empty to show the placeholder.
+@export var robot_texture: Texture2D = null:
+	set(value):
+		robot_texture = value
+		if is_inside_tree():
+			_apply_robot_art()
+## Scale multiplier for the robot art. 1.0 = original pixel size, 2.0 =
+## doubled, etc. The image is centered inside the frame regardless of
+## scale, and is clipped if it overflows. Useful when your art is small
+## pixel-art and needs to be blown up; or large and needs shrinking.
+@export_range(0.1, 8.0, 0.05) var robot_scale: float = 2.0:
+	set(value):
+		robot_scale = value
+		if is_inside_tree():
+			_apply_robot_art()
+## Nudge the robot's position inside its frame. (0, 0) keeps it centered;
+## negative Y lifts it up, positive Y pushes it down. Pixels, post-scale.
+@export var robot_offset: Vector2 = Vector2.ZERO:
+	set(value):
+		robot_offset = value
+		if is_inside_tree():
+			_apply_robot_art()
 
 # --- TARGET SCENES ---
 @export_group("Target Scenes")
-## Scene to load when "New Game" / "Endless" is picked. Defaults to Main.tscn.
+## Scene to load when "New Game" / "Endless" is picked.
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/Main.tscn"
 
 
 # =============================================================================
 # NODE REFS — resolved at _ready via unique_name_in_owner.
+# Note: there are no @onready refs for TitleLine1 / SubtitleLabel / etc
+# anymore because the script no longer touches their text. Edit them in the
+# scene tree.
 # =============================================================================
 
-@onready var title_line_1_label: Label = %TitleLine1
-@onready var title_line_2_label: Label = %TitleLine2
-@onready var subtitle_label: Label    = %SubtitleLabel
-@onready var tag_label: Label         = %TagLabel
-@onready var version_label: Label     = %VersionLabel
-@onready var studio_label: Label      = %StudioLabel
-@onready var subject_tag_label: Label = %SubjectTagLabel
-
-@onready var menu_list: VBoxContainer = %MenuList
-@onready var robot_image: TextureRect = %RobotImage
-@onready var robot_placeholder: Label = %RobotPlaceholder
-
+@onready var subject_tag_label: Label    = %SubjectTagLabel
+@onready var menu_list: VBoxContainer    = %MenuList
+@onready var robot_image: TextureRect    = %RobotImage
+@onready var robot_placeholder: Label    = %RobotPlaceholder
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 @onready var embers_layer: Control       = %EmbersLayer
 
 # Overlay panels — built on demand by _open_overlay().
 var _current_overlay: Control = null
 
-# Internal: which menu row is currently focused. Tracks `id` from menu_items.
+# Internal: which menu row is currently focused.
 var _hovered_id: String = ""
 
 
@@ -113,12 +132,24 @@ var _hovered_id: String = ""
 # =============================================================================
 
 func _ready() -> void:
-	_apply_text()
-	_apply_effects()
+	# Apply only the things that actually need code wiring. Text and font
+	# sizes come straight from the .tscn — we don't touch them.
+	scanline_layer.visible = show_scanlines
+	embers_layer.visible   = show_embers
+
+	# Accent color override is one-shot at startup; the setter handles
+	# live edits via script.
+	subject_tag_label.add_theme_color_override("font_color", accent_soft_color)
+
 	_apply_robot_art()
 	_build_menu()
 
-	# Focus the first row so the keyboard navigation has somewhere to start.
+	if show_embers:
+		_spawn_embers()
+	if show_flicker:
+		_start_flicker()
+
+	# Focus the first row so keyboard navigation starts somewhere.
 	if menu_list.get_child_count() > 0:
 		var first: Button = menu_list.get_child(0) as Button
 		if first:
@@ -128,15 +159,14 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
-	# If an overlay is open, ESC closes it. Don't let menu hotkeys steal focus.
+	# If an overlay is open, ESC closes it.
 	if _current_overlay and is_instance_valid(_current_overlay):
 		if event.keycode == KEY_ESCAPE:
 			_close_overlay()
 			get_viewport().set_input_as_handled()
 		return
 
-	# Number-key hotkeys map to menu rows by position (1 → first row, etc.).
-	# Currently caps at 9 rows; that's plenty for a main menu.
+	# Number-key hotkeys map to menu rows by position.
 	if event.keycode >= KEY_1 and event.keycode <= KEY_9:
 		var idx: int = event.keycode - KEY_1
 		if idx < menu_items.size():
@@ -148,48 +178,84 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # =============================================================================
-# WIRING — apply exports to nodes.
+# ROBOT ART
+# Renders the texture at robot_scale * its native size, centered in the
+# RobotFrame parent, with an optional offset. Pixel-art crisp.
 # =============================================================================
 
-func _apply_text() -> void:
-	title_line_1_label.text = title_line_1
-	title_line_2_label.text = title_line_2
-	subtitle_label.text     = subtitle
-	tag_label.text          = tag_line
-	version_label.text      = version_string
-	studio_label.text       = studio_line
-	subject_tag_label.text  = subject_tag
-
-	# Accent color on the second title line. add_theme_color_override is the
-	# Godot way to do a per-node color tweak without forking the theme.
-	title_line_2_label.add_theme_color_override("font_color", accent_color)
-	subject_tag_label.add_theme_color_override("font_color", accent_soft_color)
-
-
-func _apply_effects() -> void:
-	scanline_layer.visible = show_scanlines
-	embers_layer.visible   = show_embers
-
-	if show_embers:
-		_spawn_embers()
-	if show_flicker:
-		_start_flicker()
-
-
 func _apply_robot_art() -> void:
-	if robot_texture:
+	# Visibility of RobotImage and RobotPlaceholder is controlled in the
+	# editor — toggle them in the scene tree, not here.
+	if robot_texture != null:
 		robot_image.texture = robot_texture
-		robot_image.visible = true
-		robot_placeholder.visible = false
-	else:
-		robot_image.visible = false
-		robot_placeholder.visible = true
 
+	# STRETCH_SCALE lets the texture fill whatever size we set on the rect.
+	# We then size the rect ourselves to texture_size * robot_scale, which
+	# gives the visible scaling effect.
+	robot_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	robot_image.stretch_mode = TextureRect.STRETCH_SCALE
+	robot_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	robot_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Resize listener on the PARENT (RobotStage) so the robot recenters
+	# when the stage's available size changes. Listening on robot_image
+	# itself causes a feedback loop — we change its size, which fires
+	# resized, which changes its size...
+	var stage: Control = robot_image.get_parent() as Control
+	if stage and not stage.resized.is_connected(_update_robot_transform):
+		stage.resized.connect(_update_robot_transform)
+
+	_update_robot_transform()
+
+
+## Sizes the robot rect to texture_size × robot_scale (clamped so it
+## never exceeds the parent stage) and centers it inside the stage.
+func _update_robot_transform() -> void:
+	if robot_image == null or not is_instance_valid(robot_image):
+		return
+	if robot_image.texture == null:
+		return
+
+	var stage: Control = robot_image.get_parent() as Control
+	if stage == null:
+		return
+
+	# Force the rect out of anchor-driven sizing. Setting all four anchors
+	# to 0 and clearing offsets means the rect is positioned purely by
+	# `position` and sized purely by `size` — no stretching from parent.
+	robot_image.anchor_left = 0.0
+	robot_image.anchor_top = 0.0
+	robot_image.anchor_right = 0.0
+	robot_image.anchor_bottom = 0.0
+	robot_image.offset_left = 0.0
+	robot_image.offset_top = 0.0
+	robot_image.offset_right = 0.0
+	robot_image.offset_bottom = 0.0
+	robot_image.scale = Vector2.ONE
+
+	var tex_size: Vector2 = robot_image.texture.get_size()
+	var desired_size: Vector2 = tex_size * robot_scale
+
+	# Cap the scale so the rect never exceeds the stage. Uniform scale
+	# preserves the texture's aspect ratio.
+	var fit_scale: float = robot_scale
+	if stage.size.x > 0.0 and desired_size.x > stage.size.x:
+		fit_scale = min(fit_scale, stage.size.x / tex_size.x)
+	if stage.size.y > 0.0 and desired_size.y > stage.size.y:
+		fit_scale = min(fit_scale, stage.size.y / tex_size.y)
+
+	var final_size: Vector2 = tex_size * fit_scale
+	robot_image.size = final_size
+	robot_image.position = (stage.size - final_size) * 0.5 + robot_offset
+	await get_tree().process_frame
+	await get_tree().process_frame
+	print("AFTER 2 FRAMES: rect_size=", robot_image.size, " rect_pos=", robot_image.position, " stage_size=", stage.size)
+
+# =============================================================================
+# MENU BUILDING
+# =============================================================================
 
 func _build_menu() -> void:
-	# Clear anything the .tscn left behind (defensive — the scene file ships
-	# with an empty VBox, but if a designer drops sample rows in there we
-	# want them gone before we add the real ones).
 	for child in menu_list.get_children():
 		child.queue_free()
 
@@ -202,9 +268,8 @@ func _build_menu() -> void:
 		menu_list.add_child(row)
 
 
-## Build a single menu row. Each row is a Button so we get free keyboard
-## focus + click handling; the styling comes from the theme's "MenuRow"
-## variation defined in main_theme.tres.
+## A plain Button picks up the project's default Button theme from
+## main_theme.tres — same styling used everywhere else.
 func _build_menu_row(id: String, label: String, hotkey: String) -> Button:
 	var btn := Button.new()
 	btn.name = "MenuRow_" + id
@@ -212,7 +277,6 @@ func _build_menu_row(id: String, label: String, hotkey: String) -> Button:
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.custom_minimum_size = Vector2(0, 60)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.theme_type_variation = &"MenuRow"
 	btn.focus_mode = Control.FOCUS_ALL
 
 	btn.pressed.connect(_activate.bind(id))
@@ -230,47 +294,57 @@ func _on_row_hover(id: String, _btn: Button) -> void:
 
 
 func _activate(id: String) -> void:
-	# Don't stack overlays.
 	if _current_overlay and is_instance_valid(_current_overlay):
 		return
 
 	match id:
-		"new":
-			_start_new_game()
-		"endless":
-			_start_endless()
-		"load":
-			_open_overlay(_build_load_panel())
-		"settings":
-			_open_overlay(_build_settings_panel())
-		"quit":
-			_open_overlay(_build_quit_confirm())
-		_:
-			push_warning("MainMenu: unknown menu id '%s'" % id)
+		"new":      _start_new_game()
+		"endless":  _start_endless()
+		"load":     _open_overlay(_build_load_panel())
+		"settings": _open_overlay(_build_settings_panel())
+		"quit":     _open_overlay(_build_quit_confirm())
+		_:          push_warning("MainMenu: unknown menu id '%s'" % id)
 
 
 func _start_new_game() -> void:
-	# In a future save system, this would also clear/reset GameState.
-	# For now, just hand off to Main.tscn — GameState is fresh by default.
+	# Tell Main.tscn to play the FlowerLoad wipe (starting fully-covered)
+	# inside its picture frame on _ready, then swap scenes. Doing the
+	# wipe on Main's side means it's correctly scoped to the picture
+	# frame — not the entire viewport — and it reuses the same Transition
+	# node Main already has for in-game wipes.
+	#
+	# We route property access through get_node("/root/IntroTransition")
+	# rather than the bare `IntroTransition` identifier because the
+	# GDScript parser doesn't always resolve autoload names from scripts
+	# in scenes/ui/ at parse time. Going through /root sidesteps the
+	# parser entirely — same behavior, just looked up at runtime.
+	var intro: Node = get_node_or_null("/root/IntroTransition")
+	if intro:
+		intro.pending_intro = true
 	get_tree().change_scene_to_file(game_scene_path)
 
 
 func _start_endless() -> void:
 	# Endless mode currently uses the same Main scene. When endless-specific
-	# rules exist, set a GameState flag here before changing scenes, e.g.:
-	#   GameState.endless_mode = true
+	# rules exist, set a GameState flag here before changing scenes.
+	var intro: Node = get_node_or_null("/root/IntroTransition")
+	if intro:
+		intro.pending_intro = true
 	get_tree().change_scene_to_file(game_scene_path)
 
 
+## Kept for completeness — used by other parts of the script that may want
+## to check for an autoload's presence by name.
+func _has_autoload(autoload_name: String) -> bool:
+	return get_node_or_null("/root/" + autoload_name) != null
+
+
 # =============================================================================
-# OVERLAYS
-# Each overlay is built programmatically so the .tscn stays clean. If you
-# want a richer Load Game panel later, replace _build_load_panel() with
-# a PackedScene instance.
+# OVERLAYS — Load / Settings / Quit confirm dialogs.
 # =============================================================================
 
 func _open_overlay(panel: Control) -> void:
-	_close_overlay()  # paranoia
+	_close_overlay()
 	_current_overlay = panel
 	add_child(panel)
 
@@ -281,9 +355,8 @@ func _close_overlay() -> void:
 	_current_overlay = null
 
 
-## Shared backdrop + panel skeleton. Children of `panel_content` are what
-## you actually see; the surrounding ColorRect + PanelContainer handle the
-## dim-and-frame.
+## Shared backdrop + panel skeleton. Returns {back, content} so callers can
+## stuff things into the content VBox.
 func _build_overlay_shell(title: String) -> Dictionary:
 	var back := ColorRect.new()
 	back.name = "OverlayBack"
@@ -291,25 +364,20 @@ func _build_overlay_shell(title: String) -> Dictionary:
 	back.anchor_right = 1.0
 	back.anchor_bottom = 1.0
 	back.mouse_filter = Control.MOUSE_FILTER_STOP
-	# Click outside the panel closes the overlay.
 	back.gui_input.connect(func(ev):
 		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 			_close_overlay()
 	)
 
-	# CenterContainer keeps the panel pinned to the screen center without us
-	# having to do the "anchor at 50% then offset by half size" dance.
 	var center := CenterContainer.new()
 	center.anchor_right = 1.0
 	center.anchor_bottom = 1.0
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE  # pass clicks to backdrop
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	back.add_child(center)
 
 	var panel := PanelContainer.new()
 	panel.theme_type_variation = &"HUDPanel"
 	panel.custom_minimum_size = Vector2(560, 0)
-	# STOP eats clicks so they don't fall through to the backdrop's
-	# click-to-dismiss handler.
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	center.add_child(panel)
 
@@ -341,8 +409,8 @@ func _build_load_panel() -> Control:
 	sub.theme_type_variation = &"HUDLabel"
 	content.add_child(sub)
 
-	# Placeholder save slots. Wire to a real save system when one exists —
-	# the design doc already has GameState.to_dict() for serialization.
+	# Placeholder save slots. Wire to a real save system later —
+	# GameState.to_dict() already exists.
 	var saves := [
 		{"n": 1, "name": "RUN 03", "info": "Day 12  ·  Night  ·  Bedroom",  "money": 247, "anger": 71, "empty": false},
 		{"n": 2, "name": "RUN 02", "info": "Day 5   ·  Evening · Workshop", "money": 88,  "anger": 30, "empty": false},
@@ -359,14 +427,15 @@ func _build_save_slot(data: Dictionary) -> Control:
 	slot.theme_type_variation = &"HUDPanel"
 	slot.custom_minimum_size = Vector2(0, 56)
 
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 16)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 14)
 	margin.add_theme_constant_override("margin_right", 14)
 	margin.add_theme_constant_override("margin_top", 10)
 	margin.add_theme_constant_override("margin_bottom", 10)
 	slot.add_child(margin)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 16)
 	margin.add_child(hbox)
 
 	var slot_no := Label.new()
@@ -472,7 +541,6 @@ func _spawn_embers() -> void:
 	for child in embers_layer.get_children():
 		child.queue_free()
 
-	# Anchor the layer to fill the viewport so percent-based X works.
 	embers_layer.anchor_right = 1.0
 	embers_layer.anchor_bottom = 1.0
 
@@ -501,11 +569,10 @@ func _animate_ember(ember: ColorRect, rng: RandomNumberGenerator) -> void:
 	var end_y: float = -20.0
 
 	var tween := create_tween()
-	tween.set_loops()  # loops indefinitely
+	tween.set_loops()
 	tween.tween_property(ember, "position",
 		Vector2(start_x + drift, end_y), duration
 	).from(Vector2(start_x, start_y))
-	# Fade in over the first 10%, fade out over the last 30%.
 	tween.parallel().tween_property(ember, "modulate:a", 0.0, duration * 0.3)\
 		.from(0.0)\
 		.set_delay(duration * 0.1)
@@ -514,9 +581,7 @@ func _animate_ember(ember: ColorRect, rng: RandomNumberGenerator) -> void:
 
 
 func _start_flicker() -> void:
-	# Brightness flicker via modulate. The HTML uses CSS filter:brightness;
-	# in Godot the closest cheap equivalent is modulating the whole Control
-	# tree's color.
+	# Brightness flicker via modulate. CSS filter:brightness equivalent.
 	var tween := create_tween()
 	tween.set_loops()
 	tween.tween_interval(6.5)

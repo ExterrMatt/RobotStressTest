@@ -177,6 +177,10 @@ func _ready() -> void:
 
 	_refresh_hud()
 	_show_selection_screen()
+	var intro_autoload: Node = get_node_or_null("/root/IntroTransition")
+	if intro_autoload and intro_autoload.consume_intro():
+		call_deferred("_play_intro_wipe")
+
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -803,3 +807,17 @@ func hide_inventory_overlay() -> void:
 	if _inventory_overlay and is_instance_valid(_inventory_overlay):
 		_inventory_overlay.queue_free()
 	_inventory_overlay = null
+
+func _play_intro_wipe() -> void:
+	if transition == null:
+		return
+	if "_tween" in transition and transition._tween:
+		transition._tween.kill()
+	transition.visible = true
+	transition._frame_index = 9
+	var lift_duration: float = transition.duration_sec * 0.5
+	var lift_tween: Tween = transition.create_tween()
+	lift_tween.set_trans(Tween.TRANS_LINEAR)
+	lift_tween.tween_property(transition, "_frame_index", transition.total_frames - 1, lift_duration)
+	lift_tween.tween_callback(func(): transition.visible = false)
+	transition._tween = lift_tween
