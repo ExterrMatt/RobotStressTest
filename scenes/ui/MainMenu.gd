@@ -78,27 +78,15 @@ extends Control
 @export_group("Robot Art")
 ## Drop your robot character art here. PNG with transparent background.
 ## Leave empty to show the placeholder.
-@export var robot_texture: Texture2D = null:
-	set(value):
-		robot_texture = value
-		if is_inside_tree():
-			_apply_robot_art()
+@export var robot_texture: Texture2D = null
 ## Scale multiplier for the robot art. 1.0 = original pixel size, 2.0 =
 ## doubled, etc. The image is centered inside the frame regardless of
 ## scale, and is clipped if it overflows. Useful when your art is small
 ## pixel-art and needs to be blown up; or large and needs shrinking.
-@export_range(0.1, 8.0, 0.05) var robot_scale: float = 2.0:
-	set(value):
-		robot_scale = value
-		if is_inside_tree():
-			_apply_robot_art()
+@export_range(0.1, 8.0, 0.05) var robot_scale: float = 2.0
 ## Nudge the robot's position inside its frame. (0, 0) keeps it centered;
 ## negative Y lifts it up, positive Y pushes it down. Pixels, post-scale.
-@export var robot_offset: Vector2 = Vector2.ZERO:
-	set(value):
-		robot_offset = value
-		if is_inside_tree():
-			_apply_robot_art()
+@export var robot_offset: Vector2 = Vector2.ZERO
 
 # --- TARGET SCENES ---
 @export_group("Target Scenes")
@@ -115,8 +103,6 @@ extends Control
 
 @onready var subject_tag_label: Label    = %SubjectTagLabel
 @onready var menu_list: VBoxContainer    = %MenuList
-@onready var robot_image: TextureRect    = %RobotImage
-@onready var robot_placeholder: Label    = %RobotPlaceholder
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 @onready var embers_layer: Control       = %EmbersLayer
 
@@ -141,7 +127,6 @@ func _ready() -> void:
 	# live edits via script.
 	subject_tag_label.add_theme_color_override("font_color", accent_soft_color)
 
-	_apply_robot_art()
 	_build_menu()
 
 	if show_embers:
@@ -177,79 +162,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 
-# =============================================================================
-# ROBOT ART
-# Renders the texture at robot_scale * its native size, centered in the
-# RobotFrame parent, with an optional offset. Pixel-art crisp.
-# =============================================================================
-
-func _apply_robot_art() -> void:
-	# Visibility of RobotImage and RobotPlaceholder is controlled in the
-	# editor — toggle them in the scene tree, not here.
-	if robot_texture != null:
-		robot_image.texture = robot_texture
-
-	# STRETCH_SCALE lets the texture fill whatever size we set on the rect.
-	# We then size the rect ourselves to texture_size * robot_scale, which
-	# gives the visible scaling effect.
-	robot_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	robot_image.stretch_mode = TextureRect.STRETCH_SCALE
-	robot_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	robot_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	# Resize listener on the PARENT (RobotStage) so the robot recenters
-	# when the stage's available size changes. Listening on robot_image
-	# itself causes a feedback loop — we change its size, which fires
-	# resized, which changes its size...
-	var stage: Control = robot_image.get_parent() as Control
-	if stage and not stage.resized.is_connected(_update_robot_transform):
-		stage.resized.connect(_update_robot_transform)
-
-	_update_robot_transform()
-
-
-## Sizes the robot rect to texture_size × robot_scale (clamped so it
-## never exceeds the parent stage) and centers it inside the stage.
-func _update_robot_transform() -> void:
-	if robot_image == null or not is_instance_valid(robot_image):
-		return
-	if robot_image.texture == null:
-		return
-
-	var stage: Control = robot_image.get_parent() as Control
-	if stage == null:
-		return
-
-	# Force the rect out of anchor-driven sizing. Setting all four anchors
-	# to 0 and clearing offsets means the rect is positioned purely by
-	# `position` and sized purely by `size` — no stretching from parent.
-	robot_image.anchor_left = 0.0
-	robot_image.anchor_top = 0.0
-	robot_image.anchor_right = 0.0
-	robot_image.anchor_bottom = 0.0
-	robot_image.offset_left = 0.0
-	robot_image.offset_top = 0.0
-	robot_image.offset_right = 0.0
-	robot_image.offset_bottom = 0.0
-	robot_image.scale = Vector2.ONE
-
-	var tex_size: Vector2 = robot_image.texture.get_size()
-	var desired_size: Vector2 = tex_size * robot_scale
-
-	# Cap the scale so the rect never exceeds the stage. Uniform scale
-	# preserves the texture's aspect ratio.
-	var fit_scale: float = robot_scale
-	if stage.size.x > 0.0 and desired_size.x > stage.size.x:
-		fit_scale = min(fit_scale, stage.size.x / tex_size.x)
-	if stage.size.y > 0.0 and desired_size.y > stage.size.y:
-		fit_scale = min(fit_scale, stage.size.y / tex_size.y)
-
-	var final_size: Vector2 = tex_size * fit_scale
-	robot_image.size = final_size
-	robot_image.position = (stage.size - final_size) * 0.5 + robot_offset
-	await get_tree().process_frame
-	await get_tree().process_frame
-	print("AFTER 2 FRAMES: rect_size=", robot_image.size, " rect_pos=", robot_image.position, " stage_size=", stage.size)
 
 # =============================================================================
 # MENU BUILDING

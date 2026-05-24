@@ -117,29 +117,23 @@ theme_override_font_sizes/font_size = 18
 text = "SUBJECT 07 // STATUS: DORMANT"
 
 [node name="RobotFrame" type="PanelContainer" parent="UI/HBox/RightColumn" unique_id=774236696]
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"FrameOuter"
 
-[node name="RobotImage" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame" unique_id=651200304]
-unique_name_in_owner = true
+[node name="Control" type="Control" parent="UI/HBox/RightColumn/RobotFrame" unique_id=249631452]
 layout_mode = 2
-texture = ExtResource("3_2ysvc")
-expand_mode = 1
-stretch_mode = 5
 
-[node name="RobotPlaceholder" type="Label" parent="UI/HBox/RightColumn/RobotFrame" unique_id=106010302]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_type_variation = &"HUDLabel"
-text = "DROP ROBOT CHARACTER ART
-HERE
-( SET 'Robot Texture' IN INSPECTOR )"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 2
+[node name="RobotImage2" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control" unique_id=2091313544]
+layout_mode = 0
+offset_right = 516.0
+offset_bottom = 556.0
+scale = Vector2(2.965, 2.965)
+pivot_offset = Vector2(258, 0)
+texture = ExtResource("3_2ysvc")
+stretch_mode = 5
 
 [node name="BuildInfo" type="VBoxContainer" parent="UI/HBox/RightColumn" unique_id=2038652137]
 layout_mode = 2
@@ -150,7 +144,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
 theme_override_font_sizes/font_size = 18
-text = "v0.0.1 // ALPHA BUILD"
+text = "v0.1.0 // IN DEVELOPMENT"
 horizontal_alignment = 2
 
 [node name="StudioLabel" type="Label" parent="UI/HBox/RightColumn/BuildInfo" unique_id=211393971]
@@ -158,7 +152,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
 theme_override_font_sizes/font_size = 16
-text = "© WAKE-CYCLE STUDIOS — DO NOT DISTRIBUTE"
+text = "DO NOT DISTRIBUTE >:("
 horizontal_alignment = 2
 
 [node name="ScanlineLayer" type="CanvasLayer" parent="." unique_id=2059562072]
