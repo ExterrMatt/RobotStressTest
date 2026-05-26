@@ -174,7 +174,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"upper_thigh"
-paired_with = null
 hitbox_rect = Rect2(108, 31, 142, 134)
 
 [node name="upper_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/UpperThighSlot" unique_id=1263028035]
@@ -205,7 +204,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"butt"
-paired_with = null
 hitbox_rect = Rect2(174, 77, 85, 96)
 
 [node name="butt_piece" type="Control" parent="AssemblyArea/AssemblyLeg/ButtSlot" unique_id=2063088160]
@@ -247,7 +245,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"mid_thigh"
-paired_with = null
 hitbox_rect = Rect2(37, 89, 137, 132)
 
 [node name="mid_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/MidThighSlot" unique_id=2075452651]
@@ -278,7 +275,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"side_thigh"
-paired_with = null
 hitbox_rect = Rect2(99, 93, 80, 96)
 
 [node name="side_thigh" type="Control" parent="AssemblyArea/AssemblyLeg/SideThighSlot" unique_id=895148640]
@@ -327,7 +323,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"heel"
-paired_with = null
 hitbox_rect = Rect2(246, 263, 49, 56)
 
 [node name="heel" type="Control" parent="AssemblyArea/AssemblyLeg/HeelSlot" unique_id=71548926]
@@ -426,7 +421,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"knee"
-paired_with = null
 hitbox_rect = Rect2(28, 187, 52, 62)
 
 [node name="knee" type="Control" parent="AssemblyArea/AssemblyLeg/KneeSlot" unique_id=599878234]
@@ -474,7 +468,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"lower_leg"
-paired_with = null
 hitbox_rect = Rect2(127, 231, 121, 65)
 
 [node name="lower_leg" type="Control" parent="AssemblyArea/AssemblyLeg/LowerLegSlot" unique_id=507610415]
@@ -502,7 +495,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"shin"
-paired_with = null
 hitbox_rect = Rect2(84, 234, 146, 69)
 
 [node name="shin" type="Control" parent="AssemblyArea/AssemblyLeg/ShinLegSlot" unique_id=1180152038]
@@ -530,7 +522,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"upper_foot"
-paired_with = null
 hitbox_rect = Rect2(221, 284, 60, 57)
 
 [node name="upper_foot" type="Control" parent="AssemblyArea/AssemblyLeg/UpperFootSlot" unique_id=1704965705]
@@ -586,7 +577,6 @@ offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("3")
 accepts_segment_id = &"middle_foot"
-paired_with = null
 hitbox_rect = Rect2(230, 303, 51, 62)
 
 [node name="middle_foot" type="Control" parent="AssemblyArea/AssemblyLeg/MiddleFootSlot" unique_id=908355151]
