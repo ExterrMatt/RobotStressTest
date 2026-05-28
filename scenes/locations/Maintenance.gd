@@ -5,8 +5,44 @@ extends "res://scenes/locations/StubLocation.gd"
 ## but also drops the layered PersonalityTestRobot into the framed scene
 ## image so the robot appears on top of the maintenance background, using
 ## the exact same RobotLayer authoring path as PersonalityTraining.
+##
+## Adds an interactive hover-box over the robot: scans each body-layer
+## texture to find the tight rectangle of non-transparent pixels (union
+## across layers, shadow excluded), pads it with a configurable buffer,
+## and listens for clicks. Clicking zooms the framed scene image so that
+## the buffered bounds become the new top/bottom edges of the frame —
+## achieved by setting scale + pivot_offset on the SceneImage (whose
+## clip_contents is already true in Main.tscn), with no layout changes.
+
+const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
+
+## Pixel buffer added around the detected robot bounding box so the white
+## border doesn't sit flush against the artwork. Measured in robot-local
+## pixels (textures are 300x450 native, matching the robot Control's base
+## size, so this is also "texture pixels"). Tweak in the inspector.
+@export var robot_border_buffer: int = 10
+
+## Threshold above which a pixel counts as "non-empty" when scanning the
+## robot textures for their tight bounding box. Image.get_used_rect uses
+## alpha > 0; we apply this as a secondary cutoff for soft edges.
+@export_range(0.0, 1.0, 0.01) var robot_alpha_threshold: float = 0.05
 
 @onready var robot_layer: Control = $RobotLayer
+@onready var robot: Control = $RobotLayer/PersonalityTestRobot
+
+# Rectangle covering the visible robot pixels in robot-local coords
+# (i.e. before the robot's own scale is applied). Cached on _ready since
+# computing it scans every body-layer image.
+var _robot_bbox_local: Rect2 = Rect2()
+
+var _hover_box: Control = null
+var _zoomed: bool = false
+
+# Cached SceneImage state so we can return to the un-zoomed view when
+# the player clicks again or leaves the location.
+var _scene_image: TextureRect = null
+var _default_pivot: Vector2 = Vector2.ZERO
+var _default_scale: Vector2 = Vector2.ONE
 
 
 func _ready() -> void:
@@ -14,4 +50,171 @@ func _ready() -> void:
 
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("show_scene_overlay") and robot_layer:
-		main.show_scene_overlay(robot_layer)
+		# interactive=true so SceneImage stops eating mouse events and the
+		# hover box can actually receive enter/exit/click.
+		main.show_scene_overlay(robot_layer, true)
+
+	if main:
+		_scene_image = main.get_node_or_null("%SceneImage") as TextureRect
+		if _scene_image:
+			_default_pivot = _scene_image.pivot_offset
+			_default_scale = _scene_image.scale
+
+	_robot_bbox_local = _compute_robot_pixel_bbox()
+	_spawn_hover_box()
+
+
+func _exit_tree() -> void:
+	# If the player leaves the location while zoomed, snap the framed
+	# scene image back to its neutral transform so the next location
+	# isn't rendered through a leftover scale/pivot.
+	_reset_zoom()
+
+
+# --- bounding-box detection ---
+
+func _compute_robot_pixel_bbox() -> Rect2:
+	# Union the opaque-pixel bounds of every body-layer texture (Shadow
+	# excluded — it extends past the robot's feet and would inflate the
+	# box). Each texture stretches to fill the robot Control's base size,
+	# so we map texture pixels to robot-local space via a simple ratio.
+	var bounds: Rect2 = Rect2()
+	var found_any: bool = false
+	for tr in _collect_texture_rects(robot):
+		if tr.name == "Shadow":
+			continue
+		var tex: Texture2D = tr.texture
+		if tex == null:
+			continue
+		var img: Image = tex.get_image()
+		if img == null:
+			continue
+		var used: Rect2i = _opaque_bounds(img, robot_alpha_threshold)
+		if used.size == Vector2i.ZERO:
+			continue
+		var sx: float = robot.size.x / float(img.get_width())
+		var sy: float = robot.size.y / float(img.get_height())
+		var mapped: Rect2 = Rect2(
+			used.position.x * sx,
+			used.position.y * sy,
+			used.size.x * sx,
+			used.size.y * sy,
+		)
+		if not found_any:
+			bounds = mapped
+			found_any = true
+		else:
+			bounds = bounds.merge(mapped)
+	return bounds
+
+
+func _collect_texture_rects(node: Node) -> Array:
+	var out: Array = []
+	if node is TextureRect:
+		out.append(node)
+	for c in node.get_children():
+		out.append_array(_collect_texture_rects(c))
+	return out
+
+
+# Tight bounding box of pixels in `img` whose alpha exceeds `threshold`.
+# Returns Rect2i with zero size if nothing crosses the threshold.
+func _opaque_bounds(img: Image, threshold: float) -> Rect2i:
+	# Image.get_used_rect treats any alpha > 0 as opaque. That's enough
+	# for clean PNG art with hard edges; for soft edges we tighten by
+	# rescanning inside that initial rect against our own threshold.
+	var initial: Rect2i = img.get_used_rect()
+	if initial.size == Vector2i.ZERO:
+		return initial
+	if threshold <= 0.0:
+		return initial
+
+	var min_x: int = initial.position.x + initial.size.x
+	var min_y: int = initial.position.y + initial.size.y
+	var max_x: int = initial.position.x - 1
+	var max_y: int = initial.position.y - 1
+	var x_end: int = initial.position.x + initial.size.x
+	var y_end: int = initial.position.y + initial.size.y
+	for y in range(initial.position.y, y_end):
+		for x in range(initial.position.x, x_end):
+			if img.get_pixel(x, y).a > threshold:
+				if x < min_x: min_x = x
+				if y < min_y: min_y = y
+				if x > max_x: max_x = x
+				if y > max_y: max_y = y
+	if max_x < min_x:
+		return Rect2i()
+	return Rect2i(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
+
+
+# --- hover box ---
+
+func _spawn_hover_box() -> void:
+	if _hover_box and is_instance_valid(_hover_box):
+		_hover_box.queue_free()
+		_hover_box = null
+
+	if _robot_bbox_local.size == Vector2.ZERO:
+		return
+
+	var box: Control = RobotHoverBox.new()
+	var buffer: float = float(robot_border_buffer)
+	box.position = _robot_bbox_local.position - Vector2(buffer, buffer)
+	box.size = _robot_bbox_local.size + Vector2(buffer * 2.0, buffer * 2.0)
+	box.pressed.connect(_on_robot_box_pressed)
+	# HairFront has z_index=1; sit above every body layer.
+	box.z_index = 100
+	# Parented to the robot so it inherits the robot's offset+scale.
+	robot.add_child(box)
+	_hover_box = box
+
+
+# --- zoom ---
+
+func _on_robot_box_pressed() -> void:
+	if _scene_image == null:
+		return
+	if _zoomed:
+		_reset_zoom()
+	else:
+		_apply_zoom_to_robot()
+
+
+func _apply_zoom_to_robot() -> void:
+	# Compute the buffered robot rectangle in SceneImage local coords.
+	# RobotLayer is anchored full-rect to SceneImage with zero offsets,
+	# so it shares SceneImage's origin; the robot Control then sits at
+	# `robot.position` with its own `robot.scale`.
+	var buffer: float = float(robot_border_buffer)
+	var origin_x: float = robot.position.x + (_robot_bbox_local.position.x - buffer) * robot.scale.x
+	var origin_y: float = robot.position.y + (_robot_bbox_local.position.y - buffer) * robot.scale.y
+	var rect_w: float = (_robot_bbox_local.size.x + buffer * 2.0) * robot.scale.x
+	var rect_h: float = (_robot_bbox_local.size.y + buffer * 2.0) * robot.scale.y
+
+	var img_w: float = _scene_image.size.x
+	var img_h: float = _scene_image.size.y
+	if rect_h <= 0.0 or img_h <= 0.0:
+		return
+
+	# Uniform scale so the buffered bbox spans the full frame height.
+	var s: float = img_h / rect_h
+	if is_equal_approx(s, 1.0):
+		return
+
+	# Pivot derivation: under Control's `scale` transform, a point P maps
+	# to `pivot + s * (P - pivot)`. Solve for the pivot that sends the
+	# bbox top edge to y=0 and the horizontal bbox center to x=img_w/2.
+	var pivot_y: float = s * origin_y / (s - 1.0)
+	var pivot_x: float = (s * (origin_x + rect_w * 0.5) - img_w * 0.5) / (s - 1.0)
+
+	_scene_image.pivot_offset = Vector2(pivot_x, pivot_y)
+	_scene_image.scale = Vector2(s, s)
+	_zoomed = true
+
+
+func _reset_zoom() -> void:
+	if _scene_image == null or not is_instance_valid(_scene_image):
+		return
+	_scene_image.scale = _default_scale
+	_scene_image.pivot_offset = _default_pivot
+	_zoomed = false
