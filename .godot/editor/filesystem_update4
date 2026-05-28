@@ -2,3 +2,4 @@ res://scenes/locations/Maintenance.gd
 res://scenes/ui/MainMenu.tscn
 res://themes/main_theme.tres
 res://scenes/locations/RobotHoverBox.gd
+res://scenes/locations/Sleep.tscn
