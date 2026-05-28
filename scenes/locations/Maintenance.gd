@@ -13,6 +13,12 @@ extends "res://scenes/locations/StubLocation.gd"
 ## the buffered bounds become the new top/bottom edges of the frame —
 ## achieved by setting scale + pivot_offset on the SceneImage (whose
 ## clip_contents is already true in Main.tscn), with no layout changes.
+##
+## Click routing follows the Store pattern: the location root is set to
+## MOUSE_FILTER_IGNORE so it never eats clicks (which otherwise blocks
+## the framed corner button from being clickable), and the hover-box
+## hit-test is done in _input against its global rect — the SceneImage
+## chain is too deep / z-stacked to rely on Control routing alone.
 
 const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
 
@@ -27,8 +33,15 @@ const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd
 ## alpha > 0; we apply this as a secondary cutoff for soft edges.
 @export_range(0.0, 1.0, 0.01) var robot_alpha_threshold: float = 0.05
 
+## When true, the hover-border is drawn at all times (not just on hover).
+## Flip this on in the inspector to confirm the rectangle's placement
+## without having to hover, then flip it back off for the real in-game
+## hover-only behavior.
+@export var force_show_hover_border: bool = false
+
 @onready var robot_layer: Control = $RobotLayer
 @onready var robot: Control = $RobotLayer/PersonalityTestRobot
+@onready var margin_container: MarginContainer = $MarginContainer
 
 # Rectangle covering the visible robot pixels in robot-local coords
 # (i.e. before the robot's own scale is applied). Cached on _ready since
@@ -48,10 +61,16 @@ var _default_scale: Vector2 = Vector2.ONE
 func _ready() -> void:
 	super._ready()
 
+	# Match the Store pattern: the location root spans the whole screen
+	# with default STOP filter, which can swallow clicks heading for
+	# Main's corner button or for our hover box. IGNORE means we render
+	# but never consume input — children that want clicks (the outcome
+	# buttons inside MarginContainer) still capture them on their own.
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("show_scene_overlay") and robot_layer:
-		# interactive=true so SceneImage stops eating mouse events and the
-		# hover box can actually receive enter/exit/click.
+		# interactive=true so SceneImage stops eating mouse events.
 		main.show_scene_overlay(robot_layer, true)
 
 	if main:
@@ -60,15 +79,66 @@ func _ready() -> void:
 			_default_pivot = _scene_image.pivot_offset
 			_default_scale = _scene_image.scale
 
+	# Reparent the StubLocation UI (title, blurb, outcome buttons) on top
+	# of SceneImage so they sit inside the picture frame instead of below
+	# it in the off-screen area below the maintenance frame.
+	_mount_ui_onto_scene_image()
+
 	_robot_bbox_local = _compute_robot_pixel_bbox()
 	_spawn_hover_box()
 
 
 func _exit_tree() -> void:
-	# If the player leaves the location while zoomed, snap the framed
-	# scene image back to its neutral transform so the next location
-	# isn't rendered through a leftover scale/pivot.
+	# Restore the framed scene image to its neutral transform so the
+	# next location starts fresh.
 	_reset_zoom()
+	# The MarginContainer was reparented onto SceneImage; free it so it
+	# doesn't linger across locations.
+	if margin_container and is_instance_valid(margin_container) \
+			and margin_container.get_parent() != self:
+		margin_container.queue_free()
+
+
+# --- UI relocation ---
+
+func _mount_ui_onto_scene_image() -> void:
+	# Lift the StubLocation MarginContainer (which holds title, blurb,
+	# and outcome buttons) onto SceneImage so it overlays the framed
+	# picture. Anchored full-rect with a high z_index so it sits above
+	# the robot artwork.
+	if _scene_image == null or margin_container == null:
+		return
+	var prev_parent: Node = margin_container.get_parent()
+	if prev_parent:
+		prev_parent.remove_child(margin_container)
+	_scene_image.add_child(margin_container)
+	margin_container.anchor_left = 0.0
+	margin_container.anchor_top = 0.0
+	margin_container.anchor_right = 1.0
+	margin_container.anchor_bottom = 1.0
+	margin_container.offset_left = 0.0
+	margin_container.offset_top = 0.0
+	margin_container.offset_right = 0.0
+	margin_container.offset_bottom = 0.0
+	margin_container.z_index = 50
+	# Tighter inner margins than the StubLocation default so the buttons
+	# fit cleanly inside the smaller picture frame area.
+	margin_container.add_theme_constant_override("margin_left", 24)
+	margin_container.add_theme_constant_override("margin_top", 24)
+	margin_container.add_theme_constant_override("margin_right", 24)
+	margin_container.add_theme_constant_override("margin_bottom", 24)
+	# The MarginContainer and its non-Button descendants would otherwise
+	# eat clicks across the whole picture frame at z=51 (z_index 50 +
+	# SceneImage's z=1), blocking the corner Back button below. Buttons
+	# keep their STOP filter so the outcome buttons still capture clicks.
+	_set_passthrough_recursive(margin_container)
+
+
+func _set_passthrough_recursive(node: Node) -> void:
+	if node is Control and not (node is Button):
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_set_passthrough_recursive(child)
 
 
 # --- bounding-box detection ---
@@ -157,16 +227,63 @@ func _spawn_hover_box() -> void:
 	if _robot_bbox_local.size == Vector2.ZERO:
 		return
 
+	# The hover box is purely visual — input is handled in our own
+	# _input below so the deep SceneImage chain (z-indices, panel
+	# nesting) doesn't get a chance to swallow clicks before reaching
+	# it. mouse_filter IGNORE keeps it out of Godot's input routing.
 	var box: Control = RobotHoverBox.new()
 	var buffer: float = float(robot_border_buffer)
 	box.position = _robot_bbox_local.position - Vector2(buffer, buffer)
 	box.size = _robot_bbox_local.size + Vector2(buffer * 2.0, buffer * 2.0)
-	box.pressed.connect(_on_robot_box_pressed)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.force_visible = force_show_hover_border
 	# HairFront has z_index=1; sit above every body layer.
 	box.z_index = 100
 	# Parented to the robot so it inherits the robot's offset+scale.
 	robot.add_child(box)
 	_hover_box = box
+
+
+# Global click handler — same pattern Store uses for its item slots.
+# Listening at _input bypasses the SceneImage chain's STOP filters and
+# z_index priorities, so a click at the hover box's screen rect always
+# reaches us regardless of where it sits in the Control tree.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	var mb: InputEventMouseButton = event
+	if mb.button_index != MOUSE_BUTTON_LEFT or not mb.pressed:
+		return
+	if _hover_box == null or not is_instance_valid(_hover_box):
+		return
+	if not _hover_box.visible or not _hover_box.is_visible_in_tree():
+		return
+
+	# If the picture-frame transition is mid-wipe, ignore clicks.
+	var main: Node = get_tree().current_scene
+	if main and "transition" in main:
+		var tr = main.transition
+		if tr and tr.has_method("is_playing") and tr.is_playing():
+			return
+
+	if _hover_box.get_global_rect().has_point(mb.global_position):
+		_on_robot_box_pressed()
+		get_viewport().set_input_as_handled()
+
+
+# Drive the hover box's visible-on-hover state from our own hit test so
+# we don't depend on Control mouse_entered/exited routing reaching it.
+func _process(_delta: float) -> void:
+	if _hover_box == null or not is_instance_valid(_hover_box):
+		return
+	if force_show_hover_border:
+		_hover_box.force_visible = true
+		_hover_box.set_hovered(true)
+		return
+	_hover_box.force_visible = false
+	var hovered: bool = _hover_box.get_global_rect() \
+		.has_point(_hover_box.get_global_mouse_position())
+	_hover_box.set_hovered(hovered)
 
 
 # --- zoom ---
