@@ -29,6 +29,8 @@ var _zoom_tween: Tween = null
 
 func _ready() -> void:
 	call_deferred("_initialize_zoom")
+	if bot_placeholder.has_method("set_head_interaction_enabled"):
+		bot_placeholder.set_head_interaction_enabled(false)
 
 	if GameState.equipped_limbs <= 0:
 		bot_placeholder.visible = false
@@ -199,7 +201,11 @@ func _on_bed_click_area_gui_input(event: InputEvent) -> void:
 		_blanket_removed = true
 		blanket.visible = false
 		blanket_bump.visible = false
+		if bot_placeholder.has_method("set_head_interaction_enabled"):
+			bot_placeholder.set_head_interaction_enabled(true)
 		return
+	if bot_placeholder.has_method("play_head_animation"):
+		bot_placeholder.play_head_animation()
 
 
 func _on_end_button_pressed() -> void:

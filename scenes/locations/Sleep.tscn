@@ -313,10 +313,11 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -257.0
 offset_top = -435.66663
-offset_right = 276.734
-offset_bottom = 311.56036
+offset_right = -7.0
+offset_bottom = -85.66663
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(2.134936, 2.134936)
 
 [node name="Blanket" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=383073771]
 unique_name_in_owner = true
