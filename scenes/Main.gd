@@ -564,6 +564,9 @@ func _apply_result(result: Dictionary) -> void:
 
 	for ing_id in ingredients:
 		var amt: int = ingredients[ing_id]
+		if String(ing_id) == "leg":
+			GameState.equipped_limbs = max(0, GameState.equipped_limbs + amt)
+			continue
 		GameState.add_ingredient(ing_id, amt)
 
 	_log_result(money_delta, suspicion_delta, anger_delta, ingredients)
