@@ -20,7 +20,7 @@
 [ext_resource type="Texture2D" uid="uid://d3fht6umtfbpg" path="res://assets/textures/backgrounds/sleep/bed/pillow_indented.png" id="18_pillow_indented"]
 [ext_resource type="Texture2D" uid="uid://daqvhg0yhl0hu" path="res://assets/textures/backgrounds/sleep/bed/bot_full_shadow_light.png" id="19_bot_shadow_light"]
 [ext_resource type="Texture2D" uid="uid://dvtc6jc3wvk5j" path="res://assets/textures/backgrounds/sleep/bed/bot_full_shadow_heavy.png" id="20_bot_shadow_heavy"]
-[ext_resource type="Texture2D" uid="uid://csgday21odv2h" path="res://assets/textures/backgrounds/sleep/bed/bot_placeholder.png" id="21_bot_placeholder"]
+[ext_resource type="Texture2D" uid="uid://wnrck488km5p" path="res://assets/textures/characters/robot/stresstest/stress_test_bot_full2.png" id="21_2grgb"]
 [ext_resource type="Texture2D" uid="uid://dr8ugk2gassrm" path="res://assets/textures/backgrounds/sleep/bed/blanket.png" id="22_blanket"]
 [ext_resource type="Texture2D" uid="uid://bjo7rj73fkj3w" path="res://assets/textures/backgrounds/sleep/bed/blanket_bump.png" id="23_blanket_bump"]
 [ext_resource type="Texture2D" uid="uid://ufmxbsfwbwlw" path="res://assets/textures/backgrounds/sleep/darkness.png" id="24_2grgb"]
@@ -294,19 +294,21 @@ texture = ExtResource("20_bot_shadow_heavy")
 expand_mode = 1
 
 [node name="BotPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/SceneCanvas/Bed" unique_id=1282768383]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+pivot_offset = Vector2(640, 0)
 mouse_filter = 2
-texture = ExtResource("21_bot_placeholder")
+texture = ExtResource("21_2grgb")
 expand_mode = 1
+stretch_mode = 5
 
 [node name="Blanket" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/SceneCanvas/Bed" unique_id=383073771]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
