@@ -204,8 +204,6 @@ func _on_bed_click_area_gui_input(event: InputEvent) -> void:
 		if bot_placeholder.has_method("set_head_interaction_enabled"):
 			bot_placeholder.set_head_interaction_enabled(true)
 		return
-	if bot_placeholder.has_method("play_head_animation"):
-		bot_placeholder.play_head_animation()
 
 
 func _on_end_button_pressed() -> void:

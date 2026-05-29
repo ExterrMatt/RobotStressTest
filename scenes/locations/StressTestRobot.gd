@@ -65,6 +65,7 @@ const HEAD_ANIMATION_DRAW_ORDER: Array[String] = [
 
 var _head_hover_box: Control = null
 var _head_interaction_enabled: bool = true
+var _animation_primed: bool = false
 var _animation_playing: bool = false
 var _animation_elapsed: float = 0.0
 var _active_animation: Dictionary = {}
@@ -115,14 +116,29 @@ func _input(event: InputEvent) -> void:
 	if not _head_hover_box.get_global_rect().has_point(mouse_event.global_position):
 		return
 
-	play_head_animation()
+	if _animation_primed:
+		play_head_animation()
+	else:
+		prime_head_animation()
 	get_viewport().set_input_as_handled()
+
+
+func prime_head_animation() -> bool:
+	if _animation_playing or _animation_primed:
+		return false
+	_start_layered_animation(HEAD_ANIMATION, false)
+	_animation_primed = true
+	return true
 
 
 func play_head_animation() -> bool:
 	if _animation_playing:
 		return false
-	_start_layered_animation(HEAD_ANIMATION)
+	if _animation_primed:
+		_animation_elapsed = 0.0
+		_animation_playing = true
+		return true
+	_start_layered_animation(HEAD_ANIMATION, true)
 	return true
 
 
@@ -132,10 +148,10 @@ func set_head_interaction_enabled(value: bool) -> void:
 		_head_hover_box.visible = value
 
 
-func _start_layered_animation(animation: Dictionary) -> void:
+func _start_layered_animation(animation: Dictionary, play_immediately: bool) -> void:
 	_active_animation = animation
 	_animation_elapsed = 0.0
-	_animation_playing = true
+	_animation_playing = play_immediately
 	_hide_static_nodes(animation.get("static_paths", {}))
 	_collect_animation_nodes(animation)
 	_set_animation_frame(0)
@@ -153,6 +169,7 @@ func _advance_animation(delta: float) -> void:
 
 func _finish_layered_animation() -> void:
 	_animation_playing = false
+	_animation_primed = false
 	animation_layers.visible = false
 	for layer_name in _active_animation_nodes:
 		var animation_node := _active_animation_nodes[layer_name] as CanvasItem

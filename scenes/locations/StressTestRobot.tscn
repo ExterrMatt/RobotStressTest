@@ -330,6 +330,7 @@ texture = ExtResource("22_right_flexed_fingers")
 expand_mode = 1
 
 [node name="BoobCover" type="TextureRect" parent="." unique_id=931354332]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
