@@ -24,7 +24,7 @@
 [ext_resource type="Texture2D" uid="uid://bxesi2kdev4ne" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_flexed_fingers.png" id="21_left_flexed_fingers"]
 [ext_resource type="Texture2D" uid="uid://5sgu57censnv" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_flexed_fingers.png" id="22_right_flexed_fingers"]
 [ext_resource type="Texture2D" uid="uid://dnrw61gxy34nv" path="res://assets/textures/characters/robot/stresstest/boob_cover.png" id="23_boob_cover"]
-[ext_resource type="Texture2D" uid="uid://bjswvb5vpdgwq" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_intro.png" id="24_mouth_b_intro"]
+[ext_resource type="Texture2D" uid="uid://cpksrgmqudgb6" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png" id="24_mouth_b_intro"]
 
 [node name="StressTestRobot" type="Control" unique_id=1977347602]
 custom_minimum_size = Vector2(250, 350)
@@ -394,13 +394,6 @@ centered = false
 region_enabled = true
 region_rect = Rect2(1250, 0, 250, 350)
 
-[node name="Nipples" type="Sprite2D" parent="AnimationLayers"]
-visible = false
-texture = ExtResource("24_mouth_b_intro")
-centered = false
-region_enabled = true
-region_rect = Rect2(2000, 0, 250, 350)
-
 [node name="Nipples" type="TextureRect" parent="AnimationLayers/Torso" unique_id=2024828478]
 anchors_preset = 15
 anchor_right = 1.0
@@ -410,6 +403,13 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("9_nipples")
 expand_mode = 1
+
+[node name="Nipples" type="Sprite2D" parent="AnimationLayers" unique_id=1358487924]
+visible = false
+texture = ExtResource("24_mouth_b_intro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2000, 0, 250, 350)
 
 [node name="LeftArm" type="Sprite2D" parent="AnimationLayers" unique_id=1610085285]
 visible = false
