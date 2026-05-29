@@ -15,7 +15,7 @@ const STATIC_PATHS := {
 	"hair_back": "HairBack",
 	"nipples": "Torso/Nipples",
 }
-const NODE_PATHS := {
+const INTRO_NODE_PATHS := {
 	"banana": "Banana",
 	"right_arm": "RightArm",
 	"left_arm": "LeftArm",
@@ -26,6 +26,18 @@ const NODE_PATHS := {
 	"head": "Head",
 	"hair_back": "HairBack",
 	"nipples": "Nipples",
+}
+const LOOP_MEDIUM_NODE_PATHS := {
+	"banana": "MouthBLoopMedium/Banana",
+	"right_arm": "MouthBLoopMedium/RightArm",
+	"left_arm": "MouthBLoopMedium/LeftArm",
+	"torso": "MouthBLoopMedium/Torso",
+	"hair_front_normal": "MouthBLoopMedium/HairFrontNormal",
+	"squint_eyes": "MouthBLoopMedium/SquintEyes",
+	"neck": "MouthBLoopMedium/Neck",
+	"head": "MouthBLoopMedium/Head",
+	"hair_back": "MouthBLoopMedium/HairBack",
+	"nipples": "MouthBLoopMedium/Nipples",
 }
 
 const HEAD_ANIMATION := {
@@ -46,7 +58,7 @@ const HEAD_ANIMATION := {
 		"hair_back": 0,
 	},
 	"static_paths": STATIC_PATHS,
-	"node_paths": NODE_PATHS,
+	"node_paths": INTRO_NODE_PATHS,
 }
 
 const HEAD_LOOP_MEDIUM_ANIMATION := {
@@ -67,7 +79,7 @@ const HEAD_LOOP_MEDIUM_ANIMATION := {
 		"hair_back": 0,
 	},
 	"static_paths": STATIC_PATHS,
-	"node_paths": NODE_PATHS,
+	"node_paths": LOOP_MEDIUM_NODE_PATHS,
 }
 
 const HEAD_ANIMATION_DRAW_ORDER: Array[String] = [
@@ -246,6 +258,7 @@ func _hide_static_nodes(static_paths: Dictionary) -> void:
 
 
 func _collect_animation_nodes(animation: Dictionary) -> void:
+	_hide_active_animation_nodes()
 	_active_animation_nodes = {}
 	var node_paths: Dictionary = animation.get("node_paths", {})
 	var layers: Dictionary = animation.get("layers", {})
@@ -256,9 +269,15 @@ func _collect_animation_nodes(animation: Dictionary) -> void:
 		if node == null:
 			push_warning("Animation layer node not found: %s" % node_paths[layer_name])
 			continue
-		node.texture = animation["texture"]
 		node.visible = true
 		_active_animation_nodes[layer_name] = node
+
+
+func _hide_active_animation_nodes() -> void:
+	for layer_name in _active_animation_nodes:
+		var animation_node := _active_animation_nodes[layer_name] as CanvasItem
+		if animation_node and is_instance_valid(animation_node):
+			animation_node.visible = false
 
 
 func _set_animation_frame(frame: int) -> void:

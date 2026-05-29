@@ -24,7 +24,8 @@
 [ext_resource type="Texture2D" uid="uid://bxesi2kdev4ne" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_flexed_fingers.png" id="21_left_flexed_fingers"]
 [ext_resource type="Texture2D" uid="uid://5sgu57censnv" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_flexed_fingers.png" id="22_right_flexed_fingers"]
 [ext_resource type="Texture2D" uid="uid://dnrw61gxy34nv" path="res://assets/textures/characters/robot/stresstest/boob_cover.png" id="23_boob_cover"]
-[ext_resource type="Texture2D" uid="uid://cpksrgmqudgb6" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png" id="24_mouth_b_intro"]
+[ext_resource type="Texture2D" uid="uid://cpksrgmqudgb6" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_intro.png" id="24_mouth_b_intro"]
+[ext_resource type="Texture2D" uid="uid://belnxxgc3k8qa" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png" id="25_mouth_b_loop_medium"]
 
 [node name="StressTestRobot" type="Control" unique_id=1977347602]
 custom_minimum_size = Vector2(250, 350)
@@ -209,6 +210,7 @@ texture = ExtResource("13_hair_front_normal")
 expand_mode = 1
 
 [node name="HairFrontBangs" type="TextureRect" parent="Head" unique_id=1071634240]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -431,3 +433,75 @@ texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(2000, 0, 250, 350)
+
+[node name="MouthBLoopMedium" type="Node2D" parent="AnimationLayers" unique_id=1707325045]
+
+[node name="HairBack" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=348026164]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 250, 350)
+
+[node name="Neck" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1813953064]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(250, 0, 250, 350)
+
+[node name="Head" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=2092772270]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(500, 0, 250, 350)
+
+[node name="SquintEyes" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=187088775]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(750, 0, 250, 350)
+
+[node name="LeftArm" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=56690683]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(1000, 0, 250, 350)
+
+[node name="RightArm" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=87096943]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(1250, 0, 250, 350)
+
+[node name="Torso" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1174504308]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(1500, 0, 250, 350)
+
+[node name="Nipples" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1913889230]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(1750, 0, 250, 350)
+
+[node name="HairFrontNormal" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=305767674]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(2000, 0, 250, 350)
+
+[node name="Banana" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=871399523]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(2250, 0, 250, 350)
