@@ -3,12 +3,37 @@ extends Control
 const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
 
 const FRAME_SIZE: Vector2i = Vector2i(250, 350)
-const FRAME_COUNT: int = 16
 const DEFAULT_FPS: float = 12.0
+const STATIC_PATHS := {
+	"right_arm": "Arms",
+	"left_arm": "Arms",
+	"torso": "Torso",
+	"hair_front_normal": "Head/HairFrontNormal",
+	"squint_eyes": "Head/SquintEyes",
+	"neck": "Head/Neck",
+	"head": "Head/HeadBase",
+	"hair_back": "HairBack",
+	"nipples": "Torso/Nipples",
+}
+const NODE_PATHS := {
+	"banana": "Banana",
+	"right_arm": "RightArm",
+	"left_arm": "LeftArm",
+	"torso": "Torso",
+	"hair_front_normal": "HairFrontNormal",
+	"squint_eyes": "SquintEyes",
+	"neck": "Neck",
+	"head": "Head",
+	"hair_back": "HairBack",
+	"nipples": "Nipples",
+}
 
 const HEAD_ANIMATION := {
 	"name": "mouth_b_intro",
-	"texture": preload("res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png"),
+	"texture": preload("res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_intro.png"),
+	"frame_count": 16,
+	"loop": false,
+	"next": "mouth_b_loop_medium",
 	"layers": {
 		"banana": 8,
 		"right_arm": 7,
@@ -20,27 +45,29 @@ const HEAD_ANIMATION := {
 		"head": 1,
 		"hair_back": 0,
 	},
-	"static_paths": {
-		"right_arm": "Arms",
-		"left_arm": "Arms",
-		"torso": "Torso",
-		"hair_front_normal": "Head/HairFrontNormal",
-		"squint_eyes": "Head/SquintEyes",
-		"neck": "Head/Neck",
-		"head": "Head/HeadBase",
-		"hair_back": "HairBack",
+	"static_paths": STATIC_PATHS,
+	"node_paths": NODE_PATHS,
+}
+
+const HEAD_LOOP_MEDIUM_ANIMATION := {
+	"name": "mouth_b_loop_medium",
+	"texture": preload("res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png"),
+	"frame_count": 8,
+	"loop": true,
+	"layers": {
+		"banana": 9,
+		"hair_front_normal": 8,
+		"nipples": 7,
+		"torso": 6,
+		"right_arm": 5,
+		"left_arm": 4,
+		"squint_eyes": 3,
+		"head": 2,
+		"neck": 1,
+		"hair_back": 0,
 	},
-	"node_paths": {
-		"banana": "Banana",
-		"right_arm": "RightArm",
-		"left_arm": "LeftArm",
-		"torso": "Torso",
-		"hair_front_normal": "HairFrontNormal",
-		"squint_eyes": "SquintEyes",
-		"neck": "Neck",
-		"head": "Head",
-		"hair_back": "HairBack",
-	},
+	"static_paths": STATIC_PATHS,
+	"node_paths": NODE_PATHS,
 }
 
 const HEAD_ANIMATION_DRAW_ORDER: Array[String] = [
@@ -50,10 +77,16 @@ const HEAD_ANIMATION_DRAW_ORDER: Array[String] = [
 	"squint_eyes",
 	"hair_front_normal",
 	"torso",
+	"nipples",
 	"left_arm",
 	"right_arm",
 	"banana",
 ]
+
+const HEAD_ANIMATIONS := {
+	"mouth_b_intro": HEAD_ANIMATION,
+	"mouth_b_loop_medium": HEAD_LOOP_MEDIUM_ANIMATION,
+}
 
 @export var head_border_buffer: int = 4
 @export_range(0.0, 1.0, 0.01) var head_alpha_threshold: float = 0.05
@@ -111,9 +144,16 @@ func _input(event: InputEvent) -> void:
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
 		return
-	if _animation_playing or _head_hover_box == null or not is_instance_valid(_head_hover_box):
+	if _head_hover_box == null or not is_instance_valid(_head_hover_box):
 		return
 	if not _head_hover_box.get_global_rect().has_point(mouse_event.global_position):
+		return
+
+	if _animation_playing and _active_animation.get("loop", false):
+		_finish_layered_animation()
+		get_viewport().set_input_as_handled()
+		return
+	if _animation_playing:
 		return
 
 	if _animation_primed:
@@ -148,11 +188,12 @@ func set_head_interaction_enabled(value: bool) -> void:
 		_head_hover_box.visible = value
 
 
-func _start_layered_animation(animation: Dictionary, play_immediately: bool) -> void:
+func _start_layered_animation(animation: Dictionary, play_immediately: bool, hide_static: bool = true) -> void:
 	_active_animation = animation
 	_animation_elapsed = 0.0
 	_animation_playing = play_immediately
-	_hide_static_nodes(animation.get("static_paths", {}))
+	if hide_static:
+		_hide_static_nodes(animation.get("static_paths", {}))
 	_collect_animation_nodes(animation)
 	_set_animation_frame(0)
 	animation_layers.visible = true
@@ -161,7 +202,16 @@ func _start_layered_animation(animation: Dictionary, play_immediately: bool) -> 
 func _advance_animation(delta: float) -> void:
 	_animation_elapsed += delta
 	var frame := int(floor(_animation_elapsed * DEFAULT_FPS))
-	if frame >= FRAME_COUNT:
+	var frame_count: int = int(_active_animation.get("frame_count", 1))
+	if frame >= frame_count:
+		if _active_animation.get("loop", false):
+			_animation_elapsed = 0.0
+			_set_animation_frame(0)
+			return
+		var next_animation_name := String(_active_animation.get("next", ""))
+		if next_animation_name != "" and HEAD_ANIMATIONS.has(next_animation_name):
+			_start_layered_animation(HEAD_ANIMATIONS[next_animation_name], true, false)
+			return
 		_finish_layered_animation()
 		return
 	_set_animation_frame(frame)
@@ -198,11 +248,15 @@ func _hide_static_nodes(static_paths: Dictionary) -> void:
 func _collect_animation_nodes(animation: Dictionary) -> void:
 	_active_animation_nodes = {}
 	var node_paths: Dictionary = animation.get("node_paths", {})
+	var layers: Dictionary = animation.get("layers", {})
 	for layer_name in node_paths:
+		if not layers.has(layer_name):
+			continue
 		var node := animation_layers.get_node_or_null(node_paths[layer_name]) as Sprite2D
 		if node == null:
 			push_warning("Animation layer node not found: %s" % node_paths[layer_name])
 			continue
+		node.texture = animation["texture"]
 		node.visible = true
 		_active_animation_nodes[layer_name] = node
 
