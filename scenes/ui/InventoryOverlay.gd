@@ -23,6 +23,7 @@ const TEXTURE_PATHS: Dictionary = {
 	"nanobots": "res://assets/textures/icons/nanobots.png",
 	"oil": "res://assets/textures/icons/oil.png",
 	"sneaky_shoes": "res://assets/textures/icons/sneaky_shoes.png",
+	"leg": "res://assets/textures/icons/leg.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
@@ -46,6 +47,7 @@ const DISPLAY_NAMES: Dictionary = {
 	"nanobots": "Nanobots",
 	"oil": "Oil",
 	"sneaky_shoes": "Sneaky Shoes",
+	"leg": "Leg",
 	"screwdriver": "Screwdriver",
 	"crank": "Crank",
 	"electric_prod": "Electric Prod",
@@ -127,6 +129,14 @@ func _collect_entries() -> Array:
 			"name": _display_name(id),
 			"count": count,
 			"texture": _load_texture_for(id),
+		})
+
+	if GameState.equipped_limbs > 0:
+		out.append({
+			"id": "leg",
+			"name": _display_name("leg"),
+			"count": GameState.equipped_limbs,
+			"texture": _load_texture_for("leg"),
 		})
 
 	for id in GameState.owned_tools:

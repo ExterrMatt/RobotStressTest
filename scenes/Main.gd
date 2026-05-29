@@ -219,6 +219,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
+	# 2 (debug): grant a leg and jump to the current day's night choices.
+	if key_event.keycode == KEY_2 or key_event.keycode == KEY_KP_2:
+		_debug_grant_leg_and_jump_to_night()
+		get_viewport().set_input_as_handled()
+		return
+
 
 func _debug_grant_scrap_and_open_workshop() -> void:
 	# Give one scrap_metal.
@@ -246,6 +252,17 @@ func _debug_grant_scrap_and_open_workshop() -> void:
 	# Reuse the existing pick handler. It already guards against
 	# double-firing while a transition is mid-wipe.
 	_on_location_picked(workshop_loc)
+
+
+func _debug_grant_leg_and_jump_to_night() -> void:
+	GameState.equipped_limbs = max(0, GameState.equipped_limbs + 1)
+	_log("[color=#88ff88]+ leg x1 (debug)[/color]")
+
+	if GameState.phase == DayCycle.Phase.NIGHT:
+		_show_selection_screen()
+		return
+
+	GameState.phase = DayCycle.Phase.NIGHT
 
 func _load_locations() -> void:
 	for path in LOCATION_RESOURCE_PATHS:

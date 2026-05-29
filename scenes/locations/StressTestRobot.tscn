@@ -1,0 +1,339 @@
+[gd_scene format=3 uid="uid://dawhy3fb082em"]
+
+[ext_resource type="Texture2D" uid="uid://bkkbn7wfvjui5" path="res://assets/textures/characters/robot/stresstest/torso/torso_neck_back.png" id="1_torso_neck_back"]
+[ext_resource type="Texture2D" uid="uid://b42jt5klebh4v" path="res://assets/textures/characters/robot/stresstest/head/hair_back.png" id="2_hair_back"]
+[ext_resource type="Texture2D" uid="uid://dixwup2p1omyi" path="res://assets/textures/characters/robot/stresstest/legs/right_leg_slightly_out.png" id="3_right_leg_slightly_out"]
+[ext_resource type="Texture2D" uid="uid://r2tx4hhhkcv8" path="res://assets/textures/characters/robot/stresstest/legs/left_leg_slightly_out.png" id="4_left_leg_slightly_out"]
+[ext_resource type="Texture2D" uid="uid://dramcpayssocy" path="res://assets/textures/characters/robot/stresstest/legs/right_leg.png" id="5_right_leg"]
+[ext_resource type="Texture2D" uid="uid://de33xva2c1dsm" path="res://assets/textures/characters/robot/stresstest/legs/left_leg.png" id="6_left_leg"]
+[ext_resource type="Texture2D" uid="uid://fpjo774ulgtr" path="res://assets/textures/characters/robot/stresstest/torso/torso.png" id="7_torso"]
+[ext_resource type="Texture2D" uid="uid://bv64k26fbogdy" path="res://assets/textures/characters/robot/stresstest/torso/torso_skin.png" id="8_torso_skin"]
+[ext_resource type="Texture2D" uid="uid://bcwbycge67oxy" path="res://assets/textures/characters/robot/stresstest/torso/nipples.png" id="9_nipples"]
+[ext_resource type="Texture2D" uid="uid://irx4u0huje1d" path="res://assets/textures/characters/robot/stresstest/head/neck.png" id="10_neck"]
+[ext_resource type="Texture2D" uid="uid://b6glamdviyp81" path="res://assets/textures/characters/robot/stresstest/head/head.png" id="11_head"]
+[ext_resource type="Texture2D" uid="uid://dlojoyj56dpwh" path="res://assets/textures/characters/robot/stresstest/head/squint_eyes.png" id="12_squint_eyes"]
+[ext_resource type="Texture2D" uid="uid://chfvxf48t4uat" path="res://assets/textures/characters/robot/stresstest/head/hair_front_normal.png" id="13_hair_front_normal"]
+[ext_resource type="Texture2D" uid="uid://ckan8ex512aai" path="res://assets/textures/characters/robot/stresstest/head/hair_front_bangs.png" id="14_hair_front_bangs"]
+[ext_resource type="Texture2D" uid="uid://b0l7pbc2mkiwn" path="res://assets/textures/characters/robot/stresstest/arms/right_arm.png" id="15_right_arm"]
+[ext_resource type="Texture2D" uid="uid://cvoelrq0q5q4t" path="res://assets/textures/characters/robot/stresstest/arms/left_arm.png" id="16_left_arm"]
+[ext_resource type="Texture2D" uid="uid://bsjjndvd04cwr" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_palm_up.png" id="17_left_palm_up"]
+[ext_resource type="Texture2D" uid="uid://hlq7dwdd8o7u" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_palm_up.png" id="18_right_palm_up"]
+[ext_resource type="Texture2D" uid="uid://cjb5cinqnstkj" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_open_fingers.png" id="19_left_open_fingers"]
+[ext_resource type="Texture2D" uid="uid://d1f54h5u1n5xv" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_open_fingers.png" id="20_right_open_fingers"]
+[ext_resource type="Texture2D" uid="uid://bxesi2kdev4ne" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_flexed_fingers.png" id="21_left_flexed_fingers"]
+[ext_resource type="Texture2D" uid="uid://5sgu57censnv" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_flexed_fingers.png" id="22_right_flexed_fingers"]
+[ext_resource type="Texture2D" uid="uid://dnrw61gxy34nv" path="res://assets/textures/characters/robot/stresstest/boob_cover.png" id="23_boob_cover"]
+
+[node name="StressTestRobot" type="Control" unique_id=1977347602]
+custom_minimum_size = Vector2(250, 350)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 250.0
+offset_bottom = 350.0
+mouse_filter = 2
+
+[node name="Torso" type="Control" parent="." unique_id=1566708374]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TorsoNeckBack" type="TextureRect" parent="Torso" unique_id=725037889]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("1_torso_neck_back")
+expand_mode = 1
+
+[node name="TorsoBase" type="TextureRect" parent="Torso" unique_id=445828145]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_torso")
+expand_mode = 1
+
+[node name="TorsoSkin" type="TextureRect" parent="Torso" unique_id=1974583020]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_torso_skin")
+expand_mode = 1
+
+[node name="Nipples" type="TextureRect" parent="Torso" unique_id=266794297]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_nipples")
+expand_mode = 1
+
+[node name="HairBack" type="TextureRect" parent="." unique_id=421752235]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_hair_back")
+expand_mode = 1
+
+[node name="Legs" type="Control" parent="." unique_id=806425494]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RightLegSlightlyOut" type="TextureRect" parent="Legs" unique_id=157820120]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_right_leg_slightly_out")
+expand_mode = 1
+
+[node name="LeftLegSlightlyOut" type="TextureRect" parent="Legs" unique_id=1869495536]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_left_leg_slightly_out")
+expand_mode = 1
+
+[node name="RightLeg" type="TextureRect" parent="Legs" unique_id=1345797478]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_right_leg")
+expand_mode = 1
+
+[node name="LeftLeg" type="TextureRect" parent="Legs" unique_id=68568384]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_left_leg")
+expand_mode = 1
+
+[node name="Head" type="Control" parent="." unique_id=321421157]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Neck" type="TextureRect" parent="Head" unique_id=1777436782]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_neck")
+expand_mode = 1
+
+[node name="HeadBase" type="TextureRect" parent="Head" unique_id=1541472917]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_head")
+expand_mode = 1
+
+[node name="SquintEyes" type="TextureRect" parent="Head" unique_id=1646704345]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_squint_eyes")
+expand_mode = 1
+
+[node name="HairFrontNormal" type="TextureRect" parent="Head" unique_id=1845867497]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_hair_front_normal")
+expand_mode = 1
+
+[node name="HairFrontBangs" type="TextureRect" parent="Head" unique_id=1071634240]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_hair_front_bangs")
+expand_mode = 1
+
+[node name="Arms" type="Control" parent="." unique_id=1114544084]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RightArm" type="TextureRect" parent="Arms" unique_id=1373138814]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("15_right_arm")
+expand_mode = 1
+
+[node name="LeftArm" type="TextureRect" parent="Arms" unique_id=1049253849]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("16_left_arm")
+expand_mode = 1
+
+[node name="Hands" type="Control" parent="Arms" unique_id=366454601]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftPalmUp" type="TextureRect" parent="Arms/Hands" unique_id=1531742836]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("17_left_palm_up")
+expand_mode = 1
+
+[node name="RightPalmUp" type="TextureRect" parent="Arms/Hands" unique_id=1785994840]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("18_right_palm_up")
+expand_mode = 1
+
+[node name="LeftOpenFingers" type="TextureRect" parent="Arms/Hands" unique_id=368804604]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("19_left_open_fingers")
+expand_mode = 1
+
+[node name="RightOpenFingers" type="TextureRect" parent="Arms/Hands" unique_id=621850392]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("20_right_open_fingers")
+expand_mode = 1
+
+[node name="LeftFlexedFingers" type="TextureRect" parent="Arms/Hands" unique_id=723088441]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("21_left_flexed_fingers")
+expand_mode = 1
+
+[node name="RightFlexedFingers" type="TextureRect" parent="Arms/Hands" unique_id=6535739]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("22_right_flexed_fingers")
+expand_mode = 1
+
+[node name="BoobCover" type="TextureRect" parent="." unique_id=931354332]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("23_boob_cover")
+expand_mode = 1
