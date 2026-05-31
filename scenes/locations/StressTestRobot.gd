@@ -103,13 +103,37 @@ const HEAD_ANIMATIONS := {
 @export var head_border_buffer: int = 4
 @export_range(0.0, 1.0, 0.01) var head_alpha_threshold: float = 0.05
 @export var force_show_head_hover_border: bool = false
+@export var pelvis_border_buffer: int = 4
+@export var force_show_pelvis_hover_border: bool = false
 @export var sync_animation_layer_scale: bool = true
 
 @onready var head: Control = $Head
+@onready var torso_base: TextureRect = $Torso/TorsoBase
 @onready var animation_layers: Control = $AnimationLayers
+@onready var default_leg_nodes: Array = [
+	$Legs/RightLeg,
+	$Legs/LeftLeg,
+	$Legs/RightLegSlightlyOut,
+	$Legs/LeftLegSlightlyOut,
+]
+@onready var legs_up_nodes: Array = [
+	$Legs/RightLegUpThigh,
+	$Legs/RightLegUpShin,
+	$Legs/LeftLegUpThigh,
+	$Legs/LeftLegUpShin,
+]
+@onready var default_torso_nodes: Array = [
+	$Torso/TorsoNeckBack,
+	$Torso/TorsoBase,
+	$Torso/TorsoSkin,
+	$Torso/Nipples,
+]
+@onready var torso_crunch: CanvasItem = $Torso/TorsoCrunch
 
 var _head_hover_box: Control = null
+var _pelvis_hover_box: Control = null
 var _head_interaction_enabled: bool = true
+var _pelvis_pose_active: bool = false
 var _animation_primed: bool = false
 var _animation_playing: bool = false
 var _animation_elapsed: float = 0.0
@@ -121,13 +145,16 @@ var _hidden_static_nodes: Array[CanvasItem] = []
 func _ready() -> void:
 	_sync_animation_layers_to_robot_size()
 	animation_layers.visible = false
+	_set_pelvis_pose_active(false)
 	_spawn_head_hover_box()
+	_spawn_pelvis_hover_box()
 	if not resized.is_connected(_on_resized):
 		resized.connect(_on_resized)
 
 
 func _process(delta: float) -> void:
 	_update_head_hover()
+	_update_pelvis_hover()
 	if _animation_playing:
 		_advance_animation(delta)
 
@@ -135,6 +162,7 @@ func _process(delta: float) -> void:
 func _on_resized() -> void:
 	_sync_animation_layers_to_robot_size()
 	_spawn_head_hover_box()
+	_spawn_pelvis_hover_box()
 
 
 func _sync_animation_layers_to_robot_size() -> void:
@@ -156,6 +184,13 @@ func _input(event: InputEvent) -> void:
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
 		return
+
+	if _pelvis_hover_box and is_instance_valid(_pelvis_hover_box):
+		if _pelvis_hover_box.get_global_rect().has_point(mouse_event.global_position):
+			toggle_pelvis_pose()
+			get_viewport().set_input_as_handled()
+			return
+
 	if _head_hover_box == null or not is_instance_valid(_head_hover_box):
 		return
 	if not _head_hover_box.get_global_rect().has_point(mouse_event.global_position):
@@ -198,6 +233,23 @@ func set_head_interaction_enabled(value: bool) -> void:
 	_head_interaction_enabled = value
 	if _head_hover_box and is_instance_valid(_head_hover_box):
 		_head_hover_box.visible = value
+	if _pelvis_hover_box and is_instance_valid(_pelvis_hover_box):
+		_pelvis_hover_box.visible = value
+
+
+func toggle_pelvis_pose() -> void:
+	_set_pelvis_pose_active(not _pelvis_pose_active)
+
+
+func _set_pelvis_pose_active(value: bool) -> void:
+	_pelvis_pose_active = value
+	for node in default_leg_nodes:
+		node.visible = not value and not String(node.name).ends_with("SlightlyOut")
+	for node in legs_up_nodes:
+		node.visible = value
+	for node in default_torso_nodes:
+		node.visible = not value and String(node.name) != "TorsoSkin"
+	torso_crunch.visible = value
 
 
 func _start_layered_animation(animation: Dictionary, play_immediately: bool, hide_static: bool = true) -> void:
@@ -311,6 +363,31 @@ func _spawn_head_hover_box() -> void:
 	_head_hover_box = box
 
 
+func _spawn_pelvis_hover_box() -> void:
+	if _pelvis_hover_box and is_instance_valid(_pelvis_hover_box):
+		_pelvis_hover_box.queue_free()
+
+	var torso_bounds := _compute_single_texture_bounds(torso_base)
+	if torso_bounds.size == Vector2.ZERO:
+		return
+
+	var pelvis_height := torso_bounds.size.y / 3.0
+	var pelvis_bounds := Rect2(
+		Vector2(torso_bounds.position.x, torso_bounds.position.y + torso_bounds.size.y - pelvis_height),
+		Vector2(torso_bounds.size.x, pelvis_height)
+	)
+
+	var box: Control = RobotHoverBox.new()
+	var buffer := float(pelvis_border_buffer)
+	box.position = pelvis_bounds.position - Vector2(buffer, buffer)
+	box.size = pelvis_bounds.size + Vector2(buffer * 2.0, buffer * 2.0)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.force_visible = force_show_pelvis_hover_border
+	box.z_index = 201
+	add_child(box)
+	_pelvis_hover_box = box
+
+
 func _update_head_hover() -> void:
 	if _head_hover_box == null or not is_instance_valid(_head_hover_box):
 		return
@@ -324,6 +401,21 @@ func _update_head_hover() -> void:
 		return
 	_head_hover_box.force_visible = false
 	_head_hover_box.set_hovered(_head_hover_box.get_global_rect().has_point(get_global_mouse_position()))
+
+
+func _update_pelvis_hover() -> void:
+	if _pelvis_hover_box == null or not is_instance_valid(_pelvis_hover_box):
+		return
+	if not _head_interaction_enabled:
+		_pelvis_hover_box.visible = false
+		return
+	_pelvis_hover_box.visible = true
+	if force_show_pelvis_hover_border:
+		_pelvis_hover_box.force_visible = true
+		_pelvis_hover_box.set_hovered(true)
+		return
+	_pelvis_hover_box.force_visible = false
+	_pelvis_hover_box.set_hovered(_pelvis_hover_box.get_global_rect().has_point(get_global_mouse_position()))
 
 
 func _compute_texture_bounds(root: Node) -> Rect2:
@@ -353,6 +445,26 @@ func _compute_texture_bounds(root: Node) -> Rect2:
 		else:
 			bounds = bounds.merge(mapped)
 	return bounds
+
+
+func _compute_single_texture_bounds(tr: TextureRect) -> Rect2:
+	var tex: Texture2D = tr.texture
+	if tex == null:
+		return Rect2()
+	var img := tex.get_image()
+	if img == null:
+		return Rect2()
+	var used := _opaque_bounds(img, head_alpha_threshold)
+	if used.size == Vector2i.ZERO:
+		return Rect2()
+	var sx := size.x / float(img.get_width())
+	var sy := size.y / float(img.get_height())
+	return Rect2(
+		used.position.x * sx,
+		used.position.y * sy,
+		used.size.x * sx,
+		used.size.y * sy
+	)
 
 
 func _collect_texture_rects(node: Node) -> Array[TextureRect]:
