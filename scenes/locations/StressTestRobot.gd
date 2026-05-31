@@ -5,15 +5,74 @@ const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd
 const FRAME_SIZE: Vector2i = Vector2i(250, 350)
 const DEFAULT_FPS: float = 12.0
 const STATIC_PATHS := {
-	"right_arm": "Arms",
-	"left_arm": "Arms",
-	"torso": "Torso",
+	"right_arm": "Arms/RightArm",
+	"left_arm": "Arms/LeftArm",
+	"torso": "Torso/TorsoBase",
 	"hair_front_normal": "Head/HairFrontNormal",
 	"squint_eyes": "Head/SquintEyes",
 	"neck": "Head/Neck",
 	"head": "Head/HeadBase",
 	"hair_back": "HairBack",
 	"nipples": "Torso/Nipples",
+}
+const BODY_PART_VARIANT_PATHS := {
+	"torso": ["Torso/TorsoBase", "Torso/TorsoCrunch", "Torso/TorsoSkin"],
+	"nipples": ["Torso/Nipples"],
+	"right_arm": ["Arms/RightArm"],
+	"left_arm": ["Arms/LeftArm"],
+	"right_hand": ["Hands/RightPalmUp", "Hands/RightOpenFingers", "Hands/RightFlexedFingers"],
+	"left_hand": ["Hands/LeftPalmUp", "Hands/LeftOpenFingers", "Hands/LeftFlexedFingers"],
+	"right_leg": ["Legs/RightLeg", "Legs/RightLegSlightlyOut", "Legs/RightLegUpThigh", "Legs/RightLegUpShin"],
+	"left_leg": ["Legs/LeftLeg", "Legs/LeftLegSlightlyOut", "Legs/LeftLegUpThigh", "Legs/LeftLegUpShin"],
+	"head": ["Head/HeadBase"],
+	"neck": ["Head/Neck"],
+	"eyes": ["Head/SquintEyes"],
+	"hair_front": ["Head/HairFrontNormal", "Head/HairFrontBangs"],
+	"hair_back": ["HairBack"],
+}
+const DEFAULT_BODY_PART_PATHS := {
+	"torso": ["Torso/TorsoBase"],
+	"nipples": ["Torso/Nipples"],
+	"right_arm": ["Arms/RightArm"],
+	"left_arm": ["Arms/LeftArm"],
+	"right_hand": ["Hands/RightPalmUp"],
+	"left_hand": ["Hands/LeftPalmUp"],
+	"right_leg": ["Legs/RightLeg"],
+	"left_leg": ["Legs/LeftLeg"],
+	"head": ["Head/HeadBase"],
+	"neck": ["Head/Neck"],
+	"eyes": ["Head/SquintEyes"],
+	"hair_front": ["Head/HairFrontNormal"],
+	"hair_back": ["HairBack"],
+}
+const PELVIS_BODY_PART_PATHS := {
+	"torso": ["Torso/TorsoCrunch"],
+	"nipples": ["Torso/Nipples"],
+	"right_leg": ["Legs/RightLegUpThigh", "Legs/RightLegUpShin"],
+	"left_leg": ["Legs/LeftLegUpThigh", "Legs/LeftLegUpShin"],
+}
+const HEAD_ANIMATION_BODY_PARTS := [
+	"torso",
+	"nipples",
+	"right_arm",
+	"left_arm",
+	"head",
+	"neck",
+	"eyes",
+	"hair_front",
+	"hair_back",
+]
+const ANIMATION_LAYER_BODY_PARTS := {
+	"banana": "banana",
+	"right_arm": "right_arm",
+	"left_arm": "left_arm",
+	"torso": "torso",
+	"hair_front_normal": "hair_front",
+	"squint_eyes": "eyes",
+	"neck": "neck",
+	"head": "head",
+	"hair_back": "hair_back",
+	"nipples": "nipples",
 }
 const INTRO_NODE_PATHS := {
 	"banana": "Banana",
@@ -112,6 +171,22 @@ const HEAD_ANIMATIONS := {
 @export var use_custom_pelvis_hover_rect: bool = false
 @export var custom_pelvis_hover_rect: Rect2 = Rect2()
 @export var sync_animation_layer_scale: bool = true
+@export var body_part_inventory: Dictionary = {
+	"torso": true,
+	"nipples": true,
+	"right_arm": true,
+	"left_arm": true,
+	"right_hand": true,
+	"left_hand": true,
+	"right_leg": true,
+	"left_leg": true,
+	"head": true,
+	"neck": true,
+	"eyes": true,
+	"hair_front": true,
+	"hair_back": true,
+	"banana": true,
+}
 
 @onready var head: Control = $Head
 @onready var torso_base: TextureRect = $Torso/TorsoBase
@@ -126,7 +201,6 @@ var _animation_playing: bool = false
 var _animation_elapsed: float = 0.0
 var _active_animation: Dictionary = {}
 var _active_animation_nodes: Dictionary = {}
-var _hidden_static_nodes: Array[CanvasItem] = []
 
 
 func _ready() -> void:
@@ -230,29 +304,25 @@ func toggle_pelvis_pose() -> void:
 
 func _set_pelvis_pose_active(value: bool) -> void:
 	_pelvis_pose_active = value
-	_set_hover_box_toggle_active(_pelvis_hover_box, value)
+	_apply_robot_render_state()
 
 
-func _set_hover_box_toggle_active(box: Control, value: bool) -> bool:
-	if box == null or not is_instance_valid(box):
-		return false
-	if not box.has_method("has_image_toggle") or not box.has_method("set_toggle_active"):
-		return false
-	if not box.call("has_image_toggle"):
-		return false
-	box.call("set_toggle_active", self, value)
-	return true
+func has_body_part(part_name: String) -> bool:
+	return bool(body_part_inventory.get(part_name, true))
 
 
-func _start_layered_animation(animation: Dictionary, play_immediately: bool, hide_static: bool = true) -> void:
+func set_body_part_available(part_name: String, value: bool) -> void:
+	body_part_inventory[part_name] = value
+	_apply_robot_render_state()
+
+
+func _start_layered_animation(animation: Dictionary, play_immediately: bool, _hide_static: bool = true) -> void:
 	_active_animation = animation
 	_animation_elapsed = 0.0
 	_animation_playing = play_immediately
-	if hide_static:
-		_hide_static_nodes(animation.get("static_paths", {}))
 	_collect_animation_nodes(animation)
 	_set_animation_frame(0)
-	animation_layers.visible = true
+	_apply_robot_render_state()
 
 
 func _advance_animation(delta: float) -> void:
@@ -282,23 +352,8 @@ func _finish_layered_animation() -> void:
 		if animation_node and is_instance_valid(animation_node):
 			animation_node.visible = false
 	_active_animation_nodes = {}
-
-	for node in _hidden_static_nodes:
-		if node and is_instance_valid(node):
-			node.visible = true
-	_hidden_static_nodes.clear()
 	_active_animation = {}
-
-
-func _hide_static_nodes(static_paths: Dictionary) -> void:
-	_hidden_static_nodes.clear()
-	for key in static_paths:
-		var node := get_node_or_null(static_paths[key]) as CanvasItem
-		if node == null:
-			continue
-		if node.visible:
-			node.visible = false
-			_hidden_static_nodes.append(node)
+	_apply_robot_render_state()
 
 
 func _collect_animation_nodes(animation: Dictionary) -> void:
@@ -313,7 +368,6 @@ func _collect_animation_nodes(animation: Dictionary) -> void:
 		if node == null:
 			push_warning("Animation layer node not found: %s" % node_paths[layer_name])
 			continue
-		node.visible = true
 		_active_animation_nodes[layer_name] = node
 
 
@@ -322,6 +376,103 @@ func _hide_active_animation_nodes() -> void:
 		var animation_node := _active_animation_nodes[layer_name] as CanvasItem
 		if animation_node and is_instance_valid(animation_node):
 			animation_node.visible = false
+
+
+func _apply_robot_render_state() -> void:
+	_hide_all_body_part_variants()
+
+	if _pelvis_pose_active:
+		_show_body_part_pose("torso", PELVIS_BODY_PART_PATHS)
+		_show_body_part_pose("nipples", PELVIS_BODY_PART_PATHS)
+	else:
+		_show_default_body_part_unless_head_animated("torso")
+		_show_default_body_part_unless_head_animated("nipples")
+
+	_show_default_body_part_unless_head_animated("right_arm")
+	_show_default_body_part_unless_head_animated("left_arm")
+	_show_default_body_part_unless_head_animated("head")
+	_show_default_body_part_unless_head_animated("neck")
+	_show_default_body_part_unless_head_animated("eyes")
+	_show_default_body_part_unless_head_animated("hair_front")
+	_show_default_body_part_unless_head_animated("hair_back")
+
+	_show_body_part_pose("right_hand", DEFAULT_BODY_PART_PATHS)
+	_show_body_part_pose("left_hand", DEFAULT_BODY_PART_PATHS)
+	_show_body_part_pose("right_leg", PELVIS_BODY_PART_PATHS if _pelvis_pose_active else DEFAULT_BODY_PART_PATHS)
+	_show_body_part_pose("left_leg", PELVIS_BODY_PART_PATHS if _pelvis_pose_active else DEFAULT_BODY_PART_PATHS)
+	_refresh_animation_layer_visibility()
+
+
+func _hide_all_body_part_variants() -> void:
+	for part_name in BODY_PART_VARIANT_PATHS:
+		for path in BODY_PART_VARIANT_PATHS[part_name]:
+			_set_canvas_item_visible(NodePath(String(path)), false)
+
+
+func _show_default_body_part_unless_head_animated(part_name: String) -> void:
+	if _head_animation_overrides_part(part_name):
+		return
+	_show_body_part_pose(part_name, DEFAULT_BODY_PART_PATHS)
+
+
+func _show_body_part_pose(part_name: String, pose_paths: Dictionary) -> void:
+	if not has_body_part(part_name) or not pose_paths.has(part_name):
+		return
+	for path in pose_paths[part_name]:
+		_set_canvas_item_visible(NodePath(String(path)), true)
+
+
+func _head_animation_overrides_part(part_name: String) -> bool:
+	if not _head_animation_active():
+		return false
+	if not HEAD_ANIMATION_BODY_PARTS.has(part_name):
+		return false
+	if _pelvis_pose_active and (part_name == "torso" or part_name == "nipples"):
+		return false
+	return _active_animation_has_part(part_name)
+
+
+func _head_animation_active() -> bool:
+	return not _active_animation.is_empty() and not _active_animation_nodes.is_empty()
+
+
+func _active_animation_has_part(part_name: String) -> bool:
+	for layer_name in _active_animation_nodes:
+		if String(ANIMATION_LAYER_BODY_PARTS.get(String(layer_name), "")) == part_name:
+			return true
+	return false
+
+
+func _refresh_animation_layer_visibility() -> void:
+	var has_visible_layer := false
+	for layer_name in _active_animation_nodes:
+		var node := _active_animation_nodes[layer_name] as CanvasItem
+		if node == null or not is_instance_valid(node):
+			continue
+		var visible := _should_show_animation_layer(String(layer_name))
+		node.visible = visible
+		has_visible_layer = has_visible_layer or visible
+	animation_layers.visible = has_visible_layer
+
+
+func _should_show_animation_layer(layer_name: String) -> bool:
+	if not _head_animation_active():
+		return false
+	var part_name := String(ANIMATION_LAYER_BODY_PARTS.get(layer_name, ""))
+	if part_name == "":
+		return true
+	if not has_body_part(part_name):
+		return false
+	if _pelvis_pose_active and (part_name == "torso" or part_name == "nipples"):
+		return false
+	return true
+
+
+func _set_canvas_item_visible(path: NodePath, value: bool) -> void:
+	var node := get_node_or_null(path) as CanvasItem
+	if node == null:
+		return
+	node.visible = value
 
 
 func _set_animation_frame(frame: int) -> void:
