@@ -5,3 +5,4 @@ res://scenes/locations/StressTestRobot.tscn
 res://scenes/Main.gd
 res://scenes/ui/InventoryOverlay.gd
 res://scenes/locations/StressTestRobot.gd
+res://scenes/locations/RobotHoverBox.gd

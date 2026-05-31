@@ -103,32 +103,19 @@ const HEAD_ANIMATIONS := {
 @export var head_border_buffer: int = 4
 @export_range(0.0, 1.0, 0.01) var head_alpha_threshold: float = 0.05
 @export var force_show_head_hover_border: bool = false
+@export var head_hover_box_path: NodePath = ^"Head/HeadHoverBox"
+@export var use_custom_head_hover_rect: bool = false
+@export var custom_head_hover_rect: Rect2 = Rect2()
 @export var pelvis_border_buffer: int = 4
 @export var force_show_pelvis_hover_border: bool = false
+@export var pelvis_hover_box_path: NodePath = ^"PelvisHoverBox"
+@export var use_custom_pelvis_hover_rect: bool = false
+@export var custom_pelvis_hover_rect: Rect2 = Rect2()
 @export var sync_animation_layer_scale: bool = true
 
 @onready var head: Control = $Head
 @onready var torso_base: TextureRect = $Torso/TorsoBase
 @onready var animation_layers: Control = $AnimationLayers
-@onready var default_leg_nodes: Array = [
-	$Legs/RightLeg,
-	$Legs/LeftLeg,
-	$Legs/RightLegSlightlyOut,
-	$Legs/LeftLegSlightlyOut,
-]
-@onready var legs_up_nodes: Array = [
-	$Legs/RightLegUpThigh,
-	$Legs/RightLegUpShin,
-	$Legs/LeftLegUpThigh,
-	$Legs/LeftLegUpShin,
-]
-@onready var default_torso_nodes: Array = [
-	$Torso/TorsoNeckBack,
-	$Torso/TorsoBase,
-	$Torso/TorsoSkin,
-	$Torso/Nipples,
-]
-@onready var torso_crunch: CanvasItem = $Torso/TorsoCrunch
 
 var _head_hover_box: Control = null
 var _pelvis_hover_box: Control = null
@@ -145,9 +132,9 @@ var _hidden_static_nodes: Array[CanvasItem] = []
 func _ready() -> void:
 	_sync_animation_layers_to_robot_size()
 	animation_layers.visible = false
-	_set_pelvis_pose_active(false)
 	_spawn_head_hover_box()
 	_spawn_pelvis_hover_box()
+	_set_pelvis_pose_active(false)
 	if not resized.is_connected(_on_resized):
 		resized.connect(_on_resized)
 
@@ -243,13 +230,18 @@ func toggle_pelvis_pose() -> void:
 
 func _set_pelvis_pose_active(value: bool) -> void:
 	_pelvis_pose_active = value
-	for node in default_leg_nodes:
-		node.visible = not value and not String(node.name).ends_with("SlightlyOut")
-	for node in legs_up_nodes:
-		node.visible = value
-	for node in default_torso_nodes:
-		node.visible = not value and String(node.name) != "TorsoSkin"
-	torso_crunch.visible = value
+	_set_hover_box_toggle_active(_pelvis_hover_box, value)
+
+
+func _set_hover_box_toggle_active(box: Control, value: bool) -> bool:
+	if box == null or not is_instance_valid(box):
+		return false
+	if not box.has_method("has_image_toggle") or not box.has_method("set_toggle_active"):
+		return false
+	if not box.call("has_image_toggle"):
+		return false
+	box.call("set_toggle_active", self, value)
+	return true
 
 
 func _start_layered_animation(animation: Dictionary, play_immediately: bool, hide_static: bool = true) -> void:
@@ -345,47 +337,72 @@ func _set_animation_frame(frame: int) -> void:
 		)
 
 func _spawn_head_hover_box() -> void:
-	if _head_hover_box and is_instance_valid(_head_hover_box):
+	var existing_box := get_node_or_null(head_hover_box_path) as Control
+	if existing_box != null:
+		_head_hover_box = existing_box
+	elif _head_hover_box != null and is_instance_valid(_head_hover_box):
 		_head_hover_box.queue_free()
 
-	var head_bounds := _compute_texture_bounds(head)
-	if head_bounds.size == Vector2.ZERO:
-		return
+	var box: Control = _head_hover_box
+	if box == null:
+		box = RobotHoverBox.new()
+	if not use_custom_head_hover_rect:
+		var head_bounds := _compute_texture_bounds(head)
+		if head_bounds.size == Vector2.ZERO:
+			return
+		_apply_hover_box_rect(box, head_bounds, head_border_buffer)
+	elif custom_head_hover_rect.size != Vector2.ZERO:
+		_apply_hover_box_rect(box, custom_head_hover_rect, head_border_buffer)
 
-	var box: Control = RobotHoverBox.new()
-	var buffer := float(head_border_buffer)
-	box.position = head_bounds.position - Vector2(buffer, buffer)
-	box.size = head_bounds.size + Vector2(buffer * 2.0, buffer * 2.0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.force_visible = force_show_head_hover_border
 	box.z_index = 200
-	head.add_child(box)
+	if box.get_parent() == null:
+		head.add_child(box)
 	_head_hover_box = box
 
 
 func _spawn_pelvis_hover_box() -> void:
-	if _pelvis_hover_box and is_instance_valid(_pelvis_hover_box):
+	var existing_box := get_node_or_null(pelvis_hover_box_path) as Control
+	if existing_box != null:
+		_pelvis_hover_box = existing_box
+	elif _pelvis_hover_box != null and is_instance_valid(_pelvis_hover_box):
 		_pelvis_hover_box.queue_free()
 
-	var torso_bounds := _compute_single_texture_bounds(torso_base)
-	if torso_bounds.size == Vector2.ZERO:
-		return
+	var box: Control = _pelvis_hover_box
+	if box == null:
+		box = RobotHoverBox.new()
+	if not use_custom_pelvis_hover_rect:
+		var pelvis_bounds := _compute_auto_pelvis_hover_rect()
+		if pelvis_bounds.size == Vector2.ZERO:
+			return
+		_apply_hover_box_rect(box, pelvis_bounds, pelvis_border_buffer)
+	elif custom_pelvis_hover_rect.size != Vector2.ZERO:
+		_apply_hover_box_rect(box, custom_pelvis_hover_rect, pelvis_border_buffer)
 
-	var pelvis_height := torso_bounds.size.y / 3.0
-	var pelvis_bounds := Rect2(
-		Vector2(torso_bounds.position.x, torso_bounds.position.y + torso_bounds.size.y - pelvis_height),
-		Vector2(torso_bounds.size.x, pelvis_height)
-	)
-
-	var box: Control = RobotHoverBox.new()
-	var buffer := float(pelvis_border_buffer)
-	box.position = pelvis_bounds.position - Vector2(buffer, buffer)
-	box.size = pelvis_bounds.size + Vector2(buffer * 2.0, buffer * 2.0)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.force_visible = force_show_pelvis_hover_border
 	box.z_index = 201
-	add_child(box)
+	if box.get_parent() == null:
+		add_child(box)
 	_pelvis_hover_box = box
+
+
+func _apply_hover_box_rect(box: Control, bounds: Rect2, buffer: int) -> void:
+	var pad := float(buffer)
+	box.position = bounds.position - Vector2(pad, pad)
+	box.size = bounds.size + Vector2(pad * 2.0, pad * 2.0)
+
+
+func _compute_auto_pelvis_hover_rect() -> Rect2:
+	var torso_bounds := _compute_single_texture_bounds(torso_base)
+	if torso_bounds.size == Vector2.ZERO:
+		return Rect2()
+	var pelvis_height := torso_bounds.size.y / 3.0
+	return Rect2(
+		Vector2(torso_bounds.position.x, torso_bounds.position.y + torso_bounds.size.y - pelvis_height),
+		Vector2(torso_bounds.size.x, pelvis_height)
+	)
 
 
 func _update_head_hover() -> void:
