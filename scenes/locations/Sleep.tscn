@@ -258,7 +258,6 @@ texture = ExtResource("16_pillow_shadow_heavy")
 expand_mode = 1
 
 [node name="Pillow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=439397510]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -270,6 +269,7 @@ texture = ExtResource("17_pillow")
 expand_mode = 1
 
 [node name="PillowIndented" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=1399905318]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
