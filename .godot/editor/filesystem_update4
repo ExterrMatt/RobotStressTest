@@ -1,1 +1,4 @@
 res://scenes/locations/StressTestRobot.gd
+res://scenes/locations/StressTestRobot.tscn
+res://themes/main_theme.tres
+res://scenes/locations/RobotHoverBox.gd

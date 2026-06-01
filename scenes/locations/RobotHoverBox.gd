@@ -1,35 +1,107 @@
+@tool
 extends Control
-## Passive visual indicator: draws a white border around the robot's
-## tight bounding rectangle when told to. Maintenance.gd owns the box,
-## sizes/positions it from the scanned robot bounds (+ buffer), and
-## flips `set_hovered()` based on its own mouse hit-test (Control
-## routing through the deep SceneImage chain isn't reliable enough to
-## drive mouse_entered/exited here).
+
+signal configuration_changed
+
+enum ClickAction {
+	TOGGLE_VISIBILITY,
+	PRIME_THEN_PLAY_ANIMATION,
+}
 
 ## Stroke width of the hover border, in this control's local pixels.
-@export var border_width: float = 2.0
+@export var border_width: float = 2.0:
+	set(value):
+		border_width = value
+		queue_redraw()
 
 ## Border color while hovered.
-@export var border_color: Color = Color(1, 1, 1, 1)
+@export var border_color: Color = Color(1, 1, 1, 1):
+	set(value):
+		border_color = value
+		queue_redraw()
 
-## Drawn always when true, regardless of the hover state. Flipped on
-## by the editor toggle on Maintenance for placement verification.
+## Drawn always when true, regardless of the hover state.
 @export var force_visible: bool = false:
 	set(value):
 		force_visible = value
 		queue_redraw()
 
-## Image nodes to hide while this box's toggle is active.
-## Paths are resolved from the robot/root node that owns the hover box.
-@export var hidden_while_active_image_paths: Array[NodePath] = []
+## Larger priorities win when multiple active boxes affect the same node.
+@export var priority: int = 0:
+	set(value):
+		priority = value
+		_emit_configuration_changed()
 
-## Image nodes to show while this box's toggle is active.
+## How the robot should treat clicks on this box.
+@export var click_action: ClickAction = ClickAction.TOGGLE_VISIBILITY:
+	set(value):
+		click_action = value
+		_emit_configuration_changed()
+
+## Runtime starts with this hover effect already active.
+@export var active_by_default: bool = false:
+	set(value):
+		active_by_default = value
+		_emit_configuration_changed()
+
+@export_group("Editor Preview")
+## Toggle this in the editor to preview this box's active visual state.
+@export var editor_preview_active: bool = false:
+	set(value):
+		editor_preview_active = value
+		_emit_configuration_changed()
+
+## When previewing an animated box, show its loop frame instead of intro frame 0.
+@export var editor_preview_loop_animation: bool = false:
+	set(value):
+		editor_preview_loop_animation = value
+		_emit_configuration_changed()
+
+@export_group("Visibility")
+## Image nodes to hide while this box's effect is active.
 ## Paths are resolved from the robot/root node that owns the hover box.
-@export var shown_while_active_image_paths: Array[NodePath] = []
+@export var hidden_while_active_image_paths: Array[NodePath] = []:
+	set(value):
+		hidden_while_active_image_paths = value
+		_emit_configuration_changed()
+
+## Image nodes to show while this box's effect is active.
+## Paths are resolved from the robot/root node that owns the hover box.
+@export var shown_while_active_image_paths: Array[NodePath] = []:
+	set(value):
+		shown_while_active_image_paths = value
+		_emit_configuration_changed()
+
+@export_group("Layered Animation")
+## Sprite2D nodes for the intro strip, in left-to-right column order.
+@export var intro_animation_nodes: Array[NodePath] = []:
+	set(value):
+		intro_animation_nodes = value
+		_emit_configuration_changed()
+
+## Sprite2D nodes for the looping strip, in left-to-right column order.
+@export var loop_animation_nodes: Array[NodePath] = []:
+	set(value):
+		loop_animation_nodes = value
+		_emit_configuration_changed()
+
+@export var animation_frame_size: Vector2i = Vector2i(250, 350):
+	set(value):
+		animation_frame_size = value
+		_emit_configuration_changed()
+
+@export_range(0.1, 60.0, 0.1) var animation_fps: float = 12.0
+@export_range(1, 256, 1) var intro_frame_count: int = 1
+@export_range(1, 256, 1) var loop_frame_count: int = 1
+@export var loop_after_intro: bool = true
 
 var _hovered: bool = false
-var _toggle_active: bool = false
-var _remembered_visibility: Dictionary = {}
+var _runtime_active: bool = false
+
+
+func _ready() -> void:
+	_runtime_active = active_by_default
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func set_hovered(value: bool) -> void:
@@ -39,69 +111,67 @@ func set_hovered(value: bool) -> void:
 	queue_redraw()
 
 
-func has_image_toggle() -> bool:
-	return not hidden_while_active_image_paths.is_empty() or not shown_while_active_image_paths.is_empty()
-
-
-func toggle_images(root: Node) -> bool:
-	if not has_image_toggle():
-		return false
-	set_toggle_active(root, not _toggle_active)
-	return true
-
-
-func set_toggle_active(root: Node, value: bool) -> void:
-	if value == _toggle_active and (value or not _remembered_visibility.is_empty()):
+func set_runtime_active(value: bool) -> void:
+	if _runtime_active == value:
 		return
-	_toggle_active = value
-	if value:
-		_remember_toggle_visibility(root)
-		_set_path_list_visible(root, hidden_while_active_image_paths, false)
-		_set_path_list_visible(root, shown_while_active_image_paths, true)
-	elif not _remembered_visibility.is_empty():
-		_restore_toggle_visibility(root)
-	else:
-		_set_path_list_visible(root, shown_while_active_image_paths, false)
+	_runtime_active = value
 
 
-func _remember_toggle_visibility(root: Node) -> void:
-	_remembered_visibility.clear()
-	for path in _merged_toggle_paths():
-		var node := root.get_node_or_null(path) as CanvasItem
-		if node == null:
-			push_warning("Hover toggle image node not found: %s" % path)
-			continue
-		_remembered_visibility[path] = node.visible
+func toggle_runtime_active() -> void:
+	set_runtime_active(not _runtime_active)
 
 
-func _restore_toggle_visibility(root: Node) -> void:
-	for path in _remembered_visibility:
-		var node := root.get_node_or_null(path) as CanvasItem
-		if node == null:
-			push_warning("Hover toggle image node not found: %s" % path)
-			continue
-		node.visible = bool(_remembered_visibility[path])
-	_remembered_visibility.clear()
+func is_effect_active() -> bool:
+	if Engine.is_editor_hint():
+		return editor_preview_active
+	return _runtime_active
 
 
-func _merged_toggle_paths() -> Array[NodePath]:
+func has_image_toggle() -> bool:
+	return not hidden_while_active_image_paths.is_empty() \
+		or not shown_while_active_image_paths.is_empty() \
+		or not intro_animation_nodes.is_empty() \
+		or not loop_animation_nodes.is_empty()
+
+
+func has_layered_animation() -> bool:
+	return not intro_animation_nodes.is_empty() or not loop_animation_nodes.is_empty()
+
+
+func get_all_managed_paths() -> Array[NodePath]:
 	var merged: Array[NodePath] = []
-	for path in hidden_while_active_image_paths:
-		if not merged.has(path):
-			merged.append(path)
-	for path in shown_while_active_image_paths:
-		if not merged.has(path):
-			merged.append(path)
+	_append_unique_paths(merged, hidden_while_active_image_paths)
+	_append_unique_paths(merged, shown_while_active_image_paths)
+	_append_unique_paths(merged, intro_animation_nodes)
+	_append_unique_paths(merged, loop_animation_nodes)
 	return merged
 
 
-func _set_path_list_visible(root: Node, paths: Array[NodePath], value: bool) -> void:
+func get_animation_phase_paths(phase: String) -> Array[NodePath]:
+	if phase == "loop" and not loop_animation_nodes.is_empty():
+		return loop_animation_nodes
+	return intro_animation_nodes
+
+
+## Legacy compatibility: the robot now owns visibility resolution.
+func toggle_images(_root: Node) -> bool:
+	if not has_image_toggle():
+		return false
+	toggle_runtime_active()
+	return true
+
+
+func _append_unique_paths(target: Array[NodePath], paths: Array[NodePath]) -> void:
 	for path in paths:
-		var node := root.get_node_or_null(path) as CanvasItem
-		if node == null:
-			push_warning("Hover toggle image node not found: %s" % path)
-			continue
-		node.visible = value
+		if not target.has(path):
+			target.append(path)
+
+
+func _emit_configuration_changed() -> void:
+	if is_inside_tree():
+		configuration_changed.emit()
+	if Engine.is_editor_hint():
+		queue_redraw()
 
 
 func _draw() -> void:
