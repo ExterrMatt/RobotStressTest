@@ -51,6 +51,28 @@ const PELVIS_BODY_PART_PATHS := {
 	"right_leg": ["Legs/RightLegUpThigh", "Legs/RightLegUpShin"],
 	"left_leg": ["Legs/LeftLegUpThigh", "Legs/LeftLegUpShin"],
 }
+const ALL_RENDER_BODY_PARTS := [
+	"torso",
+	"nipples",
+	"right_arm",
+	"left_arm",
+	"right_hand",
+	"left_hand",
+	"right_leg",
+	"left_leg",
+	"head",
+	"neck",
+	"eyes",
+	"hair_front",
+	"hair_back",
+	"banana",
+]
+const PELVIS_RENDER_BODY_PARTS := [
+	"torso",
+	"nipples",
+	"right_leg",
+	"left_leg",
+]
 const HEAD_ANIMATION_BODY_PARTS := [
 	"torso",
 	"nipples",
@@ -73,6 +95,18 @@ const ANIMATION_LAYER_BODY_PARTS := {
 	"head": "head",
 	"hair_back": "hair_back",
 	"nipples": "nipples",
+}
+const ANIMATION_BODY_PART_VARIANT_PATHS := {
+	"torso": ["AnimationLayers/Torso", "AnimationLayers/MouthBLoopMedium/Torso"],
+	"nipples": ["AnimationLayers/Nipples", "AnimationLayers/MouthBLoopMedium/Nipples"],
+	"right_arm": ["AnimationLayers/RightArm", "AnimationLayers/MouthBLoopMedium/RightArm"],
+	"left_arm": ["AnimationLayers/LeftArm", "AnimationLayers/MouthBLoopMedium/LeftArm"],
+	"head": ["AnimationLayers/Head", "AnimationLayers/MouthBLoopMedium/Head"],
+	"neck": ["AnimationLayers/Neck", "AnimationLayers/MouthBLoopMedium/Neck"],
+	"eyes": ["AnimationLayers/SquintEyes", "AnimationLayers/MouthBLoopMedium/SquintEyes"],
+	"hair_front": ["AnimationLayers/HairFrontNormal", "AnimationLayers/MouthBLoopMedium/HairFrontNormal"],
+	"hair_back": ["AnimationLayers/HairBack", "AnimationLayers/MouthBLoopMedium/HairBack"],
+	"banana": ["AnimationLayers/Banana", "AnimationLayers/MouthBLoopMedium/Banana"],
 }
 const INTRO_NODE_PATHS := {
 	"banana": "Banana",
@@ -208,7 +242,8 @@ func _ready() -> void:
 	animation_layers.visible = false
 	_spawn_head_hover_box()
 	_spawn_pelvis_hover_box()
-	_set_pelvis_pose_active(false)
+	_pelvis_pose_active = false
+	_apply_robot_render_state()
 	if not resized.is_connected(_on_resized):
 		resized.connect(_on_resized)
 
@@ -304,7 +339,7 @@ func toggle_pelvis_pose() -> void:
 
 func _set_pelvis_pose_active(value: bool) -> void:
 	_pelvis_pose_active = value
-	_apply_robot_render_state()
+	_apply_pelvis_pose()
 
 
 func has_body_part(part_name: String) -> bool:
@@ -313,7 +348,24 @@ func has_body_part(part_name: String) -> bool:
 
 func set_body_part_available(part_name: String, value: bool) -> void:
 	body_part_inventory[part_name] = value
-	_apply_robot_render_state()
+	if PELVIS_RENDER_BODY_PARTS.has(part_name):
+		_apply_pelvis_pose()
+	else:
+		_apply_robot_render_state([part_name])
+
+
+func _apply_pelvis_pose() -> void:
+	_set_canvas_item_visible(^"Legs/RightLeg", has_body_part("right_leg") and not _pelvis_pose_active)
+	_set_canvas_item_visible(^"Legs/LeftLeg", has_body_part("left_leg") and not _pelvis_pose_active)
+	_set_canvas_item_visible(^"Legs/RightLegUpThigh", has_body_part("right_leg") and _pelvis_pose_active)
+	_set_canvas_item_visible(^"Legs/RightLegUpShin", has_body_part("right_leg") and _pelvis_pose_active)
+	_set_canvas_item_visible(^"Legs/LeftLegUpThigh", has_body_part("left_leg") and _pelvis_pose_active)
+	_set_canvas_item_visible(^"Legs/LeftLegUpShin", has_body_part("left_leg") and _pelvis_pose_active)
+	if _head_animation_active():
+		return
+	_set_canvas_item_visible(^"Torso/TorsoBase", has_body_part("torso") and not _pelvis_pose_active)
+	_set_canvas_item_visible(^"Torso/TorsoCrunch", has_body_part("torso") and _pelvis_pose_active)
+	_set_canvas_item_visible(^"Torso/Nipples", has_body_part("nipples"))
 
 
 func _start_layered_animation(animation: Dictionary, play_immediately: bool, _hide_static: bool = true) -> void:
@@ -322,7 +374,7 @@ func _start_layered_animation(animation: Dictionary, play_immediately: bool, _hi
 	_animation_playing = play_immediately
 	_collect_animation_nodes(animation)
 	_set_animation_frame(0)
-	_apply_robot_render_state()
+	_apply_robot_render_state(HEAD_ANIMATION_BODY_PARTS)
 
 
 func _advance_animation(delta: float) -> void:
@@ -353,7 +405,7 @@ func _finish_layered_animation() -> void:
 			animation_node.visible = false
 	_active_animation_nodes = {}
 	_active_animation = {}
-	_apply_robot_render_state()
+	_apply_robot_render_state(HEAD_ANIMATION_BODY_PARTS)
 
 
 func _collect_animation_nodes(animation: Dictionary) -> void:
@@ -378,34 +430,35 @@ func _hide_active_animation_nodes() -> void:
 			animation_node.visible = false
 
 
-func _apply_robot_render_state() -> void:
-	_hide_all_body_part_variants()
-
-	if _pelvis_pose_active:
-		_show_body_part_pose("torso", PELVIS_BODY_PART_PATHS)
-		_show_body_part_pose("nipples", PELVIS_BODY_PART_PATHS)
-	else:
-		_show_default_body_part_unless_head_animated("torso")
-		_show_default_body_part_unless_head_animated("nipples")
-
-	_show_default_body_part_unless_head_animated("right_arm")
-	_show_default_body_part_unless_head_animated("left_arm")
-	_show_default_body_part_unless_head_animated("head")
-	_show_default_body_part_unless_head_animated("neck")
-	_show_default_body_part_unless_head_animated("eyes")
-	_show_default_body_part_unless_head_animated("hair_front")
-	_show_default_body_part_unless_head_animated("hair_back")
-
-	_show_body_part_pose("right_hand", DEFAULT_BODY_PART_PATHS)
-	_show_body_part_pose("left_hand", DEFAULT_BODY_PART_PATHS)
-	_show_body_part_pose("right_leg", PELVIS_BODY_PART_PATHS if _pelvis_pose_active else DEFAULT_BODY_PART_PATHS)
-	_show_body_part_pose("left_leg", PELVIS_BODY_PART_PATHS if _pelvis_pose_active else DEFAULT_BODY_PART_PATHS)
+func _apply_robot_render_state(parts: Array = []) -> void:
+	var render_parts := parts if not parts.is_empty() else ALL_RENDER_BODY_PARTS
+	for part_name in render_parts:
+		_apply_body_part_render_state(String(part_name))
 	_refresh_animation_layer_visibility()
 
 
-func _hide_all_body_part_variants() -> void:
-	for part_name in BODY_PART_VARIANT_PATHS:
+func _apply_body_part_render_state(part_name: String) -> void:
+	_hide_body_part_variants(part_name)
+	match part_name:
+		"torso", "nipples":
+			if _head_animation_overrides_part(part_name):
+				return
+			elif _pelvis_pose_active:
+				_show_body_part_pose(part_name, PELVIS_BODY_PART_PATHS)
+			else:
+				_show_body_part_pose(part_name, DEFAULT_BODY_PART_PATHS)
+		"right_leg", "left_leg":
+			_show_body_part_pose(part_name, PELVIS_BODY_PART_PATHS if _pelvis_pose_active else DEFAULT_BODY_PART_PATHS)
+		_:
+			_show_default_body_part_unless_head_animated(part_name)
+
+
+func _hide_body_part_variants(part_name: String) -> void:
+	if BODY_PART_VARIANT_PATHS.has(part_name):
 		for path in BODY_PART_VARIANT_PATHS[part_name]:
+			_set_canvas_item_visible(NodePath(String(path)), false)
+	if ANIMATION_BODY_PART_VARIANT_PATHS.has(part_name):
+		for path in ANIMATION_BODY_PART_VARIANT_PATHS[part_name]:
 			_set_canvas_item_visible(NodePath(String(path)), false)
 
 
@@ -426,8 +479,6 @@ func _head_animation_overrides_part(part_name: String) -> bool:
 	if not _head_animation_active():
 		return false
 	if not HEAD_ANIMATION_BODY_PARTS.has(part_name):
-		return false
-	if _pelvis_pose_active and (part_name == "torso" or part_name == "nipples"):
 		return false
 	return _active_animation_has_part(part_name)
 
@@ -462,8 +513,6 @@ func _should_show_animation_layer(layer_name: String) -> bool:
 	if part_name == "":
 		return true
 	if not has_body_part(part_name):
-		return false
-	if _pelvis_pose_active and (part_name == "torso" or part_name == "nipples"):
 		return false
 	return true
 
