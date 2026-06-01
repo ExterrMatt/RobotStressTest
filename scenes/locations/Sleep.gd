@@ -54,6 +54,7 @@ func _ready() -> void:
 	mattress_texture.visible = false
 	pillow.visible = false
 	blanket.visible = false
+	_configure_head_hover_pillow_toggle()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -204,6 +205,25 @@ func _on_bed_click_area_gui_input(event: InputEvent) -> void:
 		if bot_placeholder.has_method("set_head_interaction_enabled"):
 			bot_placeholder.set_head_interaction_enabled(true)
 		return
+
+
+func _configure_head_hover_pillow_toggle() -> void:
+	var head_hover_box := bot_placeholder.get_node_or_null("HeadHoverBox")
+	if head_hover_box == null:
+		return
+
+	_append_unique_node_path(head_hover_box, "hidden_while_active_image_paths", ^"../PillowIndented")
+	_append_unique_node_path(head_hover_box, "shown_while_active_image_paths", ^"../Pillow")
+	if bot_placeholder.has_method("_refresh_configuration"):
+		bot_placeholder.call("_refresh_configuration")
+
+
+func _append_unique_node_path(node: Node, property_name: StringName, path: NodePath) -> void:
+	var paths: Array = node.get(property_name)
+	if paths.has(path):
+		return
+	paths.append(path)
+	node.set(property_name, paths)
 
 
 func _on_end_button_pressed() -> void:
