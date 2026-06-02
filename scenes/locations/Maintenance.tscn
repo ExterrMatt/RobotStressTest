@@ -58,9 +58,9 @@ mouse_filter = 2
 [node name="SceneCanvas" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=2128183914]
 custom_minimum_size = Vector2(500, 400)
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 0
+offset_right = 500.0
+offset_bottom = 400.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -92,14 +92,12 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -151.0
-offset_top = -550.0
-offset_right = 149.0
-offset_bottom = -100.0
+offset_left = -149.375
+offset_top = -363.125
+offset_right = 150.625
+offset_bottom = 86.875
 grow_horizontal = 2
 grow_vertical = 0
-scale = Vector2(2.4, 2.4)
-pivot_offset = Vector2(150, 225)
 
 [node name="ItemDock" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=539056135]
 layout_mode = 1
@@ -122,14 +120,13 @@ mouse_filter = 2
 
 [node name="OilSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn" unique_id=1182161211]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -36.0
-offset_top = 82.0
-offset_right = 36.0
-offset_bottom = 154.0
-grow_horizontal = 2
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -196.0
+offset_right = 72.0
+offset_bottom = -124.0
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="OilItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/OilSlot" unique_id=581608612]
@@ -152,14 +149,13 @@ item_id = &"buff_shine"
 
 [node name="ProdSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn" unique_id=1640852453]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -36.0
-offset_top = 246.0
-offset_right = 36.0
-offset_bottom = 318.0
-grow_horizontal = 2
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = 44.0
+offset_right = 72.0
+offset_bottom = 116.0
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="ProdItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/ProdSlot" unique_id=790267607]
@@ -194,14 +190,16 @@ mouse_filter = 2
 
 [node name="NanobotSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn" unique_id=460533843]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -36.0
-offset_top = 82.0
-offset_right = 36.0
-offset_bottom = 154.0
-grow_horizontal = 2
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -72.0
+offset_top = 44.0
+offset_bottom = 116.0
+grow_horizontal = 0
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="NanobotItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn/NanobotSlot" unique_id=1905226094]
@@ -224,14 +222,16 @@ item_id = &"quick_patch"
 
 [node name="BatterySlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn" unique_id=8950132]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -36.0
-offset_top = 246.0
-offset_right = 36.0
-offset_bottom = 318.0
-grow_horizontal = 2
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -72.0
+offset_top = -196.0
+offset_bottom = -124.0
+grow_horizontal = 0
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="BatteryItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn/BatterySlot" unique_id=1038407160]
@@ -243,9 +243,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -28.0
-offset_top = -28.0
+offset_top = -20.0
 offset_right = 28.0
-offset_bottom = 28.0
+offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("7_placeholder")
@@ -260,9 +260,9 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -103.0
-offset_top = -64.0
+offset_top = -216.0
 offset_right = -7.0
-offset_bottom = -7.0
+offset_bottom = -159.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_default_cursor_shape = 2

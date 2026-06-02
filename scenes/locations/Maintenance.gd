@@ -5,6 +5,9 @@ const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd
 const PAN_DURATION: float = 0.35
 const PAN_TRANS: int = Tween.TRANS_SINE
 const PAN_EASE: int = Tween.EASE_IN_OUT
+const BASE_SCENE_SIZE: Vector2 = Vector2(500.0, 400.0)
+const ZOOM_MULTIPLIER: float = 2.0
+const SCROLL_STEP_VIEW_FRACTION: float = 0.5
 
 @export var robot_border_buffer: int = 10
 @export_range(0.0, 1.0, 0.01) var robot_alpha_threshold: float = 0.05
@@ -18,9 +21,17 @@ var _robot_bbox_local: Rect2 = Rect2()
 var _hover_box: Control = null
 var _zoomed: bool = false
 var _zoom_tween: Tween = null
+var _canvas_base_scale: float = 1.0
+var _zoom_scale: float = 1.0
+var _view_left: float = 0.0
+var _view_top: float = 0.0
 
 
 func _ready() -> void:
+	if camera_window != null and not camera_window.resized.is_connected(_on_camera_window_resized):
+		camera_window.resized.connect(_on_camera_window_resized)
+	_apply_default_canvas_transform()
+	call_deferred("_apply_default_canvas_transform")
 	_robot_bbox_local = _compute_robot_pixel_bbox()
 	_spawn_hover_box()
 
@@ -29,7 +40,15 @@ func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton):
 		return
 	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
+	if not mouse_event.pressed:
+		return
+
+	if _zoomed and mouse_event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		_scroll_zoomed_view(mouse_event.button_index)
+		get_viewport().set_input_as_handled()
+		return
+
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 		return
 	if _hover_box == null or not is_instance_valid(_hover_box):
 		return
@@ -38,7 +57,7 @@ func _input(event: InputEvent) -> void:
 	if not _hover_box.get_global_rect().has_point(mouse_event.global_position):
 		return
 
-	_zoom_to_robot_box()
+	_toggle_robot_box_zoom()
 	get_viewport().set_input_as_handled()
 
 
@@ -132,20 +151,72 @@ func _spawn_hover_box() -> void:
 	_hover_box = box
 
 
+func _toggle_robot_box_zoom() -> void:
+	if _zoomed:
+		_reset_zoom()
+	else:
+		_zoom_to_robot_box()
+
+
 func _zoom_to_robot_box() -> void:
-	if _zoomed or camera_window == null or scene_canvas == null:
+	if camera_window == null or scene_canvas == null:
 		return
 
-	var buffer := float(robot_border_buffer)
-	var rect_origin := robot.position + (_robot_bbox_local.position - Vector2(buffer, buffer)) * robot.scale
-	var rect_size := (_robot_bbox_local.size + Vector2(buffer * 2.0, buffer * 2.0)) * robot.scale
-	if rect_size.y <= 0.0 or camera_window.size.y <= 0.0:
+	var robot_rect := _robot_bbox_in_scene_canvas()
+	var view_top := clampf(robot_rect.position.y, 0.0, BASE_SCENE_SIZE.y)
+	var full_robot_view_height := BASE_SCENE_SIZE.y - view_top
+	if full_robot_view_height <= 0.0 or camera_window.size.y <= 0.0:
 		return
 
-	var target_scale := camera_window.size.y / rect_size.y
+	_zoom_scale = maxf(1.0, BASE_SCENE_SIZE.y / full_robot_view_height) * ZOOM_MULTIPLIER
+	_center_zoomed_view_horizontally()
+	_view_top = _max_view_top()
+	_animate_to_view(_view_left, _view_top)
+	_zoomed = true
+
+
+func _reset_zoom() -> void:
+	if _zoom_tween and _zoom_tween.is_valid():
+		_zoom_tween.kill()
+	_zoomed = false
+	_zoom_scale = 1.0
+	_view_left = 0.0
+	_view_top = 0.0
+	_apply_default_canvas_transform()
+
+
+func _scroll_zoomed_view(button_index: int) -> void:
+	var step := _current_view_size().y * SCROLL_STEP_VIEW_FRACTION
+	if button_index == MOUSE_BUTTON_WHEEL_UP:
+		_view_top -= step
+	else:
+		_view_top += step
+	_view_top = clampf(_view_top, 0.0, _max_view_top())
+	_animate_to_view(_view_left, _view_top)
+
+
+func _apply_default_canvas_transform() -> void:
+	if camera_window == null or scene_canvas == null:
+		return
+	if camera_window.size == Vector2.ZERO:
+		return
+
+	_canvas_base_scale = minf(
+		camera_window.size.x / BASE_SCENE_SIZE.x,
+		camera_window.size.y / BASE_SCENE_SIZE.y
+	)
+	var display_size := BASE_SCENE_SIZE * _canvas_base_scale
+	scene_canvas.size = BASE_SCENE_SIZE
+	scene_canvas.pivot_offset = Vector2.ZERO
+	scene_canvas.scale = Vector2(_canvas_base_scale, _canvas_base_scale)
+	scene_canvas.position = (camera_window.size - display_size) * 0.5
+
+
+func _animate_to_view(view_left: float, view_top: float) -> void:
+	var target_scale := _canvas_base_scale * _zoom_scale
 	var target_position := Vector2(
-		camera_window.size.x * 0.5 - (rect_origin.x + rect_size.x * 0.5) * target_scale,
-		-rect_origin.y * target_scale
+		-view_left * target_scale,
+		-view_top * target_scale
 	)
 
 	if _zoom_tween and _zoom_tween.is_valid():
@@ -156,7 +227,48 @@ func _zoom_to_robot_box() -> void:
 	_zoom_tween.set_ease(PAN_EASE)
 	_zoom_tween.tween_property(scene_canvas, "scale", Vector2(target_scale, target_scale), PAN_DURATION)
 	_zoom_tween.tween_property(scene_canvas, "position", target_position, PAN_DURATION)
-	_zoomed = true
+
+
+func _center_zoomed_view_horizontally() -> void:
+	var view_size := _current_view_size()
+	var max_view_left := maxf(0.0, BASE_SCENE_SIZE.x - view_size.x)
+	_view_left = clampf(BASE_SCENE_SIZE.x * 0.5 - view_size.x * 0.5, 0.0, max_view_left)
+
+
+func _current_view_size() -> Vector2:
+	var target_scale := _canvas_base_scale * _zoom_scale
+	if target_scale <= 0.0:
+		return BASE_SCENE_SIZE
+	return camera_window.size / target_scale
+
+
+func _max_view_top() -> float:
+	return maxf(0.0, BASE_SCENE_SIZE.y - _current_view_size().y)
+
+
+func _robot_bbox_in_scene_canvas() -> Rect2:
+	var to_scene := scene_canvas.get_global_transform_with_canvas().affine_inverse() \
+		* robot.get_global_transform_with_canvas()
+	var points := [
+		to_scene * _robot_bbox_local.position,
+		to_scene * (_robot_bbox_local.position + Vector2(_robot_bbox_local.size.x, 0.0)),
+		to_scene * (_robot_bbox_local.position + Vector2(0.0, _robot_bbox_local.size.y)),
+		to_scene * (_robot_bbox_local.position + _robot_bbox_local.size),
+	]
+	var min_point: Vector2 = points[0]
+	var max_point: Vector2 = points[0]
+	for point in points:
+		min_point.x = minf(min_point.x, point.x)
+		min_point.y = minf(min_point.y, point.y)
+		max_point.x = maxf(max_point.x, point.x)
+		max_point.y = maxf(max_point.y, point.y)
+	return Rect2(min_point, max_point - min_point)
+
+
+func _on_camera_window_resized() -> void:
+	if _zoomed:
+		return
+	_apply_default_canvas_transform()
 
 
 func _on_end_button_pressed() -> void:
