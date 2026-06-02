@@ -19,6 +19,7 @@ const ZOOM_DURATION: float = 0.35
 @onready var mattress_texture_indent: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/MattressTextureIndent
 @onready var pillow: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/Pillow
 @onready var pillow_indented: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/PillowIndented
+@onready var pillow_slightly_indented: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/PillowSlightlyIndented
 
 var _grid_cell: Vector2i = Vector2i(1, 1)
 var _zoomed_in: bool = true
@@ -40,6 +41,7 @@ func _ready() -> void:
 		mattress_texture_indent.visible = false
 		pillow.visible = true
 		pillow_indented.visible = false
+		pillow_slightly_indented.visible = false
 		blanket.visible = true
 		blanket_bump.visible = false
 		return
@@ -53,6 +55,7 @@ func _ready() -> void:
 
 	mattress_texture.visible = false
 	pillow.visible = false
+	pillow_slightly_indented.visible = false
 	blanket.visible = false
 	_configure_head_hover_pillow_toggle()
 
@@ -213,7 +216,7 @@ func _configure_head_hover_pillow_toggle() -> void:
 		return
 
 	_append_unique_node_path(head_hover_box, "hidden_while_active_image_paths", ^"../PillowIndented")
-	_append_unique_node_path(head_hover_box, "shown_while_active_image_paths", ^"../Pillow")
+	_append_unique_node_path(head_hover_box, "shown_while_active_image_paths", ^"../PillowSlightlyIndented")
 	if bot_placeholder.has_method("_refresh_configuration"):
 		bot_placeholder.call("_refresh_configuration")
 

@@ -436,17 +436,6 @@ mouse_filter = 2
 texture = ExtResource("10_left_leg_up_shin")
 expand_mode = 1
 
-[node name="BoobCover" type="TextureRect" parent="." unique_id=931354332]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("23_boob_cover")
-expand_mode = 1
-
 [node name="AnimationLayers" type="Control" parent="." unique_id=1356198924]
 visible = false
 layout_mode = 1
@@ -455,7 +444,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(2, 2)
 mouse_filter = 2
 
 [node name="HairBack" type="Sprite2D" parent="AnimationLayers" unique_id=400961888]
@@ -581,6 +569,17 @@ texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
 region_rect = Rect2(2250, 0, 250, 350)
+
+[node name="BoobCover" type="TextureRect" parent="." unique_id=931354332]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("23_boob_cover")
+expand_mode = 1
 
 [node name="HeadHoverBox" type="Control" parent="." unique_id=1361736466]
 anchors_preset = 0

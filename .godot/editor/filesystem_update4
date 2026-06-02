@@ -1,5 +1,3 @@
-res://scenes/locations/StressTestRobot.gd
-res://scenes/locations/StressTestRobot.tscn
+res://scenes/locations/Maintenance.gd
+res://scenes/locations/Maintenance.tscn
 res://themes/main_theme.tres
-res://scenes/locations/RobotHoverBox.gd
-res://scenes/locations/Sleep.gd

@@ -1,34 +1,62 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://btmbmr5wb21kv"]
 
-[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
-[ext_resource type="Script" path="res://scenes/locations/Maintenance.gd" id="2"]
-[ext_resource type="PackedScene" uid="uid://k8jls1dgr68d" path="res://scenes/locations/PersonalityTestRobot.tscn" id="3"]
+[ext_resource type="Script" uid="uid://15brafh6davw" path="res://scenes/locations/Maintenance.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cttpa8ighauym" path="res://assets/textures/backgrounds/maintenance.png" id="2_background"]
+[ext_resource type="PackedScene" uid="uid://k8jls1dgr68d" path="res://scenes/locations/PersonalityTestRobot.tscn" id="3_robot"]
+[ext_resource type="Script" uid="uid://dubeqvg4d682w" path="res://scenes/locations/WorkInventory.gd" id="4_inventory"]
+[ext_resource type="Script" uid="uid://b283qqu0wyy6e" path="res://scenes/locations/DraggableItem.gd" id="5_draggable"]
+[ext_resource type="Texture2D" uid="uid://dvffjqd4ghp41" path="res://assets/textures/icons/oil.png" id="6_oil"]
+[ext_resource type="Texture2D" uid="uid://baodthgpcv17l" path="res://assets/textures/icons/placeholder_item.png" id="7_placeholder"]
+[ext_resource type="Texture2D" uid="uid://up51kbruny1t" path="res://assets/textures/icons/nanobots.png" id="8_nanobots"]
 
-[node name="Maintenance" instance=ExtResource("1")]
-script = ExtResource("2")
-title_text = "Maintenance"
-blurb_text = "Repair damage. Apply upgrades. Equip body parts. Buff and shine."
-outcomes = [{
-"label": "Quick patch (spend ingredients)",
-"money": 0,
-"suspicion": 0,
-"anger": -5,
-"ingredients": {}
-}, {
-"label": "Exchange anger — zap her (relief now, debt later)",
-"money": 0,
-"suspicion": 0,
-"anger": 8,
-"ingredients": {}
-}, {
-"label": "Buff & shine (cheap calm)",
-"money": -5,
-"suspicion": 0,
-"anger": -2,
-"ingredients": {}
-}]
+[node name="Maintenance" type="Control" unique_id=1359677230]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
 
-[node name="RobotLayer" type="Control" parent="." index="3"]
+[node name="FullscreenLayer" type="CanvasLayer" parent="." unique_id=2031965141]
+layer = 20
+
+[node name="FullscreenRoot" type="Control" parent="FullscreenLayer" unique_id=608075605]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BlackBackground" type="ColorRect" parent="FullscreenLayer/FullscreenRoot" unique_id=104152592]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="SceneScaler" type="AspectRatioContainer" parent="FullscreenLayer/FullscreenRoot" unique_id=999186671]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ratio = 1.25
+stretch_mode = 3
+
+[node name="CameraWindow" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler" unique_id=490857001]
+clip_contents = true
+custom_minimum_size = Vector2(500, 400)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SceneCanvas" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=2128183914]
+custom_minimum_size = Vector2(500, 400)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -37,10 +65,207 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PersonalityTestRobot" parent="RobotLayer" index="0" instance=ExtResource("3")]
+[node name="Background" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=485217312]
 layout_mode = 1
-offset_left = 160.99998
-offset_top = 58.999996
-offset_right = 461.0
-offset_bottom = 509.0
-scale = Vector2(1.6, 1.6)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_background")
+expand_mode = 1
+
+[node name="RobotLayer" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=2084158709]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PersonalityTestRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/RobotLayer" unique_id=252185511 instance=ExtResource("3_robot")]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -151.0
+offset_top = -550.0
+offset_right = 149.0
+offset_bottom = -100.0
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(2.4, 2.4)
+pivot_offset = Vector2(150, 225)
+
+[node name="ItemDock" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=539056135]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_inventory")
+
+[node name="LeftColumn" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock" unique_id=957676393]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 22.0
+offset_right = 94.0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="OilSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn" unique_id=1182161211]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_top = 82.0
+offset_right = 36.0
+offset_bottom = 154.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="OilItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/OilSlot" unique_id=581608612]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -28.0
+offset_right = 28.0
+offset_bottom = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_oil")
+script = ExtResource("5_draggable")
+item_id = &"buff_shine"
+
+[node name="ProdSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn" unique_id=1640852453]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_top = 246.0
+offset_right = 36.0
+offset_bottom = 318.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="ProdItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/ProdSlot" unique_id=790267607]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -28.0
+offset_right = 28.0
+offset_bottom = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_placeholder")
+script = ExtResource("5_draggable")
+item_id = &"zap"
+
+[node name="RightColumn" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock" unique_id=1834495371]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -94.0
+offset_right = -22.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="NanobotSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn" unique_id=460533843]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_top = 82.0
+offset_right = 36.0
+offset_bottom = 154.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="NanobotItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn/NanobotSlot" unique_id=1905226094]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -28.0
+offset_right = 28.0
+offset_bottom = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("8_nanobots")
+script = ExtResource("5_draggable")
+item_id = &"quick_patch"
+
+[node name="BatterySlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn" unique_id=8950132]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_top = 246.0
+offset_right = 36.0
+offset_bottom = 318.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="BatteryItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn/BatterySlot" unique_id=1038407160]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -28.0
+offset_right = 28.0
+offset_bottom = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_placeholder")
+script = ExtResource("5_draggable")
+item_id = &"user"
+
+[node name="EndButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1377351768]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -103.0
+offset_top = -64.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_default_cursor_shape = 2
+text = "END"
+
+[connection signal="pressed" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton" to="." method="_on_end_button_pressed"]
