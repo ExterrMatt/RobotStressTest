@@ -127,6 +127,7 @@ offset_top = -196.0
 offset_right = 72.0
 offset_bottom = -124.0
 grow_vertical = 2
+scale = Vector2(2, 2)
 mouse_filter = 2
 
 [node name="OilItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/OilSlot" unique_id=581608612]
@@ -156,6 +157,7 @@ offset_top = 44.0
 offset_right = 72.0
 offset_bottom = 116.0
 grow_vertical = 2
+scale = Vector2(2, 2)
 mouse_filter = 2
 
 [node name="ProdItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/ProdSlot" unique_id=790267607]
@@ -195,11 +197,13 @@ anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -72.0
+offset_left = -144.0
 offset_top = 44.0
+offset_right = -72.0
 offset_bottom = 116.0
 grow_horizontal = 0
 grow_vertical = 2
+scale = Vector2(2, 2)
 mouse_filter = 2
 
 [node name="NanobotItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn/NanobotSlot" unique_id=1905226094]
@@ -227,11 +231,13 @@ anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -72.0
+offset_left = -144.0
 offset_top = -196.0
+offset_right = -72.0
 offset_bottom = -124.0
 grow_horizontal = 0
 grow_vertical = 2
+scale = Vector2(2, 2)
 mouse_filter = 2
 
 [node name="BatteryItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/RightColumn/BatterySlot" unique_id=1038407160]

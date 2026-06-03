@@ -1,3 +1,4 @@
 res://scenes/locations/Maintenance.gd
 res://scenes/locations/Maintenance.tscn
 res://themes/main_theme.tres
+res://scenes/locations/WorkInventory.gd

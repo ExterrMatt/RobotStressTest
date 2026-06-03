@@ -8,6 +8,13 @@ const PAN_EASE: int = Tween.EASE_IN_OUT
 const BASE_SCENE_SIZE: Vector2 = Vector2(500.0, 400.0)
 const ZOOM_MULTIPLIER: float = 2.0
 const SCROLL_STEP_VIEW_FRACTION: float = 0.5
+const SCRUB_ITEM_ID: StringName = &"buff_shine"
+const SCRUB_REQUIRED_DISTANCE: float = 3000.0
+const MAINTENANCE_ITEM_IDS: Array[StringName] = [
+	&"zap",
+	&"quick_patch",
+	&"user",
+]
 
 @export var robot_border_buffer: int = 10
 @export_range(0.0, 1.0, 0.01) var robot_alpha_threshold: float = 0.05
@@ -19,6 +26,13 @@ const SCROLL_STEP_VIEW_FRACTION: float = 0.5
 
 var _robot_bbox_local: Rect2 = Rect2()
 var _hover_box: Control = null
+var _drop_slots: Array[DropSlot] = []
+var _scrub_item: DraggableItem = null
+var _scrub_bar: ProgressBar = null
+var _scrub_progress: float = 0.0
+var _last_scrub_global_pos: Vector2 = Vector2.ZERO
+var _has_last_scrub_global_pos: bool = false
+var _scrub_complete: bool = false
 var _zoomed: bool = false
 var _zoom_tween: Tween = null
 var _canvas_base_scale: float = 1.0
@@ -34,6 +48,9 @@ func _ready() -> void:
 	call_deferred("_apply_default_canvas_transform")
 	_robot_bbox_local = _compute_robot_pixel_bbox()
 	_spawn_hover_box()
+	_spawn_drop_slots()
+	_spawn_scrub_bar()
+	call_deferred("_cache_scrub_item")
 
 
 func _input(event: InputEvent) -> void:
@@ -70,6 +87,7 @@ func _process(_delta: float) -> void:
 		return
 	_hover_box.force_visible = false
 	_hover_box.set_hovered(_hover_box.get_global_rect().has_point(get_global_mouse_position()))
+	_update_scrub_progress()
 
 
 func _compute_robot_pixel_bbox() -> Rect2:
@@ -149,6 +167,112 @@ func _spawn_hover_box() -> void:
 	box.z_index = 100
 	robot.add_child(box)
 	_hover_box = box
+
+
+func _spawn_drop_slots() -> void:
+	for slot in _drop_slots:
+		if slot != null and is_instance_valid(slot):
+			slot.queue_free()
+	_drop_slots.clear()
+
+	if _robot_bbox_local.size == Vector2.ZERO:
+		return
+
+	var buffer := float(robot_border_buffer)
+	var slot_rect := Rect2(
+		_robot_bbox_local.position - Vector2(buffer, buffer),
+		_robot_bbox_local.size + Vector2(buffer * 2.0, buffer * 2.0)
+	)
+	for item_id in MAINTENANCE_ITEM_IDS:
+		var slot := DropSlot.new()
+		slot.name = "MaintenanceDropSlot%d" % _drop_slots.size()
+		slot.accepts_item_id = item_id
+		slot.position = slot_rect.position
+		slot.size = slot_rect.size
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.z_index = 99
+		robot.add_child(slot)
+		_drop_slots.append(slot)
+
+
+func _spawn_scrub_bar() -> void:
+	if camera_window == null:
+		return
+	_scrub_bar = ProgressBar.new()
+	_scrub_bar.name = "ScrubProgressBar"
+	_scrub_bar.anchor_left = 1.0
+	_scrub_bar.anchor_right = 1.0
+	_scrub_bar.offset_left = -172.0
+	_scrub_bar.offset_top = 16.0
+	_scrub_bar.offset_right = -20.0
+	_scrub_bar.offset_bottom = 34.0
+	_scrub_bar.max_value = 1.0
+	_scrub_bar.value = 0.0
+	_scrub_bar.show_percentage = false
+	_scrub_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_scrub_bar.z_index = 120
+	camera_window.add_child(_scrub_bar)
+
+
+func _cache_scrub_item() -> void:
+	_scrub_item = _find_draggable_item_by_id(self, SCRUB_ITEM_ID)
+
+
+func _update_scrub_progress() -> void:
+	if _scrub_complete:
+		return
+	if _scrub_item == null or not is_instance_valid(_scrub_item):
+		_cache_scrub_item()
+	if _scrub_item == null or not is_instance_valid(_scrub_item):
+		return
+	if not _scrub_item.visible or not _scrub_item.is_dragging():
+		_has_last_scrub_global_pos = false
+		return
+
+	var item_center := _scrub_item.global_position + _scrub_item.size * 0.5
+	if _hover_box == null or not _hover_box.get_global_rect().has_point(item_center):
+		_last_scrub_global_pos = item_center
+		_has_last_scrub_global_pos = true
+		return
+
+	if _has_last_scrub_global_pos:
+		_scrub_progress = minf(
+			SCRUB_REQUIRED_DISTANCE,
+			_scrub_progress + item_center.distance_to(_last_scrub_global_pos)
+		)
+		_update_scrub_bar()
+		if _scrub_progress >= SCRUB_REQUIRED_DISTANCE:
+			_complete_scrub()
+
+	_last_scrub_global_pos = item_center
+	_has_last_scrub_global_pos = true
+
+
+func _update_scrub_bar() -> void:
+	if _scrub_bar != null and is_instance_valid(_scrub_bar):
+		_scrub_bar.value = _scrub_progress / SCRUB_REQUIRED_DISTANCE
+
+
+func _complete_scrub() -> void:
+	_scrub_complete = true
+	_scrub_progress = SCRUB_REQUIRED_DISTANCE
+	_update_scrub_bar()
+	if _scrub_item == null or not is_instance_valid(_scrub_item):
+		return
+	if _scrub_item.is_dragging():
+		_scrub_item.end_drag(_scrub_item.global_position + _scrub_item.size * 0.5)
+	_scrub_item.visible = false
+	_scrub_item.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+func _find_draggable_item_by_id(node: Node, item_id: StringName) -> DraggableItem:
+	for child in node.get_children():
+		if child is DraggableItem and child.item_id == item_id:
+			return child
+		var found := _find_draggable_item_by_id(child, item_id)
+		if found != null:
+			return found
+	return null
 
 
 func _toggle_robot_box_zoom() -> void:

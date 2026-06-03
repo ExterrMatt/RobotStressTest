@@ -92,6 +92,7 @@ func _on_drag_started(item: DraggableItem) -> void:
 
 func _on_drag_released(item: DraggableItem, _release_pos: Vector2) -> void:
 	_active_drag = null
+	drop_slots = _collect_drop_slots_from_root()
 	# Find the first drop slot that accepts this item and contains its center.
 	for slot in drop_slots:
 		if slot.is_valid_drop(item):
