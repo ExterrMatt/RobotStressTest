@@ -1,107 +1,144 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ufk426roxtdo"]
 
-[ext_resource type="Script" path="res://scenes/locations/StressTest.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/locations/StressTestRobot.tscn" id="2"]
+[ext_resource type="Script" uid="uid://8i77rppng4bl" path="res://scenes/locations/StressTest.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bxain7khtaveo" path="res://assets/textures/backgrounds/palceholder_stress_test_light.png" id="2_light"]
+[ext_resource type="Texture2D" uid="uid://bn0geh48q1hrs" path="res://assets/textures/backgrounds/palceholder_stress_test_dark.png" id="3_dark"]
+[ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="4_robot"]
 
-[node name="StressTest" type="Control"]
+[node name="StressTest" type="Control" unique_id=471497481]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource("1")
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
 
-[node name="ColorBackground" type="ColorRect" parent="."]
+[node name="FullscreenLayer" type="CanvasLayer" parent="." unique_id=2013108336]
+layer = 20
+
+[node name="FullscreenRoot" type="Control" parent="FullscreenLayer" unique_id=284197517]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BlackBackground" type="ColorRect" parent="FullscreenLayer/FullscreenRoot" unique_id=215981165]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.08, 0.06, 0.12, 1)
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
 
-[node name="RobotLayer" type="Control" parent="."]
+[node name="SceneScaler" type="AspectRatioContainer" parent="FullscreenLayer/FullscreenRoot" unique_id=1119213311]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ratio = 1.333333
+stretch_mode = 3
+
+[node name="CameraWindow" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler" unique_id=1500699738]
+clip_contents = true
+custom_minimum_size = Vector2(800, 600)
+layout_mode = 2
 mouse_filter = 2
 
-[node name="StressTestRobot" parent="RobotLayer" instance=ExtResource("2")]
+[node name="SceneCanvas" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=730907543]
+custom_minimum_size = Vector2(800, 600)
 layout_mode = 1
-anchors_preset = 2
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -398.0
-offset_top = 50.0
-offset_right = -148.0
-offset_bottom = 400.0
-grow_horizontal = 0
-scale = Vector2(1.35, 1.35)
+anchors_preset = 0
+offset_right = 800.0
+offset_bottom = 600.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="LightPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=965176587]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme_override_constants/margin_left = 48
-theme_override_constants/margin_top = 48
-theme_override_constants/margin_right = 48
-theme_override_constants/margin_bottom = 48
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_light")
+expand_mode = 1
 
-[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 16
+[node name="DarkPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1297079992]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_dark")
+expand_mode = 1
 
-[node name="Title" type="Label" parent="MarginContainer/VBox"]
-layout_mode = 2
-text = "Stress Test (stub)"
-theme_override_font_sizes/font_size = 36
+[node name="StressTestRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1491404521 instance=ExtResource("4_robot")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -237.0
+offset_top = -103.0
+offset_right = 13.0
+offset_bottom = 247.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Blurb" type="Label" parent="MarginContainer/VBox"]
-layout_mode = 2
-text = "Simulate the outcome. The real timed minigame replaces this scene later."
-autowrap_mode = 2
-theme_override_font_sizes/font_size = 16
+[node name="EndButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=208837645]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -103.0
+offset_top = -64.0
+offset_right = -7.0
+offset_bottom = -7.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_default_cursor_shape = 2
+text = "END"
 
-[node name="InfoLabel" type="Label" parent="MarginContainer/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Equipped limbs: 0  |  Current anger: 0  |  Tonight's wakes: 0"
-theme_override_font_sizes/font_size = 14
+[node name="WakeButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=244431589]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -103.0
+offset_top = 7.0
+offset_right = -7.0
+offset_bottom = 64.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_default_cursor_shape = 2
+text = "WAKE"
 
-[node name="Spacer" type="Control" parent="MarginContainer/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
+[node name="GiveUpButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=382591550]
+layout_mode = 1
+offset_left = 7.0
+offset_top = 7.0
+offset_right = 103.0
+offset_bottom = 64.0
+mouse_default_cursor_shape = 2
+text = "GIVE UP"
 
-[node name="Buttons" type="VBoxContainer" parent="MarginContainer/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="Good" type="Button" parent="MarginContainer/VBox/Buttons"]
-layout_mode = 2
-custom_minimum_size = Vector2(320, 48)
-text = "Good stress-test (anger −20)"
-
-[node name="Bad" type="Button" parent="MarginContainer/VBox/Buttons"]
-layout_mode = 2
-custom_minimum_size = Vector2(320, 48)
-text = "Bad stress-test (anger −5)"
-
-[node name="Recorded" type="Button" parent="MarginContainer/VBox/Buttons"]
-layout_mode = 2
-custom_minimum_size = Vector2(320, 48)
-text = "Record run (+40 money, +6 suspicion, anger −10)"
-
-[node name="Wake" type="Button" parent="MarginContainer/VBox/Buttons"]
-layout_mode = 2
-custom_minimum_size = Vector2(320, 48)
-text = "Wake the robot (retry — adds fail-penalty at day end)"
-
-[node name="GiveUp" type="Button" parent="MarginContainer/VBox/Buttons"]
-layout_mode = 2
-custom_minimum_size = Vector2(320, 48)
-text = "Give up for tonight (advance to next day)"
-
-[connection signal="pressed" from="MarginContainer/VBox/Buttons/Good" to="." method="_on_good_pressed"]
-[connection signal="pressed" from="MarginContainer/VBox/Buttons/Bad" to="." method="_on_bad_pressed"]
-[connection signal="pressed" from="MarginContainer/VBox/Buttons/Recorded" to="." method="_on_recorded_pressed"]
-[connection signal="pressed" from="MarginContainer/VBox/Buttons/Wake" to="." method="_on_wake_pressed"]
-[connection signal="pressed" from="MarginContainer/VBox/Buttons/GiveUp" to="." method="_on_give_up_pressed"]
+[connection signal="pressed" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton" to="." method="_on_end_button_pressed"]
+[connection signal="pressed" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/WakeButton" to="." method="_on_wake_button_pressed"]
+[connection signal="pressed" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/GiveUpButton" to="." method="_on_give_up_button_pressed"]
