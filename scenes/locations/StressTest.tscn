@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://bn0geh48q1hrs" path="res://assets/textures/backgrounds/palceholder_stress_test_dark.png" id="3_dark"]
 [ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="4_robot"]
 [ext_resource type="Script" uid="uid://cvbl2j3xth0hm" path="res://scenes/locations/StressTestRobotShadow.gd" id="5_shadow"]
+[ext_resource type="Texture2D" uid="uid://db72lm17w1lqc" path="res://assets/textures/icons/pull_string.png" id="6_pull_string"]
 
 [node name="StressTest" type="Control" unique_id=471497481]
 layout_mode = 3
@@ -122,17 +123,14 @@ offset_bottom = 247.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PullCord" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=720968412]
+[node name="PullCord" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=720968412]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -3.0
-offset_top = 101.0
-offset_right = 3.0
-offset_bottom = 245.0
-grow_horizontal = 2
+offset_left = 393.5
+offset_top = -96.0
+offset_right = 406.5
+offset_bottom = 104.0
 mouse_default_cursor_shape = 13
+texture = ExtResource("6_pull_string")
 
 [node name="EndButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=208837645]
 layout_mode = 1

@@ -12,16 +12,20 @@ const MIDDLE_LEFT_COLUMN: int = 1
 const MIDDLE_LEFT_COLUMN_SOURCE_OFFSET_X: float = -20.0
 const TOP_VIEW_OVERSCAN_PX: float = 38.0
 const BOTTOM_VIEW_OVERSCAN_PX: float = 37.0
-const PULL_CORD_MAX_PULL: float = 120.0
-const PULL_CORD_TRIGGER_DISTANCE: float = 72.0
+const PULL_CORD_MAX_PULL: float = 60.0
+const PULL_CORD_TRIGGER_DISTANCE: float = 36.0
 const PULL_CORD_RETURN_DURATION: float = 0.11
 const PULL_CORD_BOB_DISTANCE: float = 8.0
+
+@export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
+@export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
 
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
 @onready var light_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder
 @onready var dark_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/DarkPlaceholder
-@onready var pull_cord: ColorRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/PullCord
+@onready var pull_cord: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/PullCord
+@onready var stress_test_robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot
 
 var _grid_cell: Vector2i = Vector2i(2, 2)
 var _zoomed_in: bool = true
@@ -46,7 +50,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion:
-		_update_pull_cord_drag((event as InputEventMouseMotion).global_position.y)
+		_update_pull_cord_drag((event as InputEventMouseMotion).global_position)
 		get_viewport().set_input_as_handled()
 		return
 
@@ -247,28 +251,36 @@ func _on_pull_cord_gui_input(event: InputEvent) -> void:
 		return
 
 	if mouse_event.pressed:
-		_start_pull_cord_drag(mouse_event.global_position.y)
+		_start_pull_cord_drag(mouse_event.global_position)
 	else:
 		_release_pull_cord()
 
 	get_viewport().set_input_as_handled()
 
 
-func _start_pull_cord_drag(global_y: float) -> void:
+func _start_pull_cord_drag(global_position: Vector2) -> void:
 	if _pull_cord_tween and _pull_cord_tween.is_valid():
 		_pull_cord_tween.kill()
 	_pull_cord_dragging = true
-	_pull_cord_drag_start_global_y = global_y
+	_pull_cord_drag_start_global_y = _pull_cord_parent_local_y(global_position)
 	_pull_cord_drag_start_y = pull_cord.position.y
 
 
-func _update_pull_cord_drag(global_y: float) -> void:
+func _update_pull_cord_drag(global_position: Vector2) -> void:
 	if pull_cord == null:
 		return
 
-	var drag_delta := maxf(0.0, global_y - _pull_cord_drag_start_global_y)
+	var local_y := _pull_cord_parent_local_y(global_position)
+	var drag_delta := maxf(0.0, local_y - _pull_cord_drag_start_global_y)
 	var target_y := _pull_cord_drag_start_y + drag_delta
 	pull_cord.position.y = clampf(target_y, _pull_cord_rest_y, _pull_cord_rest_y + PULL_CORD_MAX_PULL)
+
+
+func _pull_cord_parent_local_y(global_position: Vector2) -> float:
+	var parent_control := pull_cord.get_parent() as Control
+	if parent_control == null:
+		return global_position.y
+	return (parent_control.get_global_transform_with_canvas().affine_inverse() * global_position).y
 
 
 func _release_pull_cord() -> void:
@@ -299,6 +311,8 @@ func _set_stress_test_dark(value: bool) -> void:
 		light_placeholder.visible = not _stress_test_dark
 	if dark_placeholder != null:
 		dark_placeholder.visible = _stress_test_dark
+	if stress_test_robot != null:
+		stress_test_robot.modulate = robot_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
 
 
 func _on_end_button_pressed() -> void:
