@@ -4,3 +4,4 @@ res://themes/main_theme.tres
 res://scenes/locations/WorkInventory.gd
 res://scenes/locations/StressTest.gd
 res://scenes/locations/StressTest.tscn
+res://scenes/locations/StressTestRobotShadow.gd

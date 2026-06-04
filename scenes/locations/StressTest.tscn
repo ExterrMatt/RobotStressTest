@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://bxain7khtaveo" path="res://assets/textures/backgrounds/palceholder_stress_test_light.png" id="2_light"]
 [ext_resource type="Texture2D" uid="uid://bn0geh48q1hrs" path="res://assets/textures/backgrounds/palceholder_stress_test_dark.png" id="3_dark"]
 [ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="4_robot"]
+[ext_resource type="Script" uid="uid://cvbl2j3xth0hm" path="res://scenes/locations/StressTestRobotShadow.gd" id="5_shadow"]
 
 [node name="StressTest" type="Control" unique_id=471497481]
 layout_mode = 3
@@ -83,6 +84,28 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("3_dark")
 expand_mode = 1
+
+[node name="StressTestRobotShadow" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1305825547 instance=ExtResource("4_robot")]
+modulate = Color(0, 0, 0, 0.3)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -237.00002
+offset_top = -91.00006
+offset_right = 13.0
+offset_bottom = 259.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.08, 1)
+pivot_offset = Vector2(125, 175)
+script = ExtResource("5_shadow")
+edge_y_stretch = 0.16
+curve_power = 2.0
+shadow_frame_size = Vector2(250, 400)
+top_erase_px = 55.0
 
 [node name="StressTestRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1491404521 instance=ExtResource("4_robot")]
 layout_mode = 1
