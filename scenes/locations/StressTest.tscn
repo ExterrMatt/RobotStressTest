@@ -105,7 +105,8 @@ script = ExtResource("5_shadow")
 edge_y_stretch = 0.16
 curve_power = 2.0
 shadow_frame_size = Vector2(250, 400)
-top_erase_px = 55.0
+top_erase_px = 49.0
+source_robot_path = NodePath("../StressTestRobot")
 
 [node name="StressTestRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1491404521 instance=ExtResource("4_robot")]
 layout_mode = 1
@@ -121,6 +122,18 @@ offset_bottom = 247.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="PullCord" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=720968412]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -3.0
+offset_top = 101.0
+offset_right = 3.0
+offset_bottom = 245.0
+grow_horizontal = 2
+mouse_default_cursor_shape = 13
+
 [node name="EndButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=208837645]
 layout_mode = 1
 anchors_preset = 3
@@ -129,9 +142,9 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -103.0
-offset_top = -64.0
+offset_top = -184.0
 offset_right = -7.0
-offset_bottom = -7.0
+offset_bottom = -127.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_default_cursor_shape = 2

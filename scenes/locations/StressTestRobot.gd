@@ -1,6 +1,8 @@
 @tool
 extends Control
 
+signal visual_state_changed
+
 const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
 
 const DEFAULT_FRAME_SIZE: Vector2i = Vector2i(250, 350)
@@ -435,6 +437,7 @@ func _enforce_always_hidden_paths() -> void:
 func _apply_resolved_visibility(resolved: Dictionary) -> void:
 	for path in resolved:
 		_set_canvas_item_visible(NodePath(String(path)), bool(resolved[path]))
+	visual_state_changed.emit()
 
 
 func _set_canvas_item_visible(path: NodePath, value: bool) -> void:
@@ -458,6 +461,7 @@ func _set_animation_frame_for_box(box: Control, phase: String, frame: int) -> vo
 			Vector2(column * frame_size.x, frame * frame_size.y),
 			frame_size
 		)
+	visual_state_changed.emit()
 
 
 func _get_animation_phase_paths(box: Control, phase: String) -> Array:

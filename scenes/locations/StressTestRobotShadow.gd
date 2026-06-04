@@ -21,14 +21,21 @@ extends Control
 		top_erase_px = value
 		_update_shader_parameters()
 
+@export var source_robot_path: NodePath = ^"../StressTestRobot"
+
 var _shadow_material: ShaderMaterial
+var _source_robot: Node = null
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_apply_shadow_materials()
-	if not Engine.is_editor_hint():
-		process_mode = Node.PROCESS_MODE_DISABLED
+	_resolve_source_robot()
+	set_process(true)
+
+
+func _process(_delta: float) -> void:
+	_mirror_source_robot_visuals()
 
 
 func _apply_shadow_materials() -> void:
@@ -48,6 +55,50 @@ func _apply_shadow_material_to(node: Node) -> void:
 		elif child is Control:
 			(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_apply_shadow_material_to(child)
+
+
+func _mirror_source_robot_visuals() -> void:
+	if _source_robot == null or not is_instance_valid(_source_robot):
+		_resolve_source_robot()
+	if _source_robot == null:
+		return
+
+	_mirror_source_node_children(self)
+
+
+func _resolve_source_robot() -> void:
+	_source_robot = get_node_or_null(source_robot_path)
+	if _source_robot == null:
+		return
+	if _source_robot.has_signal("visual_state_changed"):
+		var mirror_callable := Callable(self, "_mirror_source_robot_visuals")
+		if not _source_robot.is_connected("visual_state_changed", mirror_callable):
+			_source_robot.connect("visual_state_changed", mirror_callable)
+	_mirror_source_robot_visuals()
+
+
+func _mirror_source_node_children(shadow_node: Node) -> void:
+	for shadow_child in shadow_node.get_children():
+		var source_child := _source_robot.get_node_or_null(get_path_to(shadow_child))
+		if source_child != null:
+			_mirror_canvas_item_state(shadow_child, source_child)
+		_mirror_source_node_children(shadow_child)
+
+
+func _mirror_canvas_item_state(shadow_node: Node, source_node: Node) -> void:
+	if shadow_node is CanvasItem and source_node is CanvasItem:
+		(shadow_node as CanvasItem).visible = (source_node as CanvasItem).visible
+
+	if shadow_node is TextureRect and source_node is TextureRect:
+		(shadow_node as TextureRect).texture = (source_node as TextureRect).texture
+		return
+
+	if shadow_node is Sprite2D and source_node is Sprite2D:
+		var shadow_sprite := shadow_node as Sprite2D
+		var source_sprite := source_node as Sprite2D
+		shadow_sprite.texture = source_sprite.texture
+		shadow_sprite.region_enabled = source_sprite.region_enabled
+		shadow_sprite.region_rect = source_sprite.region_rect
 
 
 func _update_shader_parameters() -> void:
@@ -70,8 +121,10 @@ uniform float center_y = 175.0;
 uniform float edge_y_stretch : hint_range(0.0, 0.6, 0.01) = 0.2;
 uniform float curve_power : hint_range(0.5, 5.0, 0.1) = 2.0;
 uniform float top_erase_px : hint_range(0.0, 100.0, 1.0) = 35.0;
+varying float local_y;
 
 void vertex() {
+	local_y = VERTEX.y;
 	float half_height = max(frame_height * 0.5, 0.001);
 	float center_distance = VERTEX.y - center_y;
 	float normalized_distance = clamp(center_distance / half_height, -1.0, 1.0);
@@ -80,7 +133,7 @@ void vertex() {
 }
 
 void fragment() {
-	if (UV.y * frame_height <= top_erase_px) {
+	if (local_y <= top_erase_px) {
 		COLOR = vec4(0.0);
 	}
 }
