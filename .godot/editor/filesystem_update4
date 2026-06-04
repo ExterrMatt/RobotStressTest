@@ -6,3 +6,4 @@ res://scenes/locations/StressTest.gd
 res://scenes/locations/StressTest.tscn
 res://scenes/locations/StressTestRobotShadow.gd
 res://scenes/locations/StressTestRobot.gd
+res://scenes/locations/PullCord.gd
