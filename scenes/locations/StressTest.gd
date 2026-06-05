@@ -1,7 +1,13 @@
 extends LocationBase
 
-const GRID_SIZE: Vector2i = Vector2i(5, 4)
-const ZOOMED_IN_SCALE: Vector2 = Vector2(2.0, 2.0)
+const ZOOM_LEVEL_OUT: int = 0
+const ZOOM_LEVEL_FIRST: int = 1
+const ZOOM_LEVEL_SECOND: int = 2
+const MAX_ZOOM_LEVEL: int = ZOOM_LEVEL_SECOND
+const FIRST_ZOOM_GRID_SIZE: Vector2i = Vector2i(5, 4)
+const SECOND_ZOOM_GRID_SIZE: Vector2i = Vector2i(4, 5)
+const FIRST_ZOOM_SCALE: Vector2 = Vector2(2.0, 2.0)
+const SECOND_ZOOM_SCALE: Vector2 = Vector2(3.0, 3.0)
 const ZOOMED_OUT_SCALE: Vector2 = Vector2.ONE
 const BASE_SCENE_SIZE: Vector2 = Vector2(800.0, 600.0)
 const PAN_DURATION: float = 0.35
@@ -23,7 +29,7 @@ const BOTTOM_VIEW_OVERSCAN_PX: float = 37.0
 @onready var stress_test_robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot
 
 var _grid_cell: Vector2i = Vector2i(2, 2)
-var _zoomed_in: bool = true
+var _zoom_level: int = ZOOM_LEVEL_FIRST
 var _pan_tween: Tween = null
 var _zoom_tween: Tween = null
 var _canvas_base_scale: float = 1.0
@@ -39,11 +45,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_set_zoomed_in(false)
+			_set_zoom_level(_zoom_level - 1)
 			get_viewport().set_input_as_handled()
 			return
 		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_set_zoomed_in(true)
+			_set_zoom_level(_zoom_level + 1)
 			get_viewport().set_input_as_handled()
 			return
 
@@ -52,7 +58,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var key_event := event as InputEventKey
 	if key_event.keycode == KEY_Z:
-		_set_zoomed_in(not _zoomed_in)
+		_set_zoom_level((_zoom_level + 1) % (MAX_ZOOM_LEVEL + 1))
 		get_viewport().set_input_as_handled()
 		return
 
@@ -85,17 +91,18 @@ func _initialize_zoom() -> void:
 
 	_apply_default_canvas_transform()
 	scene_canvas.pivot_offset = Vector2.ZERO
-	scene_canvas.scale = ZOOMED_IN_SCALE * _canvas_base_scale
+	scene_canvas.scale = _current_zoom_scale() * _canvas_base_scale
 	_apply_grid_cell(false)
 
 
 func _move_grid_cell(direction: Vector2i) -> void:
-	if not _zoomed_in:
+	if not _is_zoomed_in():
 		return
 
+	var grid_size := _current_grid_size()
 	var next_cell := Vector2i(
-		clampi(_grid_cell.x + direction.x, 0, GRID_SIZE.x - 1),
-		clampi(_grid_cell.y + direction.y, 0, GRID_SIZE.y - 1)
+		clampi(_grid_cell.x + direction.x, 0, grid_size.x - 1),
+		clampi(_grid_cell.y + direction.y, 0, grid_size.y - 1)
 	)
 	if next_cell == _grid_cell:
 		return
@@ -104,21 +111,24 @@ func _move_grid_cell(direction: Vector2i) -> void:
 	_apply_grid_cell(true)
 
 
-func _set_zoomed_in(value: bool) -> void:
-	if _zoomed_in == value:
+func _set_zoom_level(value: int) -> void:
+	var next_zoom_level := clampi(value, ZOOM_LEVEL_OUT, MAX_ZOOM_LEVEL)
+	if _zoom_level == next_zoom_level:
 		return
 
-	_zoomed_in = value
-	if _zoomed_in:
-		_grid_cell = Vector2i(GRID_SIZE.x / 2, GRID_SIZE.y / 2)
+	var old_grid_size := _current_grid_size()
+	var old_grid_cell := _grid_cell
+	_zoom_level = next_zoom_level
+	if _is_zoomed_in():
+		_grid_cell = _grid_cell_for_zoom_change(old_grid_cell, old_grid_size, _current_grid_size())
 
 	if _pan_tween and _pan_tween.is_valid():
 		_pan_tween.kill()
 	if _zoom_tween and _zoom_tween.is_valid():
 		_zoom_tween.kill()
 
-	var target_scale := ZOOMED_IN_SCALE if _zoomed_in else ZOOMED_OUT_SCALE
-	var target_position := _grid_position_for_scale(target_scale) if _zoomed_in else _default_canvas_position()
+	var target_scale := _current_zoom_scale()
+	var target_position := _grid_position_for_scale(target_scale) if _is_zoomed_in() else _default_canvas_position()
 
 	_zoom_tween = create_tween()
 	_zoom_tween.set_parallel(true)
@@ -129,8 +139,8 @@ func _set_zoomed_in(value: bool) -> void:
 
 
 func _apply_grid_cell(animated: bool) -> void:
-	var logical_scale := ZOOMED_IN_SCALE if _zoomed_in else ZOOMED_OUT_SCALE
-	var target_position := _grid_position_for_scale(logical_scale) if _zoomed_in else _default_canvas_position()
+	var logical_scale := _current_zoom_scale()
+	var target_position := _grid_position_for_scale(logical_scale) if _is_zoomed_in() else _default_canvas_position()
 
 	if _pan_tween and _pan_tween.is_valid():
 		_pan_tween.kill()
@@ -156,12 +166,13 @@ func _grid_position_for_scale(scale_value: Vector2) -> Vector2:
 		maxf(0.0, BASE_SCENE_SIZE.y - visible_size.y)
 	)
 
-	if GRID_SIZE.x <= 1 or GRID_SIZE.y <= 1:
+	var grid_size := _current_grid_size()
+	if grid_size.x <= 1 or grid_size.y <= 1:
 		return _default_canvas_position()
 
 	var source_offset := Vector2(
-		_grid_offset_x(max_source_offset.x),
-		_grid_offset_y(max_source_offset.y)
+		_grid_offset_x(max_source_offset.x, grid_size),
+		_grid_offset_y(max_source_offset.y, grid_size)
 	)
 	return Vector2(
 		-source_offset.x * display_scale.x,
@@ -169,23 +180,23 @@ func _grid_position_for_scale(scale_value: Vector2) -> Vector2:
 	)
 
 
-func _grid_offset_x(max_offset_x: float) -> float:
-	var offset := (float(_grid_cell.x) / float(GRID_SIZE.x - 1)) * max_offset_x
+func _grid_offset_x(max_offset_x: float, grid_size: Vector2i) -> float:
+	var offset := (float(_grid_cell.x) / float(grid_size.x - 1)) * max_offset_x
 	if _grid_cell.x == MIDDLE_LEFT_COLUMN:
 		offset += MIDDLE_LEFT_COLUMN_SOURCE_OFFSET_X
 	return clampf(offset, 0.0, max_offset_x)
 
 
-func _grid_offset_y(max_offset_y: float) -> float:
-	var fraction := float(_grid_cell.y) / float(GRID_SIZE.y - 1)
+func _grid_offset_y(max_offset_y: float, grid_size: Vector2i) -> float:
+	var fraction := float(_grid_cell.y) / float(grid_size.y - 1)
 	var overscan_range := max_offset_y + TOP_VIEW_OVERSCAN_PX + BOTTOM_VIEW_OVERSCAN_PX
 	return -TOP_VIEW_OVERSCAN_PX + fraction * overscan_range
 
 
 func _on_camera_window_resized() -> void:
 	_apply_default_canvas_transform()
-	if _zoomed_in:
-		scene_canvas.scale = ZOOMED_IN_SCALE * _canvas_base_scale
+	if _is_zoomed_in():
+		scene_canvas.scale = _current_zoom_scale() * _canvas_base_scale
 		_apply_grid_cell(false)
 	else:
 		scene_canvas.scale = ZOOMED_OUT_SCALE * _canvas_base_scale
@@ -205,6 +216,42 @@ func _apply_default_canvas_transform() -> void:
 func _default_canvas_position() -> Vector2:
 	var display_size := BASE_SCENE_SIZE * _canvas_base_scale
 	return (camera_window.size - display_size) * 0.5
+
+
+func _current_zoom_scale() -> Vector2:
+	match _zoom_level:
+		ZOOM_LEVEL_SECOND:
+			return SECOND_ZOOM_SCALE
+		ZOOM_LEVEL_FIRST:
+			return FIRST_ZOOM_SCALE
+		_:
+			return ZOOMED_OUT_SCALE
+
+
+func _current_grid_size() -> Vector2i:
+	match _zoom_level:
+		ZOOM_LEVEL_SECOND:
+			return SECOND_ZOOM_GRID_SIZE
+		ZOOM_LEVEL_FIRST:
+			return FIRST_ZOOM_GRID_SIZE
+		_:
+			return Vector2i.ONE
+
+
+func _is_zoomed_in() -> bool:
+	return _zoom_level > ZOOM_LEVEL_OUT
+
+
+func _grid_cell_for_zoom_change(old_cell: Vector2i, old_grid_size: Vector2i, new_grid_size: Vector2i) -> Vector2i:
+	if old_grid_size.x <= 1 or old_grid_size.y <= 1:
+		return Vector2i(new_grid_size.x / 2, new_grid_size.y / 2)
+
+	var x_fraction := float(old_cell.x) / float(old_grid_size.x - 1)
+	var y_fraction := float(old_cell.y) / float(old_grid_size.y - 1)
+	return Vector2i(
+		clampi(roundi(x_fraction * float(new_grid_size.x - 1)), 0, new_grid_size.x - 1),
+		clampi(roundi(y_fraction * float(new_grid_size.y - 1)), 0, new_grid_size.y - 1)
+	)
 
 
 func _initialize_pull_cord() -> void:
