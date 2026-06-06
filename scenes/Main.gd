@@ -55,6 +55,9 @@ const ANIM_DURATION: float = 0.2
 const ANIM_TRANS: int = Tween.TRANS_QUAD
 const ANIM_EASE: int = Tween.EASE_IN_OUT
 
+@export_category("Debug")
+@export var debug_hotkeys_enabled: bool = true
+
 # HUD labels
 @onready var day_label: Label = %DayLabel
 @onready var phase_label: Label = %PhaseLabel
@@ -189,13 +192,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key_event: InputEventKey = event
 
 	# Tab toggles the debug event log overlay.
-	if key_event.keycode == KEY_TAB:
+	if debug_hotkeys_enabled and key_event.keycode == KEY_TAB:
 		log_overlay.visible = not log_overlay.visible
 		get_viewport().set_input_as_handled()
 		return
 
 	# X swaps the alt teacher portrait variant.
-	if key_event.keycode == KEY_X:
+	if debug_hotkeys_enabled and key_event.keycode == KEY_X:
 		_alt_portrait = not _alt_portrait
 		_refresh_teacher_portrait_variant()
 		get_viewport().set_input_as_handled()
@@ -211,58 +214,135 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_inventory_overlay()
 			get_viewport().set_input_as_handled()
 		return
-	
-	# 1 (debug): grant one scrap_metal and jump to the workshop.
-	# Bypasses phase restrictions on purpose so it works any time of day.
-	if key_event.keycode == KEY_1 or key_event.keycode == KEY_KP_1:
-		_debug_grant_scrap_and_open_workshop()
-		get_viewport().set_input_as_handled()
+
+	if not debug_hotkeys_enabled:
 		return
 
-	# 2 (debug): grant a leg and jump to the current day's night choices.
-	if key_event.keycode == KEY_2 or key_event.keycode == KEY_KP_2:
-		_debug_grant_leg_and_jump_to_night()
+	if _handle_debug_number_shortcut(key_event):
 		get_viewport().set_input_as_handled()
 		return
 
 
-func _debug_grant_scrap_and_open_workshop() -> void:
-	# Give one scrap_metal.
-	GameState.add_ingredient("scrap_metal", 1)
-	_log("[color=#88ff88]+ scrap_metal x1 (debug)[/color]")
+func _handle_debug_number_shortcut(key_event: InputEventKey) -> bool:
+	var number := _debug_number_for_keycode(key_event.keycode)
+	if number < 1 or number > 5:
+		return false
 
-	# Find the workshop LocationData we already loaded at startup,
-	# then reuse the normal pick path so the wipe + frame animation
-	# behave exactly like a button press.
-	var workshop_loc: LocationData = null
+	match number:
+		1, 2, 3:
+			_debug_jump_for_phase_number(number, key_event.shift_pressed, key_event.ctrl_pressed)
+		4:
+			_debug_give_all_items()
+		5:
+			_debug_clear_inventory()
+	return true
+
+
+func _debug_number_for_keycode(keycode: Key) -> int:
+	match keycode:
+		KEY_1, KEY_KP_1:
+			return 1
+		KEY_2, KEY_KP_2:
+			return 2
+		KEY_3, KEY_KP_3:
+			return 3
+		KEY_4, KEY_KP_4:
+			return 4
+		KEY_5, KEY_KP_5:
+			return 5
+		_:
+			return -1
+
+
+func _debug_jump_for_phase_number(number: int, shift_held: bool, ctrl_held: bool) -> void:
+	if shift_held and ctrl_held:
+		if number == 1:
+			_debug_set_phase_for_number(number)
+			_debug_open_location_by_id(&"maintenance")
+		else:
+			_debug_jump_to_bedroom_phase(number)
+		return
+
+	if shift_held:
+		_debug_set_phase_for_number(number)
+		match number:
+			1:
+				_debug_open_location_by_id(&"school")
+			2:
+				_debug_open_location_by_id(&"store")
+			3:
+				_debug_open_location_by_id(&"stress_test")
+		return
+
+	if ctrl_held:
+		_debug_set_phase_for_number(number)
+		match number:
+			1:
+				_debug_open_location_by_id(&"work")
+			2:
+				_debug_open_location_by_id(&"workshop")
+			3:
+				_debug_open_location_by_id(&"sleep")
+		return
+
+	_debug_jump_to_bedroom_phase(number)
+
+
+func _debug_set_phase_for_number(number: int) -> void:
+	match number:
+		1:
+			GameState.phase = DayCycle.Phase.MORNING
+		2:
+			GameState.phase = DayCycle.Phase.EVENING
+		3:
+			GameState.phase = DayCycle.Phase.NIGHT
+
+
+func _debug_jump_to_bedroom_phase(number: int) -> void:
+	if transition.has_method("is_playing") and transition.is_playing():
+		return
+
+	_debug_set_phase_for_number(number)
+	_log("[color=#88aaff]Debug: bedroom %s[/color]" % DayCycle.phase_name(GameState.phase))
+	_show_selection_screen()
+
+
+func _debug_open_location_by_id(location_id: StringName) -> void:
+	var target_loc: LocationData = null
 	for loc in _locations:
-		if String(loc.id) == "workshop":
-			workshop_loc = loc
+		if loc.id == location_id:
+			target_loc = loc
 			break
 
-	if workshop_loc == null:
-		push_warning("Debug: workshop LocationData not found in _locations.")
+	if target_loc == null:
+		push_warning("Debug: LocationData not found for id '%s'." % location_id)
 		return
 
-	# If we're already inside the workshop, don't restart it.
 	if _current_location_node and is_instance_valid(_current_location_node):
-		if _current_location_node.scene_file_path == workshop_loc.scene_path:
+		if _current_location_node.scene_file_path == target_loc.scene_path:
 			return
 
-	# Reuse the existing pick handler. It already guards against
-	# double-firing while a transition is mid-wipe.
-	_on_location_picked(workshop_loc)
+	_on_location_picked(target_loc)
 
 
-func _debug_grant_leg_and_jump_to_night() -> void:
-	GameState.equipped_limbs = max(0, GameState.equipped_limbs + 1)
-	_log("[color=#88ff88]+ leg x1 (debug)[/color]")
+func _debug_give_all_items() -> void:
+	for id in GameState.ingredients.keys():
+		GameState.ingredients[id] = 99
 
-	if GameState.phase == DayCycle.Phase.NIGHT:
-		_show_selection_screen()
-		return
+	GameState.equipped_limbs = 99
+	GameState.unlock_tool("sneaky_shoes")
+	_log("[color=#88ff88]Debug: inventory set to 99 of all items[/color]")
 
-	GameState.phase = DayCycle.Phase.NIGHT
+
+func _debug_clear_inventory() -> void:
+	for id in GameState.ingredients.keys():
+		GameState.ingredients[id] = 0
+
+	GameState.equipped_limbs = 0
+	GameState.owned_tools = ["mouth", "hand"]
+	GameState.purchased_today.clear()
+	GameState.purchased_today_changed.emit(GameState.purchased_today)
+	_log("[color=#ffcc88]Debug: inventory cleared[/color]")
 
 func _load_locations() -> void:
 	for path in LOCATION_RESOURCE_PATHS:

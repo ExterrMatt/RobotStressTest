@@ -7,6 +7,8 @@
 [ext_resource type="Script" uid="uid://cvbl2j3xth0hm" path="res://scenes/locations/StressTestRobotShadow.gd" id="5_shadow"]
 [ext_resource type="Texture2D" uid="uid://db72lm17w1lqc" path="res://assets/textures/icons/pull_string.png" id="6_pull_string"]
 [ext_resource type="Script" uid="uid://c27u86yek7jb4" path="res://scenes/locations/PullCord.gd" id="7_pull_cord"]
+[ext_resource type="Texture2D" uid="uid://b732s5hej26ta" path="res://assets/textures/icons/rip_cord.png" id="8_rip_cord"]
+[ext_resource type="Script" uid="uid://bso4fhklvq0pq" path="res://scenes/locations/StressTestZoomRegion.gd" id="9_zoom_region"]
 
 [node name="StressTest" type="Control" unique_id=471497481]
 layout_mode = 3
@@ -142,6 +144,554 @@ release_velocity_drag = 1.4
 settle_horizontal_strength = 2.0
 settle_vertical_strength = 1.0
 pull_toggle_radius_scale = 1.3
+
+[node name="ElectricalCord" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=455465457]
+anchors_preset = 0
+offset_left = 574.0
+offset_top = 267.0
+offset_right = 587.0
+offset_bottom = 317.0
+mouse_filter = 2
+mouse_default_cursor_shape = 13
+script = ExtResource("7_pull_cord")
+pull_texture = ExtResource("8_rip_cord")
+cord_mode = 1
+link_size = Vector2(35, 2)
+bulb_size = Vector2(35, 18)
+visible_link_count = 15
+max_pull_radius = 100.0
+drag_soft_limit_radius = 55.0
+gravity = 48.0
+pixels_per_meter = 50.0
+damping = 0.0
+return_strength = 500.0
+rip_retract_strength = 1200.0
+rip_retract_velocity_drag = 38.0
+release_spring_strength = 50.0
+release_velocity_drag = 1.0
+settle_horizontal_strength = 5.0
+settle_vertical_strength = 5.0
+bulb_pivot_gravity_strength = 24.0
+bulb_pivot_velocity_drag = 3.8
+pull_toggle_radius_scale = 1.3
+return_reset_still_time = 0.2
+
+[node name="ZoomRegions" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1696741873]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 800.0
+offset_bottom = 600.0
+mouse_filter = 2
+
+[node name="ZoomLevel1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions" unique_id=293772681]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 800.0
+offset_bottom = 600.0
+mouse_filter = 2
+
+[node name="Zoom1_R0_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=581718332]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = -38.0
+offset_right = 400.0
+offset_bottom = 262.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R0_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=507507676]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 60.0
+offset_top = -38.0
+offset_right = 460.0
+offset_bottom = 262.0
+scale = Vector2(1.1, 1.1)
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+
+[node name="Zoom1_R0_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1369854646]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 200.0
+offset_top = -38.0
+offset_right = 600.0
+offset_bottom = 262.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R0_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=845909443]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 300.0
+offset_top = -38.0
+offset_right = 700.0
+offset_bottom = 262.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R0_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1051928169]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 400.0
+offset_top = -38.0
+offset_right = 800.0
+offset_bottom = 262.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+
+[node name="Zoom1_R1_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1025243895]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = 87.0
+offset_right = 400.0
+offset_bottom = 387.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R1_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=423160590]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 80.0
+offset_top = 186.0
+offset_right = 480.0
+offset_bottom = 486.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+
+[node name="Zoom1_R1_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=292288028]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 200.0
+offset_top = 87.0
+offset_right = 600.0
+offset_bottom = 387.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R1_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=911905836]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 300.0
+offset_top = 87.0
+offset_right = 700.0
+offset_bottom = 387.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R1_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1733628774]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 400.0
+offset_top = 87.0
+offset_right = 800.0
+offset_bottom = 387.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+
+[node name="Zoom1_R2_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=378503462]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = 212.0
+offset_right = 400.0
+offset_bottom = 512.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R2_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=546739490]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 80.0
+offset_top = 212.0
+offset_right = 480.0
+offset_bottom = 512.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R2_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=428478574]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 200.0
+offset_top = 212.0
+offset_right = 600.0
+offset_bottom = 512.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R2_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=160398612]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 300.0
+offset_top = 212.0
+offset_right = 700.0
+offset_bottom = 512.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R2_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=492326807]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 400.0
+offset_top = 212.0
+offset_right = 800.0
+offset_bottom = 512.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+
+[node name="Zoom1_R3_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=174041386]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = 337.0
+offset_right = 400.0
+offset_bottom = 637.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R3_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1155757012]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 80.0
+offset_top = 281.0
+offset_right = 480.0
+offset_bottom = 581.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+
+[node name="Zoom1_R3_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=360291662]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 200.0
+offset_top = 337.0
+offset_right = 600.0
+offset_bottom = 637.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R3_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=987671318]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 300.0
+offset_top = 337.0
+offset_right = 700.0
+offset_bottom = 637.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+
+[node name="Zoom1_R3_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1508907178]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 400.0
+offset_top = 337.0
+offset_right = 800.0
+offset_bottom = 637.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+
+[node name="ZoomLevel2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions" unique_id=1965746315]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_right = 800.0
+offset_bottom = 600.0
+mouse_filter = 2
+
+[node name="Zoom2_R0_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1837681401]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = -38.0
+offset_right = 266.667
+offset_bottom = 162.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R0_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=639003166]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 157.778
+offset_top = -38.0
+offset_right = 424.445
+offset_bottom = 162.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R0_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1076269588]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 355.556
+offset_top = -38.0
+offset_right = 622.223
+offset_bottom = 162.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R0_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=2000468555]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 533.333
+offset_top = -38.0
+offset_right = 800.0
+offset_bottom = 162.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R1_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=405382636]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = 80.75
+offset_right = 266.667
+offset_bottom = 280.75
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R1_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1436490424]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 157.778
+offset_top = 80.75
+offset_right = 424.445
+offset_bottom = 280.75
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R1_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=2143125889]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 355.556
+offset_top = 80.75
+offset_right = 622.223
+offset_bottom = 280.75
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R1_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=44452123]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 533.333
+offset_top = 80.75
+offset_right = 800.0
+offset_bottom = 280.75
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R2_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=413077396]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = 199.5
+offset_right = 266.667
+offset_bottom = 399.5
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R2_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=86096386]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 150.0
+offset_top = 199.00012
+offset_right = 416.667
+offset_bottom = 399.00012
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R2_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=987009055]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 355.556
+offset_top = 199.5
+offset_right = 622.223
+offset_bottom = 399.5
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R2_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=721047491]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 533.333
+offset_top = 199.5
+offset_right = 800.0
+offset_bottom = 399.5
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R3_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1688183106]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = 318.25
+offset_right = 266.667
+offset_bottom = 518.25
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R3_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=261122580]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 149.778
+offset_top = 278.25
+offset_right = 416.445
+offset_bottom = 478.25
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R3_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1989110865]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 355.556
+offset_top = 318.25
+offset_right = 622.223
+offset_bottom = 518.25
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R3_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1039841753]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 533.333
+offset_top = 318.25
+offset_right = 800.0
+offset_bottom = 518.25
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R4_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1758314272]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_top = 437.0
+offset_right = 266.667
+offset_bottom = 637.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R4_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=876341162]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 150.0
+offset_top = 373.00012
+offset_right = 416.667
+offset_bottom = 573.0001
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R4_C2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1899480071]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 355.556
+offset_top = 437.0
+offset_right = 622.223
+offset_bottom = 637.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
+
+[node name="Zoom2_R4_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=462046916]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 533.333
+offset_top = 437.0
+offset_right = 800.0
+offset_bottom = 637.0
+mouse_filter = 2
+script = ExtResource("9_zoom_region")
+active = false
+border_color = Color(0.22, 0.82, 1, 0.95)
+fill_color = Color(0.22, 0.82, 1, 0.07)
 
 [node name="EndButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=208837645]
 layout_mode = 1

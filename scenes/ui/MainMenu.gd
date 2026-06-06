@@ -35,17 +35,17 @@ extends Control
 ## script uses to decide what each row DOES when picked; edit labels freely
 ## but don't change IDs unless you also update _activate() below.
 ##
-## Format: ["id", "LABEL", "hotkey"]
+## Format: ["id", "LABEL"]
 ## IDs the script knows about: "new", "endless", "load", "settings", "quit"
 ##
 ## Typed as plain Array (not Array[Array]) because Godot 4 exports don't
 ## support nested typed arrays — the Inspector would refuse to load it.
 @export var menu_items: Array = [
-	["new",      "New Game",  "1"],
-	["endless",  "Endless",   "2"],
-	["load",     "Load Game", "3"],
-	["settings", "Settings",  "4"],
-	["quit",     "Quit",      "5"],
+	["new",      "New Game"],
+	["endless",  "Endless"],
+	["load",     "Load Game"],
+	["settings", "Settings"],
+	["quit",     "Quit"],
 ]
 
 # --- VISUAL EFFECTS ---
@@ -151,18 +151,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 
-	# Number-key hotkeys map to menu rows by position.
-	if event.keycode >= KEY_1 and event.keycode <= KEY_9:
-		var idx: int = event.keycode - KEY_1
-		if idx < menu_items.size():
-			var item: Array = menu_items[idx]
-			if item.size() >= 1:
-				_activate(String(item[0]))
-				get_viewport().set_input_as_handled()
-		return
-
-
-
 # =============================================================================
 # MENU BUILDING
 # =============================================================================
@@ -173,19 +161,19 @@ func _build_menu() -> void:
 
 	for i in menu_items.size():
 		var item: Array = menu_items[i]
-		if item.size() < 3:
-			push_warning("MainMenu: menu_items[%d] needs [id, label, hotkey]" % i)
+		if item.size() < 2:
+			push_warning("MainMenu: menu_items[%d] needs [id, label]" % i)
 			continue
-		var row := _build_menu_row(String(item[0]), String(item[1]), String(item[2]))
+		var row := _build_menu_row(String(item[0]), String(item[1]))
 		menu_list.add_child(row)
 
 
 ## A plain Button picks up the project's default Button theme from
 ## main_theme.tres — same styling used everywhere else.
-func _build_menu_row(id: String, label: String, hotkey: String) -> Button:
+func _build_menu_row(id: String, label: String) -> Button:
 	var btn := Button.new()
 	btn.name = "MenuRow_" + id
-	btn.text = "%s    [%s]" % [label.to_upper(), hotkey]
+	btn.text = label.to_upper()
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.custom_minimum_size = Vector2(0, 60)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL

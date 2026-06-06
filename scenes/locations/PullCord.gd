@@ -2,20 +2,31 @@ extends Control
 
 signal pulled
 
-const LINK_SIZE: Vector2 = Vector2(13.0, 2.0)
-const BULB_SIZE: Vector2 = Vector2(13.0, 18.0)
+const DEFAULT_LINK_SIZE: Vector2 = Vector2(13.0, 2.0)
+const DEFAULT_BULB_SIZE: Vector2 = Vector2(13.0, 18.0)
+const CORD_MODE_PULL_STRING: int = 0
+const CORD_MODE_RIP_CORD: int = 1
 
 @export var pull_texture: Texture2D
+@export_enum("Pull String", "Rip Cord") var cord_mode: int = CORD_MODE_PULL_STRING
+@export var link_size: Vector2 = DEFAULT_LINK_SIZE
+@export var bulb_size: Vector2 = DEFAULT_BULB_SIZE
 @export var visible_link_count: int = 41
 @export var max_pull_radius: float = 0.0
+@export var drag_soft_limit_radius: float = 36.0
+@export_range(0.0, 1.0, 0.01) var drag_soft_limit_min_influence: float = 0.35
 @export var gravity: float = 9.8
 @export var pixels_per_meter: float = 100.0
 @export var damping: float = 0.98
 @export var return_strength: float = 24.0
+@export var rip_retract_strength: float = 900.0
+@export var rip_retract_velocity_drag: float = 34.0
 @export var release_spring_strength: float = 34.0
 @export var release_velocity_drag: float = 1.2
 @export var settle_horizontal_strength: float = 4.0
 @export var settle_vertical_strength: float = 16.0
+@export var bulb_pivot_gravity_strength: float = 22.0
+@export var bulb_pivot_velocity_drag: float = 4.5
 @export var tautness_start_radius_scale: float = 0.8
 @export var tautness_end_radius_scale: float = 1.2
 @export var pull_toggle_radius_scale: float = 1.0
@@ -38,7 +49,10 @@ var _dragging: bool = false
 var _settling: bool = false
 var _drag_target: Vector2 = Vector2.ZERO
 var _returning_pendulum: bool = false
+var _returning_rip_cord: bool = false
 var _bulb_velocity: Vector2 = Vector2.ZERO
+var _bulb_angle: float = 0.0
+var _bulb_angular_velocity: float = 0.0
 var _return_still_elapsed: float = 0.0
 
 
@@ -80,6 +94,13 @@ func _physics_process(delta: float) -> void:
 			_reset_physics()
 			set_physics_process(false)
 		return
+	if _returning_rip_cord:
+		_simulate_rip_cord_return(clamped_delta)
+		_update_visuals()
+		if _is_rip_cord_return_ready_to_reset():
+			_reset_physics()
+			set_physics_process(false)
+		return
 
 	_simulate(clamped_delta)
 	_solve_chain_constraints()
@@ -102,7 +123,7 @@ func _build_visuals() -> void:
 		return
 
 	var texture_size := pull_texture.get_size()
-	_total_link_count = maxi(1, int(floor((texture_size.y - BULB_SIZE.y) / LINK_SIZE.y)))
+	_total_link_count = maxi(1, int(floor((texture_size.y - bulb_size.y) / link_size.y)))
 	visible_link_count = clampi(visible_link_count, 1, _total_link_count)
 	_active_link_count = visible_link_count
 
@@ -110,15 +131,17 @@ func _build_visuals() -> void:
 		var link := Sprite2D.new()
 		link.name = "ChainLink%02d" % (i + 1)
 		link.centered = true
-		link.texture = _atlas_region(Rect2(0.0, i * LINK_SIZE.y, LINK_SIZE.x, LINK_SIZE.y))
+		link.texture = _atlas_region(Rect2(0.0, i * link_size.y, link_size.x, link_size.y))
 		link.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(link)
 		_link_sprites.append(link)
 
 	_bulb_sprite = Sprite2D.new()
 	_bulb_sprite.name = "Bulb"
-	_bulb_sprite.centered = true
-	_bulb_sprite.texture = _atlas_region(Rect2(0.0, texture_size.y - BULB_SIZE.y, BULB_SIZE.x, BULB_SIZE.y))
+	_bulb_sprite.centered = not _bulb_uses_chain_pivot()
+	if _bulb_uses_chain_pivot():
+		_bulb_sprite.offset = Vector2(-bulb_size.x * 0.5, 0.0)
+	_bulb_sprite.texture = _atlas_region(Rect2(0.0, texture_size.y - bulb_size.y, bulb_size.x, bulb_size.y))
 	_bulb_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(_bulb_sprite)
 
@@ -133,23 +156,26 @@ func _atlas_region(region: Rect2) -> AtlasTexture:
 func _reset_physics() -> void:
 	_points.clear()
 	_previous_points.clear()
-	_active_link_count = visible_link_count
+	_active_link_count = _rest_link_count()
 
 	var anchor := _anchor_position()
 	for i in range(_total_link_count + 1):
-		var point := anchor + Vector2(0.0, i * LINK_SIZE.y)
+		var point := anchor + Vector2(0.0, i * link_size.y)
 		_points.append(point)
 		_previous_points.append(point)
 
 	_bulb_position = _rest_bulb_position()
 	_previous_bulb_position = _bulb_position
-	_points[_active_link_count] = _bulb_top_position()
+	_points[_active_link_count] = _cord_end_position()
 	_previous_points[_active_link_count] = _points[_active_link_count]
 
 	_dragging = false
 	_settling = false
 	_returning_pendulum = false
+	_returning_rip_cord = false
 	_bulb_velocity = Vector2.ZERO
+	_bulb_angle = 0.0
+	_bulb_angular_velocity = 0.0
 	_return_still_elapsed = 0.0
 	_update_visuals()
 
@@ -158,6 +184,7 @@ func _start_drag(local_position: Vector2) -> void:
 	_dragging = true
 	_settling = true
 	_returning_pendulum = false
+	_returning_rip_cord = false
 	_bulb_velocity = Vector2.ZERO
 	_return_still_elapsed = 0.0
 	_set_drag_target(local_position)
@@ -170,6 +197,9 @@ func _release_drag() -> void:
 	var should_toggle := _bulb_position.distance_to(_anchor_position()) > _pull_toggle_radius()
 	if should_toggle:
 		pulled.emit()
+	if _is_rip_cord():
+		_start_rip_cord_return()
+		return
 	if _bulb_position.distance_to(_anchor_position()) > _slack_release_radius():
 		_start_pendulum_return()
 	else:
@@ -180,18 +210,28 @@ func _release_drag() -> void:
 
 func _start_pendulum_return() -> void:
 	_returning_pendulum = true
+	_returning_rip_cord = false
 	_bulb_velocity = Vector2.ZERO
 	_return_still_elapsed = 0.0
 	_previous_bulb_position = _bulb_position
 	_update_release_chain(0.0)
 
 
-func _set_drag_target(local_position: Vector2) -> void:
-	var anchor_to_target := local_position - _anchor_position()
-	if anchor_to_target.length() > _max_stretch_radius():
-		local_position = _anchor_position() + anchor_to_target.normalized() * _max_stretch_radius()
+func _start_rip_cord_return() -> void:
+	_returning_rip_cord = true
+	_returning_pendulum = false
+	_bulb_velocity = (_bulb_position - _previous_bulb_position) * 30.0
+	_return_still_elapsed = 0.0
+	_sync_bulb_angle_to_current_cord_direction()
+	_bulb_angular_velocity = clampf(_bulb_angular_velocity + (_bulb_position.x - _anchor_position().x) * 0.035, -10.0, 10.0)
+	_update_rip_cord_retraction_chain()
 
-	_drag_target = local_position
+
+func _set_drag_target(local_position: Vector2) -> void:
+	var target_position := _bulb_pivot_position_for_center(local_position) if _bulb_uses_chain_pivot() else local_position
+	_drag_target = _drag_limited_position(target_position)
+	if _bulb_uses_chain_pivot():
+		_sync_bulb_angle_to_cord_direction(_drag_target)
 	_update_active_link_count_for_bulb()
 
 
@@ -205,23 +245,24 @@ func _update_active_link_count_for_bulb() -> void:
 
 	if _active_link_count > old_count:
 		var old_end := _points[old_count]
-		var new_end := _bulb_top_position()
+		var new_end := _cord_end_position()
 		for i in range(old_count + 1, _active_link_count + 1):
 			var t := float(i - old_count) / float(_active_link_count - old_count)
 			_points[i] = old_end.lerp(new_end, t)
 			_previous_points[i] = _points[i]
 		return
 
-	_points[_active_link_count] = _bulb_top_position()
+	_points[_active_link_count] = _cord_end_position()
 	_previous_points[_active_link_count] = _points[_active_link_count]
 
 
 func _link_count_for_bulb_position(bulb_position: Vector2) -> int:
-	var distance := bulb_position.distance_to(_anchor_position())
+	var distance := _cord_distance_for_bulb_position(bulb_position)
 	if distance <= _rest_radius():
-		return visible_link_count
-	var required := int(ceil(maxf(0.0, distance - BULB_SIZE.y * 0.5) / LINK_SIZE.y))
-	return clampi(required, visible_link_count, _total_link_count)
+		return _rest_link_count()
+	var bulb_radius := 0.0 if _bulb_uses_chain_pivot() else bulb_size.y * 0.5
+	var required := int(ceil(maxf(0.0, distance - bulb_radius) / link_size.y))
+	return clampi(required, _rest_link_count(), _total_link_count)
 
 
 func _simulate(delta: float) -> void:
@@ -240,8 +281,8 @@ func _simulate(delta: float) -> void:
 		_points[i] = point + velocity + acceleration * delta * delta
 
 	if _dragging:
+		_previous_bulb_position = _bulb_position
 		_bulb_position = _drag_target
-		_previous_bulb_position = _drag_target
 	else:
 		var bulb_velocity := (_bulb_position - _previous_bulb_position) * damping
 		var bulb_acceleration := Vector2.ZERO
@@ -253,7 +294,7 @@ func _simulate(delta: float) -> void:
 		_bulb_position += bulb_velocity + bulb_acceleration * delta * delta
 
 	_update_active_link_count_for_bulb()
-	_points[_active_link_count] = _bulb_top_position()
+	_points[_active_link_count] = _cord_end_position()
 	_previous_points[_active_link_count] = _points[_active_link_count]
 
 
@@ -276,6 +317,32 @@ func _simulate_pendulum_return(delta: float) -> void:
 	_constrain_bulb_to_maximum_radius()
 	_update_release_chain(delta)
 	_update_return_still_time(delta)
+
+
+func _simulate_rip_cord_return(delta: float) -> void:
+	var anchor := _anchor_position()
+	var to_anchor := anchor - _bulb_position
+	var acceleration := to_anchor * rip_retract_strength - _bulb_velocity * rip_retract_velocity_drag
+	_bulb_velocity += acceleration * delta
+	_previous_bulb_position = _bulb_position
+	_bulb_position += _bulb_velocity * delta
+	if _bulb_position.distance_to(anchor) <= return_reset_distance_threshold and _bulb_velocity.length() <= return_reset_velocity_threshold * 30.0:
+		_bulb_position = anchor
+		_bulb_velocity = Vector2.ZERO
+		_previous_bulb_position = anchor
+
+	_update_active_link_count_for_bulb()
+	_update_rip_cord_retraction_chain()
+
+	_simulate_bulb_pivot_rotation(delta)
+	_update_return_still_time(delta)
+
+
+func _simulate_bulb_pivot_rotation(delta: float) -> void:
+	var angular_acceleration := -sin(_bulb_angle) * bulb_pivot_gravity_strength
+	angular_acceleration -= _bulb_angular_velocity * bulb_pivot_velocity_drag
+	_bulb_angular_velocity += angular_acceleration * delta
+	_bulb_angle += _bulb_angular_velocity * delta
 
 
 func _update_return_still_time(delta: float) -> void:
@@ -301,6 +368,10 @@ func _constrain_bulb_to_maximum_radius() -> void:
 
 func _update_release_chain(delta: float) -> void:
 	_update_active_link_count_for_bulb()
+	if _active_link_count <= 0:
+		_points[0] = _anchor_position()
+		_previous_points[0] = _points[0]
+		return
 
 	for i in range(1, _active_link_count):
 		var point := _points[i]
@@ -313,13 +384,29 @@ func _update_release_chain(delta: float) -> void:
 	_apply_tautness_gradient()
 
 
+func _update_rip_cord_retraction_chain() -> void:
+	if _active_link_count <= 0:
+		_points[0] = _anchor_position()
+		_previous_points[0] = _points[0]
+		return
+
+	var anchor := _anchor_position()
+	var cord_end := _cord_end_position()
+	for i in range(_active_link_count + 1):
+		var t := float(i) / float(maxi(1, _active_link_count))
+		_points[i] = anchor.lerp(cord_end, t)
+		_previous_points[i] = _points[i]
+
+
 func _apply_tautness_gradient() -> void:
+	if _active_link_count <= 0:
+		return
 	var tautness := _tautness_for_bulb_position(_bulb_position)
 	if tautness <= 0.0:
 		return
 
 	var anchor := _anchor_position()
-	var bulb_top := _bulb_top_position()
+	var bulb_top := _cord_end_position()
 	for i in range(_active_link_count + 1):
 		var t := float(i) / float(maxi(1, _active_link_count))
 		var taut_point := anchor.lerp(bulb_top, t)
@@ -345,14 +432,18 @@ func _tautness_for_bulb_position(bulb_position: Vector2) -> float:
 func _solve_chain_constraints() -> void:
 	if _points.is_empty():
 		return
+	if _active_link_count <= 0:
+		_points[0] = _anchor_position()
+		_previous_points[0] = _points[0]
+		return
 
 	for _iteration in range(constraint_iterations):
 		_points[0] = _anchor_position()
-		_points[_active_link_count] = _bulb_top_position()
+		_points[_active_link_count] = _cord_end_position()
 		for i in range(_active_link_count):
-			_solve_distance_constraint(i, i + 1, LINK_SIZE.y)
+			_solve_distance_constraint(i, i + 1, link_size.y)
 	_points[0] = _anchor_position()
-	_points[_active_link_count] = _bulb_top_position()
+	_points[_active_link_count] = _cord_end_position()
 
 
 func _solve_distance_constraint(a_index: int, b_index: int, target_length: float) -> void:
@@ -391,18 +482,82 @@ func _update_visuals() -> void:
 
 	if _bulb_sprite != null:
 		_bulb_sprite.position = _bulb_position
-		_bulb_sprite.rotation = (_anchor_position() - _bulb_position).angle() + PI * 0.5
+		if _bulb_uses_chain_pivot():
+			_bulb_sprite.rotation = _bulb_angle
+		else:
+			_bulb_sprite.rotation = (_anchor_position() - _bulb_position).angle() + PI * 0.5
+
+
+func _drag_limited_position(local_position: Vector2) -> Vector2:
+	var anchor := _anchor_position()
+	var anchor_to_target := local_position - anchor
+	var distance := anchor_to_target.length()
+	var max_radius := _max_stretch_radius()
+	if distance <= 0.001:
+		return anchor
+	if not _is_rip_cord():
+		if distance <= max_radius:
+			return local_position
+		return anchor + anchor_to_target.normalized() * max_radius
+
+	var soft_radius := minf(maxf(0.0, drag_soft_limit_radius), max_radius)
+	var soft_start := max_radius - soft_radius
+	if soft_radius <= 0.001:
+		if distance <= max_radius:
+			return local_position
+		return anchor + anchor_to_target.normalized() * max_radius
+	if distance <= soft_start:
+		return local_position
+	var extra_distance := distance - soft_start
+	var min_influence := clampf(drag_soft_limit_min_influence, 0.0, 1.0)
+	var t := minf(extra_distance / soft_radius, 1.0)
+	var smooth_integral := t - (1.0 - min_influence) * ((t * t * t) - (0.5 * t * t * t * t))
+	var eased_extra := soft_radius * smooth_integral
+	if extra_distance > soft_radius:
+		eased_extra += (extra_distance - soft_radius) * min_influence
+	var eased_radius := minf(max_radius, soft_start + eased_extra)
+	if max_radius - eased_radius <= 0.25:
+		eased_radius = max_radius
+	return anchor + anchor_to_target.normalized() * eased_radius
+
+
+func _sync_bulb_angle_to_current_cord_direction() -> void:
+	_sync_bulb_angle_to_cord_direction(_bulb_position)
+
+
+func _sync_bulb_angle_to_cord_direction(position: Vector2) -> void:
+	var offset := position - _anchor_position()
+	if offset.length() <= 0.001:
+		return
+	_bulb_angle = offset.angle() - PI * 0.5
+
+
+func _bulb_pivot_position_for_center(center_position: Vector2) -> Vector2:
+	var anchor := _anchor_position()
+	var anchor_to_center := center_position - anchor
+	var distance := anchor_to_center.length()
+	if distance <= 0.001:
+		return anchor
+
+	var direction := anchor_to_center / distance
+	return anchor + direction * maxf(0.0, distance - bulb_size.y * 0.5)
 
 
 func _bulb_top_position() -> Vector2:
 	var to_anchor := _anchor_position() - _bulb_position
 	if to_anchor.length() <= 0.001:
 		to_anchor = Vector2.UP
-	return _bulb_position + to_anchor.normalized() * (BULB_SIZE.y * 0.5)
+	return _bulb_position + to_anchor.normalized() * (bulb_size.y * 0.5)
+
+
+func _cord_end_position() -> Vector2:
+	if _bulb_uses_chain_pivot():
+		return _bulb_position
+	return _bulb_top_position()
 
 
 func _rest_chain_position(index: int) -> Vector2:
-	return _anchor_position() + Vector2(0.0, index * LINK_SIZE.y)
+	return _anchor_position() + Vector2(0.0, index * link_size.y)
 
 
 func _rest_bulb_position() -> Vector2:
@@ -410,7 +565,12 @@ func _rest_bulb_position() -> Vector2:
 
 
 func _rest_radius() -> float:
-	return visible_link_count * LINK_SIZE.y + BULB_SIZE.y * 0.5
+	var bulb_radius := 0.0 if _bulb_uses_chain_pivot() else bulb_size.y * 0.5
+	return _rest_link_count() * link_size.y + bulb_radius
+
+
+func _rest_link_count() -> int:
+	return 0 if _is_rip_cord() else visible_link_count
 
 
 func _pull_toggle_radius() -> float:
@@ -422,13 +582,16 @@ func _slack_release_radius() -> float:
 
 
 func _max_stretch_radius() -> float:
-	var texture_max_radius := _total_link_count * LINK_SIZE.y + BULB_SIZE.y * 0.5
+	var texture_max_radius := _total_link_count * link_size.y + bulb_size.y * 0.5
 	if max_pull_radius <= 0.0:
 		return texture_max_radius
 	return minf(max_pull_radius, texture_max_radius)
 
 
 func _is_over_bulb(local_position: Vector2) -> bool:
+	if _bulb_uses_chain_pivot():
+		var bulb_center := _bulb_position + Vector2(0.0, bulb_size.y * 0.5).rotated(_bulb_angle)
+		return local_position.distance_to(bulb_center) <= hitbox_radius
 	return local_position.distance_to(_bulb_position) <= hitbox_radius
 
 
@@ -443,7 +606,7 @@ func _global_to_local(global_position: Vector2) -> Vector2:
 func _is_settled() -> bool:
 	if _dragging:
 		return false
-	if _active_link_count != visible_link_count:
+	if _active_link_count != _rest_link_count():
 		return false
 	for i in range(_active_link_count + 1):
 		if _points[i].distance_to(_rest_chain_position(i)) > 0.15:
@@ -463,3 +626,31 @@ func _is_return_ready_to_reset() -> bool:
 	if _bulb_position.distance_to(_rest_bulb_position()) > return_reset_distance_threshold:
 		return false
 	return true
+
+
+func _is_rip_cord_return_ready_to_reset() -> bool:
+	if _return_still_elapsed < return_reset_still_time:
+		return false
+	if _active_link_count != _rest_link_count():
+		return false
+	if _bulb_position.distance_to(_rest_bulb_position()) > return_reset_distance_threshold:
+		return false
+	if absf(_bulb_angle) > 0.04:
+		return false
+	if absf(_bulb_angular_velocity) > 0.12:
+		return false
+	return true
+
+
+func _cord_distance_for_bulb_position(bulb_position: Vector2) -> float:
+	if _bulb_uses_chain_pivot():
+		return bulb_position.distance_to(_anchor_position())
+	return bulb_position.distance_to(_anchor_position())
+
+
+func _is_rip_cord() -> bool:
+	return cord_mode == CORD_MODE_RIP_CORD
+
+
+func _bulb_uses_chain_pivot() -> bool:
+	return _is_rip_cord()

@@ -97,7 +97,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"HUDLabel"
 theme_override_font_sizes/font_size = 18
-text = "↑↓ NAVIGATE     ENTER SELECT     ESC BACK     1–5 HOTKEYS"
+text = "UP/DOWN NAVIGATE     ENTER SELECT     ESC BACK"
 
 [node name="RightColumn" type="VBoxContainer" parent="UI/HBox" unique_id=1093341199]
 layout_mode = 2
