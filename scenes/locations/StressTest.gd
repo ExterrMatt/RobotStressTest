@@ -15,6 +15,49 @@ const ZOOM_DURATION: float = 0.35
 @export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
 @export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
 
+@export_group("Night Timer")
+@export var night_duration_seconds: float = 60.0
+@export var timer_label_text: String = "Time"
+
+@export_group("Electricity Meter")
+@export var electricity_label_text: String = "Electricity"
+@export var electricity_start_percent: float = 0.0
+@export var electricity_ripcord_gain_percent: float = 20.0
+@export var electricity_decay_percent_per_second: float = 2.0
+@export var electricity_wake_threshold_percent: float = 130.0
+
+@export_group("Gas Meter")
+@export var gas_label_text: String = "Gas"
+@export var gas_start_percent: float = 50.0
+@export var gas_optimal_start_percent: float = 50.0
+@export var gas_optimal_min_percent: float = 25.0
+@export var gas_optimal_max_percent: float = 75.0
+@export_range(0, 20, 1) var gas_optimal_event_count_min: int = 5
+@export_range(0, 20, 1) var gas_optimal_event_count_max: int = 10
+@export_range(0, 40, 1) var gas_drift_event_count_min: int = 10
+@export_range(0, 40, 1) var gas_drift_event_count_max: int = 20
+@export var gas_drift_change_percent: float = 5.0
+@export var gas_valve_wheel_step_percent: float = 5.0
+@export var gas_valve_drag_percent_per_pixel: float = 0.15
+@export var gas_low_failure_percent: float = 0.0
+@export var gas_high_failure_percent: float = 100.0
+
+@export_group("Window Alert")
+@export_range(0, 3, 1) var window_alert_event_count_min: int = 0
+@export_range(0, 3, 1) var window_alert_event_count_max: int = 3
+@export var window_alert_yellow_seconds: float = 5.0
+@export var window_alert_red_seconds: float = 3.0
+@export var window_alert_yellow_color: Color = Color(1.0, 0.86, 0.0, 1.0)
+@export var window_alert_red_color: Color = Color(1.0, 0.0, 0.0, 1.0)
+
+@export_group("Failure Messages")
+@export var gas_high_failure_text: String = "She woke up because you let the gas pressure rise too high."
+@export var gas_low_failure_text: String = "She woke up because you let the gas pressure fall too low."
+@export var electricity_failure_text: String = "She woke up because you over supplied her with electricity."
+@export var uncle_failure_text: String = "Your uncle caught you."
+@export var timeout_failure_text: String = "You ran out of time."
+@export var wake_button_failure_text: String = "She woke up."
+
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
 @onready var first_zoom_regions: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1
@@ -22,7 +65,15 @@ const ZOOM_DURATION: float = 0.35
 @onready var light_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder
 @onready var dark_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/DarkPlaceholder
 @onready var pull_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/PullCord
+@onready var electrical_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ElectricalCord
 @onready var stress_test_robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot
+@onready var gas_valve: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/GasValve
+@onready var window_alert_rect: ColorRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/WindowAlertRect
+@onready var timer_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/TimerLabel
+@onready var electricity_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/ElectricityLabel
+@onready var gas_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/GasLabel
+@onready var failure_overlay: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay
+@onready var failure_reason_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureReasonLabel
 
 var _zoom_level: int = ZOOM_LEVEL_FIRST
 var _current_zoom_region: Control = null
@@ -30,14 +81,64 @@ var _pan_tween: Tween = null
 var _zoom_tween: Tween = null
 var _canvas_base_scale: float = 1.0
 var _stress_test_dark: bool = false
+var _night_elapsed: float = 0.0
+var _night_finished: bool = false
+var _electricity_percent: float = 0.0
+var _gas_flow_percent: float = 50.0
+var _gas_optimal_percent: float = 50.0
+var _gas_last_change_percent: float = 0.0
+var _gas_optimal_event_times: Array[float] = []
+var _gas_drift_event_times: Array[float] = []
+var _window_alert_event_times: Array[float] = []
+var _gas_optimal_event_index: int = 0
+var _gas_drift_event_index: int = 0
+var _window_alert_event_index: int = 0
+var _window_alert_state: int = WINDOW_ALERT_NONE
+var _window_alert_elapsed: float = 0.0
+var _dragging_gas_valve: bool = false
+var _pending_failure_registers_wake: bool = false
+var _failure_result_emitted: bool = false
+var _rng := RandomNumberGenerator.new()
+
+const WINDOW_ALERT_NONE: int = 0
+const WINDOW_ALERT_YELLOW: int = 1
+const WINDOW_ALERT_RED: int = 2
 
 
 func _ready() -> void:
 	_initialize_pull_cord()
+	_initialize_stress_systems()
 	call_deferred("_initialize_zoom")
 
 
+func _process(delta: float) -> void:
+	if _night_finished:
+		return
+
+	_night_elapsed += delta
+	_electricity_percent = maxf(0.0, _electricity_percent - electricity_decay_percent_per_second * delta)
+	_apply_scheduled_meter_events()
+	_update_window_alert(delta)
+	_refresh_stress_hud()
+
+	if _gas_flow_percent >= gas_high_failure_percent:
+		_fail_stress_test(gas_high_failure_text, true)
+		return
+	if _gas_flow_percent <= gas_low_failure_percent:
+		_fail_stress_test(gas_low_failure_text, true)
+		return
+	if _electricity_percent > electricity_wake_threshold_percent:
+		_fail_stress_test(electricity_failure_text, true)
+		return
+	if _night_elapsed >= night_duration_seconds:
+		_fail_stress_test(timeout_failure_text, false)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if _handle_gas_valve_input(event):
+		get_viewport().set_input_as_handled()
+		return
+
 	if event is InputEventMouseButton and event.pressed:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
@@ -364,6 +465,10 @@ func _initialize_pull_cord() -> void:
 		var pulled_callable := Callable(self, "_on_pull_cord_pulled")
 		if not pull_cord.is_connected("pulled", pulled_callable):
 			pull_cord.connect("pulled", pulled_callable)
+	if electrical_cord != null and electrical_cord.has_signal("max_pull_reached"):
+		var max_pull_callable := Callable(self, "_on_electrical_cord_max_pull_reached")
+		if not electrical_cord.is_connected("max_pull_reached", max_pull_callable):
+			electrical_cord.connect("max_pull_reached", max_pull_callable)
 	_set_stress_test_dark(false)
 
 
@@ -379,16 +484,251 @@ func _set_stress_test_dark(value: bool) -> void:
 		dark_placeholder.visible = _stress_test_dark
 	if stress_test_robot != null:
 		stress_test_robot.modulate = robot_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
+	if _stress_test_dark:
+		_clear_window_alert()
 
 
-func _on_end_button_pressed() -> void:
+func _initialize_stress_systems() -> void:
+	_rng.randomize()
+	_night_elapsed = 0.0
+	_night_finished = false
+	_electricity_percent = electricity_start_percent
+	_gas_flow_percent = gas_start_percent
+	_gas_optimal_percent = gas_optimal_start_percent
+	_gas_last_change_percent = 0.0
+	_gas_optimal_event_index = 0
+	_gas_drift_event_index = 0
+	_window_alert_event_index = 0
+	_window_alert_state = WINDOW_ALERT_NONE
+	_window_alert_elapsed = 0.0
+	_dragging_gas_valve = false
+	_pending_failure_registers_wake = false
+	_failure_result_emitted = false
+
+	var optimal_count := _random_event_count(gas_optimal_event_count_min, gas_optimal_event_count_max)
+	var drift_count := _random_event_count(gas_drift_event_count_min, gas_drift_event_count_max)
+	var alert_count := _random_event_count(window_alert_event_count_min, window_alert_event_count_max)
+	_gas_optimal_event_times = _evenly_spaced_times(optimal_count, night_duration_seconds)
+	_gas_drift_event_times = _evenly_spaced_times(drift_count, night_duration_seconds)
+	_window_alert_event_times = _random_window_alert_times(alert_count)
+
+	if window_alert_rect != null:
+		window_alert_rect.visible = false
+		window_alert_rect.color = window_alert_yellow_color
+	if failure_overlay != null:
+		failure_overlay.visible = false
+
+	set_process(true)
+	_refresh_stress_hud()
+
+
+func _random_event_count(min_count: int, max_count: int) -> int:
+	var low := maxi(0, mini(min_count, max_count))
+	var high := maxi(0, max_count)
+	if high < low:
+		high = low
+	return _rng.randi_range(low, high)
+
+
+func _evenly_spaced_times(count: int, duration: float) -> Array[float]:
+	var times: Array[float] = []
+	if count <= 0 or duration <= 0.0:
+		return times
+	for i in range(count):
+		times.append((float(i) + 1.0) * duration / (float(count) + 1.0))
+	return times
+
+
+func _random_window_alert_times(count: int) -> Array[float]:
+	var times: Array[float] = []
+	if count <= 0:
+		return times
+	var alert_duration := window_alert_yellow_seconds + window_alert_red_seconds
+	var latest_start := maxf(0.0, night_duration_seconds - alert_duration - 0.5)
+	if latest_start <= 0.0:
+		return times
+	for _i in range(count):
+		times.append(_rng.randf_range(1.0, latest_start))
+	times.sort()
+	return times
+
+
+func _apply_scheduled_meter_events() -> void:
+	while _gas_optimal_event_index < _gas_optimal_event_times.size() and _night_elapsed >= _gas_optimal_event_times[_gas_optimal_event_index]:
+		_gas_optimal_event_index += 1
+		_gas_optimal_percent = _rng.randf_range(gas_optimal_min_percent, gas_optimal_max_percent)
+
+	while _gas_drift_event_index < _gas_drift_event_times.size() and _night_elapsed >= _gas_drift_event_times[_gas_drift_event_index]:
+		_gas_drift_event_index += 1
+		var direction := _rng.randi_range(-1, 1)
+		var amount := _rng.randf_range(0.0, gas_drift_change_percent)
+		_apply_gas_flow_change(float(direction) * amount)
+
+
+func _update_window_alert(delta: float) -> void:
+	if _window_alert_state == WINDOW_ALERT_NONE:
+		if _window_alert_event_index < _window_alert_event_times.size() and _night_elapsed >= _window_alert_event_times[_window_alert_event_index]:
+			_window_alert_event_index += 1
+			_start_window_alert()
+		return
+
+	if _stress_test_dark:
+		_clear_window_alert()
+		return
+
+	_window_alert_elapsed += delta
+	if _window_alert_state == WINDOW_ALERT_YELLOW and _window_alert_elapsed >= window_alert_yellow_seconds:
+		_window_alert_state = WINDOW_ALERT_RED
+		_window_alert_elapsed = 0.0
+		if window_alert_rect != null:
+			window_alert_rect.color = window_alert_red_color
+		return
+	if _window_alert_state == WINDOW_ALERT_RED and _window_alert_elapsed >= window_alert_red_seconds:
+		_fail_stress_test(uncle_failure_text, false)
+
+
+func _start_window_alert() -> void:
+	if _stress_test_dark:
+		return
+	_window_alert_state = WINDOW_ALERT_YELLOW
+	_window_alert_elapsed = 0.0
+	if window_alert_rect != null:
+		window_alert_rect.color = window_alert_yellow_color
+		window_alert_rect.visible = true
+
+
+func _clear_window_alert() -> void:
+	_window_alert_state = WINDOW_ALERT_NONE
+	_window_alert_elapsed = 0.0
+	if window_alert_rect != null:
+		window_alert_rect.visible = false
+
+
+func _on_electrical_cord_max_pull_reached() -> void:
+	if _night_finished:
+		return
+	_electricity_percent += electricity_ripcord_gain_percent
+	_refresh_stress_hud()
+
+
+func _handle_gas_valve_input(event: InputEvent) -> bool:
+	if gas_valve == null:
+		return false
+
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			if mouse_event.pressed and _is_over_gas_valve(mouse_event.global_position):
+				_dragging_gas_valve = true
+				return true
+			if not mouse_event.pressed and _dragging_gas_valve:
+				_dragging_gas_valve = false
+				return true
+
+		if mouse_event.pressed and _is_over_gas_valve(mouse_event.global_position):
+			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				_apply_gas_flow_change(gas_valve_wheel_step_percent)
+				return true
+			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				_apply_gas_flow_change(-gas_valve_wheel_step_percent)
+				return true
+
+	if event is InputEventMouseMotion and _dragging_gas_valve:
+		var motion_event := event as InputEventMouseMotion
+		_apply_gas_flow_change(-motion_event.relative.y * gas_valve_drag_percent_per_pixel)
+		return true
+
+	return false
+
+
+func _is_over_gas_valve(global_position: Vector2) -> bool:
+	return gas_valve != null and gas_valve.get_global_rect().has_point(global_position)
+
+
+func _apply_gas_flow_change(delta_percent: float) -> void:
+	_gas_last_change_percent = delta_percent
+	_gas_flow_percent = clampf(_gas_flow_percent + delta_percent, gas_low_failure_percent, gas_high_failure_percent)
+	_refresh_stress_hud()
+
+
+func _refresh_stress_hud() -> void:
+	if timer_value_label != null:
+		timer_value_label.text = "%s: %s" % [timer_label_text, _format_remaining_time()]
+	if electricity_value_label != null:
+		electricity_value_label.text = "%s: %.0f%% (%+.1f%%/s)" % [
+			electricity_label_text,
+			_electricity_percent,
+			-electricity_decay_percent_per_second,
+		]
+	if gas_value_label != null:
+		gas_value_label.text = "%s: %.0f%% / %.0f%% (%+.1f%%)" % [
+			gas_label_text,
+			_gas_flow_percent,
+			_gas_optimal_percent,
+			_gas_last_change_percent,
+		]
+
+
+func _format_remaining_time() -> String:
+	var remaining := maxf(0.0, night_duration_seconds - _night_elapsed)
+	var total_seconds := int(floor(remaining))
+	var minutes := int(total_seconds / 60)
+	var seconds := int(total_seconds % 60)
+	var centiseconds := int(floor((remaining - float(total_seconds)) * 100.0))
+	return "%02d:%02d.%02d" % [minutes, seconds, centiseconds]
+
+
+func _complete_stress_test_success() -> void:
+	if _night_finished:
+		return
+	_night_finished = true
 	DayCycle.register_stress_test_completed()
 	finish(0, 0, -10, {}, false)
 
 
+func _fail_robot_wake() -> void:
+	_fail_stress_test(wake_button_failure_text, true)
+
+
+func _fail_stress_test(reason: String, registers_wake: bool) -> void:
+	if _night_finished:
+		return
+	_night_finished = true
+	_pending_failure_registers_wake = registers_wake
+	_dragging_gas_valve = false
+	_clear_window_alert()
+	if failure_reason_label != null:
+		failure_reason_label.text = reason
+	if failure_overlay != null:
+		failure_overlay.visible = true
+	else:
+		_finish_failed_stress_test()
+
+
+func _finish_failed_stress_test() -> void:
+	if _failure_result_emitted:
+		return
+	_failure_result_emitted = true
+	if _pending_failure_registers_wake:
+		DayCycle.register_stress_test_wake()
+		_pending_failure_registers_wake = false
+	finish(0, 0, 0, {}, false)
+
+
+func _on_end_button_pressed() -> void:
+	_complete_stress_test_success()
+
+
 func _on_wake_button_pressed() -> void:
-	DayCycle.register_stress_test_wake()
+	_fail_robot_wake()
 
 
 func _on_give_up_button_pressed() -> void:
+	if _night_finished:
+		return
+	_night_finished = true
 	finish(0, 0, 0, {}, false)
+
+
+func _on_failure_continue_button_pressed() -> void:
+	_finish_failed_stress_test()

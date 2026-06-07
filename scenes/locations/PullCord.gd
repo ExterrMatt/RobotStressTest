@@ -1,6 +1,7 @@
 extends Control
 
 signal pulled
+signal max_pull_reached
 
 const DEFAULT_LINK_SIZE: Vector2 = Vector2(13.0, 2.0)
 const DEFAULT_BULB_SIZE: Vector2 = Vector2(13.0, 18.0)
@@ -13,6 +14,7 @@ const CORD_MODE_RIP_CORD: int = 1
 @export var bulb_size: Vector2 = DEFAULT_BULB_SIZE
 @export var visible_link_count: int = 41
 @export var max_pull_radius: float = 0.0
+@export var max_pull_rearm_distance: float = 8.0
 @export var drag_soft_limit_radius: float = 36.0
 @export_range(0.0, 1.0, 0.01) var drag_soft_limit_min_influence: float = 0.35
 @export var gravity: float = 9.8
@@ -54,6 +56,7 @@ var _bulb_velocity: Vector2 = Vector2.ZERO
 var _bulb_angle: float = 0.0
 var _bulb_angular_velocity: float = 0.0
 var _return_still_elapsed: float = 0.0
+var _max_pull_reached_this_drag: bool = false
 
 
 func _ready() -> void:
@@ -187,6 +190,7 @@ func _start_drag(local_position: Vector2) -> void:
 	_returning_rip_cord = false
 	_bulb_velocity = Vector2.ZERO
 	_return_still_elapsed = 0.0
+	_max_pull_reached_this_drag = false
 	_set_drag_target(local_position)
 	set_physics_process(true)
 
@@ -230,9 +234,25 @@ func _start_rip_cord_return() -> void:
 func _set_drag_target(local_position: Vector2) -> void:
 	var target_position := _bulb_pivot_position_for_center(local_position) if _bulb_uses_chain_pivot() else local_position
 	_drag_target = _drag_limited_position(target_position)
+	_emit_max_pull_reached_if_needed()
 	if _bulb_uses_chain_pivot():
 		_sync_bulb_angle_to_cord_direction(_drag_target)
 	_update_active_link_count_for_bulb()
+
+
+func _emit_max_pull_reached_if_needed() -> void:
+	if not _is_rip_cord():
+		return
+	var distance_to_max := _max_stretch_radius() - _drag_target.distance_to(_anchor_position())
+	if _max_pull_reached_this_drag and distance_to_max > max_pull_rearm_distance:
+		_max_pull_reached_this_drag = false
+	if _max_pull_reached_this_drag:
+		return
+	if distance_to_max > 0.25:
+		return
+
+	_max_pull_reached_this_drag = true
+	max_pull_reached.emit()
 
 
 func _update_active_link_count_for_bulb() -> void:
