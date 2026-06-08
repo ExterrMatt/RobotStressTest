@@ -484,8 +484,6 @@ func _set_stress_test_dark(value: bool) -> void:
 		dark_placeholder.visible = _stress_test_dark
 	if stress_test_robot != null:
 		stress_test_robot.modulate = robot_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
-	if _stress_test_dark:
-		_clear_window_alert()
 
 
 func _initialize_stress_systems() -> void:
@@ -517,6 +515,7 @@ func _initialize_stress_systems() -> void:
 		window_alert_rect.color = window_alert_yellow_color
 	if failure_overlay != null:
 		failure_overlay.visible = false
+		failure_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 
 	set_process(true)
 	_refresh_stress_hud()
@@ -572,10 +571,6 @@ func _update_window_alert(delta: float) -> void:
 			_start_window_alert()
 		return
 
-	if _stress_test_dark:
-		_clear_window_alert()
-		return
-
 	_window_alert_elapsed += delta
 	if _window_alert_state == WINDOW_ALERT_YELLOW and _window_alert_elapsed >= window_alert_yellow_seconds:
 		_window_alert_state = WINDOW_ALERT_RED
@@ -584,7 +579,10 @@ func _update_window_alert(delta: float) -> void:
 			window_alert_rect.color = window_alert_red_color
 		return
 	if _window_alert_state == WINDOW_ALERT_RED and _window_alert_elapsed >= window_alert_red_seconds:
-		_fail_stress_test(uncle_failure_text, false)
+		if _stress_test_dark:
+			_clear_window_alert()
+		else:
+			_fail_stress_test(uncle_failure_text, false)
 
 
 func _start_window_alert() -> void:
@@ -700,7 +698,9 @@ func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 	if failure_reason_label != null:
 		failure_reason_label.text = reason
 	if failure_overlay != null:
+		failure_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 		failure_overlay.visible = true
+		get_tree().paused = true
 	else:
 		_finish_failed_stress_test()
 
@@ -709,6 +709,7 @@ func _finish_failed_stress_test() -> void:
 	if _failure_result_emitted:
 		return
 	_failure_result_emitted = true
+	get_tree().paused = false
 	if _pending_failure_registers_wake:
 		DayCycle.register_stress_test_wake()
 		_pending_failure_registers_wake = false
