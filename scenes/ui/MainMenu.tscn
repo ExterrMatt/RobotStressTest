@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://bnn6c51qbigsy"]
 
 [ext_resource type="Script" uid="uid://c13yosc3q66ph" path="res://scenes/ui/MainMenu.gd" id="1_iwbf0"]
-[ext_resource type="PackedScene" uid="uid://v7pvuxqf3sxd" path="res://scenes/Background.tscn" id="2_2ysvc"]
+[ext_resource type="Texture2D" uid="uid://bqsgsryf6ir1i" path="res://assets/textures/backgrounds/mainmenu_background.png" id="2_2ysvc"]
 [ext_resource type="Texture2D" uid="uid://batdb2pyq3mp2" path="res://assets/textures/characters/robot/main_menu_robot.png" id="3_2ysvc"]
-[ext_resource type="PackedScene" path="res://scenes/Scanlines.tscn" id="3_xpiny"]
+[ext_resource type="PackedScene" uid="uid://b63abf6sio50s" path="res://scenes/Scanlines.tscn" id="3_xpiny"]
 
 [node name="MainMenu" type="Control" unique_id=794610192]
 layout_mode = 3
@@ -17,7 +17,16 @@ script = ExtResource("1_iwbf0")
 [node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=777788677]
 layer = -10
 
-[node name="Background" parent="BackgroundLayer" unique_id=431882361 instance=ExtResource("2_2ysvc")]
+[node name="Background" type="TextureRect" parent="BackgroundLayer" unique_id=431882361]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_2ysvc")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="EmbersLayer" type="Control" parent="." unique_id=1591965417]
 unique_name_in_owner = true

@@ -13,6 +13,8 @@ signal anger_changed(new_value: int)
 signal day_changed(new_day: int)
 signal phase_changed(new_phase: int)
 signal arrested()
+signal brightness_changed(new_value: float)
+signal scanlines_enabled_changed(enabled: bool)
 ## Emitted when the set of items bought today changes. The overlay listens
 ## to this so the per-day-purchase markers stay in sync without polling.
 signal purchased_today_changed(purchased_ids: Array)
@@ -37,6 +39,8 @@ var day: int:
 ## autoload-init-order dependency at class-parse time.
 var _phase: int = 0
 var _money: int = 0
+var _brightness_value: float = 50.0
+var _scanlines_enabled: bool = true
 
 var money: int:
 	get: return _money
@@ -54,6 +58,23 @@ var phase: int:
 			return
 		_phase = value
 		phase_changed.emit(_phase)
+
+var brightness_value: float:
+	get: return _brightness_value
+	set(value):
+		var clamped: float = clampf(value, 0.0, 100.0)
+		if is_equal_approx(clamped, _brightness_value):
+			return
+		_brightness_value = clamped
+		brightness_changed.emit(_brightness_value)
+
+var scanlines_enabled: bool:
+	get: return _scanlines_enabled
+	set(value):
+		if value == _scanlines_enabled:
+			return
+		_scanlines_enabled = value
+		scanlines_enabled_changed.emit(_scanlines_enabled)
 
 var _suspicion: int = 0
 var _anger: int = 0
@@ -98,6 +119,8 @@ func _emit_initial_state() -> void:
 	anger_changed.emit(_anger)
 	day_changed.emit(_day)
 	phase_changed.emit(_phase)
+	brightness_changed.emit(_brightness_value)
+	scanlines_enabled_changed.emit(_scanlines_enabled)
 	purchased_today_changed.emit(purchased_today)
 
 

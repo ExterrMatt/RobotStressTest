@@ -9,4 +9,5 @@ display_name = "Sleep"
 description = "End the day. No stress-test, anger persists."
 allowed_phases = [2]
 scene_path = "res://scenes/locations/Sleep.tscn"
+fullscreen_scene = true
 free_action = false

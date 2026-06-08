@@ -31,7 +31,7 @@ const INTRO_REGION_HEIGHT: float = 125.0
 const MINIGAME_REGION_Y: float = PAN_SOURCE_HEIGHT - 400.0  # = 200
 const MINIGAME_REGION_HEIGHT: float = 400.0
 
-const PAN_DURATION: float = 0.3
+const PAN_DURATION: float = 0.55
 const PAN_TRANS: int = Tween.TRANS_QUAD
 const PAN_EASE: int = Tween.EASE_IN_OUT
 
@@ -53,6 +53,7 @@ var _scene_phase: WorkshopPhase = WorkshopPhase.INTRO
 var _minigame: Node = null
 var _atlas: AtlasTexture = null
 var _pan_tween: Tween = null
+var _pan_controls_frame_size: bool = false
 
 var _pan_t: float = 0.0:
 	set(value):
@@ -81,16 +82,6 @@ func _install_pan_atlas() -> void:
 	if main == null or not "scene_image" in main:
 		return
 
-	# Take manual control of the frame size so Main's default tweens don't fight us
-	if main.get("_frame_size_tween") is Tween and main._frame_size_tween.is_valid():
-		main._frame_size_tween.kill()
-	if main.get("_frame_outer_tween") is Tween and main._frame_outer_tween.is_valid():
-		main._frame_outer_tween.kill()
-	
-	# Lock the outer frame to the upscaled width (900)
-	if "frame_outer" in main and main.frame_outer:
-		main.frame_outer.custom_minimum_size.x = PAN_WIDTH * SCALE_MULT
-
 	var source_tex: Texture2D = _load_pan_source()
 	if source_tex == null:
 		push_error("Workshop: NONE of the candidate pan source paths exist on disk.")
@@ -102,8 +93,6 @@ func _install_pan_atlas() -> void:
 	_atlas.filter_clip = true
 
 	main.scene_image.texture = _atlas
-	# Set inner frame to 900x225 (500x125 * 1.8)
-	main.scene_image.custom_minimum_size = Vector2(PAN_WIDTH * SCALE_MULT, INTRO_REGION_HEIGHT * SCALE_MULT)
 
 
 func _load_pan_source() -> Texture2D:
@@ -127,16 +116,23 @@ func _apply_pan(t: float) -> void:
 
 	var main: Node = get_tree().current_scene
 	if main and "scene_image" in main:
+		if not _pan_controls_frame_size:
+			return
 		# The visual container stays multiplied by 1.8
-		main.scene_image.custom_minimum_size = Vector2(PAN_WIDTH * SCALE_MULT, h * SCALE_MULT)
-		if "frame_outer" in main and main.frame_outer:
-			main.frame_outer.custom_minimum_size.x = PAN_WIDTH * SCALE_MULT
+		var frame_size := Vector2(PAN_WIDTH * SCALE_MULT, h * SCALE_MULT)
+		if main.has_method("_set_frame_size_immediate"):
+			main._set_frame_size_immediate(frame_size, PAN_WIDTH * SCALE_MULT)
+		else:
+			main.scene_image.custom_minimum_size = frame_size
+			if "frame_outer" in main and main.frame_outer:
+				main.frame_outer.custom_minimum_size.x = PAN_WIDTH * SCALE_MULT
 
 
 func _start_pan_to_minigame(on_complete: Callable) -> void:
 	if _pan_tween and _pan_tween.is_valid():
 		_pan_tween.kill()
 
+	_pan_controls_frame_size = true
 	_pan_tween = create_tween()
 	_pan_tween.set_trans(PAN_TRANS)
 	_pan_tween.set_ease(PAN_EASE)

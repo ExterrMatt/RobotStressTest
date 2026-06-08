@@ -42,8 +42,8 @@ extends Control
 ## support nested typed arrays — the Inspector would refuse to load it.
 @export var menu_items: Array = [
 	["new",      "New Game"],
-	["endless",  "Endless"],
 	["load",     "Load Game"],
+	["endless",  "Endless"],
 	["settings", "Settings"],
 	["quit",     "Quit"],
 ]
@@ -57,6 +57,13 @@ extends Control
 		show_scanlines = value
 		if is_inside_tree():
 			scanline_layer.visible = value
+## Main-menu-only scanline strength. The shared in-game scanline scene keeps
+## its subtler default.
+@export_range(0.0, 1.0, 0.01) var main_menu_scanline_opacity: float = 0.55:
+	set(value):
+		main_menu_scanline_opacity = value
+		if is_inside_tree():
+			_apply_scanline_style()
 ## Subtle brightness flicker, fires every ~7s. Disable for "reduced motion".
 @export var show_flicker: bool = true
 ## Rising ember particles in the background.
@@ -111,6 +118,8 @@ var _current_overlay: Control = null
 
 # Internal: which menu row is currently focused.
 var _hovered_id: String = ""
+var _brightness_value: float = 50.0
+var _flicker_tween: Tween = null
 
 
 # =============================================================================
@@ -120,8 +129,15 @@ var _hovered_id: String = ""
 func _ready() -> void:
 	# Apply only the things that actually need code wiring. Text and font
 	# sizes come straight from the .tscn — we don't touch them.
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		_brightness_value = settings.brightness_value
+		show_scanlines = settings.scanlines_enabled
+
 	scanline_layer.visible = show_scanlines
 	embers_layer.visible   = show_embers
+	_apply_scanline_style()
+	_apply_brightness()
 
 	# Accent color override is one-shot at startup; the setter handles
 	# live edits via script.
@@ -178,6 +194,7 @@ func _build_menu_row(id: String, label: String) -> Button:
 	btn.custom_minimum_size = Vector2(0, 60)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.focus_mode = Control.FOCUS_ALL
+	btn.disabled = id == "endless"
 
 	btn.pressed.connect(_activate.bind(id))
 	btn.mouse_entered.connect(_on_row_hover.bind(id, btn))
@@ -374,14 +391,13 @@ func _build_settings_panel() -> Control:
 	var shell: Dictionary = _build_overlay_shell("SETTINGS")
 	var content: VBoxContainer = shell["content"]
 
-	content.add_child(_build_slider_row("MUSIC", 70))
-	content.add_child(_build_slider_row("SFX",   85))
-	content.add_child(_build_slider_row("BRIGHTNESS", 50))
+	content.add_child(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed))
+	content.add_child(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled))
 
 	var apply_row := HBoxContainer.new()
 	apply_row.alignment = BoxContainer.ALIGNMENT_END
 	var apply_btn := Button.new()
-	apply_btn.text = "APPLY"
+	apply_btn.text = "CLOSE"
 	apply_btn.pressed.connect(_close_overlay)
 	apply_row.add_child(apply_btn)
 	content.add_child(apply_row)
@@ -389,7 +405,7 @@ func _build_settings_panel() -> Control:
 	return shell["back"]
 
 
-func _build_slider_row(label_text: String, initial: int) -> HBoxContainer:
+func _build_slider_row(label_text: String, initial: float, changed_callback: Callable) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	var lbl := Label.new()
@@ -401,16 +417,33 @@ func _build_slider_row(label_text: String, initial: int) -> HBoxContainer:
 	slider.max_value = 100
 	slider.value = initial
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(changed_callback)
 	row.add_child(slider)
 	return row
 
 
+func _build_toggle_row(label_text: String, initial: bool, toggled_callback: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size = Vector2(160, 0)
+	row.add_child(lbl)
+
+	var toggle := CheckButton.new()
+	toggle.button_pressed = initial
+	toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	toggle.toggled.connect(toggled_callback)
+	row.add_child(toggle)
+	return row
+
+
 func _build_quit_confirm() -> Control:
-	var shell: Dictionary = _build_overlay_shell("LEAVE HER ALONE?")
+	var shell: Dictionary = _build_overlay_shell("QUIT GAME")
 	var content: VBoxContainer = shell["content"]
 
 	var body := Label.new()
-	body.text = "Unsaved progress will be lost.\nShe will be waiting."
+	body.text = "Unsaved progress will be lost."
 	body.theme_type_variation = &"HUDLabel"
 	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	content.add_child(body)
@@ -426,16 +459,70 @@ func _build_quit_confirm() -> Control:
 
 	var quit := Button.new()
 	quit.text = "QUIT"
-	quit.pressed.connect(func(): get_tree().quit())
+	quit.pressed.connect(_flash_message_then_quit.bind(body))
 	btn_row.add_child(quit)
 
 	content.add_child(btn_row)
 	return shell["back"]
 
 
+func _flash_message_then_quit(body: Label) -> void:
+	if body and is_instance_valid(body):
+		body.text = "I'll be waiting."
+	await get_tree().create_timer(0.05).timeout
+	get_tree().quit()
+
+
 # =============================================================================
 # AMBIENT EFFECTS — embers and flicker.
 # =============================================================================
+
+func _on_brightness_changed(value: float) -> void:
+	_brightness_value = value
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		settings.brightness_value = value
+	_apply_brightness()
+	if show_flicker:
+		_start_flicker()
+
+
+func _on_scanlines_toggled(enabled: bool) -> void:
+	show_scanlines = enabled
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		settings.scanlines_enabled = enabled
+
+
+func _brightness_multiplier() -> float:
+	return lerpf(0.8, 1.2, _brightness_value / 100.0)
+
+
+func _brightness_color(scale: float = 1.0) -> Color:
+	var value: float = _brightness_multiplier() * scale
+	return Color(value, value, value, 1.0)
+
+
+func _apply_brightness() -> void:
+	modulate = _brightness_color()
+
+
+func _apply_scanline_style() -> void:
+	var scanlines := scanline_layer.get_node_or_null("Scanlines") as ColorRect
+	if not scanlines:
+		return
+
+	var shader_material := scanlines.material as ShaderMaterial
+	if not shader_material:
+		return
+
+	if not shader_material.resource_local_to_scene:
+		shader_material = shader_material.duplicate()
+		shader_material.resource_local_to_scene = true
+		scanlines.material = shader_material
+
+	shader_material.set_shader_parameter("global_opacity", main_menu_scanline_opacity)
+
 
 func _spawn_embers() -> void:
 	for child in embers_layer.get_children():
@@ -449,44 +536,54 @@ func _spawn_embers() -> void:
 
 	for i in ember_count:
 		var ember := ColorRect.new()
-		ember.color = accent_soft_color
-		var size_px: float = 1.0 + rng.randf() * 2.0
-		ember.size = Vector2(size_px, size_px)
-		ember.position = Vector2(
-			rng.randf() * get_viewport_rect().size.x,
-			get_viewport_rect().size.y + 10.0,
-		)
 		ember.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		embers_layer.add_child(ember)
-		_animate_ember(ember, rng)
+		_animate_ember(ember, rng, true)
 
 
-func _animate_ember(ember: ColorRect, rng: RandomNumberGenerator) -> void:
+func _reset_ember(ember: ColorRect, rng: RandomNumberGenerator, scatter_y: bool = false) -> void:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var size_px: float = 1.0 + rng.randf() * 2.0
+	var start_y: float = viewport_size.y + 10.0
+	if scatter_y:
+		start_y = rng.randf_range(-20.0, viewport_size.y + 10.0)
+
+	ember.color = accent_soft_color
+	ember.size = Vector2(size_px, size_px)
+	ember.position = Vector2(rng.randf() * viewport_size.x, start_y)
+	ember.modulate.a = 0.0
+
+
+func _animate_ember(ember: ColorRect, rng: RandomNumberGenerator, scatter_y: bool = false) -> void:
+	if not is_instance_valid(ember):
+		return
+
+	_reset_ember(ember, rng, scatter_y)
+
 	var duration: float = 14.0 + rng.randf() * 14.0
 	var drift: float = (rng.randf() - 0.5) * 120.0
-	var start_x: float = ember.position.x
-	var start_y: float = ember.position.y
-	var end_y: float = -20.0
+	var start_position: Vector2 = ember.position
+	var end_position := Vector2(start_position.x + drift, -20.0)
 
 	var tween := create_tween()
-	tween.set_loops()
-	tween.tween_property(ember, "position",
-		Vector2(start_x + drift, end_y), duration
-	).from(Vector2(start_x, start_y))
-	tween.parallel().tween_property(ember, "modulate:a", 0.0, duration * 0.3)\
-		.from(0.0)\
-		.set_delay(duration * 0.1)
-	tween.parallel().tween_property(ember, "modulate:a", 0.0, duration * 0.3)\
+	tween.set_parallel(true)
+	tween.tween_property(ember, "position", end_position, duration)
+	tween.tween_property(ember, "modulate:a", 1.0, duration * 0.2)
+	tween.tween_property(ember, "modulate:a", 0.0, duration * 0.3)\
 		.set_delay(duration * 0.7)
+	tween.finished.connect(_animate_ember.bind(ember, rng, false))
 
 
 func _start_flicker() -> void:
 	# Brightness flicker via modulate. CSS filter:brightness equivalent.
-	var tween := create_tween()
-	tween.set_loops()
-	tween.tween_interval(6.5)
-	tween.tween_property(self, "modulate", Color(0.78, 0.78, 0.78), 0.04)
-	tween.tween_property(self, "modulate", Color(1, 1, 1), 0.08)
-	tween.tween_interval(0.3)
-	tween.tween_property(self, "modulate", Color(0.88, 0.88, 0.88), 0.04)
-	tween.tween_property(self, "modulate", Color(1, 1, 1), 0.08)
+	if _flicker_tween and _flicker_tween.is_valid():
+		_flicker_tween.kill()
+
+	_flicker_tween = create_tween()
+	_flicker_tween.set_loops()
+	_flicker_tween.tween_interval(6.5)
+	_flicker_tween.tween_property(self, "modulate", _brightness_color(0.78), 0.04)
+	_flicker_tween.tween_property(self, "modulate", _brightness_color(), 0.08)
+	_flicker_tween.tween_interval(0.3)
+	_flicker_tween.tween_property(self, "modulate", _brightness_color(0.88), 0.04)
+	_flicker_tween.tween_property(self, "modulate", _brightness_color(), 0.08)

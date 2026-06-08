@@ -48,6 +48,11 @@ class_name LocationData
 ## minimum will accommodate whatever frame_size.y you ask for.
 @export var frame_outer_width: float = 0.0
 
+## True for dedicated fullscreen scenes that draw their own CanvasLayer
+## over Main's framed UI. Main uses a top-level transition overlay for
+## these so the wipe does not disappear behind the fullscreen scene.
+@export var fullscreen_scene: bool = false
+
 ## Optional: if true, visiting this location does NOT consume the phase.
 ## (Reserved for things like checking inventory; nothing uses it yet.)
 @export var free_action: bool = false

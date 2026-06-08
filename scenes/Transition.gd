@@ -7,9 +7,9 @@ extends TextureRect
 ## its swap callback so the picture-box background change happens while
 ## the wipe hides it.
 ##
-## Sprite-sheet handling: we use an AtlasTexture and slide its region
-## across the full sheet, one frame at a time. The TextureRect's sizing /
-## aspect handling does the work, instead of us doing manual Sprite2D math.
+## Sprite-sheet handling: draw the active frame manually as repeated,
+## clipped tiles. The old TextureRect scaling path stretched one frame to
+## fill taller/wider scene frames, which made the wipe visibly distort.
 
 signal midpoint_reached
 signal finished
@@ -34,8 +34,13 @@ signal finished
 ## Total animation length. 18 frames over 0.75s = 24fps.
 @export var duration_sec: float = 0.75
 
-var _atlas: AtlasTexture
+## FlowerLoad's source frame is 500x125, while the normal picture frame
+## displays at 900x225. Keep that scaled size as the repeat unit so taller
+## and fullscreen wipes extend by copy/paste tiling instead of stretching.
+@export var tile_scale: float = 1.8
+
 var _frame_size: Vector2 = Vector2.ZERO
+var _frame_region: Rect2 = Rect2()
 var _tween: Tween = null
 var _midpoint_fired: bool = false
 var _midpoint_callback: Callable = Callable()
@@ -50,6 +55,7 @@ var _frame_index: int = 0:
 
 func _ready() -> void:
 	visible = false
+	texture = null
 
 	if sheet == null:
 		push_warning("Transition: sheet texture not assigned.")
@@ -57,22 +63,52 @@ func _ready() -> void:
 
 	var size: Vector2 = sheet.get_size()
 	_frame_size = Vector2(size.x / hframes, size.y / vframes)
+	_update_region()
 
-	_atlas = AtlasTexture.new()
-	_atlas.atlas = sheet
-	_atlas.region = Rect2(Vector2.ZERO, _frame_size)
-	texture = _atlas
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		queue_redraw()
 
 
 func _update_region() -> void:
-	if _atlas == null:
+	if sheet == null or _frame_size == Vector2.ZERO:
 		return
 	var col: int = _frame_index % hframes
 	var row: int = _frame_index / hframes
-	_atlas.region = Rect2(
+	_frame_region = Rect2(
 		Vector2(col * _frame_size.x, row * _frame_size.y),
 		_frame_size,
 	)
+	queue_redraw()
+
+
+func _draw() -> void:
+	if sheet == null or _frame_region.size == Vector2.ZERO:
+		return
+
+	var tile_size: Vector2 = _frame_region.size * tile_scale
+	if tile_size.x <= 0.0 or tile_size.y <= 0.0:
+		return
+
+	var bounds := Rect2(Vector2.ZERO, size)
+	var cols: int = int(ceil(size.x / tile_size.x))
+	var rows: int = int(ceil(size.y / tile_size.y))
+
+	for y in range(rows):
+		for x in range(cols):
+			var tile_rect := Rect2(Vector2(x, y) * tile_size, tile_size)
+			var clipped := tile_rect.intersection(bounds)
+			if not clipped.has_area():
+				continue
+
+			var rel_pos: Vector2 = (clipped.position - tile_rect.position) / tile_size
+			var rel_size: Vector2 = clipped.size / tile_size
+			var source_region := Rect2(
+				_frame_region.position + rel_pos * _frame_region.size,
+				rel_size * _frame_region.size,
+			)
+			draw_texture_rect_region(sheet, clipped, source_region)
 
 
 ## Start the transition. `at_midpoint` runs once when the animation reaches
@@ -92,6 +128,25 @@ func play(at_midpoint: Callable = Callable()) -> void:
 	_tween.tween_callback(_on_animation_finished)
 
 	set_process(true)
+
+
+## Play only the second half, beginning on the covered midpoint frame.
+## Used when the new surface is already visible (intro and fullscreen
+## locations) and we just need the wipe to lift away from it.
+func play_lift_from_midpoint() -> void:
+	if _tween and _tween.is_valid():
+		_tween.kill()
+
+	_midpoint_callback = Callable()
+	_midpoint_fired = true
+	_frame_index = midpoint_frame - 1
+	visible = true
+	set_process(false)
+
+	_tween = create_tween()
+	_tween.set_trans(Tween.TRANS_LINEAR)
+	_tween.tween_property(self, "_frame_index", total_frames - 1, duration_sec * 0.5)
+	_tween.tween_callback(_on_animation_finished)
 
 
 func _process(_delta: float) -> void:

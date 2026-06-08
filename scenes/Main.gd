@@ -41,6 +41,7 @@ const PHASE_BACKGROUNDS: Dictionary = {
 }
 
 const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryOverlay.tscn")
+const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
 
 ## Default rendered size of the framed scene image. Matches the size hard-
 ## coded in Main.tscn for SceneImage.custom_minimum_size, and the 1.8x
@@ -65,6 +66,7 @@ const ANIM_EASE: int = Tween.EASE_IN_OUT
 @onready var suspicion_label: Label = %SuspicionLabel
 @onready var anger_label: Label = %AngerLabel
 @onready var scene_image: TextureRect = %SceneImage
+@onready var frame_wrap: CenterContainer = $UI/VBox/FrameWrap
 ## The outer panel of the picture frame. We animate its minimum width
 ## separately from SceneImage so a location can declare both a smaller
 ## image AND a slimmer outer frame (otherwise FrameOuter's hardcoded
@@ -97,9 +99,11 @@ const ANIM_EASE: int = Tween.EASE_IN_OUT
 
 # In-frame FlowerLoad wipe (TextureRect parented inside the picture box).
 @onready var transition: TextureRect = %Transition
+@onready var scanline_layer: CanvasLayer = $ScanlineLayer
 
 var _locations: Array[LocationData] = []
 var _current_location_node: Node = null
+var _current_location_fullscreen: bool = false
 var _default_scene_image: Texture2D
 ## Toggle for the alternate teacher portrait (e.g., Health.png → Health2.png).
 ## Flipped with the X key. Persists across teachers within a session.
@@ -122,6 +126,16 @@ var _frame_size_tween: Tween = null
 ## _frame_size_tween so kills are independent (each can be replaced
 ## individually if a location changes one but not the other).
 var _frame_outer_tween: Tween = null
+var _frame_size_start: Vector2 = DEFAULT_FRAME_SIZE
+var _frame_size_target: Vector2 = DEFAULT_FRAME_SIZE
+var _frame_outer_width_start: float = 0.0
+var _frame_outer_width_target: float = 0.0
+var _frame_visual_size_start: Vector2 = Vector2.ZERO
+var _frame_visual_size_target: Vector2 = Vector2.ZERO
+var _frame_resize_progress: float = 1.0:
+	set(value):
+		_frame_resize_progress = clampf(value, 0.0, 1.0)
+		_apply_frame_resize_progress()
 
 ## Default minimum width of the outer frame, captured from the .tscn at
 ## _ready so we can animate back to it when leaving a location that
@@ -154,6 +168,9 @@ var _inventory_overlay: Control = null
 ## inventory that flanks the picture frame.
 var _player_inventory_overlay: InventoryOverlay = null
 
+var _fullscreen_transition_layer: CanvasLayer = null
+var _fullscreen_transition: TextureRect = null
+
 func _ready() -> void:
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
@@ -167,6 +184,12 @@ func _ready() -> void:
 	# constant — the .tscn is the source of truth so it can be tweaked
 	# in the editor without touching code.
 	_default_frame_outer_width = frame_outer.custom_minimum_size.x
+	_frame_size_start = scene_image.custom_minimum_size
+	_frame_size_target = scene_image.custom_minimum_size
+	_frame_outer_width_start = _default_frame_outer_width
+	_frame_outer_width_target = _default_frame_outer_width
+	_frame_visual_size_start = scene_image.custom_minimum_size
+	_frame_visual_size_target = scene_image.custom_minimum_size
 
 	_load_locations()
 
@@ -176,8 +199,12 @@ func _ready() -> void:
 	GameState.day_changed.connect(_on_day_changed)
 	GameState.phase_changed.connect(_on_phase_changed)
 	GameState.arrested.connect(_on_arrested)
+	GameState.brightness_changed.connect(_on_brightness_changed)
+	GameState.scanlines_enabled_changed.connect(_on_scanlines_enabled_changed)
 	DayCycle.day_ended.connect(_on_day_ended)
 
+	_apply_brightness(GameState.brightness_value)
+	_apply_scanlines_enabled(GameState.scanlines_enabled)
 	_refresh_hud()
 	_show_selection_screen()
 	var intro_autoload: Node = get_node_or_null("/root/IntroTransition")
@@ -367,9 +394,20 @@ func _on_money_changed(_v: int) -> void:    _refresh_hud()
 func _on_suspicion_changed(_v: int) -> void: _refresh_hud()
 func _on_anger_changed(_v: int) -> void:     _refresh_hud()
 func _on_day_changed(_v: int) -> void:       _refresh_hud()
+func _on_brightness_changed(value: float) -> void: _apply_brightness(value)
+func _on_scanlines_enabled_changed(enabled: bool) -> void: _apply_scanlines_enabled(enabled)
 func _on_phase_changed(_v: int) -> void:
 	_refresh_hud()
 	_show_selection_screen()
+
+
+func _apply_brightness(value: float) -> void:
+	var brightness: float = lerpf(0.8, 1.2, clampf(value, 0.0, 100.0) / 100.0)
+	modulate = Color(brightness, brightness, brightness, 1.0)
+
+
+func _apply_scanlines_enabled(enabled: bool) -> void:
+	scanline_layer.visible = enabled
 
 
 # --- selection screen ---
@@ -402,32 +440,40 @@ func _show_selection_screen() -> void:
 	# First load: no transition (nothing to wipe from).
 	if not _has_shown_initial:
 		_has_shown_initial = true
-		_apply_selection_screen_swap()
+		_apply_selection_screen_swap(false)
 		return
-	_play_transition_then(_apply_selection_screen_swap)
+	if _current_location_fullscreen:
+		_play_fullscreen_transition_then(_apply_selection_screen_swap.bind(true))
+	else:
+		_play_transition_then(_apply_selection_screen_swap.bind(true))
 
 
 ## Runs at the wipe midpoint when returning to the selection screen.
 ## Everything visible in the frame area changes together.
-func _apply_selection_screen_swap() -> void:
+func _apply_selection_screen_swap(animate_slide: bool = true) -> void:
 	# Tear down the previous location's UI.
 	if _current_location_node and is_instance_valid(_current_location_node):
 		_current_location_node.queue_free()
 		_current_location_node = null
+	_current_location_fullscreen = false
 
-	selection_screen.visible = true
-	location_host.visible = false
+	var swap_visuals := func():
+		selection_screen.visible = true
+		location_host.visible = false
 
-	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
-	hide_teacher_portrait()
-	hide_corner_button()
-	hide_scene_overlay()
-	hide_inventory_overlay()
+		scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
+		hide_teacher_portrait()
+		hide_corner_button()
+		hide_scene_overlay()
+		hide_inventory_overlay()
+	if animate_slide:
+		_run_with_frame_slide(swap_visuals)
+	else:
+		swap_visuals.call()
 
 	# Selection screen always uses the default frame size. Animate back to
 	# it in case we were just inside a location with a larger frame.
-	_animate_frame_size_to(DEFAULT_FRAME_SIZE)
-	_animate_frame_outer_width_to(_default_frame_outer_width)
+	_animate_frame_to(DEFAULT_FRAME_SIZE, _default_frame_outer_width)
 
 
 func _build_location_button(loc: LocationData) -> Button:
@@ -446,7 +492,7 @@ func _build_location_button(loc: LocationData) -> Button:
 
 func _on_location_picked(loc: LocationData) -> void:
 	# Guard against rapid double-click stacking transitions.
-	if transition.has_method("is_playing") and transition.is_playing():
+	if _is_any_transition_playing():
 		return
 
 	# Validate the scene up-front so we can bail before starting the wipe
@@ -458,13 +504,17 @@ func _on_location_picked(loc: LocationData) -> void:
 		return
 
 	_log("[b]→ %s[/b]" % loc.display_name)
-	_play_transition_then(_apply_location_pick_swap.bind(loc, packed))
+	if loc.fullscreen_scene:
+		_play_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed))
+	else:
+		_play_transition_then(_apply_location_pick_swap.bind(loc, packed))
 
 
 ## Runs at the wipe midpoint when picking a location.
 ## All frame-area changes happen together so the wipe hides them.
-func _apply_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
+func _apply_location_pick_swap(loc: LocationData, packed: PackedScene, animate_slide: bool = true) -> void:
 	_current_location_node = packed.instantiate()
+	_current_location_fullscreen = loc.fullscreen_scene
 	location_host.add_child(_current_location_node)
 
 	if _current_location_node.has_signal("finished"):
@@ -472,22 +522,31 @@ func _apply_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
 	else:
 		push_warning("Location %s did not expose a `finished` signal." % loc.display_name)
 
-	selection_screen.visible = false
-	location_host.visible = true
+	var swap_visuals := func():
+		selection_screen.visible = false
+		location_host.visible = true
 
-	if loc.preview_texture:
-		scene_image.texture = loc.preview_texture
+		if loc.preview_texture:
+			scene_image.texture = loc.preview_texture
+	if animate_slide:
+		_run_with_frame_slide(swap_visuals)
+	else:
+		swap_visuals.call()
 
 	# Resize the frame to this location's preferred size (or default if
 	# the resource doesn't declare one). Eases in/out over ANIM_DURATION.
 	var target: Vector2 = loc.frame_size if loc.frame_size != Vector2.ZERO else DEFAULT_FRAME_SIZE
-	_animate_frame_size_to(target)
 
 	# Same for the outer frame width — independent so locations can
 	# declare just one or the other. frame_outer_width <= 0 means "use
 	# the .tscn default", which we cached at _ready.
 	var target_outer: float = loc.frame_outer_width if loc.frame_outer_width > 0.0 else _default_frame_outer_width
-	_animate_frame_outer_width_to(target_outer)
+	_animate_frame_to(target, target_outer)
+
+
+func _apply_fullscreen_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
+	_apply_location_pick_swap(loc, packed)
+	_play_fullscreen_lift()
 
 
 # --- frame size (scale) animation ---
@@ -496,6 +555,10 @@ func _apply_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
 ## Snaps immediately if we're already there. Kills any in-flight tween so
 ## a fast back-to-back location change doesn't fight itself.
 func _animate_frame_size_to(target: Vector2) -> void:
+	var outer_target: float = _frame_outer_width_target if _is_frame_resize_playing() else frame_outer.custom_minimum_size.x
+	_animate_frame_to(target, outer_target)
+	return
+
 	if scene_image == null:
 		return
 
@@ -521,6 +584,10 @@ func _animate_frame_size_to(target: Vector2) -> void:
 ## Height of the outer frame is not animated — it's container-driven and
 ## will accommodate whatever inner height the SceneImage demands.
 func _animate_frame_outer_width_to(target_width: float) -> void:
+	var size_target: Vector2 = _frame_size_target if _is_frame_resize_playing() else scene_image.custom_minimum_size
+	_animate_frame_to(size_target, target_width)
+	return
+
 	if frame_outer == null:
 		return
 
@@ -536,6 +603,106 @@ func _animate_frame_outer_width_to(target_width: float) -> void:
 	_frame_outer_tween.tween_property(
 		frame_outer, "custom_minimum_size:x", target_width, ANIM_DURATION
 	)
+
+
+func _animate_frame_to(target_size: Vector2, target_outer_width: float) -> void:
+	if scene_image == null or frame_outer == null:
+		return
+
+	if _frame_outer_tween and _frame_outer_tween.is_valid():
+		_frame_outer_tween.kill()
+	if _frame_size_tween and _frame_size_tween.is_valid():
+		_frame_size_tween.kill()
+
+	if scene_image.custom_minimum_size.is_equal_approx(target_size) \
+			and is_equal_approx(frame_outer.custom_minimum_size.x, target_outer_width):
+		return
+
+	_frame_size_start = scene_image.custom_minimum_size
+	_frame_size_target = target_size
+	_frame_outer_width_start = frame_outer.custom_minimum_size.x
+	_frame_outer_width_target = target_outer_width
+	_frame_visual_size_start = _current_frame_visual_size()
+	_frame_visual_size_target = _target_frame_visual_size(target_size, target_outer_width)
+	_frame_resize_progress = 0.0
+
+	_frame_size_tween = create_tween()
+	_frame_size_tween.set_trans(ANIM_TRANS)
+	_frame_size_tween.set_ease(ANIM_EASE)
+	_frame_size_tween.tween_property(self, "_frame_resize_progress", 1.0, ANIM_DURATION)
+
+
+func _set_frame_size_immediate(size_value: Vector2, outer_width: float) -> void:
+	if _frame_size_tween and _frame_size_tween.is_valid():
+		_frame_size_tween.kill()
+	if _frame_outer_tween and _frame_outer_tween.is_valid():
+		_frame_outer_tween.kill()
+
+	_frame_size_start = size_value
+	_frame_size_target = size_value
+	_frame_outer_width_start = outer_width
+	_frame_outer_width_target = outer_width
+	_frame_visual_size_start = _target_frame_visual_size(size_value, outer_width)
+	_frame_visual_size_target = _frame_visual_size_start
+	_frame_resize_progress = 1.0
+	_apply_frame_resize_progress()
+
+
+func _apply_frame_resize_progress() -> void:
+	if scene_image == null or frame_outer == null:
+		return
+
+	scene_image.custom_minimum_size = _frame_size_start.lerp(_frame_size_target, _frame_resize_progress)
+	frame_outer.custom_minimum_size.x = lerpf(
+		_frame_outer_width_start,
+		_frame_outer_width_target,
+		_frame_resize_progress
+	)
+	frame_outer.position = _center_resize_offset()
+	_queue_frame_layout()
+
+
+func _is_frame_resize_playing() -> bool:
+	return _frame_size_tween != null and _frame_size_tween.is_valid()
+
+
+func _queue_frame_layout() -> void:
+	if scene_image != null:
+		scene_image.update_minimum_size()
+	if frame_outer != null:
+		frame_outer.update_minimum_size()
+	if frame_wrap != null:
+		frame_wrap.queue_sort()
+		var parent_container := frame_wrap.get_parent() as Container
+		if parent_container != null:
+			parent_container.queue_sort()
+
+
+func _current_frame_visual_size() -> Vector2:
+	if frame_outer == null:
+		return Vector2.ZERO
+	var current_size := frame_outer.size
+	if current_size.x <= 0.0:
+		current_size.x = frame_outer.custom_minimum_size.x
+	if current_size.y <= 0.0 and scene_image != null:
+		current_size.y = scene_image.custom_minimum_size.y
+	return current_size
+
+
+func _target_frame_visual_size(target_size: Vector2, target_outer_width: float) -> Vector2:
+	var current_size := _current_frame_visual_size()
+	return Vector2(
+		target_outer_width,
+		target_size.y if target_size.y > 0.0 else current_size.y
+	)
+
+
+func _center_resize_offset() -> Vector2:
+	if _frame_resize_progress >= 1.0:
+		return Vector2.ZERO
+
+	var current_size := _frame_visual_size_start.lerp(_frame_visual_size_target, _frame_resize_progress)
+	return (_frame_visual_size_start - current_size) * 0.5
 
 
 # --- layout slide animation (public API for locations) ---
@@ -565,20 +732,27 @@ func animate_layout_change(mutator: Callable) -> void:
 		push_warning("Main.animate_layout_change: invalid mutator callable")
 		return
 
+	_run_with_frame_slide(mutator)
+
+
+func _run_with_frame_slide(mutator: Callable) -> void:
+	if not mutator.is_valid():
+		return
+
 	# Capture the FrameWrap's global position before the mutation. We
 	# animate the wrap (the CenterContainer that holds the framed image),
 	# not the SceneImage itself, because the slide we want to show is the
 	# whole picture frame moving — rivets, corner button, everything.
-	var frame_wrap: Control = scene_image.get_parent().get_parent().get_parent().get_parent() as Control
+	var slide_frame_wrap: Control = frame_wrap
 	# That walks: SceneImage -> FrameInsetMid -> FrameInsetDark ->
 	# FrameOuter -> FrameWrap. If the tree shape ever changes, this needs
 	# to keep up — kept as a chain instead of a hardcoded path so it
 	# breaks loudly rather than silently animating the wrong node.
-	if frame_wrap == null:
+	if slide_frame_wrap == null:
 		mutator.call()
 		return
 
-	var old_global_y: float = frame_wrap.global_position.y
+	var old_global_pos: Vector2 = slide_frame_wrap.global_position
 
 	# Apply the mutation. The container chain reflows synchronously.
 	mutator.call()
@@ -586,44 +760,46 @@ func animate_layout_change(mutator: Callable) -> void:
 	# Force the layout to settle NOW so global_position reflects the new
 	# target. Without this the new position isn't known until the end of
 	# the frame.
-	frame_wrap.get_tree().process_frame  # touch to prevent linter unused
+	slide_frame_wrap.get_tree().process_frame  # touch to prevent linter unused
 	# In Godot 4, queue_sort + update_minimum_size is the recommended
 	# nudge. The deferred call below resolves the actual tween once layout
 	# has settled this frame.
-	frame_wrap.queue_sort()
+	_queue_frame_layout()
 
-	call_deferred("_finish_slide_animation", frame_wrap, old_global_y)
+	call_deferred("_finish_slide_animation", old_global_pos)
 
 
 ## Deferred half of animate_layout_change. Runs AFTER the reflow has
 ## settled (next idle frame), at which point frame_wrap.global_position
 ## reflects the new spot. We tween the difference using an offset so the
 ## container layout itself isn't fought.
-func _finish_slide_animation(frame_wrap: Control, old_global_y: float) -> void:
+func _finish_slide_animation(old_global_pos: Vector2) -> void:
 	if frame_wrap == null or not is_instance_valid(frame_wrap):
 		return
 
-	var new_global_y: float = frame_wrap.global_position.y
-	var delta_y: float = old_global_y - new_global_y
-
-	# No movement — no animation needed.
-	if absf(delta_y) < 0.5:
+	var new_global_pos: Vector2 = frame_wrap.global_position
+	var delta: Vector2 = old_global_pos - new_global_pos
+	if delta.length() < 0.5:
 		return
 
-	# Kill any in-flight slide so back-to-back layout changes don't stack.
 	if _slide_tween and _slide_tween.is_valid():
 		_slide_tween.kill()
+
+	frame_wrap.position = delta
+	_slide_tween = create_tween()
+	_slide_tween.set_trans(ANIM_TRANS)
+	_slide_tween.set_ease(ANIM_EASE)
+	_slide_tween.tween_property(frame_wrap, "position", Vector2.ZERO, ANIM_DURATION)
+
+	# No movement — no animation needed.
+
+	# Kill any in-flight slide so back-to-back layout changes don't stack.
 
 	# Pre-offset the frame to its OLD position, then tween the offset to
 	# zero. position is a Control property (independent of the container's
 	# resolved layout), so this gives a smooth visual slide without
 	# breaking the layout system.
-	frame_wrap.position.y = delta_y
 
-	_slide_tween = create_tween()
-	_slide_tween.set_trans(ANIM_TRANS)
-	_slide_tween.set_ease(ANIM_EASE)
-	_slide_tween.tween_property(frame_wrap, "position:y", 0.0, ANIM_DURATION)
 
 
 # --- transitions ---
@@ -636,6 +812,57 @@ func _play_transition_then(swap_callback: Callable) -> void:
 		swap_callback.call()
 		return
 	transition.play(swap_callback)
+
+
+func _play_fullscreen_transition_then(swap_callback: Callable) -> void:
+	var tr := _ensure_fullscreen_transition()
+	if tr == null or not tr.has_method("play"):
+		swap_callback.call()
+		return
+	tr.play(swap_callback)
+
+
+func _play_fullscreen_lift() -> void:
+	var tr := _ensure_fullscreen_transition()
+	if tr == null:
+		return
+	if tr.has_method("play_lift_from_midpoint"):
+		tr.play_lift_from_midpoint()
+
+
+func _ensure_fullscreen_transition() -> TextureRect:
+	if _fullscreen_transition != null and is_instance_valid(_fullscreen_transition):
+		return _fullscreen_transition
+
+	_fullscreen_transition_layer = CanvasLayer.new()
+	_fullscreen_transition_layer.name = "FullscreenTransitionLayer"
+	_fullscreen_transition_layer.layer = 100
+	add_child(_fullscreen_transition_layer)
+
+	_fullscreen_transition = TRANSITION_SCENE.instantiate() as TextureRect
+	if _fullscreen_transition == null:
+		return null
+	_fullscreen_transition.name = "FullscreenTransition"
+	_fullscreen_transition.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fullscreen_transition.anchor_left = 0.0
+	_fullscreen_transition.anchor_top = 0.0
+	_fullscreen_transition.anchor_right = 1.0
+	_fullscreen_transition.anchor_bottom = 1.0
+	_fullscreen_transition.offset_left = 0.0
+	_fullscreen_transition.offset_top = 0.0
+	_fullscreen_transition.offset_right = 0.0
+	_fullscreen_transition.offset_bottom = 0.0
+	_fullscreen_transition_layer.add_child(_fullscreen_transition)
+	return _fullscreen_transition
+
+
+func _is_any_transition_playing() -> bool:
+	if transition != null and transition.has_method("is_playing") and transition.is_playing():
+		return true
+	if _fullscreen_transition != null and is_instance_valid(_fullscreen_transition):
+		if _fullscreen_transition.has_method("is_playing") and _fullscreen_transition.is_playing():
+			return true
+	return false
 
 
 # --- result handling ---
@@ -911,13 +1138,5 @@ func hide_inventory_overlay() -> void:
 func _play_intro_wipe() -> void:
 	if transition == null:
 		return
-	if "_tween" in transition and transition._tween:
-		transition._tween.kill()
-	transition.visible = true
-	transition._frame_index = 9
-	var lift_duration: float = transition.duration_sec * 0.5
-	var lift_tween: Tween = transition.create_tween()
-	lift_tween.set_trans(Tween.TRANS_LINEAR)
-	lift_tween.tween_property(transition, "_frame_index", transition.total_frames - 1, lift_duration)
-	lift_tween.tween_callback(func(): transition.visible = false)
-	transition._tween = lift_tween
+	if transition.has_method("play_lift_from_midpoint"):
+		transition.play_lift_from_midpoint()

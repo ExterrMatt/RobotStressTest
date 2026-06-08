@@ -9,3 +9,11 @@ res://scenes/locations/StressTestRobot.gd
 res://scenes/locations/PullCord.gd
 res://scenes/Main.gd
 res://scenes/ui/MainMenu.gd
+res://resources/LocationData.gd
+res://scenes/Transition.gd
+res://scenes/locations/School.gd
+res://scenes/locations/Workshop.gd
+res://scenes/Scanlines.tscn
+res://shaders/scanlines.gdshader
+res://autoload/GameState.gd
+res://scenes/ui/MainMenu.tscn

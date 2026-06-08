@@ -9,4 +9,5 @@ display_name = "Stress Test"
 description = "Reduce tomorrow's anger. Don't wake the robot."
 allowed_phases = [2]
 scene_path = "res://scenes/locations/StressTest.tscn"
+fullscreen_scene = true
 free_action = false

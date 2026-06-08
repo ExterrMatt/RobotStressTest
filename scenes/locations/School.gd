@@ -203,15 +203,17 @@ func _auto_advance_question_prompt(prompt_text: String) -> void:
 func _show_question_choices() -> void:
 	_scene_phase = SchoolPhase.QUESTION_CHOICES
 	_hide_corner()
-	_clear_choice_buttons()
-	choice_grid.visible = true
+	_animate_layout_change(func():
+		_clear_choice_buttons()
+		choice_grid.visible = true
 
-	var choices: Array = _current_question["choices"]
-	var correct_index: int = _current_question["correct"]
-	for i in choices.size():
-		var btn := _build_choice_button(str(choices[i]))
-		btn.pressed.connect(_on_answer_pressed.bind(i, correct_index))
-		choice_grid.add_child(btn)
+		var choices: Array = _current_question["choices"]
+		var correct_index: int = _current_question["correct"]
+		for i in choices.size():
+			var btn := _build_choice_button(str(choices[i]))
+			btn.pressed.connect(_on_answer_pressed.bind(i, correct_index))
+			choice_grid.add_child(btn)
+	)
 
 
 func _on_answer_pressed(picked: int, correct: int) -> void:
@@ -237,8 +239,10 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 
 	# Hide choices; the box takes over until it emits `finished` (which
 	# routes us into the post-class intro).
-	_clear_choice_buttons()
-	choice_grid.visible = false
+	_animate_layout_change(func():
+		_clear_choice_buttons()
+		choice_grid.visible = false
+	)
 
 	_scene_phase = SchoolPhase.FEEDBACK
 	dialogue_box.play_pages(feedback_pages)
@@ -248,6 +252,7 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
+	_show_placeholder_background()
 	dialogue_box.play_pages(Dialogue.get_pages("school", "post_class"))
 
 
@@ -270,16 +275,18 @@ func _auto_advance_post_class_prompt(prompt_text: String) -> void:
 func _show_post_class_choices() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_CHOICES
 	_hide_corner()
-	_clear_choice_buttons()
-	choice_grid.visible = true
+	_animate_layout_change(func():
+		_clear_choice_buttons()
+		choice_grid.visible = true
 
-	var leave_btn := _build_choice_button("LEAVE QUIETLY")
-	leave_btn.pressed.connect(_on_leave_pressed)
-	choice_grid.add_child(leave_btn)
+		var leave_btn := _build_choice_button("LEAVE QUIETLY")
+		leave_btn.pressed.connect(_on_leave_pressed)
+		choice_grid.add_child(leave_btn)
 
-	var steal_btn := _build_choice_button("STEAL NANOBOTS")
-	steal_btn.pressed.connect(_on_steal_pressed)
-	choice_grid.add_child(steal_btn)
+		var steal_btn := _build_choice_button("STEAL NANOBOTS")
+		steal_btn.pressed.connect(_on_steal_pressed)
+		choice_grid.add_child(steal_btn)
+	)
 
 
 func _on_leave_pressed() -> void:
@@ -318,6 +325,31 @@ func _hide_corner() -> void:
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("hide_corner_button"):
 		main.hide_corner_button()
+
+
+func _animate_layout_change(mutator: Callable) -> void:
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("animate_layout_change"):
+		main.animate_layout_change(mutator)
+	elif mutator.is_valid():
+		mutator.call()
+
+
+func _show_placeholder_background() -> void:
+	var main: Node = get_tree().current_scene
+	if main == null:
+		return
+
+	if main.has_method("hide_teacher_portrait"):
+		main.hide_teacher_portrait()
+	if "scene_image" in main:
+		var placeholder: Texture2D = load("res://assets/textures/backgrounds/scene_placeholder.png")
+		if placeholder:
+			main.scene_image.texture = placeholder
+	if main.has_method("_animate_frame_size_to"):
+		main._animate_frame_size_to(Vector2(900, 225))
+	if main.has_method("_animate_frame_outer_width_to") and "frame_outer" in main:
+		main._animate_frame_outer_width_to(main._default_frame_outer_width)
 
 
 func _finish_school() -> void:
