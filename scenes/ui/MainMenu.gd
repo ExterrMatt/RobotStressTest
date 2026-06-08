@@ -73,7 +73,7 @@ extends Control
 		if is_inside_tree():
 			embers_layer.visible = value
 ## How many embers to spawn. More = denser atmosphere, slightly more CPU.
-@export_range(0, 60, 1) var ember_count: int = 22
+@export_range(0, 60, 1) var ember_count: int = 58
 ## Color of the rising embers and the warning-tag accent text.
 @export var accent_soft_color: Color = Color("f0a060"):
 	set(value):
