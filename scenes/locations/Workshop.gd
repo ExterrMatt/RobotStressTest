@@ -2,12 +2,6 @@ extends LocationBase
 ## Workshop location — craft ingredients into a leg, then jigsaw the leg
 ## segments into place.
 
-const REWARD_COLLECT: Dictionary = {
-	"money": 0,
-	"suspicion": 0,
-	"ingredients": {"leg": 1},
-}
-
 const CHOICE_BUTTON_HEIGHT: int = 110
 const CHOICE_FONT_SIZE: int = 36
 const PROMPT_COLOR: String = "#e8c468"
@@ -179,9 +173,9 @@ func _show_intro_choices() -> void:
 	tinker_btn.pressed.connect(_on_tinker_pressed)
 	choice_grid.add_child(tinker_btn)
 
-	var proceed_btn := _build_choice_button("PROCEED INTO WORKSHOP")
-	proceed_btn.pressed.connect(_on_proceed_pressed)
-	choice_grid.add_child(proceed_btn)
+	var construct_btn := _build_choice_button("CONSTRUCT A LIMB")
+	construct_btn.pressed.connect(_on_construct_limb_pressed)
+	choice_grid.add_child(construct_btn)
 
 
 # --- tinker path ---
@@ -195,7 +189,7 @@ func _on_tinker_pressed() -> void:
 
 # --- proceed path ---
 
-func _on_proceed_pressed() -> void:
+func _on_construct_limb_pressed() -> void:
 	_scene_phase = WorkshopPhase.PROCEED_DIALOGUE
 	_clear_choice_buttons()
 	choice_grid.visible = false
@@ -232,11 +226,11 @@ func _on_pan_complete() -> void:
 		main.show_scene_overlay(_minigame, true)
 
 
-func _on_minigame_collected() -> void:
-	var ingredients: Dictionary = _copy_ingredients(REWARD_COLLECT.get("ingredients", {}))
+func _on_minigame_collected(part_id: String) -> void:
+	var ingredients: Dictionary = {part_id: 1}
 	finish(
-		int(REWARD_COLLECT.get("money", 0)),
-		int(REWARD_COLLECT.get("suspicion", 0)),
+		0,
+		0,
 		0,
 		ingredients,
 		false,
@@ -257,17 +251,6 @@ func _on_dialogue_finished() -> void:
 			finish(0, 0, 0, {}, true)
 		_:
 			pass
-
-
-# --- helpers ---
-
-func _copy_ingredients(src: Dictionary) -> Dictionary:
-	var out: Dictionary = {}
-	for k in src:
-		out[k] = int(src[k])
-	return out
-
-
 func _build_choice_button(label: String) -> Button:
 	var btn := Button.new()
 	btn.text = label

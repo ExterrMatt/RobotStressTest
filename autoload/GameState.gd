@@ -18,6 +18,7 @@ signal scanlines_enabled_changed(enabled: bool)
 ## Emitted when the set of items bought today changes. The overlay listens
 ## to this so the per-day-purchase markers stay in sync without polling.
 signal purchased_today_changed(purchased_ids: Array)
+signal robot_parts_changed(parts: Dictionary)
 
 const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
@@ -79,10 +80,20 @@ var scanlines_enabled: bool:
 var _suspicion: int = 0
 var _anger: int = 0
 
-# --- robot config (stubbed until construction system exists) ---
-## Number of equipped limbs. Feeds into stress-test difficulty and the anger
-## tick formula ("2 units per limb per second at max ma").
+# --- robot config ---
+const ROBOT_PART_IDS: Array[String] = ["leg", "arm", "torso", "head", "hand"]
+
+## Kept for older scene logic that only understood legs. Mirrors
+## robot_parts["leg"].
 var equipped_limbs: int = 0
+
+var robot_parts: Dictionary = {
+	"leg": 0,
+	"arm": 0,
+	"torso": 0,
+	"head": 0,
+	"hand": 0,
+}
 
 # --- inventory (stubbed - list of ingredient string IDs for now) ---
 var ingredients: Dictionary = {
@@ -122,6 +133,7 @@ func _emit_initial_state() -> void:
 	brightness_changed.emit(_brightness_value)
 	scanlines_enabled_changed.emit(_scanlines_enabled)
 	purchased_today_changed.emit(purchased_today)
+	robot_parts_changed.emit(robot_parts.duplicate())
 
 
 # --- money ---
@@ -184,6 +196,51 @@ func add_ingredient(id: String, amount: int = 1) -> void:
 	ingredients[id] = max(0, ingredients[id] + amount)
 
 
+# --- robot parts ---
+
+func is_robot_part_id(id: String) -> bool:
+	return id in ROBOT_PART_IDS
+
+
+func add_robot_part(id: String, amount: int = 1) -> void:
+	if not is_robot_part_id(id):
+		push_warning("Unknown robot part id: %s" % id)
+		return
+	robot_parts[id] = max(0, int(robot_parts.get(id, 0)) + amount)
+	_sync_legacy_limb_count()
+	robot_parts_changed.emit(robot_parts.duplicate())
+
+
+func set_robot_part_count(id: String, amount: int) -> void:
+	if not is_robot_part_id(id):
+		push_warning("Unknown robot part id: %s" % id)
+		return
+	robot_parts[id] = max(0, amount)
+	_sync_legacy_limb_count()
+	robot_parts_changed.emit(robot_parts.duplicate())
+
+
+func get_robot_part_count(id: String) -> int:
+	if not is_robot_part_id(id):
+		return 0
+	return int(robot_parts.get(id, 0))
+
+
+func has_robot_part(id: String, amount: int = 1) -> bool:
+	return get_robot_part_count(id) >= amount
+
+
+func set_all_robot_parts(amount: int) -> void:
+	for id in ROBOT_PART_IDS:
+		robot_parts[id] = max(0, amount)
+	_sync_legacy_limb_count()
+	robot_parts_changed.emit(robot_parts.duplicate())
+
+
+func _sync_legacy_limb_count() -> void:
+	equipped_limbs = get_robot_part_count("leg")
+
+
 # --- skills ---
 
 func has_skill(skill_id: String) -> bool:
@@ -241,6 +298,7 @@ func to_dict() -> Dictionary:
 		"suspicion": _suspicion,
 		"anger": _anger,
 		"equipped_limbs": equipped_limbs,
+		"robot_parts": robot_parts.duplicate(),
 		"ingredients": ingredients.duplicate(),
 		"skills": skills.duplicate(),
 		"owned_tools": owned_tools.duplicate(),
@@ -255,6 +313,12 @@ func from_dict(data: Dictionary) -> void:
 	_suspicion = data.get("suspicion", 0)
 	_anger = data.get("anger", 0)
 	equipped_limbs = data.get("equipped_limbs", 0)
+	var loaded_parts: Dictionary = data.get("robot_parts", {}).duplicate()
+	for id in ROBOT_PART_IDS:
+		robot_parts[id] = max(0, int(loaded_parts.get(id, 0)))
+	if get_robot_part_count("leg") == 0 and equipped_limbs > 0:
+		robot_parts["leg"] = equipped_limbs
+	_sync_legacy_limb_count()
 	ingredients = data.get("ingredients", {}).duplicate()
 	skills.assign(data.get("skills", []))
 	owned_tools.assign(data.get("owned_tools", ["mouth", "hand"]))

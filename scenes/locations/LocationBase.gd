@@ -16,6 +16,8 @@ class_name LocationBase
 ## Locations should NOT mutate GameState directly. They report a result and
 ## Main applies it. This keeps the audit trail centralized and makes it easy
 ## to add modifiers (e.g. suspicion-reduces-money) in one place later.
+## Main also applies the flat skipped-stress-test anger penalty to Night
+## activities that are not the Stress Test.
 
 signal finished(result: Dictionary)
 

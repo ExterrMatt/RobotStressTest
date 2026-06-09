@@ -7,7 +7,7 @@ extends Control
 ## Two kinds of edits, two places to make them:
 ##
 ## 1. TEXT and FONT SIZES — edit the Label nodes DIRECTLY in the scene tree.
-##    Click TitleLine1 / TitleLine2 / SubtitleLabel / TagLabel / VersionLabel
+##    Click TitleImage / SubtitleLabel / TagLabel / VersionLabel
 ##    / StudioLabel / SubjectTagLabel / Keys in the Scene panel, then change
 ##    their `text` property in the Inspector. Same for font sizes (under
 ##    Theme Overrides → Font Sizes). Edits there persist; nothing in this
@@ -47,6 +47,8 @@ extends Control
 	["settings", "Settings"],
 	["quit",     "Quit"],
 ]
+## Background texture used for the main menu option rows.
+@export var menu_option_texture: Texture2D = preload("res://assets/textures/icons/mainmenu_option.png")
 
 # --- VISUAL EFFECTS ---
 @export_group("Visual Effects")
@@ -74,12 +76,8 @@ extends Control
 			embers_layer.visible = value
 ## How many embers to spawn. More = denser atmosphere, slightly more CPU.
 @export_range(0, 60, 1) var ember_count: int = 58
-## Color of the rising embers and the warning-tag accent text.
-@export var accent_soft_color: Color = Color("f0a060"):
-	set(value):
-		accent_soft_color = value
-		if is_inside_tree():
-			subject_tag_label.add_theme_color_override("font_color", value)
+## Color of the rising embers and orange menu accents.
+@export var accent_soft_color: Color = Color("f0a060")
 
 # --- ROBOT ART ---
 @export_group("Robot Art")
@@ -103,12 +101,11 @@ extends Control
 
 # =============================================================================
 # NODE REFS — resolved at _ready via unique_name_in_owner.
-# Note: there are no @onready refs for TitleLine1 / SubtitleLabel / etc
+# Note: there are no @onready refs for TitleImage / SubtitleLabel / etc
 # anymore because the script no longer touches their text. Edit them in the
 # scene tree.
 # =============================================================================
 
-@onready var subject_tag_label: Label    = %SubjectTagLabel
 @onready var menu_list: VBoxContainer    = %MenuList
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 @onready var embers_layer: Control       = %EmbersLayer
@@ -138,10 +135,6 @@ func _ready() -> void:
 	embers_layer.visible   = show_embers
 	_apply_scanline_style()
 	_apply_brightness()
-
-	# Accent color override is one-shot at startup; the setter handles
-	# live edits via script.
-	subject_tag_label.add_theme_color_override("font_color", accent_soft_color)
 
 	_build_menu()
 
@@ -191,15 +184,68 @@ func _build_menu_row(id: String, label: String) -> Button:
 	btn.name = "MenuRow_" + id
 	btn.text = label.to_upper()
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	btn.custom_minimum_size = Vector2(0, 60)
-	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.custom_minimum_size = _menu_option_button_size()
+	btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	btn.focus_mode = Control.FOCUS_ALL
 	btn.disabled = id == "endless"
+	_apply_menu_option_button_style(btn)
 
 	btn.pressed.connect(_activate.bind(id))
 	btn.mouse_entered.connect(_on_row_hover.bind(id, btn))
 	btn.focus_entered.connect(_on_row_hover.bind(id, btn))
 	return btn
+
+
+func _menu_option_button_size() -> Vector2:
+	var height := 60.0
+	if menu_option_texture == null:
+		return Vector2(0.0, height)
+
+	var texture_size := menu_option_texture.get_size()
+	if texture_size.y <= 0.0:
+		return Vector2(0.0, height)
+
+	return Vector2(texture_size.x / texture_size.y * height, height)
+
+
+func _apply_menu_option_button_style(btn: Button) -> void:
+	if menu_option_texture == null:
+		return
+
+	var clear_style := _make_menu_option_clear_stylebox()
+	btn.add_theme_stylebox_override("normal", clear_style)
+	btn.add_theme_stylebox_override("hover", clear_style)
+	btn.add_theme_stylebox_override("pressed", clear_style)
+	btn.add_theme_stylebox_override("disabled", clear_style)
+	btn.add_theme_color_override("font_color", Color(0.92, 0.94, 1.0, 1.0))
+	btn.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
+	btn.add_theme_color_override("font_pressed_color", Color(0.8, 0.9, 1.0, 1.0))
+	btn.add_theme_color_override("font_disabled_color", Color(0.48, 0.52, 0.62, 0.85))
+	btn.add_theme_constant_override("h_separation", 0)
+	btn.add_theme_constant_override("icon_max_width", 0)
+	btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+	var texture_back := TextureRect.new()
+	texture_back.name = "OptionTexture"
+	texture_back.texture = menu_option_texture
+	texture_back.show_behind_parent = true
+	texture_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	texture_back.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	texture_back.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	texture_back.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_back.self_modulate = Color(1, 1, 1, 0.92 if not btn.disabled else 0.68)
+	btn.add_child(texture_back)
+
+
+func _make_menu_option_clear_stylebox() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.draw_center = false
+	style.content_margin_left = 24
+	style.content_margin_top = 10
+	style.content_margin_right = 24
+	style.content_margin_bottom = 10
+	return style
 
 
 # =============================================================================

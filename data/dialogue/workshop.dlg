@@ -33,7 +33,7 @@
 # -----------------------------------------------------------------------------
 
 [proceed]
-[i]Right. Time to build a leg.[/i]
+[i]Right. Time to build.[/i]
 
 
 # -----------------------------------------------------------------------------
@@ -46,9 +46,9 @@
 
 
 # -----------------------------------------------------------------------------
-# COMPLETE - shown when the player presses COLLECT with a finished leg.
+# COMPLETE - shown when the player presses COLLECT with a finished part.
 # -----------------------------------------------------------------------------
 
 [complete]
-[i]A whole leg, laid out and ready.[/i] \
+[i]A finished part, laid out and ready.[/i] \
 [i]You wrap it in cloth and set it aside.[/i]

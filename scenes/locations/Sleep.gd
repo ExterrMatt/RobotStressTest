@@ -20,10 +20,12 @@ const ZOOM_DURATION: float = 0.35
 @onready var pillow: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/Pillow
 @onready var pillow_indented: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/PillowIndented
 @onready var pillow_slightly_indented: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/PillowSlightlyIndented
+@onready var end_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton
 
 var _grid_cell: Vector2i = Vector2i(1, 1)
 var _zoomed_in: bool = true
 var _blanket_removed := false
+var _has_robot_in_bed := false
 var _pan_tween: Tween = null
 var _zoom_tween: Tween = null
 
@@ -33,7 +35,11 @@ func _ready() -> void:
 	if bot_placeholder.has_method("set_head_interaction_enabled"):
 		bot_placeholder.set_head_interaction_enabled(false)
 
-	if GameState.equipped_limbs <= 0:
+	_has_robot_in_bed = GameState.equipped_limbs > 0
+	end_button.visible = _has_robot_in_bed
+	end_button.disabled = not _has_robot_in_bed
+
+	if not _has_robot_in_bed:
 		bot_placeholder.visible = false
 		bot_shadow_light.visible = false
 		bot_shadow_heavy.visible = false
@@ -205,9 +211,12 @@ func _on_bed_click_area_gui_input(event: InputEvent) -> void:
 		_blanket_removed = true
 		blanket.visible = false
 		blanket_bump.visible = false
-		if bot_placeholder.has_method("set_head_interaction_enabled"):
+		if _has_robot_in_bed and bot_placeholder.has_method("set_head_interaction_enabled"):
 			bot_placeholder.set_head_interaction_enabled(true)
 		return
+
+	if not _has_robot_in_bed:
+		finish()
 
 
 func _configure_head_hover_pillow_toggle() -> void:

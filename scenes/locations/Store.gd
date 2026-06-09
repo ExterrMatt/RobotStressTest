@@ -41,7 +41,7 @@ const SLOT_SIZE: Vector2 = Vector2(160, 160)
 
 ## Grid layout on the table surface.
 const GRID_COLUMNS: int = 3
-const GRID_ROWS: int = 2
+const GRID_ROWS: int = 3
 const GRID_H_SPACING: float = 180.0
 const GRID_V_SPACING: float = 175.0
 const GRID_BOTTOM_OFFSET: float = 120.0

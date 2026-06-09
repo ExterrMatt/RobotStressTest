@@ -1,10 +1,25 @@
 extends Control
 class_name WorkshopMinigame
 
-signal collected
+signal collected(part_id: String)
 
-@export var recipe_inputs: Dictionary = {
-	"scrap_metal": 1,
+const CRAFTABLE_PARTS: Dictionary = {
+	"leg": {
+		"display_name": "Leg",
+		"recipe": {"nanobots": 1, "scrap_metal": 1, "nuts_bolts": 1},
+	},
+	"arm": {
+		"display_name": "Arm",
+		"recipe": {"nanobots": 1},
+	},
+	"torso": {
+		"display_name": "Torso",
+		"recipe": {"electronics": 1},
+	},
+	"hand": {
+		"display_name": "Hand",
+		"recipe": {"synth_skin": 1},
+	},
 }
 
 const INGREDIENT_PATHS: Dictionary = {
@@ -39,6 +54,7 @@ var _passenger_offsets: Dictionary = {}
 var _active_drag_piece: WorkshopPiece = null
 
 var _crafted: bool = false
+var _crafted_part_id: String = ""
 
 var _shadow_group: CanvasGroup = null
 var _shadow_drawer: Control = null
@@ -90,14 +106,17 @@ func _ready() -> void:
 	craft_bin.contents_changed.connect(_refresh_craft_button)
 
 	craft_button.disabled = true
+	craft_button.text = "CRAFT"
 	collect_button.disabled = true
 	collect_button.visible = false
+	collect_button.text = "COLLECT"
 
 
 func _process(_delta: float) -> void:
 	# Force shadow drawer to redraw every frame so shadows follow smoothly while dragging
 	if is_instance_valid(_shadow_drawer):
 		_shadow_drawer.queue_redraw()
+	_sync_passenger_segments_to_active_drag()
 
 
 func _on_shadow_drawer_draw() -> void:
@@ -156,10 +175,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		if _active_drag_segment:
 			_active_drag_segment.update_drag(event.global_position)
-			var master_pos: Vector2 = _active_drag_segment.position
-			for passenger in _passenger_segments:
-				if passenger is WorkshopSegment and is_instance_valid(passenger):
-					passenger.position = master_pos + _passenger_offsets.get(passenger, Vector2.ZERO)
+			_sync_passenger_segments_to_active_drag()
 		elif _active_drag_piece:
 			_active_drag_piece.update_drag(event.global_position)
 
@@ -339,6 +355,15 @@ func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
 		_passenger_offsets[p] = p.position - segment.position
 
 
+func _sync_passenger_segments_to_active_drag() -> void:
+	if _active_drag_segment == null:
+		return
+	var master_pos: Vector2 = _active_drag_segment.position
+	for passenger in _passenger_segments:
+		if passenger is WorkshopSegment and is_instance_valid(passenger):
+			passenger.position = master_pos + _passenger_offsets.get(passenger, Vector2.ZERO)
+
+
 func _pick_up_piece(piece: WorkshopPiece, global_pos: Vector2) -> void:
 	_active_drag_piece = piece
 	if piece.get_parent() != self:
@@ -498,27 +523,54 @@ func _refresh_craft_button() -> void:
 	if _crafted:
 		craft_button.disabled = true
 		return
-	craft_button.disabled = not _bin_has_recipe()
+	var part_id := _matching_recipe_part_id()
+	craft_button.disabled = part_id == ""
+	craft_button.text = "CRAFT" if part_id == "" else "CRAFT %s" % _part_display_name(part_id).to_upper()
 
 
 func _bin_has_recipe() -> bool:
+	return _matching_recipe_part_id() != ""
+
+
+func _matching_recipe_part_id() -> String:
 	var counts: Dictionary = craft_bin.count_items()
-	for id_key in recipe_inputs:
-		var need: int = int(recipe_inputs[id_key])
-		var have: int = int(counts.get(String(id_key), 0))
-		if have < need:
+	for part_id in CRAFTABLE_PARTS:
+		var part_data: Dictionary = CRAFTABLE_PARTS[part_id]
+		var recipe: Dictionary = part_data.get("recipe", {})
+		if _counts_exactly_match_recipe(counts, recipe):
+			return String(part_id)
+	return ""
+
+
+func _counts_exactly_match_recipe(counts: Dictionary, recipe: Dictionary) -> bool:
+	for id_key in counts:
+		if int(counts[id_key]) > 0 and not recipe.has(String(id_key)):
+			return false
+	for id_key in recipe:
+		if int(counts.get(String(id_key), 0)) != int(recipe[id_key]):
 			return false
 	return true
 
 
+func _part_display_name(part_id: String) -> String:
+	var part_data: Dictionary = CRAFTABLE_PARTS.get(part_id, {})
+	return String(part_data.get("display_name", part_id))
+
+
 func _on_craft_pressed() -> void:
-	if _crafted or not _bin_has_recipe():
+	if _crafted:
+		return
+	var part_id := _matching_recipe_part_id()
+	if part_id == "":
 		return
 	_crafted = true
+	_crafted_part_id = part_id
 
-	for id_key in recipe_inputs:
+	var part_data: Dictionary = CRAFTABLE_PARTS.get(_crafted_part_id, {})
+	var recipe: Dictionary = part_data.get("recipe", {})
+	for id_key in recipe:
 		var id: String = String(id_key)
-		var need: int = int(recipe_inputs[id_key])
+		var need: int = int(recipe[id_key])
 		GameState.ingredients[id] = max(0, int(GameState.ingredients.get(id, 0)) - need)
 
 	craft_bin.clear_pieces()
@@ -527,7 +579,9 @@ func _on_craft_pressed() -> void:
 
 	_refresh_tray_counts()
 	craft_button.disabled = true
+	craft_button.text = "CRAFTED %s" % _part_display_name(_crafted_part_id).to_upper()
 	collect_button.visible = true
+	collect_button.text = "COLLECT %s" % _part_display_name(_crafted_part_id).to_upper()
 
 
 func _spawn_segments_stacked_at_bin_center() -> void:
@@ -670,7 +724,9 @@ func _refresh_collect_button() -> void:
 
 
 func _on_collect_pressed() -> void:
-	collected.emit()
+	if _crafted_part_id == "":
+		return
+	collected.emit(_crafted_part_id)
 
 
 # --- EDITOR HARVESTING ---

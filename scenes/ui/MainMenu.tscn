@@ -5,6 +5,10 @@
 [ext_resource type="Texture2D" uid="uid://batdb2pyq3mp2" path="res://assets/textures/characters/robot/main_menu_robot.png" id="3_2ysvc"]
 [ext_resource type="PackedScene" uid="uid://b63abf6sio50s" path="res://scenes/Scanlines.tscn" id="3_xpiny"]
 [ext_resource type="Texture2D" uid="uid://bt2ox7uqp6oy" path="res://assets/textures/icons/portrait_hud.png" id="4_xpiny"]
+[ext_resource type="Texture2D" uid="uid://b7pmudi6171gn" path="res://assets/textures/icons/solid_background.png" id="5_7mi0g"]
+[ext_resource type="Texture2D" uid="uid://bks3tu4eurv04" path="res://assets/textures/icons/title.png" id="5_title"]
+[ext_resource type="Script" uid="uid://cm0lmhrjqnsh8" path="res://scenes/ui/GlowingLabel.gd" id="6_glowing_label"]
+[ext_resource type="Texture2D" uid="uid://ic5aj4pu3bsr" path="res://assets/textures/icons/portrait_hud_big.png" id="8_nqjyj"]
 
 [node name="MainMenu" type="Control" unique_id=794610192]
 layout_mode = 3
@@ -72,18 +76,30 @@ theme_type_variation = &"HUDLabel"
 theme_override_font_sizes/font_size = 20
 text = "[ A GAME BY DRAGGINDRAGON ]"
 
-[node name="TitleLine1" type="Label" parent="UI/HBox/LeftColumn/Logo" unique_id=1380989661]
-unique_name_in_owner = true
+[node name="Control" type="Control" parent="UI/HBox/LeftColumn/Logo" unique_id=1370580128]
 layout_mode = 2
-theme_override_font_sizes/font_size = 88
-text = "SCREW LOOSE"
+
+[node name="TitleImage" type="TextureRect" parent="UI/HBox/LeftColumn/Logo" unique_id=1380989661]
+unique_name_in_owner = true
+texture_filter = 1
+custom_minimum_size = Vector2(640, 130)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("5_title")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="SubtitleLabel" type="Label" parent="UI/HBox/LeftColumn/Logo" unique_id=1261575460]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
+theme_override_colors/font_color = Color(1, 0.64, 0.26, 1)
 theme_override_font_sizes/font_size = 24
 text = "•  ROBOT STRESS-TEST PROTOCOL"
+script = ExtResource("6_glowing_label")
+glow_color = Color(1, 0.24, 0, 1)
+glow_radius_px = 34.0
+glow_strength = 1.7
 
 [node name="Spacer" type="Control" parent="UI/HBox/LeftColumn" unique_id=809946493]
 layout_mode = 2
@@ -106,8 +122,13 @@ theme_override_constants/separation = 18
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"HUDLabel"
+theme_override_colors/font_color = Color(0.55, 0.84, 1, 1)
 theme_override_font_sizes/font_size = 18
 text = "UP/DOWN NAVIGATE     ENTER SELECT     ESC BACK"
+script = ExtResource("6_glowing_label")
+glow_color = Color(0, 0.42, 1, 1)
+glow_radius_px = 34.0
+glow_strength = 1.7
 
 [node name="RightColumn" type="VBoxContainer" parent="UI/HBox" unique_id=1093341199]
 layout_mode = 2
@@ -123,11 +144,16 @@ alignment = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
+theme_override_colors/font_color = Color(0.55, 0.84, 1, 1)
 theme_override_font_sizes/font_size = 18
 text = "SUBJECT 07 // STATUS: DORMANT"
+script = ExtResource("6_glowing_label")
+glow_color = Color(0, 0.42, 1, 1)
+glow_radius_px = 34.0
+glow_strength = 1.7
 
 [node name="RobotFrame" type="PanelContainer" parent="UI/HBox/RightColumn" unique_id=774236696]
-self_modulate = Color(1, 1, 1, 0.4627451)
+self_modulate = Color(1, 1, 1, 0)
 clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -137,25 +163,66 @@ theme_type_variation = &"FrameOuter"
 [node name="Control" type="Control" parent="UI/HBox/RightColumn/RobotFrame" unique_id=249631452]
 layout_mode = 2
 
-[node name="RobotImage2" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control" unique_id=2091313544]
-layout_mode = 0
-offset_left = 175.0
-offset_top = 27.0
-offset_right = 329.0
-offset_bottom = 355.0
+[node name="PortraitStack" type="Control" parent="UI/HBox/RightColumn/RobotFrame/Control" unique_id=1674888997]
+anchors_preset = 0
+offset_left = 268.29
+offset_top = -2.13
+offset_right = 382.29
+offset_bottom = 121.87
 scale = Vector2(4.525, 4.525)
-pivot_offset = Vector2(76.5, 0)
+mouse_filter = 2
+
+[node name="background" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control/PortraitStack" unique_id=1738755916]
+self_modulate = Color(0, 0.28627452, 0, 0.13725491)
+layout_mode = 0
+offset_left = -59.43094
+offset_top = 2.8729286
+offset_right = 54.56906
+offset_bottom = 126.87294
+scale = Vector2(0.9581613, 0.9581602)
+pivot_offset = Vector2(57, 0)
+mouse_filter = 2
+texture = ExtResource("5_7mi0g")
+
+[node name="PortraitClip" type="Control" parent="UI/HBox/RightColumn/RobotFrame/Control/PortraitStack" unique_id=339088733]
+clip_contents = true
+anchors_preset = 0
+offset_left = -59.44751
+offset_right = 54.55249
+offset_bottom = 124.0
+mouse_filter = 2
+
+[node name="RobotImage2" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control/PortraitStack/PortraitClip" unique_id=2091313544]
+layout_mode = 0
+offset_left = -20.62
+offset_top = 3.7880688
+offset_right = 133.38
+offset_bottom = 331.78806
+scale = Vector2(1.049, 1.049)
+pivot_offset = Vector2(77, 0)
+mouse_filter = 2
 texture = ExtResource("3_2ysvc")
 stretch_mode = 5
 
-[node name="TextureRect" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control/RobotImage2" unique_id=433524803]
+[node name="PortraitHud" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control/PortraitStack" unique_id=433524803]
+visible = false
 layout_mode = 0
-offset_left = 20.619
-offset_top = -6.437
-offset_right = 134.619
-offset_bottom = 117.563
-scale = Vector2(1.001, 1.001)
+offset_left = -59.43094
+offset_right = 54.56906
+offset_bottom = 124.0
+pivot_offset = Vector2(57, 0)
+mouse_filter = 2
 texture = ExtResource("4_xpiny")
+
+[node name="PortraitHudBig" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control/PortraitStack" unique_id=2111451434]
+layout_mode = 0
+offset_left = -87.70166
+offset_right = 140.29834
+offset_bottom = 248.0
+scale = Vector2(0.5, 0.5)
+pivot_offset = Vector2(57, 0)
+mouse_filter = 2
+texture = ExtResource("8_nqjyj")
 
 [node name="BuildInfo" type="VBoxContainer" parent="UI/HBox/RightColumn" unique_id=2038652137]
 layout_mode = 2
@@ -165,17 +232,27 @@ alignment = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
+theme_override_colors/font_color = Color(1, 0.64, 0.26, 1)
 theme_override_font_sizes/font_size = 18
 text = "v0.1.0 // IN DEVELOPMENT"
 horizontal_alignment = 2
+script = ExtResource("6_glowing_label")
+glow_color = Color(1, 0.24, 0, 1)
+glow_radius_px = 34.0
+glow_strength = 1.7
 
 [node name="StudioLabel" type="Label" parent="UI/HBox/RightColumn/BuildInfo" unique_id=211393971]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
+theme_override_colors/font_color = Color(1, 0.64, 0.26, 1)
 theme_override_font_sizes/font_size = 16
 text = "DO NOT DISTRIBUTE >:("
 horizontal_alignment = 2
+script = ExtResource("6_glowing_label")
+glow_color = Color(1, 0.24, 0, 1)
+glow_radius_px = 34.0
+glow_strength = 1.7
 
 [node name="ScanlineLayer" type="CanvasLayer" parent="." unique_id=2059562072]
 layer = 10

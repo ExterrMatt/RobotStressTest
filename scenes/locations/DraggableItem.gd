@@ -24,6 +24,8 @@ class_name DraggableItem
 ## "gear", "arc", "tri", "tess".
 @export var item_id: StringName = &""
 
+const CENTER_ON_GRAB_DURATION: float = 0.05
+
 ## Emitted when the player clicks-and-holds this item. The WorkInventory
 ## listens so it knows which item is currently being dragged.
 signal drag_started(item: DraggableItem)
@@ -44,6 +46,7 @@ var _dragging: bool = false
 ## click. We preserve this while dragging so the sprite doesn't "jump" to
 ## center itself under the cursor.
 var _grab_offset: Vector2 = Vector2.ZERO
+var _grab_offset_tween: Tween = null
 
 
 func _ready() -> void:
@@ -64,6 +67,7 @@ func _gui_input(event: InputEvent) -> void:
 			_dragging = true
 			# Remember where on the sprite the player grabbed.
 			_grab_offset = get_local_mouse_position()
+			_slide_grab_offset_to_center()
 			drag_started.emit(self)
 			# Eat the event so it doesn't bubble.
 			accept_event()
@@ -88,6 +92,7 @@ func end_drag(release_global_pos: Vector2) -> void:
 	if not _dragging:
 		return
 	_dragging = false
+	_kill_grab_offset_tween()
 	drag_released.emit(self, release_global_pos)
 
 
@@ -99,6 +104,8 @@ func is_dragging() -> bool:
 func snap_home() -> void:
 	if home_slot == null:
 		return
+	_dragging = false
+	_kill_grab_offset_tween()
 	var target: Vector2 = _target_position_in(home_slot)
 	# Reparent under the home slot if we got moved during the drag.
 	if get_parent() != home_slot:
@@ -112,6 +119,7 @@ func snap_home() -> void:
 ## reparents to `slot`, and positions us centered inside it.
 func place_in(slot: Control) -> void:
 	_dragging = false
+	_kill_grab_offset_tween()
 	if get_parent() != slot:
 		_reparent_keeping_global(slot)
 	position = _target_position_in(slot)
@@ -123,6 +131,19 @@ func place_in(slot: Control) -> void:
 ## inside the slot.
 func _target_position_in(slot: Control) -> Vector2:
 	return (slot.size - size) * 0.5
+
+
+func _slide_grab_offset_to_center() -> void:
+	_kill_grab_offset_tween()
+	_grab_offset_tween = create_tween()
+	_grab_offset_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_grab_offset_tween.tween_property(self, "_grab_offset", size * 0.5, CENTER_ON_GRAB_DURATION)
+
+
+func _kill_grab_offset_tween() -> void:
+	if _grab_offset_tween and _grab_offset_tween.is_valid():
+		_grab_offset_tween.kill()
+	_grab_offset_tween = null
 
 
 ## Move this node under `new_parent` without visually jumping. We compute

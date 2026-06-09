@@ -12,6 +12,48 @@ const ANIMATION_PHASE_NONE: String = ""
 const ANIMATION_PHASE_INTRO: String = "intro"
 const ANIMATION_PHASE_LOOP: String = "loop"
 
+const TORSO_PART_PATHS: Array[NodePath] = [
+	^"Torso",
+	^"BoobCover",
+	^"AnimationLayers/Torso",
+	^"AnimationLayers/Nipples",
+	^"AnimationLayers/Torso/Nipples",
+	^"AnimationLayers/MouthBLoopMedium/Torso",
+	^"AnimationLayers/MouthBLoopMedium/Nipples",
+]
+const LEFT_ARM_PART_PATHS: Array[NodePath] = [
+	^"Arms/LeftArm",
+	^"AnimationArmLayers/LeftArm",
+	^"AnimationArmLayers/MouthBLoopMedium/LeftArm",
+]
+const RIGHT_ARM_PART_PATHS: Array[NodePath] = [
+	^"Arms/RightArm",
+	^"AnimationArmLayers/RightArm",
+	^"AnimationArmLayers/MouthBLoopMedium/RightArm",
+]
+const LEFT_HAND_PART_PATHS: Array[NodePath] = [
+	^"Hands/LeftPalmUp",
+	^"Hands/LeftOpenFingers",
+	^"Hands/LeftFlexedFingers",
+]
+const RIGHT_HAND_PART_PATHS: Array[NodePath] = [
+	^"Hands/RightPalmUp",
+	^"Hands/RightOpenFingers",
+	^"Hands/RightFlexedFingers",
+]
+const LEFT_LEG_PART_PATHS: Array[NodePath] = [
+	^"Legs/LeftLeg",
+	^"Legs/LeftLegSlightlyOut",
+	^"Legs/LeftLegUpThigh",
+	^"Legs/LeftLegUpShin",
+]
+const RIGHT_LEG_PART_PATHS: Array[NodePath] = [
+	^"Legs/RightLeg",
+	^"Legs/RightLegSlightlyOut",
+	^"Legs/RightLegUpThigh",
+	^"Legs/RightLegUpShin",
+]
+
 @export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox"]:
 	set(value):
 		hover_box_paths = value
@@ -47,6 +89,7 @@ func _ready() -> void:
 	_sync_animation_layers_to_robot_size()
 	if not resized.is_connected(_on_resized):
 		resized.connect(_on_resized)
+	_connect_robot_part_state()
 	set_process(true)
 
 
@@ -108,6 +151,8 @@ func toggle_pelvis_pose() -> void:
 	if box == null:
 		box = _find_toggle_hover_box()
 	if box != null:
+		if not _is_hover_box_available(box):
+			return
 		_toggle_box_effect(box)
 
 
@@ -115,8 +160,9 @@ func set_head_interaction_enabled(value: bool) -> void:
 	_interaction_enabled = value
 	for box in _hover_boxes:
 		if box != null and is_instance_valid(box):
-			box.visible = value
-			if not value and box.has_method("set_hovered"):
+			var visible_value := value and _is_hover_box_available(box)
+			box.visible = visible_value
+			if not visible_value and box.has_method("set_hovered"):
 				box.call("set_hovered", false)
 
 
@@ -126,6 +172,22 @@ func set_interaction_enabled(value: bool) -> void:
 
 func _on_resized() -> void:
 	_sync_animation_layers_to_robot_size()
+
+
+func _connect_robot_part_state() -> void:
+	if Engine.is_editor_hint():
+		return
+	var state := get_node_or_null("/root/GameState")
+	if state == null or not state.has_signal("robot_parts_changed"):
+		return
+	var changed_callable := Callable(self, "_on_robot_parts_changed")
+	if not state.is_connected("robot_parts_changed", changed_callable):
+		state.connect("robot_parts_changed", changed_callable)
+
+
+func _on_robot_parts_changed(_parts: Dictionary) -> void:
+	_update_hover_boxes()
+	_apply_visibility_state()
 
 
 func _sync_animation_layers_to_robot_size() -> void:
@@ -183,6 +245,7 @@ func _rebuild_visibility_cache() -> void:
 	_managed_paths.clear()
 	_base_visibility.clear()
 	_add_managed_paths(always_hidden_image_paths)
+	_add_robot_part_managed_paths()
 	_add_managed_path(animation_layers_path)
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -238,8 +301,11 @@ func _update_hover_boxes() -> void:
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
 			continue
-		box.visible = _interaction_enabled
-		if not _interaction_enabled:
+		var box_available := _is_hover_box_available(box)
+		box.visible = _interaction_enabled and box_available
+		if not _interaction_enabled or not box_available:
+			if box.has_method("set_hovered"):
+				box.call("set_hovered", false)
 			continue
 		var force_box_visible := bool(box.get("force_visible"))
 		var hovered := force_box_visible or box.get_global_rect().has_point(get_global_mouse_position())
@@ -254,6 +320,8 @@ func _find_clicked_hover_box(global_position: Vector2) -> Control:
 	)
 	for box in boxes:
 		if box == null or not is_instance_valid(box):
+			continue
+		if not _is_hover_box_available(box):
 			continue
 		if not box.visible or not box.is_visible_in_tree():
 			continue
@@ -379,6 +447,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 
 	_apply_animation_parent_visibility(resolved)
 	_apply_always_hidden_to_dictionary(resolved)
+	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_resolved_visibility(resolved)
 
 
@@ -427,6 +496,60 @@ func _apply_animation_parent_visibility(resolved: Dictionary) -> void:
 func _apply_always_hidden_to_dictionary(resolved: Dictionary) -> void:
 	for path in always_hidden_image_paths:
 		resolved[path] = false
+
+
+func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
+	_apply_paths_available(resolved, TORSO_PART_PATHS, _robot_part_count("torso") >= 1)
+
+	var arm_count := _robot_part_count("arm")
+	_apply_paths_available(resolved, LEFT_ARM_PART_PATHS, arm_count >= 1)
+	_apply_paths_available(resolved, RIGHT_ARM_PART_PATHS, arm_count >= 2)
+
+	var hand_count := _robot_part_count("hand")
+	_apply_paths_available(resolved, LEFT_HAND_PART_PATHS, hand_count >= 1)
+	_apply_paths_available(resolved, RIGHT_HAND_PART_PATHS, hand_count >= 2)
+
+	var leg_count := _robot_part_count("leg")
+	_apply_paths_available(resolved, LEFT_LEG_PART_PATHS, leg_count >= 1)
+	_apply_paths_available(resolved, RIGHT_LEG_PART_PATHS, leg_count >= 2)
+
+
+func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], available: bool) -> void:
+	if available:
+		return
+	for path in paths:
+		resolved[path] = false
+
+
+func _add_robot_part_managed_paths() -> void:
+	_add_managed_paths(TORSO_PART_PATHS)
+	_add_managed_paths(LEFT_ARM_PART_PATHS)
+	_add_managed_paths(RIGHT_ARM_PART_PATHS)
+	_add_managed_paths(LEFT_HAND_PART_PATHS)
+	_add_managed_paths(RIGHT_HAND_PART_PATHS)
+	_add_managed_paths(LEFT_LEG_PART_PATHS)
+	_add_managed_paths(RIGHT_LEG_PART_PATHS)
+
+
+func _robot_part_count(id: String) -> int:
+	if Engine.is_editor_hint():
+		return 2
+	var state := get_node_or_null("/root/GameState")
+	if state == null:
+		return 0
+	if state.has_method("get_robot_part_count"):
+		return int(state.call("get_robot_part_count", id))
+	if id == "leg":
+		return int(state.get("equipped_limbs"))
+	return 0
+
+
+func _is_hover_box_available(box: Control) -> bool:
+	if box == null or not is_instance_valid(box):
+		return false
+	if box.name == "PelvisHoverBox":
+		return _robot_part_count("torso") >= 1
+	return true
 
 
 func _enforce_always_hidden_paths() -> void:

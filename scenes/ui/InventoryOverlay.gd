@@ -24,11 +24,16 @@ const TEXTURE_PATHS: Dictionary = {
 	"oil": "res://assets/textures/icons/oil.png",
 	"sneaky_shoes": "res://assets/textures/icons/sneaky_shoes.png",
 	"leg": "res://assets/textures/icons/leg.png",
+	"arm": "res://assets/textures/icons/placeholder_item.png",
+	"torso": "res://assets/textures/icons/placeholder_item.png",
+	"head": "res://assets/textures/icons/placeholder_item.png",
+	"hand": "res://assets/textures/icons/placeholder_item.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
 	"electric_prod": "res://assets/textures/icons/electric_prod.png",
 	"foam_spray": "res://assets/textures/icons/foam_spray.png",
+	"welding_gun": "res://assets/textures/icons/welding_gun.png",
 }
 
 const PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/icons/placeholder_item.png"
@@ -48,10 +53,15 @@ const DISPLAY_NAMES: Dictionary = {
 	"oil": "Oil",
 	"sneaky_shoes": "Sneaky Shoes",
 	"leg": "Leg",
+	"arm": "Arm",
+	"torso": "Torso",
+	"head": "Head",
+	"hand": "Hand",
 	"screwdriver": "Screwdriver",
 	"crank": "Crank",
 	"electric_prod": "Electric Prod",
 	"foam_spray": "Foam Spray",
+	"welding_gun": "Welding Gun",
 }
 
 const TILE_SIZE: Vector2 = Vector2(72, 72)
@@ -129,14 +139,19 @@ func _collect_entries() -> Array:
 			"name": _display_name(id),
 			"count": count,
 			"texture": _load_texture_for(id),
+			"kind": "ingredient",
 		})
 
-	if GameState.equipped_limbs > 0:
+	for id in GameState.ROBOT_PART_IDS:
+		var part_count: int = GameState.get_robot_part_count(id)
+		if part_count <= 0:
+			continue
 		out.append({
-			"id": "leg",
-			"name": _display_name("leg"),
-			"count": GameState.equipped_limbs,
-			"texture": _load_texture_for("leg"),
+			"id": id,
+			"name": _display_name(id),
+			"count": part_count,
+			"texture": _load_texture_for(id),
+			"kind": "robot_part",
 		})
 
 	for id in GameState.owned_tools:
@@ -147,6 +162,7 @@ func _collect_entries() -> Array:
 			"name": _display_name(id),
 			"count": 1,
 			"texture": _load_texture_for(id),
+			"kind": "tool",
 		})
 
 	return out
@@ -196,7 +212,7 @@ func _build_tile(entry: Dictionary) -> Panel:
 	# Hidden when count is 1 AND the entry is a tool (looks cleaner that way),
 	# but we still show "1" for ingredients in case the player has exactly one.
 	var count: int = int(entry.get("count", 1))
-	if count > 1 or not (entry["id"] in GameState.owned_tools):
+	if count > 1 or String(entry.get("kind", "")) != "tool":
 		var badge := Label.new()
 		badge.text = str(count)
 		badge.anchor_left = 1.0

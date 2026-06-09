@@ -39,6 +39,14 @@ const PHASE_BACKGROUNDS: Dictionary = {
 	1: preload("res://assets/textures/backgrounds/bedroom_evening.png"),
 	2: preload("res://assets/textures/backgrounds/bedroom_night.png"),
 }
+const DISABLED_LOCATION_IDS: Dictionary = {
+	&"maintenance": true,
+}
+const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
+	"Laptop",
+]
+const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
+const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
 
 const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryOverlay.tscn")
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
@@ -104,6 +112,7 @@ const ANIM_EASE: int = Tween.EASE_IN_OUT
 var _locations: Array[LocationData] = []
 var _current_location_node: Node = null
 var _current_location_fullscreen: bool = false
+var _current_location_id: StringName = &""
 var _default_scene_image: Texture2D
 ## Toggle for the alternate teacher portrait (e.g., Health.png → Health2.png).
 ## Flipped with the X key. Persists across teachers within a session.
@@ -356,8 +365,13 @@ func _debug_give_all_items() -> void:
 	for id in GameState.ingredients.keys():
 		GameState.ingredients[id] = 99
 
-	GameState.equipped_limbs = 99
+	GameState.set_all_robot_parts(99)
+	GameState.unlock_tool("electric_prod")
+	GameState.unlock_tool("screwdriver")
+	GameState.unlock_tool("welding_gun")
 	GameState.unlock_tool("sneaky_shoes")
+	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
+		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: inventory set to 99 of all items[/color]")
 
 
@@ -365,7 +379,7 @@ func _debug_clear_inventory() -> void:
 	for id in GameState.ingredients.keys():
 		GameState.ingredients[id] = 0
 
-	GameState.equipped_limbs = 0
+	GameState.set_all_robot_parts(0)
 	GameState.owned_tools = ["mouth", "hand"]
 	GameState.purchased_today.clear()
 	GameState.purchased_today_changed.emit(GameState.purchased_today)
@@ -436,6 +450,8 @@ func _show_selection_screen() -> void:
 			continue
 		var btn := _build_location_button(loc)
 		location_grid.add_child(btn)
+	for label in _disabled_bedroom_options_for_phase(GameState.phase):
+		location_grid.add_child(_build_disabled_location_button(label))
 
 	# First load: no transition (nothing to wipe from).
 	if not _has_shown_initial:
@@ -456,6 +472,7 @@ func _apply_selection_screen_swap(animate_slide: bool = true) -> void:
 		_current_location_node.queue_free()
 		_current_location_node = null
 	_current_location_fullscreen = false
+	_current_location_id = &""
 
 	var swap_visuals := func():
 		selection_screen.visible = true
@@ -486,8 +503,30 @@ func _build_location_button(loc: LocationData) -> Button:
 	if loc.icon:
 		btn.icon = loc.icon
 		btn.expand_icon = true
-	btn.pressed.connect(_on_location_picked.bind(loc))
+	btn.disabled = _is_location_disabled(loc)
+	if not btn.disabled:
+		btn.pressed.connect(_on_location_picked.bind(loc))
 	return btn
+
+
+func _build_disabled_location_button(label: String) -> Button:
+	var btn := Button.new()
+	btn.text = label.to_upper()
+	btn.custom_minimum_size = Vector2(0, 80)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.add_theme_font_size_override("font_size", 58)
+	btn.disabled = true
+	return btn
+
+
+func _is_location_disabled(loc: LocationData) -> bool:
+	return DISABLED_LOCATION_IDS.has(loc.id)
+
+
+func _disabled_bedroom_options_for_phase(phase: int) -> Array[String]:
+	if phase == DayCycle.Phase.EVENING:
+		return EVENING_DISABLED_BEDROOM_OPTIONS
+	return []
 
 
 func _on_location_picked(loc: LocationData) -> void:
@@ -515,6 +554,7 @@ func _on_location_picked(loc: LocationData) -> void:
 func _apply_location_pick_swap(loc: LocationData, packed: PackedScene, animate_slide: bool = true) -> void:
 	_current_location_node = packed.instantiate()
 	_current_location_fullscreen = loc.fullscreen_scene
+	_current_location_id = loc.id
 	location_host.add_child(_current_location_node)
 
 	if _current_location_node.has_signal("finished"):
@@ -868,12 +908,30 @@ func _is_any_transition_playing() -> bool:
 # --- result handling ---
 
 func _on_location_finished(result: Dictionary) -> void:
+	result = _apply_skipped_stress_test_penalty(result)
 	_apply_result(result)
 
 	if result.get("skip_advance", false):
 		_show_selection_screen()
 	else:
 		DayCycle.advance_phase()
+
+
+func _apply_skipped_stress_test_penalty(result: Dictionary) -> Dictionary:
+	if not _should_apply_skipped_stress_test_penalty(result):
+		return result
+
+	var penalized_result := result.duplicate()
+	penalized_result["anger_delta"] = int(penalized_result.get("anger_delta", 0)) + SKIPPED_STRESS_TEST_ANGER_DELTA
+	return penalized_result
+
+
+func _should_apply_skipped_stress_test_penalty(result: Dictionary) -> bool:
+	if result.get("skip_advance", false):
+		return false
+	if GameState.phase != DayCycle.Phase.NIGHT:
+		return false
+	return _current_location_id != STRESS_TEST_LOCATION_ID
 
 
 func _apply_result(result: Dictionary) -> void:
@@ -888,8 +946,9 @@ func _apply_result(result: Dictionary) -> void:
 
 	for ing_id in ingredients:
 		var amt: int = ingredients[ing_id]
-		if String(ing_id) == "leg":
-			GameState.equipped_limbs = max(0, GameState.equipped_limbs + amt)
+		var item_id := String(ing_id)
+		if GameState.is_robot_part_id(item_id):
+			GameState.add_robot_part(item_id, amt)
 			continue
 		GameState.add_ingredient(ing_id, amt)
 

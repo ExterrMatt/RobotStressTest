@@ -17,3 +17,11 @@ res://scenes/Scanlines.tscn
 res://shaders/scanlines.gdshader
 res://autoload/GameState.gd
 res://scenes/ui/MainMenu.tscn
+res://scenes/locations/DraggableItem.gd
+res://scenes/locations/WorkshopMinigame.gd
+res://scenes/locations/WorkshopPiece.gd
+res://scenes/locations/WorkshopSegment.gd
+res://scenes/locations/LocationBase.gd
+res://scenes/locations/Sleep.gd
+res://scenes/locations/Store.gd
+res://scenes/ui/InventoryOverlay.gd

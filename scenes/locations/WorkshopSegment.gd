@@ -14,6 +14,8 @@ class_name WorkshopSegment
 ## independent: moving one does not move the other.
 
 
+const CENTER_ON_GRAB_DURATION: float = 0.05
+
 @export var segment_id: StringName = &""
 
 ## True once placed on its goal. Locked segments ignore clicks.
@@ -62,10 +64,17 @@ var pair_partners: Array = []
 # --- Drag state ---
 var _dragging: bool = false
 var _grab_offset: Vector2 = Vector2.ZERO
+var _last_drag_global_pos: Vector2 = Vector2.ZERO
+var _grab_offset_tween: Tween = null
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+
+func _process(_delta: float) -> void:
+	if _dragging:
+		_apply_drag_position()
 
 
 func _draw() -> void:
@@ -98,21 +107,46 @@ func hit_test(global_pos: Vector2) -> bool:
 
 func start_drag(global_pos: Vector2) -> void:
 	_dragging = true
+	_last_drag_global_pos = global_pos
 	_grab_offset = global_pos - global_position
+	_slide_grab_offset_to_center()
 
 
 func update_drag(global_pos: Vector2) -> void:
 	if not _dragging:
 		return
-	global_position = global_pos - _grab_offset
+	_last_drag_global_pos = global_pos
+	_apply_drag_position()
 
 
 func end_drag() -> void:
 	_dragging = false
+	_kill_grab_offset_tween()
 
 
 func is_dragging() -> bool:
 	return _dragging
+
+
+func _apply_drag_position() -> void:
+	global_position = _last_drag_global_pos - _grab_offset
+
+
+func _slide_grab_offset_to_center() -> void:
+	_kill_grab_offset_tween()
+	_grab_offset_tween = create_tween()
+	_grab_offset_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_grab_offset_tween.tween_property(self, "_grab_offset", _global_center_offset(), CENTER_ON_GRAB_DURATION)
+
+
+func _global_center_offset() -> Vector2:
+	return get_global_transform() * _effective_local_hitbox().get_center() - global_position
+
+
+func _kill_grab_offset_tween() -> void:
+	if _grab_offset_tween and _grab_offset_tween.is_valid():
+		_grab_offset_tween.kill()
+	_grab_offset_tween = null
 
 
 # -----------------------------------------------------------------------------
