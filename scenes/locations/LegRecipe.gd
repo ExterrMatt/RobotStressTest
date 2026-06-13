@@ -8,7 +8,7 @@ class_name LegRecipe
 ##
 ## Inputs match GameState.ingredients keys exactly:
 ##   "scrap_metal", "nuts_bolts", "nanobots", "electronics", "synth_skin",
-##   "oil", "sneaky_shoes"
+##   "oil"
 
 @export var inputs: Dictionary = {
 	"nanobots": 1,

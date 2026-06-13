@@ -13,7 +13,11 @@ const ANIMATION_PHASE_INTRO: String = "intro"
 const ANIMATION_PHASE_LOOP: String = "loop"
 
 const TORSO_PART_PATHS: Array[NodePath] = [
-	^"Torso",
+	^"Torso/TorsoNeckBack",
+	^"Torso/TorsoBase",
+	^"Torso/TorsoSkin",
+	^"Torso/Nipples",
+	^"Torso/TorsoCrunch",
 	^"BoobCover",
 	^"AnimationLayers/Torso",
 	^"AnimationLayers/Nipples",
@@ -54,7 +58,7 @@ const RIGHT_LEG_PART_PATHS: Array[NodePath] = [
 	^"Legs/RightLegUpShin",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox"]:
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()

@@ -23,6 +23,9 @@ signal robot_parts_changed(parts: Dictionary)
 const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
 const ARREST_THRESHOLD: int = 100  # tweak later; suspicion at/above this triggers arrest event
+const LEGACY_TOOL_ID_MAP: Dictionary = {
+	"electric_prod": "taser",
+}
 
 # --- core scalars ---
 var _day: int = 1
@@ -103,7 +106,6 @@ var ingredients: Dictionary = {
 	"electronics": 0,
 	"nanobots": 0,
 	"oil": 0,
-	"sneaky_shoes": 0,
 }
 
 # --- unlocked skills (string IDs from design doc) ---
@@ -255,12 +257,27 @@ func unlock_skill(skill_id: String) -> void:
 # --- tools ---
 
 func has_tool(tool_id: String) -> bool:
+	tool_id = _normalized_tool_id(tool_id)
 	return tool_id in owned_tools
 
 
 func unlock_tool(tool_id: String) -> void:
+	tool_id = _normalized_tool_id(tool_id)
 	if tool_id not in owned_tools:
 		owned_tools.append(tool_id)
+
+
+func _normalized_tool_id(tool_id: String) -> String:
+	return String(LEGACY_TOOL_ID_MAP.get(tool_id, tool_id))
+
+
+func _normalize_owned_tools() -> void:
+	var normalized: Array[String] = []
+	for tool_id in owned_tools:
+		var normalized_id := _normalized_tool_id(tool_id)
+		if normalized_id not in normalized:
+			normalized.append(normalized_id)
+	owned_tools = normalized
 
 
 # --- daily purchases ---
@@ -320,7 +337,12 @@ func from_dict(data: Dictionary) -> void:
 		robot_parts["leg"] = equipped_limbs
 	_sync_legacy_limb_count()
 	ingredients = data.get("ingredients", {}).duplicate()
+	var had_legacy_sneaky_shoes: bool = int(ingredients.get("sneaky_shoes", 0)) > 0
+	ingredients.erase("sneaky_shoes")
 	skills.assign(data.get("skills", []))
 	owned_tools.assign(data.get("owned_tools", ["mouth", "hand"]))
+	_normalize_owned_tools()
+	if had_legacy_sneaky_shoes:
+		unlock_tool("sneaky_shoes")
 	purchased_today.assign(data.get("purchased_today", []))
 	_emit_initial_state()

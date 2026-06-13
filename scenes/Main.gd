@@ -268,7 +268,9 @@ func _handle_debug_number_shortcut(key_event: InputEventKey) -> bool:
 		1, 2, 3:
 			_debug_jump_for_phase_number(number, key_event.shift_pressed, key_event.ctrl_pressed)
 		4:
-			_debug_give_all_items()
+			if not key_event.shift_pressed:
+				_debug_give_all_items()
+			_debug_give_money()
 		5:
 			_debug_clear_inventory()
 	return true
@@ -366,13 +368,18 @@ func _debug_give_all_items() -> void:
 		GameState.ingredients[id] = 99
 
 	GameState.set_all_robot_parts(99)
-	GameState.unlock_tool("electric_prod")
+	GameState.unlock_tool("taser")
 	GameState.unlock_tool("screwdriver")
 	GameState.unlock_tool("welding_gun")
 	GameState.unlock_tool("sneaky_shoes")
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: inventory set to 99 of all items[/color]")
+
+
+func _debug_give_money() -> void:
+	GameState.add_money(1000)
+	_log("[color=#88ff88]Debug: +$1000[/color]")
 
 
 func _debug_clear_inventory() -> void:

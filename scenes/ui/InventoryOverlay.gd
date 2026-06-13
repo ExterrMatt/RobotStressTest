@@ -7,8 +7,6 @@ class_name InventoryOverlay
 ##   - Ingredients with counts > 0 (scrap_metal, electronics, etc).
 ##   - Tools the player owns (excluding the defaults "mouth" and "hand"
 ##     which everyone always has — they'd just be noise).
-##   - Any future store-bought gadgets stored in GameState.ingredients
-##     (e.g. sneaky_shoes is currently stored there as a stacking item).
 ##
 ## Items render as Minecraft-style hotbar tiles anchored to the bottom-right
 ## of the viewport: sprite + count badge per tile.
@@ -24,14 +22,15 @@ const TEXTURE_PATHS: Dictionary = {
 	"oil": "res://assets/textures/icons/oil.png",
 	"sneaky_shoes": "res://assets/textures/icons/sneaky_shoes.png",
 	"leg": "res://assets/textures/icons/leg.png",
-	"arm": "res://assets/textures/icons/placeholder_item.png",
+	"arm": "res://assets/textures/icons/arm.png",
 	"torso": "res://assets/textures/icons/placeholder_item.png",
 	"head": "res://assets/textures/icons/placeholder_item.png",
 	"hand": "res://assets/textures/icons/placeholder_item.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
-	"electric_prod": "res://assets/textures/icons/electric_prod.png",
+	"electric_prod": "res://assets/textures/icons/taser.png",
+	"taser": "res://assets/textures/icons/taser.png",
 	"foam_spray": "res://assets/textures/icons/foam_spray.png",
 	"welding_gun": "res://assets/textures/icons/welding_gun.png",
 }
@@ -59,7 +58,8 @@ const DISPLAY_NAMES: Dictionary = {
 	"hand": "Hand",
 	"screwdriver": "Screwdriver",
 	"crank": "Crank",
-	"electric_prod": "Electric Prod",
+	"electric_prod": "Taser",
+	"taser": "Taser",
 	"foam_spray": "Foam Spray",
 	"welding_gun": "Welding Gun",
 }

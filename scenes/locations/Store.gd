@@ -31,6 +31,10 @@ extends LocationBase
 ## beyond that are silently dropped.
 @export var items: Array[StoreItemData] = []
 
+## The first entries in `items` that are always displayed. One additional
+## item is chosen daily from the remaining entries and shown in the next slot.
+@export_range(0, 8, 1) var fixed_visible_item_count: int = 5
+
 
 ## Fallback sprite used when an item has no texture set (or when the
 ## configured texture failed to load).
@@ -152,8 +156,9 @@ func _build_grid() -> void:
 	if rect_size == Vector2.ZERO:
 		rect_size = Vector2(800, 200)
 
-	for i in items.size():
-		var item: StoreItemData = items[i]
+	var visible_items := _daily_visible_items()
+	for i in visible_items.size():
+		var item: StoreItemData = visible_items[i]
 		if item == null:
 			continue
 
@@ -171,6 +176,81 @@ func _build_grid() -> void:
 		_slot_by_id[String(item.id)] = slot
 		_slot_hits.append({"slot": slot, "item": item})
 		_refresh_slot(String(item.id))
+
+
+func _daily_visible_items() -> Array[StoreItemData]:
+	var visible_items: Array[StoreItemData] = []
+	var fixed_count: int = mini(fixed_visible_item_count, items.size())
+	for i in fixed_count:
+		var item: StoreItemData = items[i]
+		if item != null:
+			visible_items.append(item)
+
+	var lottery_items: Array[StoreItemData] = []
+	for i in range(fixed_count, items.size()):
+		var item: StoreItemData = items[i]
+		if item != null and _is_lottery_item_available(item):
+			lottery_items.append(item)
+
+	if not lottery_items.is_empty():
+		visible_items.append(_daily_lottery_item(lottery_items))
+
+	return visible_items
+
+
+func _daily_lottery_item(lottery_items: Array[StoreItemData]) -> StoreItemData:
+	var selected_id := ""
+	var previous_id := ""
+	var day_count: int = maxi(1, GameState.day)
+	for day in range(1, day_count + 1):
+		selected_id = _daily_lottery_item_id_for_day(lottery_items, day, previous_id)
+		previous_id = selected_id
+
+	for item in lottery_items:
+		if item != null and String(item.id) == selected_id:
+			return item
+
+	return lottery_items[0]
+
+
+func _daily_lottery_item_id_for_day(
+	lottery_items: Array[StoreItemData],
+	day: int,
+	previous_id: String
+) -> String:
+	var candidates: Array[StoreItemData] = []
+	for item in lottery_items:
+		if item == null:
+			continue
+		if lottery_items.size() > 1 and String(item.id) == previous_id:
+			continue
+		candidates.append(item)
+
+	if candidates.is_empty():
+		return ""
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("store_daily_lottery_%d" % day)
+	var selected: StoreItemData = candidates[rng.randi_range(0, candidates.size() - 1)]
+	return String(selected.id)
+
+
+func _is_lottery_item_available(item: StoreItemData) -> bool:
+	if item == null:
+		return false
+	var item_id := String(item.id)
+	if item_id == "":
+		return false
+	return not (item.is_tool and GameState.has_tool(item_id))
+
+
+func _has_available_lottery_items() -> bool:
+	var fixed_count: int = mini(fixed_visible_item_count, items.size())
+	for i in range(fixed_count, items.size()):
+		var item: StoreItemData = items[i]
+		if _is_lottery_item_available(item):
+			return true
+	return false
 
 
 ## Build one item's slot — a Control containing the shadow (behind) and
@@ -222,6 +302,9 @@ func _build_slot(item: StoreItemData, center: Vector2) -> Control:
 func _resolve_item_texture(item: StoreItemData) -> Texture2D:
 	if item.texture:
 		return item.texture
+	var icon_path := "res://assets/textures/icons/%s.png" % String(item.id)
+	if ResourceLoader.exists(icon_path):
+		return load(icon_path)
 	if ResourceLoader.exists(PLACEHOLDER_TEXTURE_PATH):
 		return load(PLACEHOLDER_TEXTURE_PATH)
 	push_warning("Store: item %s has no texture and placeholder %s is missing." % [
@@ -233,9 +316,13 @@ func _resolve_item_texture(item: StoreItemData) -> Texture2D:
 func _resolve_shadow_texture(item: StoreItemData) -> Texture2D:
 	if item.shadow_texture:
 		return item.shadow_texture
-	if item.texture == null:
-		return null
-	var sprite_path: String = item.texture.resource_path
+	var sprite_path: String = ""
+	if item.texture:
+		sprite_path = item.texture.resource_path
+	else:
+		var icon_path := "res://assets/textures/icons/%s.png" % String(item.id)
+		if ResourceLoader.exists(icon_path):
+			sprite_path = icon_path
 	if sprite_path == "":
 		return null
 	var derived: String = sprite_path.get_basename() + "_shadow." + sprite_path.get_extension()
@@ -255,8 +342,9 @@ func _refresh_slot(item_id: String) -> void:
 		return
 
 	var bought: bool = GameState.has_purchased_today(item_id)
+	var already_owned_tool: bool = item.is_tool and GameState.has_tool(item_id)
 	var affordable: bool = GameState.can_afford(item.cost)
-	var clickable: bool = (not bought) and affordable
+	var clickable: bool = (not bought) and (not already_owned_tool) and affordable
 
 	var mod: Color = ITEM_NORMAL_MODULATE if clickable else ITEM_DIMMED_MODULATE
 	for child in slot.get_children():
@@ -285,6 +373,8 @@ func _try_purchase(item: StoreItemData) -> void:
 	if item_id == "":
 		return
 
+	if item.is_tool and GameState.has_tool(item_id):
+		return
 	if GameState.has_purchased_today(item_id):
 		return
 	if not GameState.spend_money(item.cost):
@@ -297,6 +387,8 @@ func _try_purchase(item: StoreItemData) -> void:
 
 	GameState.mark_purchased_today(item_id)
 	_bought_anything = true
+	if not _has_available_lottery_items():
+		_build_grid()
 	_refresh_corner_button()
 
 

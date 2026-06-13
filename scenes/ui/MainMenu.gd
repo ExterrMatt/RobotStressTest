@@ -49,6 +49,8 @@ extends Control
 ]
 ## Background texture used for the main menu option rows.
 @export var menu_option_texture: Texture2D = preload("res://assets/textures/icons/mainmenu_option.png")
+## Background texture used while the mouse hovers a main menu option row.
+@export var menu_option_selected_texture: Texture2D = preload("res://assets/textures/icons/mainmenu_option_select.png")
 
 # --- VISUAL EFFECTS ---
 @export_group("Visual Effects")
@@ -113,8 +115,6 @@ extends Control
 # Overlay panels — built on demand by _open_overlay().
 var _current_overlay: Control = null
 
-# Internal: which menu row is currently focused.
-var _hovered_id: String = ""
 var _brightness_value: float = 50.0
 var _flicker_tween: Tween = null
 
@@ -191,8 +191,8 @@ func _build_menu_row(id: String, label: String) -> Button:
 	_apply_menu_option_button_style(btn)
 
 	btn.pressed.connect(_activate.bind(id))
-	btn.mouse_entered.connect(_on_row_hover.bind(id, btn))
-	btn.focus_entered.connect(_on_row_hover.bind(id, btn))
+	btn.mouse_entered.connect(_on_row_hover.bind(btn))
+	btn.mouse_exited.connect(_on_row_unhover.bind(btn))
 	return btn
 
 
@@ -236,6 +236,7 @@ func _apply_menu_option_button_style(btn: Button) -> void:
 	texture_back.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	texture_back.self_modulate = Color(1, 1, 1, 0.92 if not btn.disabled else 0.68)
 	btn.add_child(texture_back)
+	_update_menu_option_button_texture(btn)
 
 
 func _make_menu_option_clear_stylebox() -> StyleBoxFlat:
@@ -252,8 +253,33 @@ func _make_menu_option_clear_stylebox() -> StyleBoxFlat:
 # INTERACTION
 # =============================================================================
 
-func _on_row_hover(id: String, _btn: Button) -> void:
-	_hovered_id = id
+func _on_row_hover(_btn: Button) -> void:
+	_update_menu_option_button_texture(_btn)
+
+
+func _on_row_unhover(_btn: Button) -> void:
+	_update_menu_option_button_texture(_btn)
+
+
+func _update_menu_option_button_texture(btn: Button) -> void:
+	var texture_back := btn.get_node_or_null("OptionTexture") as TextureRect
+	if texture_back == null:
+		return
+
+	var is_selected := btn.get_global_rect().has_point(get_global_mouse_position())
+	if btn.disabled:
+		is_selected = false
+	texture_back.texture = menu_option_selected_texture if is_selected and menu_option_selected_texture != null else menu_option_texture
+
+
+func _reset_menu_option_button_textures() -> void:
+	for child in menu_list.get_children():
+		var btn := child as Button
+		if btn == null:
+			continue
+		var texture_back := btn.get_node_or_null("OptionTexture") as TextureRect
+		if texture_back:
+			texture_back.texture = menu_option_texture
 
 
 func _activate(id: String) -> void:
@@ -316,6 +342,7 @@ func _close_overlay() -> void:
 	if _current_overlay and is_instance_valid(_current_overlay):
 		_current_overlay.queue_free()
 	_current_overlay = null
+	_reset_menu_option_button_textures()
 
 
 ## Shared backdrop + panel skeleton. Returns {back, content} so callers can

@@ -58,6 +58,9 @@ const ZOOM_DURATION: float = 0.35
 @export var timeout_failure_text: String = "You ran out of time."
 @export var wake_button_failure_text: String = "She woke up."
 
+@export_group("Robot Position")
+@export var head_only_drop_px: float = 57.0
+
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
 @onready var first_zoom_regions: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1
@@ -66,6 +69,7 @@ const ZOOM_DURATION: float = 0.35
 @onready var dark_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/DarkPlaceholder
 @onready var pull_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/PullCord
 @onready var electrical_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ElectricalCord
+@onready var stress_test_robot_shadow: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobotShadow
 @onready var stress_test_robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot
 @onready var gas_valve: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/GasValve
 @onready var window_alert_rect: ColorRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/WindowAlertRect
@@ -99,6 +103,9 @@ var _dragging_gas_valve: bool = false
 var _pending_failure_registers_wake: bool = false
 var _failure_result_emitted: bool = false
 var _rng := RandomNumberGenerator.new()
+var _robot_base_position: Vector2
+var _robot_shadow_base_position: Vector2
+var _robot_shadow_base_top_erase_px: float = 0.0
 
 const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
@@ -106,6 +113,7 @@ const WINDOW_ALERT_RED: int = 2
 
 
 func _ready() -> void:
+	_initialize_robot_position_state()
 	_initialize_pull_cord()
 	_initialize_stress_systems()
 	call_deferred("_initialize_zoom")
@@ -484,6 +492,54 @@ func _set_stress_test_dark(value: bool) -> void:
 		dark_placeholder.visible = _stress_test_dark
 	if stress_test_robot != null:
 		stress_test_robot.modulate = robot_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
+
+
+func _initialize_robot_position_state() -> void:
+	if stress_test_robot != null:
+		_robot_base_position = stress_test_robot.position
+	if stress_test_robot_shadow != null:
+		_robot_shadow_base_position = stress_test_robot_shadow.position
+		_robot_shadow_base_top_erase_px = float(stress_test_robot_shadow.get("top_erase_px"))
+
+	var state := get_node_or_null("/root/GameState")
+	if state != null and state.has_signal("robot_parts_changed"):
+		var changed_callable := Callable(self, "_on_robot_parts_changed")
+		if not state.is_connected("robot_parts_changed", changed_callable):
+			state.connect("robot_parts_changed", changed_callable)
+
+	_apply_robot_head_only_position()
+
+
+func _on_robot_parts_changed(_parts: Dictionary) -> void:
+	_apply_robot_head_only_position()
+
+
+func _apply_robot_head_only_position() -> void:
+	var head_only := _is_head_only_robot()
+	var offset := Vector2(0.0, head_only_drop_px if head_only else 0.0)
+	if stress_test_robot != null:
+		stress_test_robot.position = _robot_base_position + offset
+	if stress_test_robot_shadow != null:
+		stress_test_robot_shadow.position = _robot_shadow_base_position + offset
+		stress_test_robot_shadow.set("top_erase_px", 0.0 if head_only else _robot_shadow_base_top_erase_px)
+
+
+func _is_head_only_robot() -> bool:
+	return _robot_part_count("torso") <= 0 \
+			and _robot_part_count("arm") <= 0 \
+			and _robot_part_count("hand") <= 0 \
+			and _robot_part_count("leg") <= 0
+
+
+func _robot_part_count(id: String) -> int:
+	var state := get_node_or_null("/root/GameState")
+	if state == null:
+		return 0
+	if state.has_method("get_robot_part_count"):
+		return int(state.call("get_robot_part_count", id))
+	if id == "leg":
+		return int(state.get("equipped_limbs"))
+	return 0
 
 
 func _initialize_stress_systems() -> void:

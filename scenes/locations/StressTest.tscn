@@ -91,6 +91,7 @@ expand_mode = 1
 
 [node name="StressTestRobotShadow" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1305825547 instance=ExtResource("4_robot")]
 modulate = Color(0, 0, 0, 0.3)
+z_index = -10
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -758,6 +759,7 @@ horizontal_alignment = 2
 [node name="FailureOverlay" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1186687941]
 process_mode = 2
 visible = false
+z_index = 100
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

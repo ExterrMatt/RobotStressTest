@@ -81,10 +81,10 @@ shadow_texture = ExtResource("13_886yl")
 shadow_offset = Vector2(-15, -14)
 shadow_modulate = Color(1, 1, 1, 0.49411765)
 
-[sub_resource type="Resource" id="Item_ElectricProd"]
+[sub_resource type="Resource" id="Item_Taser"]
 script = ExtResource("2")
-id = &"electric_prod"
-display_name = "Electric Prod"
+id = &"taser"
+display_name = "Taser"
 cost = 80
 is_tool = true
 
@@ -110,7 +110,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
-items = Array[ExtResource("2")]([SubResource("Item_ScrapMetal"), SubResource("Item_Electronics"), SubResource("Item_NutsBolts"), SubResource("Item_SynthSkin"), SubResource("Item_Oil"), SubResource("Item_SneakyShoes"), SubResource("Item_ElectricProd"), SubResource("Item_Screwdriver"), SubResource("Item_WeldingGun")])
+items = Array[ExtResource("2")]([SubResource("Item_ScrapMetal"), SubResource("Item_Electronics"), SubResource("Item_NutsBolts"), SubResource("Item_SynthSkin"), SubResource("Item_Oil"), SubResource("Item_SneakyShoes"), SubResource("Item_Taser"), SubResource("Item_Screwdriver"), SubResource("Item_WeldingGun")])
 
 [node name="FurnitureLayer" type="Control" parent="." unique_id=696613427]
 layout_mode = 1
