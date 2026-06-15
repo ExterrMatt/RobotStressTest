@@ -174,6 +174,22 @@ func set_interaction_enabled(value: bool) -> void:
 	set_head_interaction_enabled(value)
 
 
+func reset_interactions_to_default() -> void:
+	_active_animation_box = null
+	_animation_phase = ANIMATION_PHASE_NONE
+	_animation_playing = false
+	_animation_elapsed = 0.0
+	for box in _hover_boxes:
+		if box == null or not is_instance_valid(box):
+			continue
+		if box.has_method("set_runtime_active"):
+			box.call("set_runtime_active", bool(box.get("active_by_default")))
+		if box.has_method("set_hovered"):
+			box.call("set_hovered", false)
+	_apply_visibility_state()
+	_update_hover_boxes()
+
+
 func _on_resized() -> void:
 	_sync_animation_layers_to_robot_size()
 
@@ -551,9 +567,31 @@ func _robot_part_count(id: String) -> int:
 func _is_hover_box_available(box: Control) -> bool:
 	if box == null or not is_instance_valid(box):
 		return false
+	if _is_hover_box_blocked_by_repair(box):
+		return false
 	if box.name == "PelvisHoverBox":
 		return _robot_part_count("torso") >= 1
 	return true
+
+
+func _is_hover_box_blocked_by_repair(box: Control) -> bool:
+	for repair in _repair_controllers():
+		if repair.has_method("blocks_hover_box") and bool(repair.call("blocks_hover_box", box)):
+			return true
+	return false
+
+
+func _repair_controllers() -> Array[Node]:
+	var controllers: Array[Node] = []
+	_collect_repair_controllers(self, controllers)
+	return controllers
+
+
+func _collect_repair_controllers(node: Node, out: Array[Node]) -> void:
+	for child in node.get_children():
+		if child.has_method("blocks_hover_box"):
+			out.append(child)
+		_collect_repair_controllers(child, out)
 
 
 func _enforce_always_hidden_paths() -> void:

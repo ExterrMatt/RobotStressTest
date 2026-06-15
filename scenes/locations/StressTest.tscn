@@ -9,6 +9,33 @@
 [ext_resource type="Script" uid="uid://c27u86yek7jb4" path="res://scenes/locations/PullCord.gd" id="7_pull_cord"]
 [ext_resource type="Texture2D" uid="uid://b732s5hej26ta" path="res://assets/textures/icons/rip_cord.png" id="8_rip_cord"]
 [ext_resource type="Script" uid="uid://bso4fhklvq0pq" path="res://scenes/locations/StressTestZoomRegion.gd" id="9_zoom_region"]
+[ext_resource type="Script" uid="uid://73o0tn3fw5we" path="res://scenes/locations/HeadScrewRepair.gd" id="10_head_screw_repair"]
+[ext_resource type="Texture2D" uid="uid://b83hhlbg61pr1" path="res://assets/textures/characters/robot/stresstest/head/screw_left_top.png" id="11_screw_left_top"]
+[ext_resource type="Texture2D" uid="uid://bi8uunber5wew" path="res://assets/textures/characters/robot/stresstest/head/screw_right_top.png" id="12_screw_right_top"]
+[ext_resource type="Texture2D" uid="uid://c7aie2mvjnmvk" path="res://assets/textures/characters/robot/stresstest/head/screw_left_mid.png" id="13_screw_left_mid"]
+[ext_resource type="Texture2D" uid="uid://vjal5ydp4nni" path="res://assets/textures/characters/robot/stresstest/head/screw_right_mid.png" id="14_screw_right_mid"]
+[ext_resource type="Texture2D" uid="uid://0jfalncvuhbk" path="res://assets/textures/icons/screwdriver_horizontal_screwing.png" id="15_screwdriver_horizontal"]
+[ext_resource type="Script" uid="uid://ckexopyixr75o" path="res://scenes/locations/EmergencyPowerButton.gd" id="16_emergency_power_button"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0, 0, 0, 0.22)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.88, 0.95, 0.88, 0.95)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_window_alert_indicator"]
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 1, 1, 1)
 
 [node name="StressTest" type="Control" unique_id=471497481]
 layout_mode = 3
@@ -127,6 +154,91 @@ offset_bottom = 247.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="HeadScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1897075763]
+z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("10_head_screw_repair")
+blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
+flipped_screwdriver_indices = [0, 2]
+screw_nodes = Array[NodePath]([NodePath("ScrewLeftTop"), NodePath("ScrewRightTop"), NodePath("ScrewLeftMid"), NodePath("ScrewRightMid")])
+screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/LeftTop"), NodePath("ScrewdriverPositions/RightTop"), NodePath("ScrewdriverPositions/LeftMid"), NodePath("ScrewdriverPositions/RightMid")])
+
+[node name="ScrewLeftTop" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair" unique_id=767834265]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_screw_left_top")
+expand_mode = 1
+
+[node name="ScrewRightTop" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair" unique_id=1881372513]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_screw_right_top")
+expand_mode = 1
+
+[node name="ScrewLeftMid" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair" unique_id=945015916]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_screw_left_mid")
+expand_mode = 1
+
+[node name="ScrewRightMid" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair" unique_id=399323270]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_screw_right_mid")
+expand_mode = 1
+
+[node name="Screwdriver" type="Sprite2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair" unique_id=907837686]
+visible = false
+texture = ExtResource("15_screwdriver_horizontal")
+centered = false
+offset = Vector2(0, -12)
+region_enabled = true
+region_rect = Rect2(0, 0, 48, 24)
+
+[node name="ScrewdriverPositions" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair" unique_id=1891829086]
+
+[node name="LeftTop" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=232892011]
+position = Vector2(107.5, 46.5)
+
+[node name="RightTop" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=52479076]
+position = Vector2(140.5, 47)
+
+[node name="LeftMid" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=945038159]
+position = Vector2(103.5, 55.5)
+
+[node name="RightMid" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=498013492]
+position = Vector2(147, 53.5)
+
 [node name="PullCord" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=720968412]
 layout_mode = 1
 anchors_preset = 0
@@ -160,7 +272,7 @@ cord_mode = 1
 link_size = Vector2(35, 2)
 bulb_size = Vector2(35, 18)
 visible_link_count = 15
-max_pull_radius = 100.0
+max_pull_radius = 50.0
 drag_soft_limit_radius = 55.0
 gravity = 48.0
 pixels_per_meter = 50.0
@@ -185,6 +297,17 @@ offset_right = 249.0
 offset_bottom = 100.00012
 mouse_filter = 2
 color = Color(1, 0.86, 0, 1)
+
+[node name="EmergencyPowerButton" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1816515271]
+z_index = 5
+layout_mode = 1
+anchors_preset = 0
+offset_left = 466.0
+offset_top = 80.0
+offset_right = 500.0
+offset_bottom = 114.0
+mouse_default_cursor_shape = 2
+script = ExtResource("16_emergency_power_button")
 
 [node name="GasValve" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=389653453]
 layout_mode = 1
@@ -233,6 +356,7 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R0_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=507507676]
+visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 60.0
@@ -290,6 +414,7 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R1_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=423160590]
+visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 80.0
@@ -324,6 +449,7 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R1_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1733628774]
+visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 400.0
@@ -345,6 +471,7 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R2_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=546739490]
+visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 80.0
@@ -380,6 +507,7 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R2_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=492326807]
+visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 400.0
@@ -402,6 +530,7 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R3_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1155757012]
+visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 80.0
@@ -747,7 +876,7 @@ horizontal_alignment = 2
 [node name="ElectricityLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud" unique_id=179864172]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Electricity: 0% (-2.0%/s)"
+text = "Electricity: 0% (-6.0%/s)"
 horizontal_alignment = 2
 
 [node name="GasLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud" unique_id=1013658264]
@@ -755,6 +884,226 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Gas: 50% / 50% (+0.0%)"
 horizontal_alignment = 2
+
+[node name="ElectricityMeter" type="PanelContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=284355991]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -58.0
+offset_top = 578.0
+offset_right = -12.0
+offset_bottom = 766.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_electricity_meter")
+
+[node name="ElectricityMeterGroups" type="VBoxContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter" unique_id=1653519082]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 2
+
+[node name="Bar6" type="VBoxContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups" unique_id=787828848]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Segment4" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar6" unique_id=151501730]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment3" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar6" unique_id=383510127]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment2" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar6" unique_id=1751076966]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment1" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar6" unique_id=1602587684]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Bar5" type="VBoxContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups" unique_id=239671884]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Segment4" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar5" unique_id=1925185111]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment3" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar5" unique_id=916559676]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment2" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar5" unique_id=273223964]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment1" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar5" unique_id=554097121]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Bar4" type="VBoxContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups" unique_id=4429103]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Segment4" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar4" unique_id=277321362]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment3" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar4" unique_id=1772303163]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment2" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar4" unique_id=263514469]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment1" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar4" unique_id=2095569697]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Bar3" type="VBoxContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups" unique_id=427927590]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Segment4" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar3" unique_id=915519910]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment3" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar3" unique_id=734217119]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment2" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar3" unique_id=1260803367]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment1" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar3" unique_id=1163478128]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Bar2" type="VBoxContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups" unique_id=1444624113]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Segment4" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar2" unique_id=1693674153]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment3" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar2" unique_id=1656415092]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment2" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar2" unique_id=1487687772]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment1" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar2" unique_id=1211878679]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Bar1" type="VBoxContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups" unique_id=1257817428]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Segment4" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar1" unique_id=1254937298]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment3" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar1" unique_id=361738978]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment2" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar1" unique_id=484692751]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="Segment1" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups/Bar1" unique_id=1704099240]
+custom_minimum_size = Vector2(32, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="WindowAlertIndicator" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1545558170]
+z_index = 80
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -68.0
+offset_top = 130.0
+offset_right = 116.0
+offset_bottom = 178.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_window_alert_indicator")
+
+[node name="ExclamationLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/WindowAlertIndicator" unique_id=1079697582]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 36
+text = "!   !   !"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="FailureOverlay" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1186687941]
 process_mode = 2
