@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://ufk426roxtdo"]
 
 [ext_resource type="Script" uid="uid://8i77rppng4bl" path="res://scenes/locations/StressTest.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bxain7khtaveo" path="res://assets/textures/backgrounds/palceholder_stress_test_light.png" id="2_light"]
 [ext_resource type="Texture2D" uid="uid://bn0geh48q1hrs" path="res://assets/textures/backgrounds/palceholder_stress_test_dark.png" id="3_dark"]
 [ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="4_robot"]
 [ext_resource type="Script" uid="uid://cvbl2j3xth0hm" path="res://scenes/locations/StressTestRobotShadow.gd" id="5_shadow"]
@@ -18,6 +17,24 @@
 [ext_resource type="Script" uid="uid://ckexopyixr75o" path="res://scenes/locations/EmergencyPowerButton.gd" id="16_emergency_power_button"]
 [ext_resource type="Script" uid="uid://cm0lmhrjqnsh8" path="res://scenes/ui/GlowingLabel.gd" id="17_glowing_label"]
 [ext_resource type="Script" uid="uid://cfj8bhm2fbx1d" path="res://scenes/ui/FixedWidthTimerLabel.gd" id="18_fixed_width_timer"]
+[ext_resource type="Texture2D" uid="uid://d1n1cjkrwg1df" path="res://assets/textures/backgrounds/stress_test/shed_background.png" id="19_shed_background"]
+[ext_resource type="Texture2D" uid="uid://dcv3p6ggjfiud" path="res://assets/textures/backgrounds/stress_test/side_wall/side_table.png" id="20_side_table"]
+[ext_resource type="Texture2D" uid="uid://pnhke68c5vpp" path="res://assets/textures/backgrounds/stress_test/side_wall/side_panel.png" id="21_side_panel"]
+[ext_resource type="Texture2D" uid="uid://bqpkyts2qeayq" path="res://assets/textures/backgrounds/stress_test/side_wall/side_wall.png" id="22_side_wall"]
+[ext_resource type="Texture2D" uid="uid://drpakyidmfx5q" path="res://assets/textures/backgrounds/stress_test/side_wall/generator.png" id="23_generator"]
+[ext_resource type="Texture2D" uid="uid://cbksyf0cnkef5" path="res://assets/textures/backgrounds/stress_test/side_wall/generator_gauge.png" id="24_generator_gauge"]
+[ext_resource type="Texture2D" uid="uid://ckcqd8fsag5h8" path="res://assets/textures/backgrounds/stress_test/side_wall/rip_cord_dock.png" id="25_rip_cord_dock"]
+[ext_resource type="Texture2D" uid="uid://catqpx06puklo" path="res://assets/textures/backgrounds/stress_test/floor/floor.png" id="26_floor"]
+[ext_resource type="Texture2D" uid="uid://d4lqhjwr2jck0" path="res://assets/textures/backgrounds/stress_test/floor/floor_wire_darkness.png" id="27_floor_wire_darkness"]
+[ext_resource type="Texture2D" uid="uid://dvmaxf52u2iqy" path="res://assets/textures/backgrounds/stress_test/floor/table.png" id="28_table"]
+[ext_resource type="Texture2D" uid="uid://l7e7hn4etm0x" path="res://assets/textures/backgrounds/stress_test/window/button.png" id="29_button"]
+[ext_resource type="Texture2D" uid="uid://c1hihaqhdb2bh" path="res://assets/textures/backgrounds/stress_test/window/button_pressed.png" id="30_button_pressed"]
+[ext_resource type="Texture2D" uid="uid://cqk10nfe7odup" path="res://assets/textures/backgrounds/stress_test/window/window.png" id="31_window"]
+[ext_resource type="Texture2D" uid="uid://biyf4k4pg6tsc" path="res://assets/textures/backgrounds/stress_test/window/window_light_on.png" id="32_window_light_on"]
+[ext_resource type="Texture2D" uid="uid://bl2wesj1838yo" path="res://assets/textures/backgrounds/stress_test/window/uncle_window.png" id="33_uncle_window"]
+[ext_resource type="Texture2D" uid="uid://bwhwvms6kmiir" path="res://assets/textures/backgrounds/stress_test/window/bulb_over_window.png" id="34_bulb_over_window"]
+[ext_resource type="Texture2D" uid="uid://ijuiwks7mxh" path="res://assets/textures/backgrounds/stress_test/window/light.png" id="35_light"]
+[ext_resource type="Texture2D" uid="uid://buqh1w4htw3lo" path="res://assets/textures/backgrounds/stress_test/window/bulb.png" id="36_bulb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -95,7 +112,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="LightPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=965176587]
+[node name="LightPlaceholder" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=965176587]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -103,7 +120,205 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_light")
+
+[node name="ShedBackground" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1054355615]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("19_shed_background")
+expand_mode = 1
+
+[node name="SideTable" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=2053021675]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("20_side_table")
+expand_mode = 1
+
+[node name="SidePanel" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=930569676]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("21_side_panel")
+expand_mode = 1
+
+[node name="SideWall" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=369451495]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("22_side_wall")
+expand_mode = 1
+
+[node name="Generator" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1896534767]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("23_generator")
+expand_mode = 1
+
+[node name="GeneratorGauge" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=593186459]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("24_generator_gauge")
+expand_mode = 1
+
+[node name="RipCordDock" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1103673197]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("25_rip_cord_dock")
+expand_mode = 1
+
+[node name="Floor" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=554771159]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("26_floor")
+expand_mode = 1
+
+[node name="FloorWireDarkness" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=594291274]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("27_floor_wire_darkness")
+expand_mode = 1
+
+[node name="Table" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1712345476]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("28_table")
+expand_mode = 1
+
+[node name="Button" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=2142978624]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("29_button")
+expand_mode = 1
+
+[node name="ButtonPressed" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=17164941]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("30_button_pressed")
+expand_mode = 1
+
+[node name="Window" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1284097158]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("31_window")
+expand_mode = 1
+
+[node name="WindowLightOn" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=233490396]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("32_window_light_on")
+expand_mode = 1
+
+[node name="UncleWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420079]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("33_uncle_window")
+expand_mode = 1
+
+[node name="BulbOverWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=100411321]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("34_bulb_over_window")
+expand_mode = 1
+
+[node name="Light" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=415680127]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("35_light")
+expand_mode = 1
+
+[node name="Bulb" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1141615490]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("36_bulb")
 expand_mode = 1
 
 [node name="DarkPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1297079992]
@@ -268,10 +483,10 @@ pull_toggle_radius_scale = 1.3
 
 [node name="ElectricalCord" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=455465457]
 anchors_preset = 0
-offset_left = 574.0
-offset_top = 267.0
-offset_right = 587.0
-offset_bottom = 317.0
+offset_left = 573.0
+offset_top = 204.0
+offset_right = 586.0
+offset_bottom = 254.0
 mouse_filter = 2
 mouse_default_cursor_shape = 13
 script = ExtResource("7_pull_cord")
@@ -298,16 +513,16 @@ pull_toggle_radius_scale = 1.3
 return_reset_still_time = 0.2
 
 [node name="WindowAlertRect" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1288840102]
+visible = false
 layout_mode = 1
 offset_left = 230.0
 offset_top = 84.00012
 offset_right = 249.0
 offset_bottom = 100.00012
 mouse_filter = 2
-color = Color(1, 0.86, 0, 1)
+color = Color(1, 1, 1, 0)
 
 [node name="EmergencyPowerButton" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1816515271]
-z_index = 5
 layout_mode = 1
 anchors_preset = 0
 offset_left = 466.0
@@ -866,10 +1081,10 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -250.0
+offset_left = -380.0
 offset_top = 128.0
 offset_right = -8.0
-offset_bottom = 224.0
+offset_bottom = 260.0
 grow_horizontal = 0
 mouse_filter = 2
 theme_override_constants/separation = 4
@@ -903,6 +1118,17 @@ text = "Gas: 50% / 50% (+0.0%)"
 horizontal_alignment = 2
 script = ExtResource("17_glowing_label")
 glow_color = Color(0, 0.78, 0.18, 1)
+glow_radius_px = 25.0
+glow_strength = 1.7
+
+[node name="UncleLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.95, 1)
+theme_override_font_sizes/font_size = 28
+text = "Light: -- | Seen: 0.0/3.0s | Leaves: --"
+horizontal_alignment = 2
+script = ExtResource("17_glowing_label")
+glow_color = Color(0.9, 0, 0.45, 1)
 glow_radius_px = 25.0
 glow_strength = 1.7
 

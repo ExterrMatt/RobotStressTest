@@ -54,11 +54,13 @@ const ZOOM_DURATION: float = 0.35
 @export_group("Window Alert")
 @export_range(0, 3, 1) var window_alert_event_count_min: int = 0
 @export_range(0, 3, 1) var window_alert_event_count_max: int = 3
-@export var window_alert_yellow_seconds: float = 5.0
-@export var window_alert_red_seconds: float = 3.0
-@export var window_alert_yellow_color: Color = Color(1.0, 0.86, 0.0, 1.0)
-@export var window_alert_red_color: Color = Color(1.0, 0.0, 0.0, 1.0)
-@export_range(0.0, 1.0, 0.01) var window_alert_indicator_yellow_start_fraction: float = 0.5
+@export var window_alert_light_seconds_min: float = 5.0
+@export var window_alert_light_seconds_max: float = 10.0
+@export var window_alert_indicator_lead_seconds: float = 3.0
+@export var window_alert_spotted_light_remaining_seconds: float = 3.0
+@export var window_alert_safe_silhouette_seconds: float = 3.0
+@export var window_alert_late_safe_silhouette_seconds: float = 6.0
+@export var window_alert_seen_failure_seconds: float = 3.0
 @export var window_alert_indicator_flash_seconds: float = 0.35
 
 @export_group("Failure Messages")
@@ -76,8 +78,12 @@ const ZOOM_DURATION: float = 0.35
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
 @onready var first_zoom_regions: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1
 @onready var second_zoom_regions: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2
-@onready var light_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder
+@onready var light_placeholder: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder
 @onready var dark_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/DarkPlaceholder
+@onready var window_light_on: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/WindowLightOn
+@onready var uncle_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/UncleWindow
+@onready var shed_light: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Light
+@onready var shed_bulb: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Bulb
 @onready var pull_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/PullCord
 @onready var electrical_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ElectricalCord
 @onready var stress_test_robot_shadow: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobotShadow
@@ -89,6 +95,7 @@ const ZOOM_DURATION: float = 0.35
 @onready var timer_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/TimerLabel
 @onready var electricity_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/ElectricityLabel
 @onready var gas_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/GasLabel
+@onready var uncle_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/UncleLabel
 @onready var electricity_meter_groups: VBoxContainer = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups
 @onready var failure_overlay: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay
 @onready var failure_reason_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureReasonLabel
@@ -115,6 +122,10 @@ var _window_alert_event_index: int = 0
 var _window_alert_state: int = WINDOW_ALERT_NONE
 var _window_alert_elapsed: float = 0.0
 var _window_alert_total_elapsed: float = 0.0
+var _window_alert_light_duration: float = 5.0
+var _window_alert_silhouette_leave_seconds: float = 3.0
+var _window_alert_safe_elapsed: float = 0.0
+var _window_alert_seen_elapsed: float = 0.0
 var _dragging_gas_valve: bool = false
 var _pending_failure_registers_wake: bool = false
 var _failure_result_emitted: bool = false
@@ -506,15 +517,23 @@ func _on_pull_cord_max_pull_reached() -> void:
 func _set_stress_test_dark(value: bool) -> void:
 	var was_dark := _stress_test_dark
 	_stress_test_dark = value
-	if light_placeholder != null:
-		light_placeholder.visible = not _stress_test_dark
-	if dark_placeholder != null:
-		dark_placeholder.visible = _stress_test_dark
+	_apply_background_light_state()
 	if stress_test_robot != null:
 		stress_test_robot.modulate = robot_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
 		if _stress_test_dark and not was_dark and stress_test_robot.has_method("reset_interactions_to_default"):
 			stress_test_robot.call("reset_interactions_to_default")
 	_apply_screw_repair_light_state()
+
+
+func _apply_background_light_state() -> void:
+	if light_placeholder != null:
+		light_placeholder.visible = true
+	if dark_placeholder != null:
+		dark_placeholder.visible = _stress_test_dark
+	if shed_light != null:
+		shed_light.visible = not _stress_test_dark
+	if shed_bulb != null:
+		shed_bulb.visible = not _stress_test_dark
 
 
 func _initialize_robot_position_state() -> void:
@@ -583,6 +602,10 @@ func _initialize_stress_systems() -> void:
 	_window_alert_state = WINDOW_ALERT_NONE
 	_window_alert_elapsed = 0.0
 	_window_alert_total_elapsed = 0.0
+	_window_alert_light_duration = window_alert_light_seconds_min
+	_window_alert_silhouette_leave_seconds = window_alert_safe_silhouette_seconds
+	_window_alert_safe_elapsed = 0.0
+	_window_alert_seen_elapsed = 0.0
 	_dragging_gas_valve = false
 	_pending_failure_registers_wake = false
 	_failure_result_emitted = false
@@ -596,9 +619,9 @@ func _initialize_stress_systems() -> void:
 
 	if window_alert_rect != null:
 		window_alert_rect.visible = false
-		window_alert_rect.color = window_alert_yellow_color
 	if window_alert_indicator != null:
 		window_alert_indicator.visible = false
+	_apply_window_alert_visual_state()
 	if failure_overlay != null:
 		failure_overlay.visible = false
 		failure_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
@@ -629,7 +652,7 @@ func _random_window_alert_times(count: int) -> Array[float]:
 	var times: Array[float] = []
 	if count <= 0:
 		return times
-	var alert_duration := window_alert_yellow_seconds + window_alert_red_seconds
+	var alert_duration := _window_alert_schedule_duration()
 	var latest_start := maxf(0.0, night_duration_seconds - alert_duration - 0.5)
 	if latest_start <= 0.0:
 		return times
@@ -660,20 +683,32 @@ func _update_window_alert(delta: float) -> void:
 
 	_window_alert_elapsed += delta
 	_window_alert_total_elapsed += delta
-	if _window_alert_state == WINDOW_ALERT_YELLOW and _window_alert_elapsed >= window_alert_yellow_seconds:
+	if _window_alert_state == WINDOW_ALERT_YELLOW:
+		_shorten_window_alert_light_if_spotted()
+	if _window_alert_state == WINDOW_ALERT_YELLOW and _window_alert_elapsed >= _window_alert_light_duration:
 		_window_alert_state = WINDOW_ALERT_RED
 		_window_alert_elapsed = 0.0
-		if window_alert_rect != null:
-			window_alert_rect.color = window_alert_red_color
-	if _window_alert_state == WINDOW_ALERT_RED and _window_alert_elapsed >= window_alert_red_seconds:
-		if _can_avoid_uncle_capture():
-			_clear_window_alert()
-			return
+		_window_alert_safe_elapsed = 0.0
+		_window_alert_seen_elapsed = 0.0
+		_window_alert_silhouette_leave_seconds = window_alert_late_safe_silhouette_seconds
+		if not _is_uncle_exposure_active():
+			_window_alert_silhouette_leave_seconds = window_alert_safe_silhouette_seconds
+		_apply_window_alert_visual_state()
+	if _window_alert_state == WINDOW_ALERT_RED:
+		if _is_uncle_exposure_active():
+			_window_alert_silhouette_leave_seconds = window_alert_late_safe_silhouette_seconds
+			_window_alert_seen_elapsed += delta
+			_window_alert_safe_elapsed = 0.0
+			if _window_alert_seen_elapsed >= window_alert_seen_failure_seconds:
+				_fail_stress_test(uncle_failure_text, false)
+				if window_alert_indicator != null:
+					window_alert_indicator.visible = false
+				return
 		else:
-			_fail_stress_test(uncle_failure_text, false)
-			if window_alert_indicator != null:
-				window_alert_indicator.visible = false
-			return
+			_window_alert_safe_elapsed += delta
+			if _window_alert_safe_elapsed >= _window_alert_silhouette_leave_seconds:
+				_clear_window_alert()
+				return
 	_update_window_alert_indicator()
 
 
@@ -681,9 +716,13 @@ func _start_window_alert() -> void:
 	_window_alert_state = WINDOW_ALERT_YELLOW
 	_window_alert_elapsed = 0.0
 	_window_alert_total_elapsed = 0.0
+	_window_alert_safe_elapsed = 0.0
+	_window_alert_seen_elapsed = 0.0
+	_window_alert_light_duration = _random_window_alert_light_duration()
+	_window_alert_silhouette_leave_seconds = window_alert_safe_silhouette_seconds
 	if window_alert_rect != null:
-		window_alert_rect.color = window_alert_yellow_color
-		window_alert_rect.visible = true
+		window_alert_rect.visible = false
+	_apply_window_alert_visual_state()
 	_update_window_alert_indicator()
 
 
@@ -691,11 +730,21 @@ func _clear_window_alert() -> void:
 	_window_alert_state = WINDOW_ALERT_NONE
 	_window_alert_elapsed = 0.0
 	_window_alert_total_elapsed = 0.0
+	_window_alert_safe_elapsed = 0.0
+	_window_alert_seen_elapsed = 0.0
 	_skip_elapsed_window_alert_events()
 	if window_alert_rect != null:
 		window_alert_rect.visible = false
 	if window_alert_indicator != null:
 		window_alert_indicator.visible = false
+	_apply_window_alert_visual_state()
+
+
+func _apply_window_alert_visual_state() -> void:
+	if window_light_on != null:
+		window_light_on.visible = _window_alert_state != WINDOW_ALERT_NONE
+	if uncle_window != null:
+		uncle_window.visible = _window_alert_state == WINDOW_ALERT_RED
 
 
 func _skip_elapsed_window_alert_events() -> void:
@@ -717,7 +766,16 @@ func _update_window_alert_indicator() -> void:
 
 
 func _window_alert_indicator_start_time() -> float:
-	return window_alert_yellow_seconds * window_alert_indicator_yellow_start_fraction
+	return maxf(0.0, _window_alert_light_duration - window_alert_indicator_lead_seconds)
+
+
+func _shorten_window_alert_light_if_spotted() -> void:
+	if not _is_window_alert_in_camera_view():
+		return
+	var spotted_remaining := maxf(0.0, window_alert_spotted_light_remaining_seconds)
+	var remaining := _window_alert_light_duration - _window_alert_elapsed
+	if remaining > spotted_remaining:
+		_window_alert_light_duration = _window_alert_elapsed + spotted_remaining
 
 
 func _is_window_alert_in_camera_view() -> bool:
@@ -726,8 +784,20 @@ func _is_window_alert_in_camera_view() -> bool:
 	return camera_window.get_global_rect().intersects(window_alert_rect.get_global_rect())
 
 
-func _can_avoid_uncle_capture() -> bool:
-	return _stress_test_dark and (_emergency_power_shutoff_pressed or _electricity_percent <= 0.0)
+func _is_uncle_exposure_active() -> bool:
+	return not _stress_test_dark or (_electricity_percent > 0.0 and not _emergency_power_shutoff_pressed)
+
+
+func _random_window_alert_light_duration() -> float:
+	var low := maxf(0.0, minf(window_alert_light_seconds_min, window_alert_light_seconds_max))
+	var high := maxf(low, window_alert_light_seconds_max)
+	return _rng.randf_range(low, high)
+
+
+func _window_alert_schedule_duration() -> float:
+	return maxf(0.0, window_alert_light_seconds_max) \
+			+ maxf(0.0, window_alert_late_safe_silhouette_seconds) \
+			+ maxf(0.0, window_alert_seen_failure_seconds)
 
 
 func _on_electrical_cord_max_pull_reached() -> void:
@@ -827,7 +897,27 @@ func _refresh_stress_hud() -> void:
 			_gas_optimal_percent,
 			_gas_last_change_percent,
 		]
+	if uncle_value_label != null:
+		uncle_value_label.text = _format_uncle_meter_text()
 	_refresh_electricity_meter()
+
+
+func _format_uncle_meter_text() -> String:
+	var seen_limit := maxf(0.0, window_alert_seen_failure_seconds)
+	var light_text := "--"
+	if _window_alert_state == WINDOW_ALERT_YELLOW:
+		var light_remaining := maxf(0.0, _window_alert_light_duration - _window_alert_elapsed)
+		light_text = "%.1fs" % light_remaining
+	var leave_text := "--"
+	if _window_alert_state == WINDOW_ALERT_RED and not _is_uncle_exposure_active():
+		var leave_remaining := maxf(0.0, _window_alert_silhouette_leave_seconds - _window_alert_safe_elapsed)
+		leave_text = "%.1fs" % leave_remaining
+	return "Light: %s | Seen: %.1f/%.1fs | Leaves: %s" % [
+		light_text,
+		_window_alert_seen_elapsed,
+		seen_limit,
+		leave_text,
+	]
 
 
 func _refresh_electricity_meter() -> void:

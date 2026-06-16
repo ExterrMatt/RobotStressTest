@@ -1,8 +1,4 @@
-res://scenes/locations/StressTestRobotShadow.gd
-res://scenes/locations/StressTestRobot.gd
+res://scenes/locations/StressTest.gd
 res://scenes/locations/StressTest.tscn
 res://themes/main_theme.tres
 res://shaders/scanlines.gdshader
-res://scenes/locations/StressTestRobot.tscn
-res://scenes/locations/StressTest.gd
-res://scenes/locations/RobotHoverBox.gd
