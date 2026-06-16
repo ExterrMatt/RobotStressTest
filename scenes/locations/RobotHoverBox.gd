@@ -26,6 +26,12 @@ enum ClickAction {
 		force_visible = value
 		queue_redraw()
 
+## Draw the border while hovered or force-visible.
+@export var show_border: bool = false:
+	set(value):
+		show_border = value
+		_emit_configuration_changed()
+
 ## Larger priorities win when multiple active boxes affect the same node.
 @export var priority: int = 0:
 	set(value):
@@ -170,11 +176,12 @@ func _append_unique_paths(target: Array[NodePath], paths: Array[NodePath]) -> vo
 func _emit_configuration_changed() -> void:
 	if is_inside_tree():
 		configuration_changed.emit()
-	if Engine.is_editor_hint():
-		queue_redraw()
+	queue_redraw()
 
 
 func _draw() -> void:
+	if not show_border:
+		return
 	if not (_hovered or force_visible):
 		return
 	draw_rect(Rect2(Vector2.ZERO, size), border_color, false, border_width)

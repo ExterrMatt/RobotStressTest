@@ -586,10 +586,12 @@ texture = ExtResource("23_boob_cover")
 expand_mode = 1
 
 [node name="HeadHoverBox" type="Control" parent="." unique_id=1361736466]
+z_index = 1000
+z_as_relative = false
 anchors_preset = 0
-offset_left = 102.0
+offset_left = 100.0
 offset_top = 34.0
-offset_right = 152.0
+offset_right = 150.0
 offset_bottom = 97.0
 mouse_filter = 2
 script = ExtResource("2_hover_box")
@@ -603,6 +605,8 @@ intro_frame_count = 16
 loop_frame_count = 8
 
 [node name="PelvisHoverBox" type="Control" parent="." unique_id=897079671]
+z_index = 1000
+z_as_relative = false
 anchors_preset = 0
 offset_left = 93.0
 offset_top = 146.333
@@ -615,6 +619,8 @@ hidden_while_active_image_paths = Array[NodePath]([NodePath("Legs/RightLeg"), No
 shown_while_active_image_paths = Array[NodePath]([NodePath("Legs/RightLegUpThigh"), NodePath("Legs/RightLegUpShin"), NodePath("Legs/LeftLegUpThigh"), NodePath("Legs/LeftLegUpShin"), NodePath("Torso/TorsoCrunch"), NodePath("Torso/Nipples")])
 
 [node name="BoobCoverHoverBox" type="Control" parent="." unique_id=1489784484]
+z_index = 1000
+z_as_relative = false
 anchors_preset = 0
 offset_left = 96.0
 offset_top = 98.0

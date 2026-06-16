@@ -16,6 +16,8 @@
 [ext_resource type="Texture2D" uid="uid://vjal5ydp4nni" path="res://assets/textures/characters/robot/stresstest/head/screw_right_mid.png" id="14_screw_right_mid"]
 [ext_resource type="Texture2D" uid="uid://0jfalncvuhbk" path="res://assets/textures/icons/screwdriver_horizontal_screwing.png" id="15_screwdriver_horizontal"]
 [ext_resource type="Script" uid="uid://ckexopyixr75o" path="res://scenes/locations/EmergencyPowerButton.gd" id="16_emergency_power_button"]
+[ext_resource type="Script" uid="uid://cm0lmhrjqnsh8" path="res://scenes/ui/GlowingLabel.gd" id="17_glowing_label"]
+[ext_resource type="Script" uid="uid://cfj8bhm2fbx1d" path="res://scenes/ui/FixedWidthTimerLabel.gd" id="18_fixed_width_timer"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -116,9 +118,7 @@ mouse_filter = 2
 texture = ExtResource("3_dark")
 expand_mode = 1
 
-[node name="StressTestRobotShadow" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1305825547 instance=ExtResource("4_robot")]
-modulate = Color(0, 0, 0, 0.3)
-z_index = -10
+[node name="StressTestRobotShadow" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1305825547]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -133,12 +133,20 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(1.08, 1)
 pivot_offset = Vector2(125, 175)
+mouse_filter = 2
 script = ExtResource("5_shadow")
-edge_y_stretch = 0.16
-curve_power = 2.0
-shadow_frame_size = Vector2(250, 400)
-top_erase_px = 49.0
-source_robot_path = NodePath("../StressTestRobot")
+full_body_edge_y_stretch = 0.16
+full_body_shadow_frame_size = Vector2(250, 400)
+full_body_top_erase_px = 49.0
+head_only_shadow_offset = Vector2(0, 17)
+head_only_edge_y_stretch = 0.16
+head_only_shadow_frame_size = Vector2(250, 400)
+
+[node name="ShadowComposite" type="CanvasGroup" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobotShadow" unique_id=1565444028]
+modulate = Color(0, 0, 0, 0.40784317)
+
+[node name="ShadowRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobotShadow/ShadowComposite" unique_id=1938115084 instance=ExtResource("4_robot")]
+process_mode = 4
 
 [node name="StressTestRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1491404521 instance=ExtResource("4_robot")]
 layout_mode = 1
@@ -231,13 +239,13 @@ region_rect = Rect2(0, 0, 48, 24)
 position = Vector2(107.5, 46.5)
 
 [node name="RightTop" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=52479076]
-position = Vector2(140.5, 47)
+position = Vector2(140.5, 46)
 
 [node name="LeftMid" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=945038159]
-position = Vector2(103.5, 55.5)
+position = Vector2(103.5, 54.5)
 
 [node name="RightMid" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=498013492]
-position = Vector2(147, 53.5)
+position = Vector2(149, 53.5)
 
 [node name="PullCord" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=720968412]
 layout_mode = 1
@@ -869,21 +877,34 @@ alignment = 2
 
 [node name="TimerLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud" unique_id=1505966969]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.64, 0.26, 1)
 theme_override_font_sizes/font_size = 28
 text = "Time: 01:00.00"
 horizontal_alignment = 2
+script = ExtResource("18_fixed_width_timer")
+glow_radius_px = 25.0
 
 [node name="ElectricityLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud" unique_id=179864172]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.84, 1, 1)
 theme_override_font_sizes/font_size = 28
 text = "Electricity: 0% (-6.0%/s)"
 horizontal_alignment = 2
+script = ExtResource("17_glowing_label")
+glow_color = Color(0, 0.42, 1, 1)
+glow_radius_px = 25.0
+glow_strength = 1.7
 
 [node name="GasLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud" unique_id=1013658264]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 1, 0.42, 1)
 theme_override_font_sizes/font_size = 28
 text = "Gas: 50% / 50% (+0.0%)"
 horizontal_alignment = 2
+script = ExtResource("17_glowing_label")
+glow_color = Color(0, 0.78, 0.18, 1)
+glow_radius_px = 25.0
+glow_strength = 1.7
 
 [node name="ElectricityMeter" type="PanelContainer" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=284355991]
 layout_mode = 1

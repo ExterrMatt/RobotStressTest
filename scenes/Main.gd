@@ -215,9 +215,22 @@ func _ready() -> void:
 	_apply_brightness(GameState.brightness_value)
 	_apply_scanlines_enabled(GameState.scanlines_enabled)
 	_refresh_hud()
-	_show_selection_screen()
 	var intro_autoload: Node = get_node_or_null("/root/IntroTransition")
-	if intro_autoload and intro_autoload.consume_intro():
+	var debug_jump := {}
+	if intro_autoload and intro_autoload.has_method("consume_debug_jump"):
+		debug_jump = intro_autoload.call("consume_debug_jump")
+	if not debug_jump.is_empty():
+		_debug_set_phase_for_number(int(debug_jump.get("number", 1)))
+	_refresh_hud()
+	_show_selection_screen()
+	if not debug_jump.is_empty():
+		call_deferred(
+			"_debug_jump_for_phase_number",
+			int(debug_jump.get("number", 1)),
+			bool(debug_jump.get("shift", false)),
+			bool(debug_jump.get("ctrl", false))
+		)
+	elif intro_autoload and intro_autoload.consume_intro():
 		call_deferred("_play_intro_wipe")
 
 
@@ -293,6 +306,8 @@ func _debug_number_for_keycode(keycode: Key) -> int:
 
 
 func _debug_jump_for_phase_number(number: int, shift_held: bool, ctrl_held: bool) -> void:
+	_cancel_active_transitions()
+
 	if shift_held and ctrl_held:
 		if number == 1:
 			_debug_set_phase_for_number(number)
@@ -337,9 +352,6 @@ func _debug_set_phase_for_number(number: int) -> void:
 
 
 func _debug_jump_to_bedroom_phase(number: int) -> void:
-	if transition.has_method("is_playing") and transition.is_playing():
-		return
-
 	_debug_set_phase_for_number(number)
 	_log("[color=#88aaff]Debug: bedroom %s[/color]" % DayCycle.phase_name(GameState.phase))
 	_show_selection_screen()
@@ -475,9 +487,7 @@ func _show_selection_screen() -> void:
 ## Everything visible in the frame area changes together.
 func _apply_selection_screen_swap(animate_slide: bool = true) -> void:
 	# Tear down the previous location's UI.
-	if _current_location_node and is_instance_valid(_current_location_node):
-		_current_location_node.queue_free()
-		_current_location_node = null
+	_clear_current_location()
 	_current_location_fullscreen = false
 	_current_location_id = &""
 
@@ -559,6 +569,7 @@ func _on_location_picked(loc: LocationData) -> void:
 ## Runs at the wipe midpoint when picking a location.
 ## All frame-area changes happen together so the wipe hides them.
 func _apply_location_pick_swap(loc: LocationData, packed: PackedScene, animate_slide: bool = true) -> void:
+	_clear_current_location()
 	_current_location_node = packed.instantiate()
 	_current_location_fullscreen = loc.fullscreen_scene
 	_current_location_id = loc.id
@@ -594,6 +605,12 @@ func _apply_location_pick_swap(loc: LocationData, packed: PackedScene, animate_s
 func _apply_fullscreen_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
 	_apply_location_pick_swap(loc, packed)
 	_play_fullscreen_lift()
+
+
+func _clear_current_location() -> void:
+	if _current_location_node and is_instance_valid(_current_location_node):
+		_current_location_node.queue_free()
+		_current_location_node = null
 
 
 # --- frame size (scale) animation ---
@@ -910,6 +927,14 @@ func _is_any_transition_playing() -> bool:
 		if _fullscreen_transition.has_method("is_playing") and _fullscreen_transition.is_playing():
 			return true
 	return false
+
+
+func _cancel_active_transitions() -> void:
+	if transition != null and transition.has_method("cancel"):
+		transition.cancel()
+	if _fullscreen_transition != null and is_instance_valid(_fullscreen_transition):
+		if _fullscreen_transition.has_method("cancel"):
+			_fullscreen_transition.cancel()
 
 
 # --- result handling ---

@@ -11,6 +11,11 @@ const CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION: int = 1
 const ANIMATION_PHASE_NONE: String = ""
 const ANIMATION_PHASE_INTRO: String = "intro"
 const ANIMATION_PHASE_LOOP: String = "loop"
+const TORSO_CRUNCH_PATH: NodePath = ^"Torso/TorsoCrunch"
+const INTRO_ANIMATION_TORSO_PATH: NodePath = ^"AnimationLayers/Torso"
+const LOOP_ANIMATION_TORSO_PATH: NodePath = ^"AnimationLayers/MouthBLoopMedium/Torso"
+const LEGS_PATH: NodePath = ^"Legs"
+const HOVER_BOX_OVERLAY_Z_INDEX: int = 1000
 
 const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
@@ -86,6 +91,8 @@ var _active_animation_box: Control = null
 var _animation_phase: String = ANIMATION_PHASE_NONE
 var _animation_playing: bool = false
 var _animation_elapsed: float = 0.0
+var _animation_torso_restore_state: Dictionary = {}
+var _raised_legs_restore_index: int = -1
 
 
 func _ready() -> void:
@@ -165,7 +172,7 @@ func set_head_interaction_enabled(value: bool) -> void:
 	for box in _hover_boxes:
 		if box != null and is_instance_valid(box):
 			var visible_value := value and _is_hover_box_available(box)
-			box.visible = visible_value
+			box.visible = visible_value and _does_hover_box_show_border(box)
 			if not visible_value and box.has_method("set_hovered"):
 				box.call("set_hovered", false)
 
@@ -247,6 +254,8 @@ func _collect_hover_boxes() -> void:
 			continue
 		_hover_boxes.append(box)
 		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.z_index = HOVER_BOX_OVERLAY_Z_INDEX
+		box.z_as_relative = false
 		if box.has_signal("configuration_changed") \
 				and not box.is_connected("configuration_changed", changed_callable):
 			box.connect("configuration_changed", changed_callable)
@@ -259,6 +268,7 @@ func _on_hover_box_configuration_changed() -> void:
 			_apply_visibility_state(true)
 	else:
 		_apply_visibility_state()
+	_update_hover_boxes()
 
 
 func _rebuild_visibility_cache() -> void:
@@ -322,11 +332,12 @@ func _update_hover_boxes() -> void:
 		if box == null or not is_instance_valid(box):
 			continue
 		var box_available := _is_hover_box_available(box)
-		box.visible = _interaction_enabled and box_available
 		if not _interaction_enabled or not box_available:
+			box.visible = false
 			if box.has_method("set_hovered"):
 				box.call("set_hovered", false)
 			continue
+		box.visible = _does_hover_box_show_border(box)
 		var force_box_visible := bool(box.get("force_visible"))
 		var hovered := force_box_visible or box.get_global_rect().has_point(get_global_mouse_position())
 		if box.has_method("set_hovered"):
@@ -334,6 +345,8 @@ func _update_hover_boxes() -> void:
 
 
 func _find_clicked_hover_box(global_position: Vector2) -> Control:
+	if not _interaction_enabled:
+		return null
 	var boxes := _hover_boxes.duplicate()
 	boxes.sort_custom(func(a: Control, b: Control) -> bool:
 		return _get_box_priority(a) > _get_box_priority(b)
@@ -343,7 +356,7 @@ func _find_clicked_hover_box(global_position: Vector2) -> Control:
 			continue
 		if not _is_hover_box_available(box):
 			continue
-		if not box.visible or not box.is_visible_in_tree():
+		if not box.is_inside_tree():
 			continue
 		if box.get_global_rect().has_point(global_position):
 			return box
@@ -468,6 +481,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_animation_parent_visibility(resolved)
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
+	_apply_pelvis_torso_crunch_animation_slot(resolved)
 	_apply_resolved_visibility(resolved)
 
 
@@ -541,6 +555,90 @@ func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], availa
 		resolved[path] = false
 
 
+func _apply_pelvis_torso_crunch_animation_slot(resolved: Dictionary) -> void:
+	_restore_animation_torso_slots()
+	_restore_raised_legs_order()
+	if _robot_part_count("torso") < 1:
+		return
+	if not _is_named_box_effect_active("PelvisHoverBox"):
+		return
+
+	var head_box := _find_hover_box_by_name("HeadHoverBox")
+	if head_box == null or not _is_box_effect_active(head_box):
+		return
+
+	var phase := _get_visible_animation_phase_for_box(head_box)
+	if phase == ANIMATION_PHASE_NONE:
+		return
+
+	var target_path := LOOP_ANIMATION_TORSO_PATH if phase == ANIMATION_PHASE_LOOP else INTRO_ANIMATION_TORSO_PATH
+	var target := get_node_or_null(target_path) as Sprite2D
+	var source := get_node_or_null(TORSO_CRUNCH_PATH) as TextureRect
+	if target == null or source == null or source.texture == null:
+		return
+
+	_remember_animation_torso_slot(target_path, target)
+	target.texture = source.texture
+	target.region_enabled = false
+	resolved[TORSO_CRUNCH_PATH] = false
+	resolved[target_path] = true
+	_move_raised_legs_above_animation_layers()
+
+
+func _remember_animation_torso_slot(path: NodePath, node: Sprite2D) -> void:
+	var key := String(path)
+	if _animation_torso_restore_state.has(key):
+		return
+	_animation_torso_restore_state[key] = {
+		"texture": node.texture,
+		"region_enabled": node.region_enabled,
+		"region_rect": node.region_rect,
+	}
+
+
+func _restore_animation_torso_slots() -> void:
+	for key in _animation_torso_restore_state:
+		var node := get_node_or_null(NodePath(key)) as Sprite2D
+		if node == null:
+			continue
+		var state: Dictionary = _animation_torso_restore_state[key]
+		node.texture = state.get("texture")
+		node.region_enabled = bool(state.get("region_enabled", false))
+		node.region_rect = state.get("region_rect", Rect2())
+	_animation_torso_restore_state.clear()
+
+
+func _move_raised_legs_above_animation_layers() -> void:
+	var legs := get_node_or_null(LEGS_PATH)
+	var layers := _get_animation_layers()
+	if legs == null or layers == null:
+		return
+	var parent := legs.get_parent()
+	if parent == null or parent != layers.get_parent():
+		return
+	if _raised_legs_restore_index < 0:
+		_raised_legs_restore_index = legs.get_index()
+	var target_index := layers.get_index()
+	if legs.get_index() > layers.get_index():
+		target_index += 1
+	parent.move_child(legs, target_index)
+
+
+func _restore_raised_legs_order() -> void:
+	if _raised_legs_restore_index < 0:
+		return
+	var legs := get_node_or_null(LEGS_PATH)
+	if legs == null:
+		_raised_legs_restore_index = -1
+		return
+	var parent := legs.get_parent()
+	if parent == null:
+		_raised_legs_restore_index = -1
+		return
+	parent.move_child(legs, mini(_raised_legs_restore_index, parent.get_child_count() - 1))
+	_raised_legs_restore_index = -1
+
+
 func _add_robot_part_managed_paths() -> void:
 	_add_managed_paths(TORSO_PART_PATHS)
 	_add_managed_paths(LEFT_ARM_PART_PATHS)
@@ -569,7 +667,7 @@ func _is_hover_box_available(box: Control) -> bool:
 		return false
 	if _is_hover_box_blocked_by_repair(box):
 		return false
-	if box.name == "PelvisHoverBox":
+	if box.name == "PelvisHoverBox" or box.name == "BoobCoverHoverBox":
 		return _robot_part_count("torso") >= 1
 	return true
 
@@ -683,6 +781,15 @@ func _is_box_effect_active(box: Control) -> bool:
 	if box.has_method("is_effect_active"):
 		return bool(box.call("is_effect_active"))
 	return false
+
+
+func _does_hover_box_show_border(box: Control) -> bool:
+	return bool(box.get("show_border"))
+
+
+func _is_named_box_effect_active(box_name: String) -> bool:
+	var box := _find_hover_box_by_name(box_name)
+	return box != null and _is_box_effect_active(box)
 
 
 func _get_box_priority(box: Control) -> int:

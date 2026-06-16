@@ -19,6 +19,16 @@ extends Node
 ## Set by MainMenu before handing off to Main.tscn. Read once by Main.gd
 ## on _ready() via consume_intro(), which clears the flag.
 var pending_intro: bool = false
+var _pending_debug_jump: Dictionary = {}
+
+
+func request_debug_jump(number: int, shift_held: bool, ctrl_held: bool) -> void:
+	pending_intro = false
+	_pending_debug_jump = {
+		"number": number,
+		"shift": shift_held,
+		"ctrl": ctrl_held,
+	}
 
 
 ## Returns whether an intro wipe was requested, and clears the flag.
@@ -28,3 +38,9 @@ func consume_intro() -> bool:
 	var was_pending: bool = pending_intro
 	pending_intro = false
 	return was_pending
+
+
+func consume_debug_jump() -> Dictionary:
+	var request := _pending_debug_jump.duplicate()
+	_pending_debug_jump.clear()
+	return request

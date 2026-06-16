@@ -241,8 +241,6 @@ func _set_drag_target(local_position: Vector2) -> void:
 
 
 func _emit_max_pull_reached_if_needed() -> void:
-	if not _is_rip_cord():
-		return
 	var distance_to_max := _max_stretch_radius() - _drag_target.distance_to(_anchor_position())
 	if _max_pull_reached_this_drag and distance_to_max > max_pull_rearm_distance:
 		_max_pull_reached_this_drag = false

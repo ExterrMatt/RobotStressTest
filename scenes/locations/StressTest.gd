@@ -121,7 +121,6 @@ var _failure_result_emitted: bool = false
 var _rng := RandomNumberGenerator.new()
 var _robot_base_position: Vector2
 var _robot_shadow_base_position: Vector2
-var _robot_shadow_base_top_erase_px: float = 0.0
 
 const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
@@ -489,10 +488,10 @@ func _global_to_scene_source(global_position: Vector2) -> Vector2:
 func _initialize_pull_cord() -> void:
 	if pull_cord == null:
 		return
-	if pull_cord.has_signal("pulled"):
-		var pulled_callable := Callable(self, "_on_pull_cord_pulled")
-		if not pull_cord.is_connected("pulled", pulled_callable):
-			pull_cord.connect("pulled", pulled_callable)
+	if pull_cord.has_signal("max_pull_reached"):
+		var max_pull_callable := Callable(self, "_on_pull_cord_max_pull_reached")
+		if not pull_cord.is_connected("max_pull_reached", max_pull_callable):
+			pull_cord.connect("max_pull_reached", max_pull_callable)
 	if electrical_cord != null and electrical_cord.has_signal("max_pull_reached"):
 		var max_pull_callable := Callable(self, "_on_electrical_cord_max_pull_reached")
 		if not electrical_cord.is_connected("max_pull_reached", max_pull_callable):
@@ -500,7 +499,7 @@ func _initialize_pull_cord() -> void:
 	_set_stress_test_dark(false)
 
 
-func _on_pull_cord_pulled() -> void:
+func _on_pull_cord_max_pull_reached() -> void:
 	_set_stress_test_dark(not _stress_test_dark)
 
 
@@ -523,7 +522,6 @@ func _initialize_robot_position_state() -> void:
 		_robot_base_position = stress_test_robot.position
 	if stress_test_robot_shadow != null:
 		_robot_shadow_base_position = stress_test_robot_shadow.position
-		_robot_shadow_base_top_erase_px = float(stress_test_robot_shadow.get("top_erase_px"))
 
 	var state := get_node_or_null("/root/GameState")
 	if state != null and state.has_signal("robot_parts_changed"):
@@ -544,8 +542,12 @@ func _apply_robot_head_only_position() -> void:
 	if stress_test_robot != null:
 		stress_test_robot.position = _robot_base_position + offset
 	if stress_test_robot_shadow != null:
-		stress_test_robot_shadow.position = _robot_shadow_base_position + offset
-		stress_test_robot_shadow.set("top_erase_px", 0.0 if head_only else _robot_shadow_base_top_erase_px)
+		if stress_test_robot_shadow.has_method("set_head_only_shadow_enabled"):
+			stress_test_robot_shadow.call("set_head_only_shadow_enabled", head_only)
+		var shadow_profile_offset := Vector2.ZERO
+		if stress_test_robot_shadow.has_method("get_shadow_position_offset"):
+			shadow_profile_offset = stress_test_robot_shadow.call("get_shadow_position_offset")
+		stress_test_robot_shadow.position = _robot_shadow_base_position + offset + shadow_profile_offset
 
 
 func _is_head_only_robot() -> bool:
@@ -601,6 +603,7 @@ func _initialize_stress_systems() -> void:
 		failure_overlay.visible = false
 		failure_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 
+	_set_robot_interaction_enabled(true)
 	set_process(true)
 	_refresh_stress_hud()
 
@@ -899,6 +902,7 @@ func _complete_stress_test_success() -> void:
 	if _night_finished:
 		return
 	_night_finished = true
+	_set_robot_interaction_enabled(false)
 	DayCycle.register_stress_test_completed()
 	finish(0, 0, -10, {}, false)
 
@@ -911,6 +915,7 @@ func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 	if _night_finished:
 		return
 	_night_finished = true
+	_set_robot_interaction_enabled(false)
 	_pending_failure_registers_wake = registers_wake
 	_dragging_gas_valve = false
 	_clear_window_alert()
@@ -947,8 +952,14 @@ func _on_give_up_button_pressed() -> void:
 	if _night_finished:
 		return
 	_night_finished = true
+	_set_robot_interaction_enabled(false)
 	finish(0, 0, 0, {}, false)
 
 
 func _on_failure_continue_button_pressed() -> void:
 	_finish_failed_stress_test()
+
+
+func _set_robot_interaction_enabled(value: bool) -> void:
+	if stress_test_robot != null and stress_test_robot.has_method("set_interaction_enabled"):
+		stress_test_robot.call("set_interaction_enabled", value)

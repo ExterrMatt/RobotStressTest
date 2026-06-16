@@ -96,7 +96,7 @@ func _ensure_glow_nodes() -> void:
 	_glow_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_glow_rect.texture = _glow_viewport.get_texture()
 	_glow_rect.show_behind_parent = true
-	_glow_rect.z_index = -10
+	# Keep the glow behind the label text while leaving it in normal draw order.
 	_glow_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	add_child(_glow_rect)
 

@@ -153,11 +153,19 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
+	var key_event: InputEventKey = event
+
 	# If an overlay is open, ESC closes it.
 	if _current_overlay and is_instance_valid(_current_overlay):
-		if event.keycode == KEY_ESCAPE:
+		if key_event.keycode == KEY_ESCAPE:
 			_close_overlay()
 			get_viewport().set_input_as_handled()
+		return
+
+	var debug_number := _debug_number_for_keycode(key_event.keycode)
+	if debug_number >= 1 and debug_number <= 3:
+		get_viewport().set_input_as_handled()
+		_start_debug_game(debug_number, key_event.shift_pressed, key_event.ctrl_pressed)
 		return
 
 # =============================================================================
@@ -324,6 +332,25 @@ func _start_endless() -> void:
 
 ## Kept for completeness — used by other parts of the script that may want
 ## to check for an autoload's presence by name.
+func _start_debug_game(number: int, shift_held: bool, ctrl_held: bool) -> void:
+	var intro: Node = get_node_or_null("/root/IntroTransition")
+	if intro and intro.has_method("request_debug_jump"):
+		intro.call("request_debug_jump", number, shift_held, ctrl_held)
+	get_tree().change_scene_to_file(game_scene_path)
+
+
+func _debug_number_for_keycode(keycode: Key) -> int:
+	match keycode:
+		KEY_1, KEY_KP_1:
+			return 1
+		KEY_2, KEY_KP_2:
+			return 2
+		KEY_3, KEY_KP_3:
+			return 3
+		_:
+			return -1
+
+
 func _has_autoload(autoload_name: String) -> bool:
 	return get_node_or_null("/root/" + autoload_name) != null
 

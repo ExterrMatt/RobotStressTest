@@ -149,6 +149,17 @@ func play_lift_from_midpoint() -> void:
 	_tween.tween_callback(_on_animation_finished)
 
 
+func cancel() -> void:
+	if _tween and _tween.is_valid():
+		_tween.kill()
+	_tween = null
+	_midpoint_callback = Callable()
+	_midpoint_fired = false
+	_frame_index = 0
+	visible = false
+	set_process(false)
+
+
 func _process(_delta: float) -> void:
 	if _midpoint_fired:
 		return
