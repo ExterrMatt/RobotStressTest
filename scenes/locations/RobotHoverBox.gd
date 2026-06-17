@@ -44,6 +44,8 @@ enum ClickAction {
 		click_action = value
 		_emit_configuration_changed()
 
+@export_multiline var hover_description: String = ""
+
 ## Runtime starts with this hover effect already active.
 @export var active_by_default: bool = false:
 	set(value):

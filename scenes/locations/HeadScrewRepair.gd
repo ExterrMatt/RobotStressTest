@@ -133,6 +133,19 @@ func set_repair_animation_duration_multiplier(value: float) -> void:
 	_repair_animation_duration_multiplier = maxf(0.1, value)
 
 
+func interrupt_repair() -> bool:
+	if not _repairing:
+		return false
+
+	_repairing = false
+	_repairing_screw_index = -1
+	_repair_elapsed = 0.0
+	var screwdriver := _get_screwdriver()
+	if screwdriver != null:
+		screwdriver.visible = false
+	return true
+
+
 func _start_repair_animation(screw_index: int) -> void:
 	_repairing = true
 	_repairing_screw_index = screw_index

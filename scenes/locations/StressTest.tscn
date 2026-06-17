@@ -231,28 +231,6 @@ mouse_filter = 2
 texture = ExtResource("28_table")
 expand_mode = 1
 
-[node name="Button" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=2142978624]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("29_button")
-expand_mode = 1
-
-[node name="ButtonPressed" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=17164941]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("30_button_pressed")
-expand_mode = 1
-
 [node name="Window" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1284097158]
 layout_mode = 1
 anchors_preset = 15
@@ -532,6 +510,27 @@ offset_bottom = 114.0
 mouse_default_cursor_shape = 2
 script = ExtResource("16_emergency_power_button")
 
+[node name="Button" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton" unique_id=1317033291]
+layout_mode = 1
+offset_left = -466.0
+offset_top = -80.0
+offset_right = 334.0
+offset_bottom = 520.0
+mouse_filter = 2
+texture = ExtResource("29_button")
+expand_mode = 1
+
+[node name="ButtonPressed" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton" unique_id=2085711196]
+visible = false
+layout_mode = 1
+offset_left = -466.0
+offset_top = -80.0
+offset_right = 334.0
+offset_bottom = 520.0
+mouse_filter = 2
+texture = ExtResource("30_button_pressed")
+expand_mode = 1
+
 [node name="GasValve" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=389653453]
 layout_mode = 1
 offset_left = 503.0
@@ -615,7 +614,6 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R0_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1051928169]
-visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 400.0
@@ -660,16 +658,14 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R1_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=911905836]
-visible = false
 layout_mode = 1
 anchors_preset = 0
-offset_left = 300.0
+offset_left = 400.0
 offset_top = 87.0
-offset_right = 700.0
+offset_right = 800.0
 offset_bottom = 387.0
 mouse_filter = 2
 script = ExtResource("9_zoom_region")
-active = false
 
 [node name="Zoom1_R1_C4" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1733628774]
 visible = false
@@ -681,6 +677,7 @@ offset_right = 800.0
 offset_bottom = 419.0
 mouse_filter = 2
 script = ExtResource("9_zoom_region")
+active = false
 
 [node name="Zoom1_R2_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=378503462]
 visible = false
@@ -753,7 +750,6 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R3_C1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=1155757012]
-visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 80.0
@@ -1121,7 +1117,7 @@ glow_color = Color(0, 0.78, 0.18, 1)
 glow_radius_px = 25.0
 glow_strength = 1.7
 
-[node name="UncleLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud"]
+[node name="UncleLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud" unique_id=1963341068]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.8, 0.95, 1)
 theme_override_font_sizes/font_size = 28

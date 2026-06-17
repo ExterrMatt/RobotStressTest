@@ -12,6 +12,7 @@ const PAN_DURATION: float = 0.35
 const PAN_TRANS: int = Tween.TRANS_SINE
 const PAN_EASE: int = Tween.EASE_IN_OUT
 const ZOOM_DURATION: float = 0.35
+const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 @export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
 @export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
 
@@ -54,6 +55,8 @@ const ZOOM_DURATION: float = 0.35
 @export_group("Window Alert")
 @export_range(0, 3, 1) var window_alert_event_count_min: int = 0
 @export_range(0, 3, 1) var window_alert_event_count_max: int = 3
+@export var window_alert_initial_delay_seconds: float = 10.0
+@export var window_alert_return_delay_seconds: float = 15.0
 @export var window_alert_light_seconds_min: float = 5.0
 @export var window_alert_light_seconds_max: float = 10.0
 @export var window_alert_indicator_lead_seconds: float = 3.0
@@ -84,6 +87,7 @@ const ZOOM_DURATION: float = 0.35
 @onready var uncle_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/UncleWindow
 @onready var shed_light: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Light
 @onready var shed_bulb: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Bulb
+@onready var bulb_over_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/BulbOverWindow
 @onready var pull_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/PullCord
 @onready var electrical_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ElectricalCord
 @onready var stress_test_robot_shadow: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobotShadow
@@ -126,12 +130,15 @@ var _window_alert_light_duration: float = 5.0
 var _window_alert_silhouette_leave_seconds: float = 3.0
 var _window_alert_safe_elapsed: float = 0.0
 var _window_alert_seen_elapsed: float = 0.0
+var _window_alert_next_allowed_time: float = 0.0
 var _dragging_gas_valve: bool = false
 var _pending_failure_registers_wake: bool = false
 var _failure_result_emitted: bool = false
 var _rng := RandomNumberGenerator.new()
 var _robot_base_position: Vector2
 var _robot_shadow_base_position: Vector2
+var _tooltip_layer: CanvasLayer = null
+var _mouse_tooltip: MouseFollowTooltip = null
 
 const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
@@ -139,6 +146,7 @@ const WINDOW_ALERT_RED: int = 2
 
 
 func _ready() -> void:
+	_create_mouse_tooltip()
 	_initialize_robot_position_state()
 	_initialize_pull_cord()
 	_initialize_stress_systems()
@@ -148,6 +156,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if _night_finished:
+		_hide_mouse_tooltip()
 		return
 
 	_night_elapsed += delta
@@ -158,6 +167,7 @@ func _process(delta: float) -> void:
 	_update_emergency_power_gas_equalization(delta)
 	_update_window_alert(delta)
 	_refresh_stress_hud()
+	_update_hover_box_tooltip()
 
 	if _gas_flow_percent >= gas_high_failure_percent:
 		_fail_stress_test(gas_high_failure_text, true)
@@ -241,6 +251,7 @@ func _move_zoom_region(direction: Vector2i) -> void:
 
 	_current_zoom_region = next_region
 	_apply_zoom_region(true)
+	_interrupt_screw_repairs_if_window_in_target_view()
 
 
 func _set_zoom_level(value: int, focus_position: Vector2) -> void:
@@ -271,6 +282,7 @@ func _set_zoom_level(value: int, focus_position: Vector2) -> void:
 	_zoom_tween.set_ease(PAN_EASE)
 	_zoom_tween.tween_property(scene_canvas, "scale", target_scale * _canvas_base_scale, ZOOM_DURATION)
 	_zoom_tween.tween_property(scene_canvas, "position", target_position, ZOOM_DURATION)
+	_interrupt_screw_repairs_if_window_in_target_view()
 
 
 func _apply_zoom_region(animated: bool) -> void:
@@ -391,21 +403,62 @@ func _neighbor_region(region: Control, direction: Vector2i) -> Control:
 	if region == null:
 		return _find_region_for_focus(_zoom_level, _visible_source_center())
 
-	var current_cell := _cell_for_region(region)
-	if current_cell.x < 0 or current_cell.y < 0:
-		return _find_region_for_focus(_zoom_level, _visible_source_center())
-
-	var regions_by_cell := _regions_by_cell_for_level(_zoom_level)
-	if regions_by_cell.is_empty():
+	var active_regions := _active_regions_for_level(_zoom_level)
+	if active_regions.is_empty():
 		return null
 
-	var next_cell := current_cell + direction
-	while regions_by_cell.has(next_cell):
-		var candidate := regions_by_cell[next_cell] as Control
-		if candidate != null and bool(candidate.get("active")):
-			return candidate
-		next_cell += direction
-	return null
+	var direction_vector := Vector2(direction)
+	if direction_vector.length_squared() <= 0.0:
+		return null
+
+	var current_rect := _region_rect(region)
+	var current_center := current_rect.get_center()
+	var nearest_region: Control = null
+	var nearest_score := INF
+	for candidate in active_regions:
+		if candidate == region:
+			continue
+
+		var candidate_rect := _region_rect(candidate)
+		var candidate_center := candidate_rect.get_center()
+		var center_delta := candidate_center - current_center
+		var primary_distance := center_delta.dot(direction_vector)
+		if primary_distance <= 0.001:
+			continue
+
+		var lane_gap := _region_perpendicular_gap(current_rect, candidate_rect, direction)
+		var perpendicular_distance := absf(center_delta.cross(direction_vector))
+		var score := lane_gap * 1000000.0 + perpendicular_distance * 1000.0 + primary_distance
+		if score < nearest_score:
+			nearest_score = score
+			nearest_region = candidate
+
+	return nearest_region
+
+
+func _region_perpendicular_gap(current_rect: Rect2, candidate_rect: Rect2, direction: Vector2i) -> float:
+	if direction.x != 0:
+		return _span_gap(
+			current_rect.position.y,
+			current_rect.position.y + current_rect.size.y,
+			candidate_rect.position.y,
+			candidate_rect.position.y + candidate_rect.size.y
+		)
+
+	return _span_gap(
+		current_rect.position.x,
+		current_rect.position.x + current_rect.size.x,
+		candidate_rect.position.x,
+		candidate_rect.position.x + candidate_rect.size.x
+	)
+
+
+func _span_gap(first_min: float, first_max: float, second_min: float, second_max: float) -> float:
+	if second_min > first_max:
+		return second_min - first_max
+	if first_min > second_max:
+		return first_min - second_max
+	return 0.0
 
 
 func _active_regions_for_level(zoom_level: int) -> Array[Control]:
@@ -518,11 +571,22 @@ func _set_stress_test_dark(value: bool) -> void:
 	var was_dark := _stress_test_dark
 	_stress_test_dark = value
 	_apply_background_light_state()
-	if stress_test_robot != null:
-		stress_test_robot.modulate = robot_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
-		if _stress_test_dark and not was_dark and stress_test_robot.has_method("reset_interactions_to_default"):
-			stress_test_robot.call("reset_interactions_to_default")
+	_apply_lights_off_modulate()
+	if stress_test_robot != null and _stress_test_dark and not was_dark and stress_test_robot.has_method("reset_interactions_to_default"):
+		stress_test_robot.call("reset_interactions_to_default")
 	_apply_screw_repair_light_state()
+
+
+func _apply_lights_off_modulate() -> void:
+	var lights_modulate := robot_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
+	if stress_test_robot != null:
+		stress_test_robot.modulate = lights_modulate
+	if pull_cord != null:
+		pull_cord.modulate = lights_modulate
+	if electrical_cord != null:
+		electrical_cord.modulate = lights_modulate
+	if emergency_power_button != null:
+		emergency_power_button.modulate = lights_modulate
 
 
 func _apply_background_light_state() -> void:
@@ -534,6 +598,41 @@ func _apply_background_light_state() -> void:
 		shed_light.visible = not _stress_test_dark
 	if shed_bulb != null:
 		shed_bulb.visible = not _stress_test_dark
+	if bulb_over_window != null:
+		bulb_over_window.visible = not _stress_test_dark
+
+
+func _create_mouse_tooltip() -> void:
+	_tooltip_layer = CanvasLayer.new()
+	_tooltip_layer.name = "TooltipLayer"
+	_tooltip_layer.layer = 200
+	add_child(_tooltip_layer)
+
+	_mouse_tooltip = MOUSE_TOOLTIP_SCRIPT.new() as MouseFollowTooltip
+	_tooltip_layer.add_child(_mouse_tooltip)
+
+
+func _update_hover_box_tooltip() -> void:
+	if stress_test_robot == null or not stress_test_robot.has_method("hovered_hover_box_description"):
+		_hide_mouse_tooltip()
+		return
+
+	var description := String(stress_test_robot.call("hovered_hover_box_description"))
+	if description.strip_edges().is_empty():
+		_hide_mouse_tooltip()
+		return
+
+	_show_mouse_tooltip(description)
+
+
+func _show_mouse_tooltip(text: String) -> void:
+	if _mouse_tooltip != null:
+		_mouse_tooltip.show_text(text)
+
+
+func _hide_mouse_tooltip() -> void:
+	if _mouse_tooltip != null:
+		_mouse_tooltip.hide_tooltip()
 
 
 func _initialize_robot_position_state() -> void:
@@ -606,6 +705,7 @@ func _initialize_stress_systems() -> void:
 	_window_alert_silhouette_leave_seconds = window_alert_safe_silhouette_seconds
 	_window_alert_safe_elapsed = 0.0
 	_window_alert_seen_elapsed = 0.0
+	_window_alert_next_allowed_time = maxf(0.0, window_alert_initial_delay_seconds)
 	_dragging_gas_valve = false
 	_pending_failure_registers_wake = false
 	_failure_result_emitted = false
@@ -654,10 +754,11 @@ func _random_window_alert_times(count: int) -> Array[float]:
 		return times
 	var alert_duration := _window_alert_schedule_duration()
 	var latest_start := maxf(0.0, night_duration_seconds - alert_duration - 0.5)
-	if latest_start <= 0.0:
+	var earliest_start := maxf(0.0, window_alert_initial_delay_seconds)
+	if latest_start < earliest_start:
 		return times
 	for _i in range(count):
-		times.append(_rng.randf_range(1.0, latest_start))
+		times.append(_rng.randf_range(earliest_start, latest_start))
 	times.sort()
 	return times
 
@@ -676,7 +777,9 @@ func _apply_scheduled_meter_events() -> void:
 
 func _update_window_alert(delta: float) -> void:
 	if _window_alert_state == WINDOW_ALERT_NONE:
-		if _window_alert_event_index < _window_alert_event_times.size() and _night_elapsed >= _window_alert_event_times[_window_alert_event_index]:
+		if _window_alert_event_index < _window_alert_event_times.size() \
+				and _night_elapsed >= _window_alert_event_times[_window_alert_event_index] \
+				and _night_elapsed >= _window_alert_next_allowed_time:
 			_window_alert_event_index += 1
 			_start_window_alert()
 		return
@@ -732,6 +835,8 @@ func _clear_window_alert() -> void:
 	_window_alert_total_elapsed = 0.0
 	_window_alert_safe_elapsed = 0.0
 	_window_alert_seen_elapsed = 0.0
+	if not _night_finished:
+		_window_alert_next_allowed_time = _night_elapsed + maxf(0.0, window_alert_return_delay_seconds)
 	_skip_elapsed_window_alert_events()
 	if window_alert_rect != null:
 		window_alert_rect.visible = false
@@ -782,6 +887,24 @@ func _is_window_alert_in_camera_view() -> bool:
 	if camera_window == null or window_alert_rect == null:
 		return false
 	return camera_window.get_global_rect().intersects(window_alert_rect.get_global_rect())
+
+
+func _is_window_alert_in_target_view() -> bool:
+	if window_alert_rect == null:
+		return false
+	if not _is_zoomed_in():
+		return true
+	if _current_zoom_region == null:
+		return false
+	return _region_rect(_current_zoom_region).intersects(_region_rect(window_alert_rect))
+
+
+func _interrupt_screw_repairs_if_window_in_target_view() -> void:
+	if not _is_window_alert_in_target_view():
+		return
+	for repair in _screw_repair_controllers():
+		if repair.has_method("interrupt_repair"):
+			repair.call("interrupt_repair")
 
 
 func _is_uncle_exposure_active() -> bool:
@@ -983,7 +1106,7 @@ func _screw_repair_controllers() -> Array[Node]:
 
 func _collect_screw_repair_controllers(node: Node, out: Array[Node]) -> void:
 	for child in node.get_children():
-		if child.has_method("set_repair_animation_duration_multiplier"):
+		if child.has_method("set_repair_animation_duration_multiplier") or child.has_method("interrupt_repair"):
 			out.append(child)
 		_collect_screw_repair_controllers(child, out)
 
@@ -992,6 +1115,7 @@ func _complete_stress_test_success() -> void:
 	if _night_finished:
 		return
 	_night_finished = true
+	_hide_mouse_tooltip()
 	_set_robot_interaction_enabled(false)
 	DayCycle.register_stress_test_completed()
 	finish(0, 0, -10, {}, false)
@@ -1005,6 +1129,7 @@ func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 	if _night_finished:
 		return
 	_night_finished = true
+	_hide_mouse_tooltip()
 	_set_robot_interaction_enabled(false)
 	_pending_failure_registers_wake = registers_wake
 	_dragging_gas_valve = false

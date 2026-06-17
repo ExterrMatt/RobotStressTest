@@ -17,6 +17,7 @@ const CORD_MODE_RIP_CORD: int = 1
 @export var max_pull_rearm_distance: float = 8.0
 @export var drag_soft_limit_radius: float = 36.0
 @export_range(0.0, 1.0, 0.01) var drag_soft_limit_min_influence: float = 0.35
+@export var rip_overpull_release_radius_scale: float = 1.25
 @export var gravity: float = 9.8
 @export var pixels_per_meter: float = 100.0
 @export var damping: float = 0.98
@@ -57,6 +58,7 @@ var _bulb_angle: float = 0.0
 var _bulb_angular_velocity: float = 0.0
 var _return_still_elapsed: float = 0.0
 var _max_pull_reached_this_drag: bool = false
+var _overpull_release_radius: float = 0.0
 
 
 func _ready() -> void:
@@ -180,6 +182,7 @@ func _reset_physics() -> void:
 	_bulb_angle = 0.0
 	_bulb_angular_velocity = 0.0
 	_return_still_elapsed = 0.0
+	_overpull_release_radius = 0.0
 	_update_visuals()
 
 
@@ -191,6 +194,7 @@ func _start_drag(local_position: Vector2) -> void:
 	_bulb_velocity = Vector2.ZERO
 	_return_still_elapsed = 0.0
 	_max_pull_reached_this_drag = false
+	_overpull_release_radius = 0.0
 	_set_drag_target(local_position)
 	set_physics_process(true)
 
@@ -238,18 +242,23 @@ func _set_drag_target(local_position: Vector2) -> void:
 	if _bulb_uses_chain_pivot():
 		_sync_bulb_angle_to_cord_direction(_drag_target)
 	_update_active_link_count_for_bulb()
+	if _should_release_from_overpull(target_position):
+		_force_bulb_to_drag_target()
+		_release_drag()
 
 
 func _emit_max_pull_reached_if_needed() -> void:
 	var distance_to_max := _max_stretch_radius() - _drag_target.distance_to(_anchor_position())
 	if _max_pull_reached_this_drag and distance_to_max > max_pull_rearm_distance:
 		_max_pull_reached_this_drag = false
+		_overpull_release_radius = 0.0
 	if _max_pull_reached_this_drag:
 		return
 	if distance_to_max > 0.25:
 		return
 
 	_max_pull_reached_this_drag = true
+	_overpull_release_radius = _raw_drag_radius_for_max_pull() * maxf(1.0, rip_overpull_release_radius_scale)
 	max_pull_reached.emit()
 
 
@@ -537,6 +546,50 @@ func _drag_limited_position(local_position: Vector2) -> Vector2:
 	if max_radius - eased_radius <= 0.25:
 		eased_radius = max_radius
 	return anchor + anchor_to_target.normalized() * eased_radius
+
+
+func _should_release_from_overpull(target_position: Vector2) -> bool:
+	if not _dragging or not _is_rip_cord():
+		return false
+	if not _max_pull_reached_this_drag or _overpull_release_radius <= 0.0:
+		return false
+
+	var release_scale := maxf(0.0, rip_overpull_release_radius_scale)
+	if release_scale <= 0.0:
+		return false
+
+	return target_position.distance_to(_anchor_position()) > _overpull_release_radius
+
+
+func _raw_drag_radius_for_max_pull() -> float:
+	var anchor := _anchor_position()
+	var max_radius := _max_stretch_radius()
+	var target_radius := maxf(0.0, max_radius - 0.25)
+	var low := 0.0
+	var high := maxf(1.0, max_radius)
+
+	while _drag_limited_position(anchor + Vector2.DOWN * high).distance_to(anchor) < target_radius:
+		low = high
+		high *= 2.0
+		if high >= max_radius * 16.0:
+			return high
+
+	for _i in range(20):
+		var mid := (low + high) * 0.5
+		if _drag_limited_position(anchor + Vector2.DOWN * mid).distance_to(anchor) >= target_radius:
+			high = mid
+		else:
+			low = mid
+
+	return high
+
+
+func _force_bulb_to_drag_target() -> void:
+	_previous_bulb_position = _bulb_position
+	_bulb_position = _drag_target
+	_update_active_link_count_for_bulb()
+	_points[_active_link_count] = _cord_end_position()
+	_previous_points[_active_link_count] = _points[_active_link_count]
 
 
 func _sync_bulb_angle_to_current_cord_direction() -> void:

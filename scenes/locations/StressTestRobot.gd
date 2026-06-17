@@ -197,6 +197,19 @@ func reset_interactions_to_default() -> void:
 	_update_hover_boxes()
 
 
+func hovered_hover_box_description() -> String:
+	var box := _find_hover_box_at(get_global_mouse_position())
+	if box == null:
+		return ""
+	if String(box.name) == "HeadHoverBox":
+		return "Animate Head" if _active_animation_box == box else "Raise Head"
+	if String(box.name) == "PelvisHoverBox":
+		return "Lower Legs" if _is_box_effect_active(box) else "Raise Legs"
+	if String(box.name) == "BoobCoverHoverBox":
+		return "Remove Chest Cover" if _is_boob_cover_visible() else "Equip Chest Cover"
+	return String(box.get("hover_description"))
+
+
 func _on_resized() -> void:
 	_sync_animation_layers_to_robot_size()
 
@@ -345,6 +358,10 @@ func _update_hover_boxes() -> void:
 
 
 func _find_clicked_hover_box(global_position: Vector2) -> Control:
+	return _find_hover_box_at(global_position)
+
+
+func _find_hover_box_at(global_position: Vector2) -> Control:
 	if not _interaction_enabled:
 		return null
 	var boxes := _hover_boxes.duplicate()
@@ -790,6 +807,11 @@ func _does_hover_box_show_border(box: Control) -> bool:
 func _is_named_box_effect_active(box_name: String) -> bool:
 	var box := _find_hover_box_by_name(box_name)
 	return box != null and _is_box_effect_active(box)
+
+
+func _is_boob_cover_visible() -> bool:
+	var cover := get_node_or_null(^"BoobCover") as CanvasItem
+	return cover != null and cover.visible
 
 
 func _get_box_priority(box: Control) -> int:

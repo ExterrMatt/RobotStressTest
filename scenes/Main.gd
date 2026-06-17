@@ -50,6 +50,7 @@ const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
 
 const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryOverlay.tscn")
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
+const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 
 ## Default rendered size of the framed scene image. Matches the size hard-
 ## coded in Main.tscn for SceneImage.custom_minimum_size, and the 1.8x
@@ -179,8 +180,11 @@ var _player_inventory_overlay: InventoryOverlay = null
 
 var _fullscreen_transition_layer: CanvasLayer = null
 var _fullscreen_transition: TextureRect = null
+var _tooltip_layer: CanvasLayer = null
+var _mouse_tooltip: MouseFollowTooltip = null
 
 func _ready() -> void:
+	_create_mouse_tooltip()
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
 
@@ -513,7 +517,6 @@ func _apply_selection_screen_swap(animate_slide: bool = true) -> void:
 func _build_location_button(loc: LocationData) -> Button:
 	var btn := Button.new()
 	btn.text = loc.display_name.to_upper()
-	btn.tooltip_text = loc.description
 	btn.custom_minimum_size = Vector2(0, 80)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.add_theme_font_size_override("font_size", 58)
@@ -521,6 +524,9 @@ func _build_location_button(loc: LocationData) -> Button:
 		btn.icon = loc.icon
 		btn.expand_icon = true
 	btn.disabled = _is_location_disabled(loc)
+	if not loc.description.strip_edges().is_empty():
+		btn.mouse_entered.connect(_show_mouse_tooltip.bind(loc.description))
+		btn.mouse_exited.connect(_hide_mouse_tooltip)
 	if not btn.disabled:
 		btn.pressed.connect(_on_location_picked.bind(loc))
 	return btn
@@ -534,6 +540,26 @@ func _build_disabled_location_button(label: String) -> Button:
 	btn.add_theme_font_size_override("font_size", 58)
 	btn.disabled = true
 	return btn
+
+
+func _create_mouse_tooltip() -> void:
+	_tooltip_layer = CanvasLayer.new()
+	_tooltip_layer.name = "TooltipLayer"
+	_tooltip_layer.layer = 200
+	add_child(_tooltip_layer)
+
+	_mouse_tooltip = MOUSE_TOOLTIP_SCRIPT.new() as MouseFollowTooltip
+	_tooltip_layer.add_child(_mouse_tooltip)
+
+
+func _show_mouse_tooltip(text: String) -> void:
+	if _mouse_tooltip != null:
+		_mouse_tooltip.show_text(text)
+
+
+func _hide_mouse_tooltip() -> void:
+	if _mouse_tooltip != null:
+		_mouse_tooltip.hide_tooltip()
 
 
 func _is_location_disabled(loc: LocationData) -> bool:
@@ -550,6 +576,7 @@ func _on_location_picked(loc: LocationData) -> void:
 	# Guard against rapid double-click stacking transitions.
 	if _is_any_transition_playing():
 		return
+	_hide_mouse_tooltip()
 
 	# Validate the scene up-front so we can bail before starting the wipe
 	# if something's wrong. The actual instantiation + swap-in happens at
