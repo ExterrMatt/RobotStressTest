@@ -252,7 +252,7 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
-	_show_placeholder_background()
+	_show_school_cabinet_background()
 	dialogue_box.play_pages(Dialogue.get_pages("school", "post_class"))
 
 
@@ -335,7 +335,7 @@ func _animate_layout_change(mutator: Callable) -> void:
 		mutator.call()
 
 
-func _show_placeholder_background() -> void:
+func _show_school_cabinet_background() -> void:
 	var main: Node = get_tree().current_scene
 	if main == null:
 		return
@@ -343,9 +343,9 @@ func _show_placeholder_background() -> void:
 	if main.has_method("hide_teacher_portrait"):
 		main.hide_teacher_portrait()
 	if "scene_image" in main:
-		var placeholder: Texture2D = load("res://assets/textures/backgrounds/scene_placeholder.png")
-		if placeholder:
-			main.scene_image.texture = placeholder
+		var cabinet: Texture2D = load("res://assets/textures/backgrounds/school_cabinet.png")
+		if cabinet:
+			main.scene_image.texture = cabinet
 	if main.has_method("_animate_frame_size_to"):
 		main._animate_frame_size_to(Vector2(900, 225))
 	if main.has_method("_animate_frame_outer_width_to") and "frame_outer" in main:

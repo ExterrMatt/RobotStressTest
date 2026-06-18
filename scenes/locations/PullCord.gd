@@ -7,6 +7,8 @@ const DEFAULT_LINK_SIZE: Vector2 = Vector2(13.0, 2.0)
 const DEFAULT_BULB_SIZE: Vector2 = Vector2(13.0, 18.0)
 const CORD_MODE_PULL_STRING: int = 0
 const CORD_MODE_RIP_CORD: int = 1
+const PULL_STRING_ON_SOUND_PATH := "res://assets/sounds/pull_string/pull_string_on.mp3"
+const PULL_STRING_OFF_SOUND_PATH := "res://assets/sounds/pull_string/pull_string_off.mp3"
 
 @export var pull_texture: Texture2D
 @export_enum("Pull String", "Rip Cord") var cord_mode: int = CORD_MODE_PULL_STRING
@@ -59,11 +61,16 @@ var _bulb_angular_velocity: float = 0.0
 var _return_still_elapsed: float = 0.0
 var _max_pull_reached_this_drag: bool = false
 var _overpull_release_radius: float = 0.0
+var _pull_string_on_sound: AudioStream = null
+var _pull_string_off_sound: AudioStream = null
+var _pull_string_audio_player: AudioStreamPlayer = null
+var _pull_string_toggled_on: bool = false
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_visuals()
+	_initialize_pull_string_sounds()
 	_reset_physics()
 	set_process_input(true)
 	set_physics_process(false)
@@ -204,6 +211,7 @@ func _release_drag() -> void:
 	_settling = true
 	var should_toggle := _bulb_position.distance_to(_anchor_position()) > _pull_toggle_radius()
 	if should_toggle:
+		_play_pull_string_toggle_sound()
 		pulled.emit()
 	if _is_rip_cord():
 		_start_rip_cord_return()
@@ -721,6 +729,37 @@ func _cord_distance_for_bulb_position(bulb_position: Vector2) -> float:
 
 func _is_rip_cord() -> bool:
 	return cord_mode == CORD_MODE_RIP_CORD
+
+
+func _is_pull_string() -> bool:
+	return cord_mode == CORD_MODE_PULL_STRING
+
+
+func _initialize_pull_string_sounds() -> void:
+	if not _is_pull_string():
+		return
+
+	_pull_string_on_sound = load(PULL_STRING_ON_SOUND_PATH) as AudioStream
+	_pull_string_off_sound = load(PULL_STRING_OFF_SOUND_PATH) as AudioStream
+	if _pull_string_on_sound == null and _pull_string_off_sound == null:
+		return
+
+	_pull_string_audio_player = AudioStreamPlayer.new()
+	_pull_string_audio_player.name = "PullStringAudioPlayer"
+	add_child(_pull_string_audio_player)
+
+
+func _play_pull_string_toggle_sound() -> void:
+	if not _is_pull_string() or _pull_string_audio_player == null:
+		return
+
+	_pull_string_toggled_on = not _pull_string_toggled_on
+	var stream := _pull_string_on_sound if _pull_string_toggled_on else _pull_string_off_sound
+	if stream == null:
+		return
+
+	_pull_string_audio_player.stream = stream
+	_pull_string_audio_player.play()
 
 
 func _bulb_uses_chain_pivot() -> bool:

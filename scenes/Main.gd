@@ -10,7 +10,7 @@ extends Control
 ## - Toggle the debug event-log overlay with Tab.
 ## - Run a FlowerLoad transition INSIDE THE PICTURE BOX between scene swaps.
 ##   HUD and buttons snap instantly; the framed background change happens at
-##   frame 9/18, while the wipe hides it.
+##   frame 9/17, while the wipe hides it.
 ## - Animate the SceneImage's frame size between locations whose preferred
 ##   sizes differ (e.g. School at 900x225 -> Work at 900x720). Eases in/out
 ##   over ANIM_DURATION seconds.
@@ -51,6 +51,7 @@ const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
 const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryOverlay.tscn")
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
+const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 
 ## Default rendered size of the framed scene image. Matches the size hard-
 ## coded in Main.tscn for SceneImage.custom_minimum_size, and the 1.8x
@@ -64,6 +65,8 @@ const DEFAULT_FRAME_SIZE: Vector2 = Vector2(900, 225)
 const ANIM_DURATION: float = 0.2
 const ANIM_TRANS: int = Tween.TRANS_QUAD
 const ANIM_EASE: int = Tween.EASE_IN_OUT
+const EXPANDING_FULLSCREEN_TRANSITION_DURATION_SCALE: float = 1.0
+const SHRINKING_FULLSCREEN_TARGET_OUTSET: float = 3.0
 
 @export_category("Debug")
 @export var debug_hotkeys_enabled: bool = true
@@ -180,6 +183,18 @@ var _player_inventory_overlay: InventoryOverlay = null
 
 var _fullscreen_transition_layer: CanvasLayer = null
 var _fullscreen_transition: TextureRect = null
+var _expanding_transition_layer: CanvasLayer = null
+var _expanding_scene_border_panel: Panel = null
+var _expanding_transition_clip: Control = null
+var _expanding_transition: TextureRect = null
+var _expanding_transition_tween: Tween = null
+var _expanding_transition_rect: Rect2 = Rect2():
+	set(value):
+		_expanding_transition_rect = value
+		_apply_expanding_transition_rect()
+var _source_frame_chrome_hidden: bool = false
+var _source_frame_style_backups: Dictionary = {}
+var _source_frame_visibility_backups: Dictionary = {}
 var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
 
@@ -240,6 +255,10 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _play_disabled_location_button_sound_from_event(event):
+		get_viewport().set_input_as_handled()
+		return
+
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
 	var key_event: InputEventKey = event
@@ -482,7 +501,12 @@ func _show_selection_screen() -> void:
 		_apply_selection_screen_swap(false)
 		return
 	if _current_location_fullscreen:
-		_play_fullscreen_transition_then(_apply_selection_screen_swap.bind(true))
+		_set_frame_size_immediate(DEFAULT_FRAME_SIZE, _default_frame_outer_width)
+		_play_shrinking_fullscreen_transition_after_layout(
+			_prepare_selection_screen_layout_for_shrink,
+			_apply_selection_screen_swap.bind(false),
+			_restore_fullscreen_layout_for_shrink
+		)
 	else:
 		_play_transition_then(_apply_selection_screen_swap.bind(true))
 
@@ -514,6 +538,23 @@ func _apply_selection_screen_swap(animate_slide: bool = true) -> void:
 	_animate_frame_to(DEFAULT_FRAME_SIZE, _default_frame_outer_width)
 
 
+func _prepare_selection_screen_layout_for_shrink() -> void:
+	selection_screen.visible = true
+	location_host.visible = false
+	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
+	hide_teacher_portrait()
+	hide_corner_button()
+	hide_scene_overlay()
+	hide_inventory_overlay()
+	_queue_frame_layout()
+
+
+func _restore_fullscreen_layout_for_shrink() -> void:
+	selection_screen.visible = false
+	location_host.visible = true
+	_queue_frame_layout()
+
+
 func _build_location_button(loc: LocationData) -> Button:
 	var btn := Button.new()
 	btn.text = loc.display_name.to_upper()
@@ -540,6 +581,27 @@ func _build_disabled_location_button(label: String) -> Button:
 	btn.add_theme_font_size_override("font_size", 58)
 	btn.disabled = true
 	return btn
+
+
+func _play_disabled_location_button_sound_from_event(event: InputEvent) -> bool:
+	if not selection_screen.visible:
+		return false
+	if _is_any_transition_playing():
+		return false
+	if not (event is InputEventMouseButton):
+		return false
+	var mouse_event := event as InputEventMouseButton
+	if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
+		return false
+
+	for child in location_grid.get_children():
+		var btn := child as Button
+		if btn == null or not btn.disabled:
+			continue
+		if btn.get_global_rect().has_point(mouse_event.global_position):
+			UI_SOUND.play_inaccessible_button(self)
+			return true
+	return false
 
 
 func _create_mouse_tooltip() -> void:
@@ -588,14 +650,29 @@ func _on_location_picked(loc: LocationData) -> void:
 
 	_log("[b]→ %s[/b]" % loc.display_name)
 	if loc.fullscreen_scene:
-		_play_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed))
+		if _current_location_fullscreen:
+			_play_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed, false))
+		else:
+			_play_expanding_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed, false))
 	else:
-		_play_transition_then(_apply_location_pick_swap.bind(loc, packed))
+		if _current_location_fullscreen:
+			_set_frame_size_immediate(_location_frame_size(loc), _location_frame_outer_width(loc))
+			_play_shrinking_fullscreen_transition_after_layout(
+				Callable(),
+				_apply_location_pick_swap.bind(loc, packed, false, false)
+			)
+		else:
+			_play_transition_then(_apply_location_pick_swap.bind(loc, packed))
 
 
 ## Runs at the wipe midpoint when picking a location.
 ## All frame-area changes happen together so the wipe hides them.
-func _apply_location_pick_swap(loc: LocationData, packed: PackedScene, animate_slide: bool = true) -> void:
+func _apply_location_pick_swap(
+		loc: LocationData,
+		packed: PackedScene,
+		animate_slide: bool = true,
+		animate_frame: bool = true
+) -> void:
 	_clear_current_location()
 	_current_location_node = packed.instantiate()
 	_current_location_fullscreen = loc.fullscreen_scene
@@ -620,18 +697,32 @@ func _apply_location_pick_swap(loc: LocationData, packed: PackedScene, animate_s
 
 	# Resize the frame to this location's preferred size (or default if
 	# the resource doesn't declare one). Eases in/out over ANIM_DURATION.
-	var target: Vector2 = loc.frame_size if loc.frame_size != Vector2.ZERO else DEFAULT_FRAME_SIZE
+	var target: Vector2 = _location_frame_size(loc)
 
 	# Same for the outer frame width — independent so locations can
 	# declare just one or the other. frame_outer_width <= 0 means "use
 	# the .tscn default", which we cached at _ready.
-	var target_outer: float = loc.frame_outer_width if loc.frame_outer_width > 0.0 else _default_frame_outer_width
-	_animate_frame_to(target, target_outer)
+	var target_outer: float = _location_frame_outer_width(loc)
+	if animate_frame:
+		_animate_frame_to(target, target_outer)
 
 
-func _apply_fullscreen_location_pick_swap(loc: LocationData, packed: PackedScene) -> void:
-	_apply_location_pick_swap(loc, packed)
-	_play_fullscreen_lift()
+func _apply_fullscreen_location_pick_swap(
+		loc: LocationData,
+		packed: PackedScene,
+		play_lift: bool = true
+) -> void:
+	_apply_location_pick_swap(loc, packed, play_lift, play_lift)
+	if play_lift:
+		_play_fullscreen_lift()
+
+
+func _location_frame_size(loc: LocationData) -> Vector2:
+	return loc.frame_size if loc.frame_size != Vector2.ZERO else DEFAULT_FRAME_SIZE
+
+
+func _location_frame_outer_width(loc: LocationData) -> float:
+	return loc.frame_outer_width if loc.frame_outer_width > 0.0 else _default_frame_outer_width
 
 
 func _clear_current_location() -> void:
@@ -696,7 +787,11 @@ func _animate_frame_outer_width_to(target_width: float) -> void:
 	)
 
 
-func _animate_frame_to(target_size: Vector2, target_outer_width: float) -> void:
+func _animate_frame_to(
+		target_size: Vector2,
+		target_outer_width: float,
+		duration: float = ANIM_DURATION
+) -> void:
 	if scene_image == null or frame_outer == null:
 		return
 
@@ -720,7 +815,7 @@ func _animate_frame_to(target_size: Vector2, target_outer_width: float) -> void:
 	_frame_size_tween = create_tween()
 	_frame_size_tween.set_trans(ANIM_TRANS)
 	_frame_size_tween.set_ease(ANIM_EASE)
-	_frame_size_tween.tween_property(self, "_frame_resize_progress", 1.0, ANIM_DURATION)
+	_frame_size_tween.tween_property(self, "_frame_resize_progress", 1.0, maxf(0.01, duration))
 
 
 func _set_frame_size_immediate(size_value: Vector2, outer_width: float) -> void:
@@ -895,7 +990,7 @@ func _finish_slide_animation(old_global_pos: Vector2) -> void:
 
 # --- transitions ---
 
-## Play the FlowerLoad wipe, invoking `swap_callback` at frame 9/18 (when
+## Play the FlowerLoad wipe, invoking `swap_callback` at frame 9/17 (when
 ## the picture is fully covered). Falls back to immediate invocation if
 ## the transition node isn't ready / missing for any reason.
 func _play_transition_then(swap_callback: Callable) -> void:
@@ -905,12 +1000,272 @@ func _play_transition_then(swap_callback: Callable) -> void:
 	transition.play(swap_callback)
 
 
+func _play_expanding_fullscreen_transition_then(swap_callback: Callable) -> void:
+	_cleanup_expanding_fullscreen_transition()
+
+	var tr := _create_expanding_fullscreen_transition()
+	if tr == null or not tr.has_method("play"):
+		swap_callback.call()
+		return
+
+	tr.set("duration_sec", float(tr.get("duration_sec")) * EXPANDING_FULLSCREEN_TRANSITION_DURATION_SCALE)
+	var start_rect := _current_scene_image_global_rect()
+	var target_rect := _fullscreen_reveal_scene_rect()
+	var expand_duration := _transition_midpoint_seconds(tr)
+	_expanding_transition_rect = start_rect
+
+	_expanding_transition_tween = create_tween()
+	_expanding_transition_tween.set_trans(ANIM_TRANS)
+	_expanding_transition_tween.set_ease(ANIM_EASE)
+	_expanding_transition_tween.tween_property(
+		self,
+		"_expanding_transition_rect",
+		target_rect,
+		expand_duration
+	)
+	tr.connect("finished", Callable(self, "_cleanup_expanding_fullscreen_transition"), CONNECT_ONE_SHOT)
+	tr.play(swap_callback)
+
+
+func _play_shrinking_fullscreen_transition_then(swap_callback: Callable, target_rect: Rect2) -> void:
+	_cleanup_expanding_fullscreen_transition()
+
+	var tr := _create_expanding_fullscreen_transition()
+	if tr == null or not tr.has_method("play"):
+		swap_callback.call()
+		return
+
+	tr.set("duration_sec", float(tr.get("duration_sec")) * EXPANDING_FULLSCREEN_TRANSITION_DURATION_SCALE)
+	_expanding_transition_rect = _fullscreen_reveal_scene_rect()
+
+	tr.connect("finished", Callable(self, "_cleanup_expanding_fullscreen_transition"), CONNECT_ONE_SHOT)
+	tr.play(_start_shrinking_fullscreen_transition.bind(swap_callback, target_rect, tr))
+
+
+func _start_shrinking_fullscreen_transition(
+		swap_callback: Callable,
+		target_rect: Rect2,
+		tr: TextureRect
+) -> void:
+	if swap_callback.is_valid():
+		swap_callback.call()
+	var shrink_duration := _transition_remaining_seconds(tr)
+	_expanding_transition_tween = create_tween()
+	_expanding_transition_tween.set_trans(ANIM_TRANS)
+	_expanding_transition_tween.set_ease(ANIM_EASE)
+	_expanding_transition_tween.tween_property(
+		self,
+		"_expanding_transition_rect",
+		target_rect,
+		shrink_duration
+	)
+
+
+func _play_shrinking_fullscreen_transition_after_layout(
+		prepare_layout: Callable,
+		midpoint_callback: Callable,
+		restore_layout: Callable = Callable()
+) -> void:
+	if prepare_layout.is_valid():
+		prepare_layout.call()
+	_queue_frame_layout()
+	await get_tree().process_frame
+	_queue_frame_layout()
+	var target_rect := _outset_rect(_current_scene_image_global_rect(), SHRINKING_FULLSCREEN_TARGET_OUTSET)
+	if restore_layout.is_valid():
+		restore_layout.call()
+	_play_shrinking_fullscreen_transition_then(
+		midpoint_callback,
+		target_rect
+	)
+
+
+func _create_expanding_fullscreen_transition() -> TextureRect:
+	_set_source_frame_chrome_hidden(true)
+
+	_expanding_transition_layer = CanvasLayer.new()
+	_expanding_transition_layer.name = "ExpandingFullscreenTransitionLayer"
+	_expanding_transition_layer.layer = 100
+	add_child(_expanding_transition_layer)
+
+	_expanding_transition_clip = Control.new()
+	_expanding_transition_clip.name = "ExpandingFullscreenTransitionClip"
+	_expanding_transition_clip.clip_contents = true
+	_expanding_transition_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_expanding_transition_layer.add_child(_expanding_transition_clip)
+
+	_expanding_transition = TRANSITION_SCENE.instantiate() as TextureRect
+	if _expanding_transition == null:
+		_cleanup_expanding_fullscreen_transition()
+		return null
+	_expanding_transition.name = "ExpandingFullscreenTransition"
+	_expanding_transition.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_expanding_transition_clip.add_child(_expanding_transition)
+
+	_expanding_scene_border_panel = Panel.new()
+	_expanding_scene_border_panel.name = "ExpandingSceneImageBorder"
+	_expanding_scene_border_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_expanding_scene_border_panel.z_index = 100
+	_expanding_scene_border_panel.add_theme_stylebox_override("panel", _expanding_scene_border_style())
+	_expanding_transition_clip.add_child(_expanding_scene_border_panel)
+	return _expanding_transition
+
+
+func _apply_expanding_transition_rect() -> void:
+	if _expanding_transition_clip == null or not is_instance_valid(_expanding_transition_clip):
+		return
+	_expanding_transition_clip.position = _expanding_transition_rect.position
+	_expanding_transition_clip.size = _expanding_transition_rect.size
+
+	if _expanding_transition != null and is_instance_valid(_expanding_transition):
+		_expanding_transition.position = -_expanding_transition_rect.position
+		_expanding_transition.size = get_viewport_rect().size
+
+	if _expanding_scene_border_panel != null and is_instance_valid(_expanding_scene_border_panel):
+		_expanding_scene_border_panel.position = Vector2.ZERO
+		_expanding_scene_border_panel.size = _expanding_transition_rect.size
+
+
+func _cleanup_expanding_fullscreen_transition() -> void:
+	if _expanding_transition_tween != null and _expanding_transition_tween.is_valid():
+		_expanding_transition_tween.kill()
+	_expanding_transition_tween = null
+	_expanding_transition = null
+	_expanding_transition_clip = null
+	_expanding_scene_border_panel = null
+	if _expanding_transition_layer != null and is_instance_valid(_expanding_transition_layer):
+		_expanding_transition_layer.queue_free()
+	_expanding_transition_layer = null
+	_expanding_transition_rect = Rect2()
+	_set_source_frame_chrome_hidden(false)
+
+
+func _expanding_scene_border_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	style.border_color = Color(0.42, 0.333, 0.196, 1.0)
+	style.set_border_width_all(3)
+	style.set_content_margin_all(0)
+	return style
+
+
+func _set_source_frame_chrome_hidden(hidden: bool) -> void:
+	if hidden == _source_frame_chrome_hidden:
+		return
+	_source_frame_chrome_hidden = hidden
+	if hidden:
+		_hide_source_frame_chrome()
+	else:
+		_restore_source_frame_chrome()
+
+
+func _hide_source_frame_chrome() -> void:
+	for panel in _source_frame_panel_nodes():
+		if panel == null:
+			continue
+		var original_style := panel.get_theme_stylebox("panel")
+		_source_frame_style_backups[panel.get_path()] = original_style
+		panel.add_theme_stylebox_override("panel", _transparent_frame_style(original_style))
+
+	if frame_outer == null:
+		return
+	for child in frame_outer.get_children():
+		var item := child as CanvasItem
+		if item == null or not String(item.name).begins_with("Rivet"):
+			continue
+		_source_frame_visibility_backups[item.get_path()] = item.visible
+		item.visible = false
+
+
+func _transparent_frame_style(source: StyleBox) -> StyleBox:
+	if source is StyleBoxFlat:
+		var style := (source as StyleBoxFlat).duplicate() as StyleBoxFlat
+		style.bg_color = Color(style.bg_color.r, style.bg_color.g, style.bg_color.b, 0.0)
+		style.border_color = Color(style.border_color.r, style.border_color.g, style.border_color.b, 0.0)
+		return style
+	return source.duplicate() as StyleBox
+
+
+func _restore_source_frame_chrome() -> void:
+	for key in _source_frame_style_backups:
+		var panel := get_node_or_null(NodePath(String(key))) as PanelContainer
+		if panel != null:
+			panel.add_theme_stylebox_override("panel", _source_frame_style_backups[key])
+	_source_frame_style_backups.clear()
+
+	for key in _source_frame_visibility_backups:
+		var item := get_node_or_null(NodePath(String(key))) as CanvasItem
+		if item != null:
+			item.visible = bool(_source_frame_visibility_backups[key])
+	_source_frame_visibility_backups.clear()
+
+
+func _source_frame_panel_nodes() -> Array[PanelContainer]:
+	var panels: Array[PanelContainer] = []
+	if frame_outer != null:
+		panels.append(frame_outer)
+		var inset_dark := frame_outer.get_node_or_null("FrameInsetDark") as PanelContainer
+		if inset_dark != null:
+			panels.append(inset_dark)
+			var inset_mid := inset_dark.get_node_or_null("FrameInsetMid") as PanelContainer
+			if inset_mid != null:
+				panels.append(inset_mid)
+	return panels
+
+
+func _current_scene_image_global_rect() -> Rect2:
+	if scene_image == null:
+		return Rect2(Vector2.ZERO, get_viewport_rect().size)
+	return scene_image.get_global_rect()
+
+
+func _outset_rect(rect: Rect2, amount: float) -> Rect2:
+	var inset := Vector2(amount, amount)
+	return Rect2(rect.position - inset, rect.size + inset * 2.0)
+
+
+func _transition_midpoint_seconds(tr: TextureRect) -> float:
+	var duration := float(tr.get("duration_sec"))
+	var midpoint_frame := int(tr.get("midpoint_frame"))
+	var total_frames := int(tr.get("total_frames"))
+	if duration <= 0.0 or total_frames <= 1:
+		return ANIM_DURATION
+	var midpoint_ratio := clampf(float(maxi(1, midpoint_frame) - 1) / float(total_frames - 1), 0.0, 1.0)
+	return maxf(0.05, duration * midpoint_ratio)
+
+
+func _transition_remaining_seconds(tr: TextureRect) -> float:
+	var duration := float(tr.get("duration_sec"))
+	return maxf(0.05, duration - _transition_midpoint_seconds(tr))
+
+
+func _fullscreen_reveal_scene_rect() -> Rect2:
+	var viewport_size := get_viewport_rect().size
+	var overscan := 8.0
+	return Rect2(Vector2(-overscan, -overscan), viewport_size + Vector2(overscan * 2.0, overscan * 2.0))
+
+
 func _play_fullscreen_transition_then(swap_callback: Callable) -> void:
 	var tr := _ensure_fullscreen_transition()
 	if tr == null or not tr.has_method("play"):
 		swap_callback.call()
 		return
 	tr.play(swap_callback)
+
+
+func play_current_fullscreen_transition(
+		at_midpoint: Callable,
+		at_finished: Callable = Callable()
+) -> bool:
+	var tr := _ensure_fullscreen_transition()
+	if tr == null or not tr.has_method("play"):
+		return false
+	if tr.has_method("is_playing") and tr.is_playing():
+		return false
+	if at_finished.is_valid():
+		tr.finished.connect(at_finished, CONNECT_ONE_SHOT)
+	tr.play(at_midpoint)
+	return true
 
 
 func _play_fullscreen_lift() -> void:
@@ -953,6 +1308,9 @@ func _is_any_transition_playing() -> bool:
 	if _fullscreen_transition != null and is_instance_valid(_fullscreen_transition):
 		if _fullscreen_transition.has_method("is_playing") and _fullscreen_transition.is_playing():
 			return true
+	if _expanding_transition != null and is_instance_valid(_expanding_transition):
+		if _expanding_transition.has_method("is_playing") and _expanding_transition.is_playing():
+			return true
 	return false
 
 
@@ -962,6 +1320,10 @@ func _cancel_active_transitions() -> void:
 	if _fullscreen_transition != null and is_instance_valid(_fullscreen_transition):
 		if _fullscreen_transition.has_method("cancel"):
 			_fullscreen_transition.cancel()
+	if _expanding_transition != null and is_instance_valid(_expanding_transition):
+		if _expanding_transition.has_method("cancel"):
+			_expanding_transition.cancel()
+	_cleanup_expanding_fullscreen_transition()
 
 
 # --- result handling ---

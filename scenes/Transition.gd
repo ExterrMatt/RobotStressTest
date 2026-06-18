@@ -1,9 +1,9 @@
 extends TextureRect
 ## In-frame scene transition.
 ##
-## Plays the FlowerLoad 18-frame animation scoped to the framed picture
+## Plays the FlowerLoad 17-frame animation scoped to the framed picture
 ## area only. The HUD, buttons, and location UI outside the frame are not
-## affected. At frame 9/18 (the most-covered frame), the parent Main calls
+## affected. At frame 9/17 (the most-covered frame), the parent Main calls
 ## its swap callback so the picture-box background change happens while
 ## the wipe hides it.
 ##
@@ -17,27 +17,26 @@ signal finished
 ## Source sprite sheet. Assigned in the .tscn.
 @export var sheet: Texture2D
 
-## Sprite sheet grid. FlowerLoad is a 1x18 vertical strip (500x2250, each
-## frame 500x125). Change if a different sheet has a different layout.
+## Sprite sheet grid. FlowerLoad is a 1x17 vertical strip (512x2176, each
+## frame 512x128). Change if a different sheet has a different layout.
 ## Total = hframes * vframes should equal total_frames.
 @export var hframes: int = 1
-@export var vframes: int = 18
-@export var total_frames: int = 18
+@export var vframes: int = 17
+@export var total_frames: int = 17
 
 ## 1-indexed frame at which the midpoint callback fires - the swap happens
 ## one tick AFTER coverage first becomes full, so a fully-covered frame is
 ## guaranteed to have rendered before anything underneath changes.
-## For FlowerLoad, indices 8-12 are all 100% covered, so any value in
-## [9, 13] is safe; 10 gives a clean one-frame buffer past full coverage.
-@export var midpoint_frame: int = 10
+## For FlowerLoad, the middle covered frame is frame 9.
+@export var midpoint_frame: int = 9
 
-## Total animation length. 18 frames over 0.75s = 24fps.
+## Total animation length. 17 frames over 0.75s.
 @export var duration_sec: float = 0.75
 
-## FlowerLoad's source frame is 500x125, while the normal picture frame
+## FlowerLoad's source frame is 512x128, while the normal picture frame
 ## displays at 900x225. Keep that scaled size as the repeat unit so taller
 ## and fullscreen wipes extend by copy/paste tiling instead of stretching.
-@export var tile_scale: float = 1.8
+@export var tile_scale: float = 1.7578125
 
 var _frame_size: Vector2 = Vector2.ZERO
 var _frame_region: Rect2 = Rect2()

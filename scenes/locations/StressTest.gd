@@ -13,6 +13,42 @@ const PAN_TRANS: int = Tween.TRANS_SINE
 const PAN_EASE: int = Tween.EASE_IN_OUT
 const ZOOM_DURATION: float = 0.35
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
+const RIP_CORD_FULL_EXTEND_SOUND_PATH := "res://assets/sounds/rip_cord/ripcord.mp3"
+const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/night_sounds/1_min_night_sounds.mp3",
+	"res://assets/sounds/night_sounds/loud_crickets.mp3",
+	"res://assets/sounds/night_sounds/loud_night_sounds.mp3",
+]
+const NIGHT_AMBIENT_LOUD_VOLUME_SCALE: float = 0.5
+const HEAD_ONLY_DISABLED_ZOOM_REGIONS: Array[StringName] = [
+	&"Zoom1_R1_C1",
+	&"Zoom1_R3_C1",
+	&"Zoom2_R2_C1",
+	&"Zoom2_R4_C1",
+]
+const BODY_DISABLED_ZOOM_REGIONS: Array[StringName] = [
+	&"Zoom1_R1_C1",
+	&"Zoom1_R3_C1",
+	&"Zoom2_R3_C1",
+]
+const HEAD_ONLY_ENABLED_ZOOM_REGIONS: Array[StringName] = [
+	&"Zoom2_R3_C1",
+]
+const BODY_ENABLED_ZOOM_REGIONS: Array[StringName] = [
+	&"Zoom2_R2_C1",
+	&"Zoom2_R4_C1",
+]
+const HEAD_ONLY_GENERATOR_ZOOM_REGION: StringName = &"Zoom1_R1_C3"
+const HEAD_ONLY_TABLE_ZOOM_REGION: StringName = &"Zoom2_R3_C1"
+const BODY_INITIAL_ZOOM_REGION: StringName = &"Zoom1_R1_C1"
+const HEAD_ONLY_INITIAL_ZOOM_REGION: StringName = &"Zoom2_R2_C1"
+const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
+	&"Zoom1_R1_C1",
+	&"Zoom1_R3_C1",
+	&"Zoom2_R2_C1",
+	&"Zoom2_R3_C1",
+	&"Zoom2_R4_C1",
+]
 @export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
 @export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
 
@@ -22,11 +58,12 @@ const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowToolt
 
 @export_group("Electricity Meter")
 @export var electricity_label_text: String = "Electricity"
-@export var electricity_start_percent: float = 0.0
+@export var electricity_start_percent: float = 100.0
 @export var electricity_ripcord_gain_percent: float = 20.0
 @export var electricity_decay_percent_per_second: float = 6.0
 @export var electricity_lights_off_decay_multiplier: float = 2.0
 @export var electricity_wake_threshold_percent: float = 130.0
+@export var electricity_meter_visual_max_percent: float = 105.0
 
 @export_group("Darkness Effects")
 @export var screw_repair_lights_off_duration_multiplier: float = 2.0
@@ -51,6 +88,7 @@ const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowToolt
 @export var emergency_power_gas_target_percent: float = 50.0
 @export var emergency_power_gas_equalize_units_per_second: float = 2.0
 @export var emergency_power_electricity_decay_per_second: float = 50.0
+@export var emergency_power_electricity_consequence_pause_seconds: float = 6.0
 
 @export_group("Window Alert")
 @export_range(0, 3, 1) var window_alert_event_count_min: int = 0
@@ -73,6 +111,19 @@ const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowToolt
 @export var uncle_failure_text: String = "Your uncle caught you."
 @export var timeout_failure_text: String = "You ran out of time."
 @export var wake_button_failure_text: String = "She woke up."
+
+@export_group("End Summary")
+@export var summary_title_text: String = "STRESS TEST SUMMARY"
+@export var summary_success_text: String = "Stress test completed."
+@export var electricity_target_min_percent: float = 70.0
+@export var electricity_target_max_percent: float = 110.0
+@export_range(0.0, 1.0, 0.01) var electricity_five_star_required_ratio: float = 0.8
+@export var screw_spawn_end_buffer_seconds: float = 10.0
+@export var screw_response_grace_seconds: float = 5.0
+@export var screw_late_penalty_percent: float = 5.0
+@export var screw_unrepaired_penalty_percent: float = 20.0
+@export_range(0.0, 1.0, 0.01) var screw_completion_target_ratio: float = 0.8
+@export var screw_completion_penalty_step_percent: float = 10.0
 
 @export_group("Robot Position")
 @export var head_only_drop_px: float = 57.0
@@ -102,7 +153,9 @@ const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowToolt
 @onready var uncle_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/UncleLabel
 @onready var electricity_meter_groups: VBoxContainer = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups
 @onready var failure_overlay: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay
+@onready var failure_title_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureTitleLabel
 @onready var failure_reason_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureReasonLabel
+@onready var failure_continue_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureContinueButton
 
 var _zoom_level: int = ZOOM_LEVEL_FIRST
 var _current_zoom_region: Control = null
@@ -134,11 +187,30 @@ var _window_alert_next_allowed_time: float = 0.0
 var _dragging_gas_valve: bool = false
 var _pending_failure_registers_wake: bool = false
 var _failure_result_emitted: bool = false
+var _failure_transition_playing: bool = false
+var _summary_result: Dictionary = {}
+var _summary_registers_completion: bool = false
+var _summary_success: bool = false
+var _summary_reason: String = ""
+var _electricity_target_elapsed: float = 0.0
+var _electricity_consequence_pause_until: float = 0.0
+var _consequence_pause_intervals: Array[Vector2] = []
+var _screw_expected_events: int = 0
+var _screw_started_count: int = 0
+var _screw_repaired_count: int = 0
+var _screw_late_count: int = 0
+var _screw_late_penalty_total: float = 0.0
+var _screw_active_events: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _robot_base_position: Vector2
 var _robot_shadow_base_position: Vector2
 var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
+var _rip_cord_full_extend_sound: AudioStream = null
+var _rip_cord_audio_player: AudioStreamPlayer = null
+var _night_ambient_sounds: Array[AudioStream] = []
+var _night_ambient_paths: Array[String] = []
+var _night_ambient_audio_player: AudioStreamPlayer = null
 
 const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
@@ -147,6 +219,7 @@ const WINDOW_ALERT_RED: int = 2
 
 func _ready() -> void:
 	_create_mouse_tooltip()
+	_initialize_audio_players()
 	_initialize_robot_position_state()
 	_initialize_pull_cord()
 	_initialize_stress_systems()
@@ -159,10 +232,13 @@ func _process(delta: float) -> void:
 		_hide_mouse_tooltip()
 		return
 
+	var previous_elapsed := _night_elapsed
 	_night_elapsed += delta
 	_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * delta)
 	if _electricity_percent <= 0.0 and _emergency_power_shutoff_pressed:
 		_set_emergency_power_shutoff_pressed(false)
+	_update_electricity_summary_time(_night_elapsed - previous_elapsed)
+	_update_screw_loosen_availability()
 	_apply_scheduled_meter_events()
 	_update_emergency_power_gas_equalization(delta)
 	_update_window_alert(delta)
@@ -175,7 +251,7 @@ func _process(delta: float) -> void:
 	if _gas_flow_percent <= gas_low_failure_percent:
 		_fail_stress_test(gas_low_failure_text, true)
 		return
-	if _electricity_percent > electricity_wake_threshold_percent:
+	if _electricity_percent > electricity_wake_threshold_percent and not _is_electricity_consequence_paused():
 		_fail_stress_test(electricity_failure_text, true)
 		return
 	if _night_elapsed >= night_duration_seconds:
@@ -183,6 +259,9 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _night_finished:
+		return
+
 	if _handle_gas_valve_input(event):
 		get_viewport().set_input_as_handled()
 		return
@@ -236,7 +315,11 @@ func _initialize_zoom() -> void:
 
 	_apply_default_canvas_transform()
 	scene_canvas.pivot_offset = Vector2.ZERO
-	_current_zoom_region = _find_region_for_focus(_zoom_level, BASE_SCENE_SIZE * 0.5)
+	_current_zoom_region = _initial_zoom_region()
+	if _current_zoom_region == null:
+		_current_zoom_region = _find_region_for_focus(_zoom_level, BASE_SCENE_SIZE * 0.5)
+	if _current_zoom_region != null:
+		_zoom_level = _zoom_level_for_region(_current_zoom_region)
 	scene_canvas.scale = _current_zoom_scale() * _canvas_base_scale
 	_apply_zoom_region(false)
 
@@ -249,9 +332,12 @@ func _move_zoom_region(direction: Vector2i) -> void:
 	if next_region == null or next_region == _current_zoom_region:
 		return
 
+	_zoom_level = _zoom_level_for_region(next_region)
 	_current_zoom_region = next_region
+	if _zoom_tween and _zoom_tween.is_valid():
+		_zoom_tween.kill()
 	_apply_zoom_region(true)
-	_interrupt_screw_repairs_if_window_in_target_view()
+	_interrupt_screw_repairs_if_current_view_requires_it()
 
 
 func _set_zoom_level(value: int, focus_position: Vector2) -> void:
@@ -282,7 +368,7 @@ func _set_zoom_level(value: int, focus_position: Vector2) -> void:
 	_zoom_tween.set_ease(PAN_EASE)
 	_zoom_tween.tween_property(scene_canvas, "scale", target_scale * _canvas_base_scale, ZOOM_DURATION)
 	_zoom_tween.tween_property(scene_canvas, "position", target_position, ZOOM_DURATION)
-	_interrupt_screw_repairs_if_window_in_target_view()
+	_interrupt_screw_repairs_if_current_view_requires_it()
 
 
 func _apply_zoom_region(animated: bool) -> void:
@@ -401,9 +487,13 @@ func _find_region_for_focus(zoom_level: int, focus_position: Vector2) -> Control
 
 func _neighbor_region(region: Control, direction: Vector2i) -> Control:
 	if region == null:
-		return _find_region_for_focus(_zoom_level, _visible_source_center())
+		return _find_navigation_region_for_focus(_visible_source_center())
 
-	var active_regions := _active_regions_for_level(_zoom_level)
+	var override_region := _navigation_override_region(region, direction)
+	if override_region != null:
+		return override_region
+
+	var active_regions := _navigation_regions()
 	if active_regions.is_empty():
 		return null
 
@@ -433,6 +523,52 @@ func _neighbor_region(region: Control, direction: Vector2i) -> Control:
 			nearest_score = score
 			nearest_region = candidate
 
+	return nearest_region
+
+
+func _navigation_override_region(region: Control, direction: Vector2i) -> Control:
+	if not _is_head_only_robot():
+		return null
+
+	var region_name := StringName(String(region.name))
+	if region_name == HEAD_ONLY_GENERATOR_ZOOM_REGION and direction == Vector2i.LEFT:
+		return _zoom_region_by_name(ZOOM_LEVEL_SECOND, HEAD_ONLY_TABLE_ZOOM_REGION)
+	if region_name == HEAD_ONLY_TABLE_ZOOM_REGION and direction == Vector2i.RIGHT:
+		return _zoom_region_by_name(ZOOM_LEVEL_FIRST, HEAD_ONLY_GENERATOR_ZOOM_REGION)
+
+	return null
+
+
+func _initial_zoom_region() -> Control:
+	if _is_head_only_robot():
+		return _zoom_region_by_name(ZOOM_LEVEL_SECOND, HEAD_ONLY_INITIAL_ZOOM_REGION)
+	return _zoom_region_by_name(ZOOM_LEVEL_FIRST, BODY_INITIAL_ZOOM_REGION)
+
+
+func _find_navigation_region_for_focus(focus_position: Vector2) -> Control:
+	var active_regions := _navigation_regions()
+	if active_regions.is_empty():
+		return null
+
+	var nearest_region: Control = null
+	var nearest_distance := INF
+	for region in active_regions:
+		if not _region_rect(region).has_point(focus_position):
+			continue
+
+		var distance := _region_center(region).distance_squared_to(focus_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_region = region
+	if nearest_region != null:
+		return nearest_region
+
+	nearest_distance = INF
+	for region in active_regions:
+		var distance := _region_center(region).distance_squared_to(focus_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_region = region
 	return nearest_region
 
 
@@ -471,9 +607,63 @@ func _active_regions_for_level(zoom_level: int) -> Array[Control]:
 		var region := child as Control
 		if region == null:
 			continue
-		if bool(region.get("active")):
+		if _is_zoom_region_active(region):
 			regions.append(region)
 	return regions
+
+
+func _navigation_regions() -> Array[Control]:
+	var regions := _active_regions_for_level(ZOOM_LEVEL_FIRST)
+	var replacement_region_names := BODY_ENABLED_ZOOM_REGIONS
+	if _is_head_only_robot():
+		replacement_region_names = HEAD_ONLY_ENABLED_ZOOM_REGIONS
+
+	for region_name in replacement_region_names:
+		var region := _zoom_region_by_name(ZOOM_LEVEL_SECOND, region_name)
+		if region != null and _is_zoom_region_active(region):
+			regions.append(region)
+	return regions
+
+
+func _is_zoom_region_active(region: Control) -> bool:
+	var region_name := StringName(String(region.name))
+	var head_only := _is_head_only_robot()
+
+	if head_only:
+		if region_name in HEAD_ONLY_DISABLED_ZOOM_REGIONS:
+			return false
+		if region_name in HEAD_ONLY_ENABLED_ZOOM_REGIONS:
+			return true
+	else:
+		if region_name in BODY_DISABLED_ZOOM_REGIONS:
+			return false
+		if region_name in BODY_ENABLED_ZOOM_REGIONS:
+			return true
+
+	return bool(region.get("active"))
+
+
+func _apply_robot_zoom_profile() -> void:
+	if not _is_zoomed_in():
+		return
+	if _current_zoom_region == null:
+		return
+	if _is_zoom_region_active(_current_zoom_region):
+		return
+
+	_current_zoom_region = _find_navigation_region_for_focus(_visible_source_center())
+	if _current_zoom_region != null:
+		_zoom_level = _zoom_level_for_region(_current_zoom_region)
+		_apply_zoom_region(false)
+
+
+func _zoom_region_by_name(zoom_level: int, region_name: StringName) -> Control:
+	var container := _region_container_for_level(zoom_level)
+	if container == null:
+		return null
+
+	var node := container.get_node_or_null(NodePath(String(region_name)))
+	return node as Control
 
 
 func _regions_by_cell_for_level(zoom_level: int) -> Dictionary:
@@ -535,6 +725,18 @@ func _cell_for_region(region: Control) -> Vector2i:
 	if result == null:
 		return Vector2i(-1, -1)
 	return Vector2i(int(result.get_string(2)), int(result.get_string(1)))
+
+
+func _zoom_level_for_region(region: Control) -> int:
+	if region == null:
+		return _zoom_level
+
+	var region_name := String(region.name)
+	if region_name.begins_with("Zoom2_"):
+		return ZOOM_LEVEL_SECOND
+	if region_name.begins_with("Zoom1_"):
+		return ZOOM_LEVEL_FIRST
+	return _zoom_level
 
 
 func _visible_source_center() -> Vector2:
@@ -648,10 +850,12 @@ func _initialize_robot_position_state() -> void:
 			state.connect("robot_parts_changed", changed_callable)
 
 	_apply_robot_head_only_position()
+	_apply_robot_zoom_profile()
 
 
 func _on_robot_parts_changed(_parts: Dictionary) -> void:
 	_apply_robot_head_only_position()
+	_apply_robot_zoom_profile()
 
 
 func _apply_robot_head_only_position() -> void:
@@ -686,10 +890,61 @@ func _robot_part_count(id: String) -> int:
 	return 0
 
 
+func _initialize_audio_players() -> void:
+	_rip_cord_full_extend_sound = load(RIP_CORD_FULL_EXTEND_SOUND_PATH) as AudioStream
+	if _rip_cord_full_extend_sound != null:
+		_rip_cord_audio_player = AudioStreamPlayer.new()
+		_rip_cord_audio_player.name = "RipCordAudioPlayer"
+		add_child(_rip_cord_audio_player)
+
+	_night_ambient_sounds.clear()
+	_night_ambient_paths.clear()
+	for path in NIGHT_AMBIENT_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream == null:
+			continue
+		_night_ambient_sounds.append(stream)
+		_night_ambient_paths.append(path)
+	if not _night_ambient_sounds.is_empty():
+		_night_ambient_audio_player = AudioStreamPlayer.new()
+		_night_ambient_audio_player.name = "NightAmbientAudioPlayer"
+		add_child(_night_ambient_audio_player)
+
+
+func _play_rip_cord_full_extend_sound() -> void:
+	if _rip_cord_audio_player == null or _rip_cord_full_extend_sound == null:
+		return
+	_rip_cord_audio_player.stream = _rip_cord_full_extend_sound
+	_rip_cord_audio_player.pitch_scale = 1.0
+	_rip_cord_audio_player.volume_db = 0.0
+	_rip_cord_audio_player.play()
+
+
+func _play_random_night_ambient() -> void:
+	if _night_ambient_audio_player == null or _night_ambient_sounds.is_empty():
+		return
+	var index := _rng.randi_range(0, _night_ambient_sounds.size() - 1)
+	var path := _night_ambient_paths[index]
+	_night_ambient_audio_player.stream = _night_ambient_sounds[index]
+	_night_ambient_audio_player.pitch_scale = 1.0
+	_night_ambient_audio_player.volume_db = linear_to_db(NIGHT_AMBIENT_LOUD_VOLUME_SCALE) if _is_loud_night_ambient(path) else 0.0
+	_night_ambient_audio_player.play()
+
+
+func _stop_night_ambient() -> void:
+	if _night_ambient_audio_player != null:
+		_night_ambient_audio_player.stop()
+
+
+func _is_loud_night_ambient(path: String) -> bool:
+	return path.get_file().begins_with("loud_")
+
+
 func _initialize_stress_systems() -> void:
 	_rng.randomize()
 	_night_elapsed = 0.0
 	_night_finished = false
+	_play_random_night_ambient()
 	_electricity_percent = electricity_start_percent
 	_gas_flow_percent = gas_start_percent
 	_gas_optimal_percent = gas_optimal_start_percent
@@ -709,6 +964,19 @@ func _initialize_stress_systems() -> void:
 	_dragging_gas_valve = false
 	_pending_failure_registers_wake = false
 	_failure_result_emitted = false
+	_failure_transition_playing = false
+	_summary_result = {}
+	_summary_registers_completion = false
+	_electricity_target_elapsed = 0.0
+	_electricity_consequence_pause_until = 0.0
+	_consequence_pause_intervals.clear()
+	_screw_started_count = 0
+	_screw_repaired_count = 0
+	_screw_late_count = 0
+	_screw_late_penalty_total = 0.0
+	_screw_active_events.clear()
+	_connect_screw_summary_tracking()
+	_screw_expected_events = _expected_screw_event_count()
 
 	var optimal_count := _random_event_count(gas_optimal_event_count_min, gas_optimal_event_count_max)
 	var drift_count := _random_event_count(gas_drift_event_count_min, gas_drift_event_count_max)
@@ -725,8 +993,12 @@ func _initialize_stress_systems() -> void:
 	if failure_overlay != null:
 		failure_overlay.visible = false
 		failure_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	if failure_title_label != null:
+		failure_title_label.text = summary_title_text
+	if failure_continue_button != null:
+		failure_continue_button.disabled = false
 
-	_set_robot_interaction_enabled(true)
+	_set_stress_test_interaction_enabled(true)
 	set_process(true)
 	_refresh_stress_hud()
 
@@ -902,6 +1174,21 @@ func _is_window_alert_in_target_view() -> bool:
 func _interrupt_screw_repairs_if_window_in_target_view() -> void:
 	if not _is_window_alert_in_target_view():
 		return
+	_interrupt_screw_repairs()
+
+
+func _interrupt_screw_repairs_if_current_view_requires_it() -> void:
+	if _is_window_alert_in_target_view() or not _is_current_screw_repair_view_safe():
+		_interrupt_screw_repairs()
+
+
+func _is_current_screw_repair_view_safe() -> bool:
+	if not _is_zoomed_in() or _current_zoom_region == null:
+		return false
+	return StringName(String(_current_zoom_region.name)) in SCREW_REPAIR_SAFE_ZOOM_REGIONS
+
+
+func _interrupt_screw_repairs() -> void:
 	for repair in _screw_repair_controllers():
 		if repair.has_method("interrupt_repair"):
 			repair.call("interrupt_repair")
@@ -926,6 +1213,7 @@ func _window_alert_schedule_duration() -> float:
 func _on_electrical_cord_max_pull_reached() -> void:
 	if _night_finished:
 		return
+	_play_rip_cord_full_extend_sound()
 	_electricity_percent += electricity_ripcord_gain_percent
 	_refresh_stress_hud()
 
@@ -981,6 +1269,8 @@ func _initialize_emergency_power_button() -> void:
 func _on_emergency_power_button_pressed() -> void:
 	if _night_finished:
 		return
+	if _can_start_emergency_consequence_pause():
+		_start_emergency_consequence_pause()
 	_set_emergency_power_shutoff_pressed(true)
 	_refresh_stress_hud()
 
@@ -1045,7 +1335,12 @@ func _format_uncle_meter_text() -> String:
 
 func _refresh_electricity_meter() -> void:
 	var segments := _electricity_meter_segments()
-	var visible_segment_count := clampi(int(ceil(_electricity_percent / 5.0)), 0, segments.size())
+	var visual_max := maxf(1.0, electricity_meter_visual_max_percent)
+	var visible_segment_count := clampi(
+		int(ceil((_electricity_percent / visual_max) * float(segments.size()))),
+		0,
+		segments.size()
+	)
 	var color := Color(0.1, 0.95, 0.18, 1.0)
 	var completed_bar_count := int(floor(_electricity_percent / 20.0))
 	if completed_bar_count >= 6:
@@ -1111,14 +1406,164 @@ func _collect_screw_repair_controllers(node: Node, out: Array[Node]) -> void:
 		_collect_screw_repair_controllers(child, out)
 
 
+func _connect_screw_summary_tracking() -> void:
+	for repair in _screw_repair_controllers():
+		_connect_screw_signal(repair, "screw_loosened", "_on_screw_loosened")
+		_connect_screw_signal(repair, "repair_started", "_on_screw_repair_started")
+		_connect_screw_signal(repair, "repair_interrupted", "_on_screw_repair_interrupted")
+		_connect_screw_signal(repair, "screw_repaired", "_on_screw_repaired")
+	_update_screw_loosen_availability()
+
+
+func _connect_screw_signal(repair: Node, signal_name: StringName, method_name: StringName) -> void:
+	if repair == null or not repair.has_signal(signal_name):
+		return
+	var callable := Callable(self, String(method_name)).bind(repair)
+	if not repair.is_connected(signal_name, callable):
+		repair.connect(signal_name, callable)
+
+
+func _screw_event_key(repair: Node, index: int) -> String:
+	return "%s:%d" % [str(repair.get_instance_id()), index]
+
+
+func _on_screw_loosened(index: int, repair: Node) -> void:
+	var key := _screw_event_key(repair, index)
+	if _screw_active_events.has(key):
+		return
+	_screw_started_count += 1
+	_screw_active_events[key] = {
+		"loosened_elapsed": _night_elapsed,
+		"repair_started_elapsed": -1.0,
+	}
+
+
+func _on_screw_repair_started(index: int, repair: Node) -> void:
+	var key := _screw_event_key(repair, index)
+	if not _screw_active_events.has(key):
+		return
+	var event: Dictionary = _screw_active_events[key]
+	event["repair_started_elapsed"] = _night_elapsed
+	_screw_active_events[key] = event
+
+
+func _on_screw_repair_interrupted(index: int, repair: Node) -> void:
+	var key := _screw_event_key(repair, index)
+	if not _screw_active_events.has(key):
+		return
+	var event: Dictionary = _screw_active_events[key]
+	event["repair_started_elapsed"] = -1.0
+	_screw_active_events[key] = event
+
+
+func _on_screw_repaired(index: int, repair: Node) -> void:
+	var key := _screw_event_key(repair, index)
+	if not _screw_active_events.has(key):
+		return
+	var event: Dictionary = _screw_active_events[key]
+	var response_elapsed := float(event.get("repair_started_elapsed", -1.0))
+	if response_elapsed < 0.0:
+		response_elapsed = _night_elapsed
+	var loosened_elapsed := float(event.get("loosened_elapsed", response_elapsed))
+	var paused_seconds := _consequence_pause_overlap_seconds(loosened_elapsed, response_elapsed)
+	var response_seconds := maxf(0.0, response_elapsed - loosened_elapsed - paused_seconds)
+	if response_seconds > maxf(0.0, screw_response_grace_seconds):
+		_screw_late_count += 1
+		_screw_late_penalty_total += maxf(0.0, screw_late_penalty_percent)
+	_screw_repaired_count += 1
+	_screw_active_events.erase(key)
+
+
+func _update_screw_loosen_availability() -> void:
+	var allow_loosen := _night_elapsed < maxf(0.0, night_duration_seconds - maxf(0.0, screw_spawn_end_buffer_seconds))
+	for repair in _screw_repair_controllers():
+		if repair.has_method("set_loosen_enabled"):
+			repair.call("set_loosen_enabled", allow_loosen)
+
+
+func _expected_screw_event_count() -> int:
+	var expected := 0
+	for repair in _screw_repair_controllers():
+		var enabled_value = repair.get("enabled")
+		if enabled_value != null and not bool(enabled_value):
+			continue
+		var interval := 0.0
+		var interval_value = repair.get("screw_interval_seconds")
+		if interval_value != null:
+			interval = float(interval_value)
+		if interval > 0.0:
+			var available_duration := maxf(
+				0.0,
+				night_duration_seconds - maxf(0.0, screw_spawn_end_buffer_seconds)
+			)
+			expected += int(ceil(available_duration / interval))
+	return expected
+
+
+func _update_electricity_summary_time(delta: float) -> void:
+	if delta <= 0.0:
+		return
+	var low := minf(electricity_target_min_percent, electricity_target_max_percent)
+	var high := maxf(electricity_target_min_percent, electricity_target_max_percent)
+	if _is_electricity_consequence_paused() or (_electricity_percent >= low and _electricity_percent <= high):
+		_electricity_target_elapsed += delta
+
+
+func _is_electricity_consequence_paused() -> bool:
+	return _night_elapsed < _electricity_consequence_pause_until
+
+
+func _can_start_emergency_consequence_pause() -> bool:
+	return _window_alert_state != WINDOW_ALERT_NONE
+
+
+func _start_emergency_consequence_pause() -> void:
+	var duration := maxf(0.0, emergency_power_electricity_consequence_pause_seconds)
+	if duration <= 0.0:
+		return
+	var pause_start := _night_elapsed
+	var pause_end := pause_start + duration
+	_electricity_consequence_pause_until = maxf(_electricity_consequence_pause_until, pause_end)
+	if not _consequence_pause_intervals.is_empty():
+		var last_index := _consequence_pause_intervals.size() - 1
+		var last_interval := _consequence_pause_intervals[last_index]
+		if pause_start <= last_interval.y:
+			last_interval.y = maxf(last_interval.y, pause_end)
+			_consequence_pause_intervals[last_index] = last_interval
+			return
+	_consequence_pause_intervals.append(Vector2(pause_start, pause_end))
+
+
+func _consequence_pause_overlap_seconds(start_elapsed: float, end_elapsed: float) -> float:
+	var window_start := minf(start_elapsed, end_elapsed)
+	var window_end := maxf(start_elapsed, end_elapsed)
+	if window_end <= window_start:
+		return 0.0
+	var total := 0.0
+	for interval in _consequence_pause_intervals:
+		var overlap_start := maxf(window_start, interval.x)
+		var overlap_end := minf(window_end, interval.y)
+		if overlap_end > overlap_start:
+			total += overlap_end - overlap_start
+	return total
+
+
 func _complete_stress_test_success() -> void:
 	if _night_finished:
 		return
-	_night_finished = true
-	_hide_mouse_tooltip()
-	_set_robot_interaction_enabled(false)
-	DayCycle.register_stress_test_completed()
-	finish(0, 0, -10, {}, false)
+	_begin_stress_test_summary(
+		true,
+		"",
+		{
+			"money_delta": 0,
+			"suspicion_delta": 0,
+			"anger_delta": -10,
+			"ingredients": {},
+			"skip_advance": false,
+		},
+		false,
+		true
+	)
 
 
 func _fail_robot_wake() -> void:
@@ -1128,31 +1573,176 @@ func _fail_robot_wake() -> void:
 func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 	if _night_finished:
 		return
+	_begin_stress_test_summary(
+		false,
+		reason,
+		{
+			"money_delta": 0,
+			"suspicion_delta": 0,
+			"anger_delta": 0,
+			"ingredients": {},
+			"skip_advance": false,
+		},
+		registers_wake,
+		false
+	)
+
+
+func _begin_stress_test_summary(
+		success: bool,
+		reason: String,
+		result: Dictionary,
+		registers_wake: bool,
+		registers_completion: bool
+) -> void:
 	_night_finished = true
+	_stop_night_ambient()
 	_hide_mouse_tooltip()
-	_set_robot_interaction_enabled(false)
+	_set_stress_test_interaction_enabled(false)
+	_summary_success = success
+	_summary_reason = reason
+	_summary_result = result
+	_summary_registers_completion = registers_completion
 	_pending_failure_registers_wake = registers_wake
 	_dragging_gas_valve = false
-	_clear_window_alert()
+	_update_summary_text()
+
+	if failure_overlay == null:
+		_finish_stress_test_summary()
+		return
+
+	var main := _main_controller()
+	if main != null and main.has_method("play_current_fullscreen_transition"):
+		_failure_transition_playing = true
+		var played := bool(main.call(
+			"play_current_fullscreen_transition",
+			Callable(self, "_show_failure_overlay"),
+			Callable(self, "_on_failure_transition_finished")
+		))
+		if played:
+			return
+
+	_show_failure_overlay()
+	_on_failure_transition_finished()
+
+
+func _update_summary_text() -> void:
+	if failure_title_label != null:
+		failure_title_label.text = summary_title_text
 	if failure_reason_label != null:
-		failure_reason_label.text = reason
-	if failure_overlay != null:
-		failure_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-		failure_overlay.visible = true
-		get_tree().paused = true
+		failure_reason_label.text = _build_summary_text()
+
+
+func _build_summary_text() -> String:
+	var lines: Array[String] = []
+	if _summary_success:
+		lines.append("Result: %s" % summary_success_text)
 	else:
-		_finish_failed_stress_test()
+		lines.append("Result: Failed")
+		if not _summary_reason.is_empty():
+			lines.append("Reason: %s" % _summary_reason)
+
+	var electricity := _electricity_summary()
+	lines.append("Electricity Flow: %s  %.0f%% in range" % [
+		_stars_for_score(float(electricity["score"])),
+		float(electricity["target_ratio"]) * 100.0,
+	])
+
+	var screws := _screw_summary()
+	lines.append("Screws: %s  %.0f%% score" % [
+		_stars_for_score(float(screws["score"])),
+		float(screws["score"]),
+	])
+	return "\n".join(lines)
 
 
-func _finish_failed_stress_test() -> void:
+func _electricity_summary() -> Dictionary:
+	var duration := maxf(0.001, minf(_night_elapsed, night_duration_seconds))
+	var target_ratio := clampf(_electricity_target_elapsed / duration, 0.0, 1.0)
+	var required_ratio := maxf(0.001, electricity_five_star_required_ratio)
+	var score := clampf((target_ratio / required_ratio) * 100.0, 0.0, 100.0)
+	return {
+		"target_ratio": target_ratio,
+		"score": score,
+	}
+
+
+func _screw_summary() -> Dictionary:
+	var expected_count := maxi(0, _screw_expected_events)
+	var unrepaired_count := _screw_active_events.size()
+	var score := 100.0
+	score -= _screw_late_penalty_total
+	score -= float(unrepaired_count) * maxf(0.0, screw_unrepaired_penalty_percent)
+
+	if expected_count > 0:
+		var completion_ratio := clampf(float(_screw_repaired_count) / float(expected_count), 0.0, 1.0)
+		var target_ratio := clampf(screw_completion_target_ratio, 0.0, 1.0)
+		if completion_ratio < target_ratio:
+			var step := maxf(0.1, screw_completion_penalty_step_percent)
+			var deficit_percent := (target_ratio - completion_ratio) * 100.0
+			score -= ceil(deficit_percent / step) * step
+
+	return {
+		"score": clampf(score, 0.0, 100.0),
+		"expected_count": expected_count,
+		"repaired_count": _screw_repaired_count,
+		"late_count": _screw_late_count,
+		"unrepaired_count": unrepaired_count,
+	}
+
+
+func _stars_for_score(score: float) -> String:
+	var full_count := clampi(int(floor(clampf(score, 0.0, 100.0) / 20.0)), 0, 5)
+	var stars := ""
+	for i in range(5):
+		stars += "★" if i < full_count else "☆"
+	return stars
+
+
+func _show_failure_overlay() -> void:
+	if failure_overlay == null:
+		return
+	_update_summary_text()
+	failure_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	failure_overlay.visible = true
+	if failure_continue_button != null:
+		failure_continue_button.disabled = true
+
+
+func _on_failure_transition_finished() -> void:
+	_failure_transition_playing = false
+	if failure_continue_button != null:
+		failure_continue_button.disabled = false
+	get_tree().paused = true
+
+
+func _main_controller() -> Node:
+	var node := get_parent()
+	while node != null:
+		if node.has_method("play_current_fullscreen_transition"):
+			return node
+		node = node.get_parent()
+	return null
+
+
+func _finish_stress_test_summary() -> void:
 	if _failure_result_emitted:
 		return
 	_failure_result_emitted = true
 	get_tree().paused = false
+	if _summary_registers_completion:
+		DayCycle.register_stress_test_completed()
+		_summary_registers_completion = false
 	if _pending_failure_registers_wake:
 		DayCycle.register_stress_test_wake()
 		_pending_failure_registers_wake = false
-	finish(0, 0, 0, {}, false)
+	finish(
+		int(_summary_result.get("money_delta", 0)),
+		int(_summary_result.get("suspicion_delta", 0)),
+		int(_summary_result.get("anger_delta", 0)),
+		_summary_result.get("ingredients", {}),
+		bool(_summary_result.get("skip_advance", false))
+	)
 
 
 func _on_end_button_pressed() -> void:
@@ -1167,14 +1757,32 @@ func _on_give_up_button_pressed() -> void:
 	if _night_finished:
 		return
 	_night_finished = true
-	_set_robot_interaction_enabled(false)
+	_stop_night_ambient()
+	_set_stress_test_interaction_enabled(false)
 	finish(0, 0, 0, {}, false)
 
 
 func _on_failure_continue_button_pressed() -> void:
-	_finish_failed_stress_test()
+	if _failure_transition_playing:
+		return
+	_finish_stress_test_summary()
 
 
 func _set_robot_interaction_enabled(value: bool) -> void:
 	if stress_test_robot != null and stress_test_robot.has_method("set_interaction_enabled"):
 		stress_test_robot.call("set_interaction_enabled", value)
+
+
+func _set_stress_test_interaction_enabled(value: bool) -> void:
+	_set_robot_interaction_enabled(value)
+	for repair in _screw_repair_controllers():
+		if repair.has_method("set_completion_enabled"):
+			repair.call("set_completion_enabled", value)
+	if pull_cord != null:
+		pull_cord.set_process_input(value)
+	if electrical_cord != null:
+		electrical_cord.set_process_input(value)
+	if not value and gas_valve != null:
+		gas_valve.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not value and emergency_power_button != null:
+		emergency_power_button.mouse_filter = Control.MOUSE_FILTER_IGNORE

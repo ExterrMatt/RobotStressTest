@@ -100,6 +100,8 @@ extends Control
 ## Scene to load when "New Game" / "Endless" is picked.
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/Main.tscn"
 
+const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
+
 
 # =============================================================================
 # NODE REFS — resolved at _ready via unique_name_in_owner.
@@ -151,6 +153,10 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _play_disabled_menu_button_sound_from_event(event):
+		get_viewport().set_input_as_handled()
+		return
+
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
 	var key_event: InputEventKey = event
@@ -288,6 +294,25 @@ func _reset_menu_option_button_textures() -> void:
 		var texture_back := btn.get_node_or_null("OptionTexture") as TextureRect
 		if texture_back:
 			texture_back.texture = menu_option_texture
+
+
+func _play_disabled_menu_button_sound_from_event(event: InputEvent) -> bool:
+	if _current_overlay and is_instance_valid(_current_overlay):
+		return false
+	if not (event is InputEventMouseButton):
+		return false
+	var mouse_event := event as InputEventMouseButton
+	if not mouse_event.pressed or mouse_event.button_index != MOUSE_BUTTON_LEFT:
+		return false
+
+	for child in menu_list.get_children():
+		var btn := child as Button
+		if btn == null or not btn.disabled:
+			continue
+		if btn.get_global_rect().has_point(mouse_event.global_position):
+			UI_SOUND.play_inaccessible_button(self)
+			return true
+	return false
 
 
 func _activate(id: String) -> void:

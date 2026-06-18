@@ -37,6 +37,7 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"synth_skin":    "res://assets/textures/icons/synth_skin_shadow.png",
 	"oil":           "res://assets/textures/icons/oil_shadow.png",
 }
+const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 
 @onready var ingredients_tray: Control = %IngredientsTray
 @onready var craft_bin: WorkshopBin = %CraftBin
@@ -185,11 +186,15 @@ func _handle_left_press(global_pos: Vector2) -> void:
 		return
 
 	if _hit_button(craft_button, global_pos):
-		if not craft_button.disabled:
+		if craft_button.disabled:
+			UI_SOUND.play_inaccessible_button(self)
+		else:
 			_on_craft_pressed()
 		return
 	if _hit_button(collect_button, global_pos):
-		if not collect_button.disabled:
+		if collect_button.disabled:
+			UI_SOUND.play_inaccessible_button(self)
+		else:
 			_on_collect_pressed()
 		return
 

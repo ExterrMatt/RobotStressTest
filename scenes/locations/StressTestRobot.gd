@@ -16,6 +16,17 @@ const INTRO_ANIMATION_TORSO_PATH: NodePath = ^"AnimationLayers/Torso"
 const LOOP_ANIMATION_TORSO_PATH: NodePath = ^"AnimationLayers/MouthBLoopMedium/Torso"
 const LEGS_PATH: NodePath = ^"Legs"
 const HOVER_BOX_OVERLAY_Z_INDEX: int = 1000
+const WOOD_CREAK_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/wood/wood_creak.mp3",
+	"res://assets/sounds/wood/wood_creak_long.mp3",
+	"res://assets/sounds/wood/wood_creak_slight.mp3",
+]
+const HAND_RUB_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/hands/hand_rub_long_1.mp3",
+	"res://assets/sounds/hands/hand_rub_long_2.mp3",
+	"res://assets/sounds/hands/hand_rub_long_3.mp3",
+	"res://assets/sounds/hands/hand_rub_loud.mp3",
+]
 
 const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
@@ -93,6 +104,11 @@ var _animation_playing: bool = false
 var _animation_elapsed: float = 0.0
 var _animation_torso_restore_state: Dictionary = {}
 var _raised_legs_restore_index: int = -1
+var _rng := RandomNumberGenerator.new()
+var _wood_creak_sounds: Array[AudioStream] = []
+var _hand_rub_sounds: Array[AudioStream] = []
+var _wood_creak_audio_player: AudioStreamPlayer = null
+var _hand_rub_audio_player: AudioStreamPlayer = null
 
 
 func _ready() -> void:
@@ -101,6 +117,9 @@ func _ready() -> void:
 	if not resized.is_connected(_on_resized):
 		resized.connect(_on_resized)
 	_connect_robot_part_state()
+	if not Engine.is_editor_hint():
+		_rng.randomize()
+		_initialize_interaction_sounds()
 	set_process(true)
 
 
@@ -154,6 +173,7 @@ func play_head_animation() -> bool:
 		return false
 	_animation_elapsed = 0.0
 	_animation_playing = true
+	_play_hand_rub_sound()
 	return true
 
 
@@ -202,8 +222,18 @@ func hovered_hover_box_description() -> String:
 	if box == null:
 		return ""
 	if String(box.name) == "HeadHoverBox":
-		return "Animate Head" if _active_animation_box == box else "Raise Head"
+		if _active_animation_box != box:
+			return "Raise Head"
+		if _animation_phase == ANIMATION_PHASE_INTRO and not _animation_playing:
+			return "Animate Head"
+		return "Lower Head"
 	if String(box.name) == "PelvisHoverBox":
+		if _box_has_layered_animation(box):
+			if _active_animation_box != box:
+				return "Raise Legs"
+			if _animation_phase == ANIMATION_PHASE_INTRO and not _animation_playing:
+				return "Animate Legs"
+			return "Lower Legs"
 		return "Lower Legs" if _is_box_effect_active(box) else "Raise Legs"
 	if String(box.name) == "BoobCoverHoverBox":
 		return "Remove Chest Cover" if _is_boob_cover_visible() else "Equip Chest Cover"
@@ -417,6 +447,7 @@ func _handle_layered_animation_click(box: Control) -> void:
 
 	_animation_elapsed = 0.0
 	_animation_playing = true
+	_play_hand_rub_sound()
 	_apply_visibility_state()
 
 
@@ -428,6 +459,7 @@ func _prime_layered_animation(box: Control) -> void:
 	if box.has_method("set_runtime_active"):
 		box.call("set_runtime_active", true)
 	_set_animation_frame_for_box(box, _animation_phase, 0)
+	_play_wood_creak_sound()
 	_apply_visibility_state()
 
 
@@ -839,6 +871,45 @@ func _find_hover_box_by_name(box_name: String) -> Control:
 		if box != null and is_instance_valid(box) and box.name == box_name:
 			return box
 	return null
+
+
+func _initialize_interaction_sounds() -> void:
+	_wood_creak_sounds = _load_audio_streams(WOOD_CREAK_SOUND_PATHS)
+	_hand_rub_sounds = _load_audio_streams(HAND_RUB_SOUND_PATHS)
+	if not _wood_creak_sounds.is_empty():
+		_wood_creak_audio_player = AudioStreamPlayer.new()
+		_wood_creak_audio_player.name = "WoodCreakAudioPlayer"
+		add_child(_wood_creak_audio_player)
+	if not _hand_rub_sounds.is_empty():
+		_hand_rub_audio_player = AudioStreamPlayer.new()
+		_hand_rub_audio_player.name = "HandRubAudioPlayer"
+		add_child(_hand_rub_audio_player)
+
+
+func _load_audio_streams(paths: Array[String]) -> Array[AudioStream]:
+	var streams: Array[AudioStream] = []
+	for path in paths:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			streams.append(stream)
+	return streams
+
+
+func _play_wood_creak_sound() -> void:
+	_play_random_stream(_wood_creak_audio_player, _wood_creak_sounds)
+
+
+func _play_hand_rub_sound() -> void:
+	_play_random_stream(_hand_rub_audio_player, _hand_rub_sounds)
+
+
+func _play_random_stream(player: AudioStreamPlayer, streams: Array[AudioStream]) -> void:
+	if Engine.is_editor_hint() or player == null or streams.is_empty():
+		return
+	player.stream = streams[_rng.randi_range(0, streams.size() - 1)]
+	player.pitch_scale = 1.0
+	player.volume_db = 0.0
+	player.play()
 
 
 func _get_animation_layers() -> Control:
