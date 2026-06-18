@@ -14,6 +14,11 @@ const PAN_EASE: int = Tween.EASE_IN_OUT
 const ZOOM_DURATION: float = 0.35
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 const RIP_CORD_FULL_EXTEND_SOUND_PATH := "res://assets/sounds/rip_cord/ripcord.mp3"
+const GENERATOR_HUM_SOUND_PATH := "res://assets/sounds/generator/generator_hum.mp3"
+const GENERATOR_CHUG_SOUND_PATH := "res://assets/sounds/generator/generator_chug.mp3"
+const GENERATOR_SHUTTING_OFF_SOUND_PATH := "res://assets/sounds/generator/generator_shutting_off.mp3"
+const GENERATOR_NO_POWER_SOUND_PATH := "res://assets/sounds/generator/generator_no_power.mp3"
+const EMERGENCY_POWER_BUTTON_SOUND_PATH := "res://assets/sounds/emergency_button/emergency_power_button.mp3"
 const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/night_sounds/1_min_night_sounds.mp3",
 	"res://assets/sounds/night_sounds/loud_crickets.mp3",
@@ -208,9 +213,20 @@ var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
 var _rip_cord_full_extend_sound: AudioStream = null
 var _rip_cord_audio_player: AudioStreamPlayer = null
+var _generator_hum_sound: AudioStream = null
+var _generator_chug_sound: AudioStream = null
+var _generator_shutting_off_sound: AudioStream = null
+var _generator_no_power_sound: AudioStream = null
+var _emergency_power_button_sound: AudioStream = null
+var _generator_hum_audio_player: AudioStreamPlayer = null
+var _generator_chug_audio_player: AudioStreamPlayer = null
+var _generator_shutdown_audio_player: AudioStreamPlayer = null
+var _generator_no_power_audio_player: AudioStreamPlayer = null
+var _emergency_power_button_audio_player: AudioStreamPlayer = null
 var _night_ambient_sounds: Array[AudioStream] = []
 var _night_ambient_paths: Array[String] = []
 var _night_ambient_audio_player: AudioStreamPlayer = null
+var _generator_had_power: bool = false
 
 const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
@@ -241,6 +257,7 @@ func _process(delta: float) -> void:
 	_update_screw_loosen_availability()
 	_apply_scheduled_meter_events()
 	_update_emergency_power_gas_equalization(delta)
+	_update_generator_power_sound()
 	_update_window_alert(delta)
 	_refresh_stress_hud()
 	_update_hover_box_tooltip()
@@ -897,6 +914,39 @@ func _initialize_audio_players() -> void:
 		_rip_cord_audio_player.name = "RipCordAudioPlayer"
 		add_child(_rip_cord_audio_player)
 
+	_generator_hum_sound = load(GENERATOR_HUM_SOUND_PATH) as AudioStream
+	_generator_chug_sound = load(GENERATOR_CHUG_SOUND_PATH) as AudioStream
+	_generator_shutting_off_sound = load(GENERATOR_SHUTTING_OFF_SOUND_PATH) as AudioStream
+	_generator_no_power_sound = load(GENERATOR_NO_POWER_SOUND_PATH) as AudioStream
+	_emergency_power_button_sound = load(EMERGENCY_POWER_BUTTON_SOUND_PATH) as AudioStream
+	_set_audio_stream_loop(_generator_hum_sound, true)
+	_set_audio_stream_loop(_generator_chug_sound, true)
+
+	if _generator_hum_sound != null:
+		_generator_hum_audio_player = AudioStreamPlayer.new()
+		_generator_hum_audio_player.name = "GeneratorHumAudioPlayer"
+		_generator_hum_audio_player.stream = _generator_hum_sound
+		add_child(_generator_hum_audio_player)
+		_generator_hum_audio_player.finished.connect(_on_generator_hum_finished)
+	if _generator_chug_sound != null:
+		_generator_chug_audio_player = AudioStreamPlayer.new()
+		_generator_chug_audio_player.name = "GeneratorChugAudioPlayer"
+		_generator_chug_audio_player.stream = _generator_chug_sound
+		add_child(_generator_chug_audio_player)
+		_generator_chug_audio_player.finished.connect(_on_generator_chug_finished)
+	if _generator_shutting_off_sound != null:
+		_generator_shutdown_audio_player = AudioStreamPlayer.new()
+		_generator_shutdown_audio_player.name = "GeneratorShutdownAudioPlayer"
+		add_child(_generator_shutdown_audio_player)
+	if _generator_no_power_sound != null:
+		_generator_no_power_audio_player = AudioStreamPlayer.new()
+		_generator_no_power_audio_player.name = "GeneratorNoPowerAudioPlayer"
+		add_child(_generator_no_power_audio_player)
+	if _emergency_power_button_sound != null:
+		_emergency_power_button_audio_player = AudioStreamPlayer.new()
+		_emergency_power_button_audio_player.name = "EmergencyPowerButtonAudioPlayer"
+		add_child(_emergency_power_button_audio_player)
+
 	_night_ambient_sounds.clear()
 	_night_ambient_paths.clear()
 	for path in NIGHT_AMBIENT_SOUND_PATHS:
@@ -918,6 +968,102 @@ func _play_rip_cord_full_extend_sound() -> void:
 	_rip_cord_audio_player.pitch_scale = 1.0
 	_rip_cord_audio_player.volume_db = 0.0
 	_rip_cord_audio_player.play()
+
+
+func _update_generator_power_sound() -> void:
+	var has_power := _electricity_percent > 0.001
+	if _generator_had_power and not has_power and not _night_finished:
+		_play_generator_no_power_sound()
+	_generator_had_power = has_power
+
+	if _night_finished or _emergency_power_shutoff_pressed:
+		_apply_generator_loop_volume(_generator_hum_audio_player, 0.0)
+		_apply_generator_loop_volume(_generator_chug_audio_player, 0.0)
+		return
+
+	_apply_generator_loop_volume(_generator_hum_audio_player, _generator_hum_volume())
+	_apply_generator_loop_volume(_generator_chug_audio_player, _generator_chug_volume())
+
+
+func _generator_hum_volume() -> float:
+	return clampf((_electricity_percent - 20.0) / 30.0, 0.0, 1.0)
+
+
+func _generator_chug_volume() -> float:
+	if _electricity_percent <= 0.0:
+		return 0.0
+	if _electricity_percent < 20.0:
+		return 0.5 + 0.5 * clampf(_electricity_percent / 20.0, 0.0, 1.0)
+	return clampf((50.0 - _electricity_percent) / 30.0, 0.0, 1.0)
+
+
+func _apply_generator_loop_volume(player: AudioStreamPlayer, volume: float) -> void:
+	if player == null:
+		return
+	var clamped_volume := clampf(volume, 0.0, 1.0)
+	if clamped_volume <= 0.001:
+		if player.playing:
+			player.stop()
+		return
+	player.volume_db = linear_to_db(clamped_volume)
+	player.pitch_scale = 1.0
+	if not player.playing:
+		player.play()
+
+
+func _stop_generator_power_sound() -> void:
+	if _generator_hum_audio_player != null:
+		_generator_hum_audio_player.stop()
+	if _generator_chug_audio_player != null:
+		_generator_chug_audio_player.stop()
+
+
+func _on_generator_hum_finished() -> void:
+	if _generator_hum_audio_player == null or _generator_hum_volume() <= 0.001:
+		return
+	_generator_hum_audio_player.play()
+
+
+func _on_generator_chug_finished() -> void:
+	if _generator_chug_audio_player == null or _generator_chug_volume() <= 0.001:
+		return
+	_generator_chug_audio_player.play()
+
+
+func _play_generator_shutting_off_sound() -> void:
+	if _generator_shutdown_audio_player == null or _generator_shutting_off_sound == null:
+		return
+	_generator_shutdown_audio_player.stream = _generator_shutting_off_sound
+	_generator_shutdown_audio_player.pitch_scale = 1.0
+	_generator_shutdown_audio_player.volume_db = 0.0
+	_generator_shutdown_audio_player.play()
+
+
+func _play_generator_no_power_sound() -> void:
+	if _generator_no_power_audio_player == null or _generator_no_power_sound == null:
+		return
+	_generator_no_power_audio_player.stream = _generator_no_power_sound
+	_generator_no_power_audio_player.pitch_scale = 1.0
+	_generator_no_power_audio_player.volume_db = 0.0
+	_generator_no_power_audio_player.play()
+
+
+func _play_emergency_power_button_sound() -> void:
+	if _emergency_power_button_audio_player == null or _emergency_power_button_sound == null:
+		return
+	_emergency_power_button_audio_player.stream = _emergency_power_button_sound
+	_emergency_power_button_audio_player.pitch_scale = 1.0
+	_emergency_power_button_audio_player.volume_db = 0.0
+	_emergency_power_button_audio_player.play()
+
+
+func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
+	if stream == null:
+		return
+	for property in stream.get_property_list():
+		if String(property.get("name", "")) == "loop":
+			stream.set("loop", enabled)
+			return
 
 
 func _play_random_night_ambient() -> void:
@@ -970,6 +1116,7 @@ func _initialize_stress_systems() -> void:
 	_electricity_target_elapsed = 0.0
 	_electricity_consequence_pause_until = 0.0
 	_consequence_pause_intervals.clear()
+	_generator_had_power = false
 	_screw_started_count = 0
 	_screw_repaired_count = 0
 	_screw_late_count = 0
@@ -999,6 +1146,7 @@ func _initialize_stress_systems() -> void:
 		failure_continue_button.disabled = false
 
 	_set_stress_test_interaction_enabled(true)
+	_update_generator_power_sound()
 	set_process(true)
 	_refresh_stress_hud()
 
@@ -1269,9 +1417,13 @@ func _initialize_emergency_power_button() -> void:
 func _on_emergency_power_button_pressed() -> void:
 	if _night_finished:
 		return
+	_play_emergency_power_button_sound()
+	if _electricity_percent > 0.001:
+		_play_generator_shutting_off_sound()
 	if _can_start_emergency_consequence_pause():
 		_start_emergency_consequence_pause()
 	_set_emergency_power_shutoff_pressed(true)
+	_update_generator_power_sound()
 	_refresh_stress_hud()
 
 
@@ -1596,6 +1748,7 @@ func _begin_stress_test_summary(
 		registers_completion: bool
 ) -> void:
 	_night_finished = true
+	_stop_generator_power_sound()
 	_stop_night_ambient()
 	_hide_mouse_tooltip()
 	_set_stress_test_interaction_enabled(false)
@@ -1757,6 +1910,7 @@ func _on_give_up_button_pressed() -> void:
 	if _night_finished:
 		return
 	_night_finished = true
+	_stop_generator_power_sound()
 	_stop_night_ambient()
 	_set_stress_test_interaction_enabled(false)
 	finish(0, 0, 0, {}, false)
