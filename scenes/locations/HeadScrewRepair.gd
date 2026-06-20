@@ -194,6 +194,10 @@ func set_repair_animation_duration_multiplier(value: float) -> void:
 	_repair_animation_duration_multiplier = maxf(0.1, value)
 
 
+func is_repairing() -> bool:
+	return _repairing
+
+
 func set_completion_enabled(value: bool) -> void:
 	_completion_enabled = value
 

@@ -4,6 +4,10 @@ class_name WorkshopMinigame
 signal collected(part_id: String)
 
 const CRAFTABLE_PARTS: Dictionary = {
+	"head": {
+		"display_name": "Head",
+		"recipe": {"head_segments": 1},
+	},
 	"leg": {
 		"display_name": "Leg",
 		"recipe": {"nanobots": 1, "scrap_metal": 1, "nuts_bolts": 1},
@@ -28,6 +32,7 @@ const INGREDIENT_PATHS: Dictionary = {
 	"nanobots":      "res://assets/textures/icons/nanobots.png",
 	"electronics":   "res://assets/textures/icons/electronics.png",
 	"synth_skin":    "res://assets/textures/icons/synth_skin.png",
+	"head_segments": "res://assets/textures/icons/placeholder_item.png",
 	"oil":           "res://assets/textures/icons/oil.png",
 }
 const INGREDIENT_SHADOW_PATHS: Dictionary = {
@@ -35,6 +40,7 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts_shadow.png",
 	"electronics":   "res://assets/textures/icons/electronics_shadow.png",
 	"synth_skin":    "res://assets/textures/icons/synth_skin_shadow.png",
+	"head_segments": "res://assets/textures/icons/placeholder_item.png",
 	"oil":           "res://assets/textures/icons/oil_shadow.png",
 }
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
@@ -580,6 +586,15 @@ func _on_craft_pressed() -> void:
 
 	craft_bin.clear_pieces()
 	craft_bin.output_mode = true
+	if _crafted_part_id == "head":
+		_refresh_tray_counts()
+		craft_button.disabled = true
+		craft_button.text = "CRAFTED %s" % _part_display_name(_crafted_part_id).to_upper()
+		collect_button.visible = true
+		collect_button.disabled = false
+		collect_button.text = "COLLECT %s" % _part_display_name(_crafted_part_id).to_upper()
+		return
+
 	_spawn_segments_stacked_at_bin_center()
 
 	_refresh_tray_counts()

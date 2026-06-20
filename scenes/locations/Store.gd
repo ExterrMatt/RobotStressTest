@@ -39,6 +39,10 @@ extends LocationBase
 ## Fallback sprite used when an item has no texture set (or when the
 ## configured texture failed to load).
 const PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/icons/placeholder_item.png"
+const SCENE_PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/backgrounds/scene_placeholder.png"
+const STORE_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/store.png"
+const STORE_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
+const STORE_FRAME_OUTER_WIDTH: float = 800.0
 
 ## Pixel size of each item's sprite slot on the table.
 const SLOT_SIZE: Vector2 = Vector2(160, 160)
@@ -58,6 +62,8 @@ const ITEM_NORMAL_MODULATE: Color = Color(1, 1, 1, 1)
 
 ## Track whether the player has bought ANYTHING this visit.
 var _bought_anything: bool = false
+var _store_active: bool = false
+var _signals_connected: bool = false
 
 ## Map of item_id (String) -> the Control node holding sprite+shadow.
 var _slot_by_id: Dictionary = {}
@@ -69,6 +75,7 @@ var _slot_hits: Array = []
 
 @onready var furniture_layer: Control = $FurnitureLayer
 @onready var item_grid: Control = %ItemGrid
+@onready var dialogue_box: DialogueBox = %DialogueBox
 
 
 func _ready() -> void:
@@ -77,19 +84,72 @@ func _ready() -> void:
 	# we render but never consume input — clicks pass straight through.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	Dialogue.load_file("intro", "res://data/dialogue/intro.dlg")
+	if dialogue_box != null:
+		dialogue_box.visible = false
+		dialogue_box.finished.connect(_on_intro_dialogue_finished)
+
+	if GameState.is_intro_step("store"):
+		_enter_intro_dialogue()
+		return
+
+	_enter_store_ui()
+
+
+func _enter_intro_dialogue() -> void:
+	_store_active = false
+	furniture_layer.visible = false
+	var main: Node = get_tree().current_scene
+	if main != null:
+		if main.has_method("hide_scene_overlay"):
+			main.hide_scene_overlay()
+		if main.has_method("hide_corner_button"):
+			main.hide_corner_button()
+		if "scene_image" in main:
+			var placeholder := load(SCENE_PLACEHOLDER_TEXTURE_PATH) as Texture2D
+			if placeholder != null:
+				main.scene_image.texture = placeholder
+		if main.has_method("_animate_frame_to") and "_default_frame_outer_width" in main:
+			main._animate_frame_to(Vector2(900.0, 225.0), main._default_frame_outer_width)
+
+	if dialogue_box != null:
+		dialogue_box.visible = true
+		dialogue_box.play_pages(Dialogue.get_pages("intro", "store_intro"))
+
+
+func _on_intro_dialogue_finished() -> void:
+	if not GameState.is_intro_step("store"):
+		return
+	if dialogue_box != null:
+		dialogue_box.visible = false
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("_play_transition_then"):
+		main._play_transition_then(Callable(self, "_enter_store_ui"))
+	else:
+		_enter_store_ui()
+
+
+func _enter_store_ui() -> void:
+	_store_active = true
+	furniture_layer.visible = true
+	var main: Node = get_tree().current_scene
+	if main != null:
+		if "scene_image" in main:
+			var store_background := load(STORE_BACKGROUND_TEXTURE_PATH) as Texture2D
+			if store_background != null:
+				main.scene_image.texture = store_background
+		if main.has_method("_animate_frame_to"):
+			main._animate_frame_to(STORE_FRAME_SIZE, STORE_FRAME_OUTER_WIDTH)
+
 	_build_grid()
 
-	# Hand FurnitureLayer (table + items) to Main so it renders inside the
-	# framed picture. interactive=true makes Main flip SceneImage's
-	# mouse_filter so child clicks can route through — though we ALSO use
-	# our own _input handler below as a backup, since the SceneImage chain
-	# is too deep to rely on Control routing alone.
-	var main: Node = get_tree().current_scene
 	if main and main.has_method("show_scene_overlay") and furniture_layer:
 		main.show_scene_overlay(furniture_layer, true)
 
-	GameState.money_changed.connect(_on_money_changed)
-	GameState.purchased_today_changed.connect(_on_purchased_today_changed)
+	if not _signals_connected:
+		GameState.money_changed.connect(_on_money_changed)
+		GameState.purchased_today_changed.connect(_on_purchased_today_changed)
+		_signals_connected = true
 
 	_refresh_corner_button()
 
@@ -98,6 +158,8 @@ func _exit_tree() -> void:
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("hide_corner_button"):
 		main.hide_corner_button()
+	if main and main.has_method("hide_scene_overlay"):
+		main.hide_scene_overlay()
 
 
 ## Global input handler. We listen here (rather than relying on each
@@ -110,6 +172,8 @@ func _exit_tree() -> void:
 ## Safety: bail out if a dialogue overlay or transition is active so we
 ## don't fire purchases during scene swaps.
 func _input(event: InputEvent) -> void:
+	if not _store_active:
+		return
 	if not (event is InputEventMouseButton):
 		return
 	var mb: InputEventMouseButton = event

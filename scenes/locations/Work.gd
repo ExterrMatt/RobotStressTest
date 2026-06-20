@@ -28,12 +28,19 @@ const CHOICE_FONT_SIZE: int = 36
 
 # Gold color for the in-box prompt ("What do you do?"). Matches School.
 const PROMPT_COLOR: String = "#e8c468"
+const SCENE_PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/backgrounds/scene_placeholder.png"
+const WORK_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work.png"
+const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
+const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
+const WORK_FRAME_OUTER_WIDTH: float = 800.0
 
 ## Two-phase scene flow. The minigame runs in MINIGAME; the completion
 ## screen lives in COMPLETION_PROMPT (typing the gold question) and
 ## COMPLETION_CHOICES (buttons up, waiting on the player).
 enum WorkPhase {
+	INTRO_JOB,
 	MINIGAME,
+	INTRO_HEAD_BOX,
 	COMPLETION_INTRO,
 	COMPLETION_PROMPT,
 	COMPLETION_CHOICES,
@@ -56,8 +63,10 @@ var _scene_phase: WorkPhase = WorkPhase.MINIGAME
 func _ready() -> void:
 	Dialogue.load_file("work", "res://data/dialogue/work.dlg")
 	# Completion-screen widgets are hidden until the minigame finishes.
-	dialogue_box.visible = false
-	choice_grid.visible = false
+	_set_node_visible(dialogue_box, false)
+	_set_node_visible(choice_grid, false)
+	_set_node_visible(furniture_layer, false)
+	_set_node_visible(work_inventory, false)
 
 	# Clear any leftover choice buttons from a previous run.
 	_clear_choice_buttons()
@@ -66,7 +75,27 @@ func _ready() -> void:
 	# once the gold prompt is done typing out.
 	dialogue_box.finished.connect(_on_dialogue_finished)
 
+	if GameState.is_intro_step("work"):
+		_enter_intro_job()
+		return
+
+	_show_work_minigame()
+
+
+func _show_work_minigame() -> void:
 	var main: Node = get_tree().current_scene
+	_scene_phase = WorkPhase.MINIGAME
+	_set_node_visible(color_background, true)
+	_set_node_visible(furniture_layer, true)
+	_set_node_visible(work_inventory, true)
+
+	if main != null:
+		if "scene_image" in main:
+			var work_background := load(WORK_BACKGROUND_TEXTURE_PATH) as Texture2D
+			if work_background != null:
+				main.scene_image.texture = work_background
+		if main.has_method("_animate_frame_to"):
+			main._animate_frame_to(WORK_FRAME_SIZE, WORK_FRAME_OUTER_WIDTH)
 
 	# Hand the furniture layer off to Main so it sits inside the framed picture.
 	if main and main.has_method("show_scene_overlay") and furniture_layer:
@@ -81,10 +110,68 @@ func _ready() -> void:
 		work_inventory.slots_changed.connect(_on_slots_changed)
 
 
+func _enter_intro_job() -> void:
+	_scene_phase = WorkPhase.INTRO_JOB
+	_show_intro_placeholder()
+	_set_node_visible(dialogue_box, true)
+	_set_node_visible(choice_grid, false)
+	dialogue_box.play_pages(Dialogue.get_pages("work", "intro_job"))
+
+
+func _show_intro_placeholder() -> void:
+	_set_node_visible(color_background, false)
+	_set_node_visible(furniture_layer, false)
+	_set_node_visible(work_inventory, false)
+
+	var main: Node = get_tree().current_scene
+	if main == null:
+		return
+	if main.has_method("hide_scene_overlay"):
+		main.hide_scene_overlay()
+	if main.has_method("hide_inventory_overlay"):
+		main.hide_inventory_overlay()
+	if main.has_method("hide_corner_button"):
+		main.hide_corner_button()
+	if "scene_image" in main:
+		var placeholder := load(SCENE_PLACEHOLDER_TEXTURE_PATH) as Texture2D
+		if placeholder != null:
+			main.scene_image.texture = placeholder
+	if main.has_method("_animate_frame_to") and "_default_frame_outer_width" in main:
+		main._animate_frame_to(DEFAULT_DIALOGUE_FRAME_SIZE, main._default_frame_outer_width)
+
+
 func _on_slots_changed(filled_count: int) -> void:
 	# Show the finish/steal choices only when all four slots are filled.
-	if filled_count >= 4 and work_inventory.is_complete():
+	if filled_count >= 4 and work_inventory != null and work_inventory.is_complete():
+		if GameState.is_intro_step("work"):
+			_enter_intro_head_box()
+			return
 		_enter_completion_screen()
+
+
+func _enter_intro_head_box() -> void:
+	if _scene_phase != WorkPhase.MINIGAME:
+		return
+
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("hide_scene_overlay"):
+		main.hide_scene_overlay()
+	if main and main.has_method("hide_inventory_overlay"):
+		main.hide_inventory_overlay()
+	if main and main.has_method("hide_corner_button"):
+		main.hide_corner_button()
+	_set_node_visible(color_background, false)
+	if main and "scene_image" in main:
+		var placeholder: Texture2D = load("res://assets/textures/backgrounds/scene_placeholder.png")
+		if placeholder:
+			main.scene_image.texture = placeholder
+	if main and main.has_method("_animate_frame_size_to"):
+		main._animate_frame_size_to(Vector2(900, 225))
+
+	_scene_phase = WorkPhase.INTRO_HEAD_BOX
+	_set_node_visible(dialogue_box, true)
+	_set_node_visible(choice_grid, false)
+	dialogue_box.play_pages(Dialogue.get_pages("work", "intro_head_box"))
 
 
 func _enter_completion_screen() -> void:
@@ -105,8 +192,7 @@ func _enter_completion_screen() -> void:
 	# Drop the opaque grey backdrop so the completion screen matches School's
 	# starfield-on-dark look. The minigame uses it to focus attention on the
 	# work area; on the completion screen it would just be a distracting slab.
-	if color_background:
-		color_background.visible = false
+	_set_node_visible(color_background, false)
 
 	# Swap the picture to the shared scene placeholder and shrink the frame
 	# back to default so the dialogue box and buttons below the picture come
@@ -125,9 +211,9 @@ func _enter_completion_screen() -> void:
 func _enter_completion_intro() -> void:
 	_scene_phase = WorkPhase.COMPLETION_INTRO
 	_clear_choice_buttons()
-	choice_grid.visible = false
+	_set_node_visible(choice_grid, false)
 
-	dialogue_box.visible = true
+	_set_node_visible(dialogue_box, true)
 	await get_tree().process_frame
 	dialogue_box.play_pages(Dialogue.get_pages("work", "completion"))
 
@@ -137,9 +223,9 @@ func _enter_completion_intro() -> void:
 func _enter_completion_prompt() -> void:
 	_scene_phase = WorkPhase.COMPLETION_PROMPT
 	_clear_choice_buttons()
-	choice_grid.visible = false
+	_set_node_visible(choice_grid, false)
 
-	dialogue_box.visible = true
+	_set_node_visible(dialogue_box, true)
 	var prompt_text: String = "What do you do?"
 	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt_text]
 	dialogue_box.play_pages_autosized([[gold_prompt]], [48, 36, 24, 16], 2)
@@ -160,7 +246,7 @@ func _auto_advance_completion_prompt(prompt_text: String) -> void:
 func _show_completion_choices() -> void:
 	_scene_phase = WorkPhase.COMPLETION_CHOICES
 	_clear_choice_buttons()
-	choice_grid.visible = true
+	_set_node_visible(choice_grid, true)
 
 	var finish_btn := _build_choice_button("FINISH SHIFT")
 	finish_btn.pressed.connect(_on_finish_pressed)
@@ -175,12 +261,35 @@ func _show_completion_choices() -> void:
 
 func _on_dialogue_finished() -> void:
 	match _scene_phase:
+		WorkPhase.INTRO_JOB:
+			_set_node_visible(dialogue_box, false)
+			var main: Node = get_tree().current_scene
+			if main != null and main.has_method("_play_transition_then"):
+				main._play_transition_then(Callable(self, "_show_work_minigame"))
+			else:
+				_show_work_minigame()
+		WorkPhase.INTRO_HEAD_BOX:
+			_finish_intro_work()
 		WorkPhase.COMPLETION_INTRO:
 			_enter_completion_prompt()
 		WorkPhase.COMPLETION_PROMPT:
 			_show_completion_choices()
 		_:
 			pass
+
+
+func _exit_tree() -> void:
+	var main: Node = get_tree().current_scene
+	if main and main.has_method("hide_scene_overlay"):
+		main.hide_scene_overlay()
+	if main and main.has_method("hide_inventory_overlay"):
+		main.hide_inventory_overlay()
+
+
+func _set_node_visible(node: CanvasItem, value: bool) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	node.visible = value
 
 
 # --- Button callbacks ---
@@ -205,6 +314,14 @@ func _finish_work(stole: bool) -> void:
 		suspicion += int(REWARD_STEAL.get("suspicion", 0))
 		_merge_ingredients(ingredients, REWARD_STEAL.get("ingredients", {}))
 
+	finish(money, suspicion, 0, ingredients, false)
+
+
+func _finish_intro_work() -> void:
+	var money: int = int(REWARD_COMPLETE.get("money", 0))
+	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0))
+	var ingredients: Dictionary = _copy_ingredients(REWARD_COMPLETE.get("ingredients", {}))
+	ingredients["head_segments"] = int(ingredients.get("head_segments", 0)) + 1
 	finish(money, suspicion, 0, ingredients, false)
 
 

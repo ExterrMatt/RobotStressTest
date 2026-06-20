@@ -1,0 +1,60 @@
+# Intro sequence dialogue.
+# Format: see data/dialogue/school.dlg.
+
+[exposition]
+Uncle: You're up early.
+You: Yeah, I've gotta get to class.
+Uncle: Right. Factory tomorrow then.
+You: That's the deal...
+Uncle: Good. Patrol drones made two passes over the block last night. Nothing came of it, but they're getting curious again. You should keep your head down.
+You: Should I be worried?
+Uncle: You should. Be quiet and punctual. Worry's expensive.
+You: Almost as expensive as rent.
+Uncle: The arrangement's fair. I keep the roof over your head, you pull your weight. Food, heat, power- none of it runs free.
+You: Dad left money.
+Uncle: Tuition. He had it set aside- just enough for your credits. That's what he left. Everything else is yours to sort out now. You're an adult now.
+You: Then I guess I have to work...
+Uncle: Yes, you will. You keep your head down in class, you pull your weight at the factory, we both win.
+You: That's the speech?
+Uncle: That's the generous version. The other one has a spreadsheet. Get to class.
+
+[school_first]
+The bell rings, and the classroom settles into its usual rhythm.
+Notes open. Chairs squeak. Someone behind you is already asking to borrow a pencil.
+The teacher starts the lesson like the world outside is perfectly normal.
+For the next hour, you let yourself be a student.
+
+[evening_room]
+By evening, your room is quiet in the practical way a room gets when it has to hold too many plans.
+You have tuition covered, a factory shift waiting tomorrow, and not nearly enough supplies of your own.
+The store is still open.
+It is not glamorous, but neither is building impossible things from spare change.
+
+[store_intro]
+The store is bright, crowded, and pretending very hard that everything on the shelves is normal household equipment.
+Some of it even is.
+You only need enough to start small: parts, tools, anything that will make the next bad idea slightly safer.
+
+[bedroom_night]
+You get home after dark with a bag that feels heavier than it should.
+Your room is the one place in the house that is mostly yours.
+Tomorrow will be factory work. Tonight, you can at least sleep before the plan gets louder.
+
+[school_second]
+The next morning, class feels easier to sit through because there is something waiting after it.
+You take notes. You answer when called on. You do enough to look like you belong there.
+The trick is not acting innocent. The trick is acting busy.
+
+[robot_first_talk]
+The head goes still after the test.
+For a second, you just listen to the shed cooling down around it.
+"...hello?"
+The voice is small, careful, and very real.
+You lean closer before you can talk yourself out of it.
+"Hi," you say. "Okay. That's new."
+
+[free_reign]
+After that, the routine changes shape.
+School still matters. Work still pays. The store still has what you cannot make.
+But now the shed has a voice in it.
+Day one starts for real.

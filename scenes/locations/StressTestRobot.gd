@@ -217,6 +217,17 @@ func reset_interactions_to_default() -> void:
 	_update_hover_boxes()
 
 
+func is_in_default_pose() -> bool:
+	if _active_animation_box != null and is_instance_valid(_active_animation_box):
+		return false
+	for box in _hover_boxes:
+		if box == null or not is_instance_valid(box):
+			continue
+		if _is_box_effect_active(box) != bool(box.get("active_by_default")):
+			return false
+	return true
+
+
 func hovered_hover_box_description() -> String:
 	var box := _find_hover_box_at(get_global_mouse_position())
 	if box == null:

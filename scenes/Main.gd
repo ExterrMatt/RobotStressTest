@@ -47,6 +47,22 @@ const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
 ]
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
+const INTRO_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/IntroDialogue.tscn"
+const INTRO_DIALOGUE_LOCATION_ID: StringName = &"intro_dialogue"
+const INTRO_STEPS: Array[Dictionary] = [
+	{"step": "exposition", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
+	{"step": "school_first", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/school.png"},
+	{"step": "evening_room", "kind": "dialogue", "phase": 1, "preview": "res://assets/textures/backgrounds/bedroom_evening.png"},
+	{"step": "store", "kind": "location", "phase": 1, "location_id": &"store"},
+	{"step": "bedroom_night", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
+	{"step": "sleep", "kind": "location", "phase": 2, "location_id": &"sleep"},
+	{"step": "work", "kind": "location", "phase": 0, "location_id": &"work"},
+	{"step": "school_second", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/school.png"},
+	{"step": "workshop", "kind": "location", "phase": 1, "location_id": &"workshop"},
+	{"step": "stress_test", "kind": "location", "phase": 2, "location_id": &"stress_test"},
+	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
+	{"step": "free_reign", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
+]
 
 const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryOverlay.tscn")
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
@@ -197,6 +213,8 @@ var _source_frame_style_backups: Dictionary = {}
 var _source_frame_visibility_backups: Dictionary = {}
 var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
+var _intro_sequence_enabled: bool = false
+var _suppress_phase_selection_refresh: bool = false
 
 func _ready() -> void:
 	_create_mouse_tooltip()
@@ -238,6 +256,12 @@ func _ready() -> void:
 	var debug_jump := {}
 	if intro_autoload and intro_autoload.has_method("consume_debug_jump"):
 		debug_jump = intro_autoload.call("consume_debug_jump")
+	var should_start_intro_sequence: bool = debug_jump.is_empty() \
+			and GameState.intro_active \
+			and not GameState.intro_completed
+	var should_play_intro_wipe: bool = debug_jump.is_empty() \
+			and intro_autoload != null \
+			and bool(intro_autoload.consume_intro())
 	if not debug_jump.is_empty():
 		_debug_set_phase_for_number(int(debug_jump.get("number", 1)))
 	_refresh_hud()
@@ -249,8 +273,10 @@ func _ready() -> void:
 			bool(debug_jump.get("shift", false)),
 			bool(debug_jump.get("ctrl", false))
 		)
-	elif intro_autoload and intro_autoload.consume_intro():
+	elif should_play_intro_wipe:
 		call_deferred("_play_intro_wipe")
+	if should_start_intro_sequence:
+		call_deferred("_start_intro_sequence")
 
 
 
@@ -398,6 +424,131 @@ func _debug_open_location_by_id(location_id: StringName) -> void:
 	_on_location_picked(target_loc)
 
 
+func _start_intro_sequence() -> void:
+	if not GameState.intro_active or GameState.intro_completed:
+		return
+	_intro_sequence_enabled = true
+	if _is_any_transition_playing() and transition != null and transition.has_signal("finished"):
+		await transition.finished
+	if _intro_sequence_enabled:
+		_open_intro_current_step()
+
+
+func _open_intro_current_step() -> void:
+	if not _intro_sequence_enabled:
+		return
+	var step_def := _intro_current_step_def()
+	if step_def.is_empty():
+		_complete_intro_sequence()
+		return
+
+	_set_phase_for_intro_step(int(step_def.get("phase", GameState.phase)))
+	match String(step_def.get("kind", "")):
+		"dialogue":
+			_open_intro_dialogue_step(step_def)
+		"location":
+			_open_intro_location_step(StringName(step_def.get("location_id", &"")))
+		_:
+			_advance_intro_sequence()
+
+
+func _intro_current_step_def() -> Dictionary:
+	var step := GameState.intro_step
+	for step_def in INTRO_STEPS:
+		if String(step_def.get("step", "")) == step:
+			return step_def
+	return {}
+
+
+func _intro_current_step_index() -> int:
+	var step := GameState.intro_step
+	for i in INTRO_STEPS.size():
+		if String(INTRO_STEPS[i].get("step", "")) == step:
+			return i
+	return -1
+
+
+func _set_phase_for_intro_step(phase: int) -> void:
+	if GameState.phase == phase:
+		return
+	_suppress_phase_selection_refresh = true
+	GameState.phase = phase
+	_suppress_phase_selection_refresh = false
+	_refresh_hud()
+
+
+func _open_intro_dialogue_step(step_def: Dictionary) -> void:
+	if load(INTRO_DIALOGUE_SCENE_PATH) == null:
+		push_error("Intro: could not load %s" % INTRO_DIALOGUE_SCENE_PATH)
+		_advance_intro_sequence()
+		return
+
+	var loc := LocationData.new()
+	loc.id = INTRO_DIALOGUE_LOCATION_ID
+	loc.display_name = "Intro"
+	loc.scene_path = INTRO_DIALOGUE_SCENE_PATH
+	loc.preview_texture = _load_intro_preview(step_def)
+	_on_location_picked(loc)
+
+
+func _open_intro_location_step(location_id: StringName) -> void:
+	var loc := _location_by_id(location_id)
+	if loc == null:
+		push_warning("Intro: LocationData not found for id '%s'." % location_id)
+		_advance_intro_sequence()
+		return
+	if location_id == &"store" or location_id == &"work":
+		var intro_loc := LocationData.new()
+		intro_loc.id = loc.id
+		intro_loc.display_name = loc.display_name
+		intro_loc.description = loc.description
+		intro_loc.scene_path = loc.scene_path
+		intro_loc.preview_texture = load("res://assets/textures/backgrounds/scene_placeholder.png")
+		intro_loc.frame_size = DEFAULT_FRAME_SIZE
+		intro_loc.frame_outer_width = _default_frame_outer_width
+		_on_location_picked(intro_loc)
+		return
+	_on_location_picked(loc)
+
+
+func _location_by_id(location_id: StringName) -> LocationData:
+	for loc in _locations:
+		if loc.id == location_id:
+			return loc
+	return null
+
+
+func _load_intro_preview(step_def: Dictionary) -> Texture2D:
+	var path := String(step_def.get("preview", ""))
+	if path.is_empty():
+		return PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
+	if not ResourceLoader.exists(path):
+		return PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
+	return load(path) as Texture2D
+
+
+func _advance_intro_sequence() -> void:
+	if not _intro_sequence_enabled:
+		return
+	var index := _intro_current_step_index()
+	if index < 0 or index + 1 >= INTRO_STEPS.size():
+		_complete_intro_sequence()
+		return
+	GameState.set_intro_step(String(INTRO_STEPS[index + 1].get("step", "")))
+	call_deferred("_open_intro_current_step")
+
+
+func _complete_intro_sequence() -> void:
+	_intro_sequence_enabled = false
+	GameState.complete_intro()
+	_set_phase_for_intro_step(DayCycle.Phase.MORNING)
+	GameState.day = 1
+	DayCycle.nightly_wakes = 0
+	DayCycle.nightly_stress_test_completed = false
+	GameState.reset_daily_purchases()
+	_show_selection_screen()
+
+
 func _debug_give_all_items() -> void:
 	for id in GameState.ingredients.keys():
 		GameState.ingredients[id] = 99
@@ -454,6 +605,8 @@ func _on_brightness_changed(value: float) -> void: _apply_brightness(value)
 func _on_scanlines_enabled_changed(enabled: bool) -> void: _apply_scanlines_enabled(enabled)
 func _on_phase_changed(_v: int) -> void:
 	_refresh_hud()
+	if _suppress_phase_selection_refresh:
+		return
 	_show_selection_screen()
 
 
@@ -726,6 +879,8 @@ func _location_frame_outer_width(loc: LocationData) -> float:
 
 
 func _clear_current_location() -> void:
+	hide_scene_overlay()
+	hide_inventory_overlay()
 	if _current_location_node and is_instance_valid(_current_location_node):
 		_current_location_node.queue_free()
 		_current_location_node = null
@@ -1329,6 +1484,11 @@ func _cancel_active_transitions() -> void:
 # --- result handling ---
 
 func _on_location_finished(result: Dictionary) -> void:
+	if _intro_sequence_enabled:
+		_apply_result(result)
+		_advance_intro_sequence()
+		return
+
 	result = _apply_skipped_stress_test_penalty(result)
 	_apply_result(result)
 

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c2bv0w5te4pab" path="res://scenes/locations/Store.gd" id="1"]
 [ext_resource type="Script" uid="uid://dqmk6gwpmj4t5" path="res://scenes/locations/StoreItemData.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://b8dlgbox4dlg0" path="res://scenes/ui/DialogueBox.tscn" id="3_dialogue"]
 [ext_resource type="Texture2D" uid="uid://barmwpo16jixi" path="res://assets/textures/icons/store_table.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://dp58wrjwdao53" path="res://assets/textures/icons/scrap_metal_shadow.png" id="3_dhal8"]
 [ext_resource type="Texture2D" uid="uid://kc6svv36o12f" path="res://assets/textures/icons/scrap_metal.png" id="4"]
@@ -153,3 +154,30 @@ grow_horizontal = 2
 grow_vertical = 0
 size_flags_horizontal = 4
 mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=192735824]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer" unique_id=345175127]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBox" unique_id=652928884]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="DialogueBox" parent="MarginContainer/VBox" unique_id=1668586574 instance=ExtResource("3_dialogue")]
+unique_name_in_owner = true
+layout_mode = 2

@@ -2,6 +2,17 @@
 # Format: see data/dialogue/school.dlg for the full spec.
 # Trailing backslash joins onto the next line into one page (one click).
 
+[intro_job]
+[i]The next day starts under fluorescent lights.[/i]
+[i]Your job is simple: sort parts, match shapes, keep the line moving.[/i]
+[i]Every piece has a place. Every mistake slows someone down.[/i]
+[i]You tell yourself that makes it honest work.[/i]
+
+[intro_head_box]
+[i]At the end of the shift, a small cardboard box is sitting beside your station.[/i]
+[i]No label. No signature. Just a set of head segments packed in foam.[/i]
+[i]You take it home before anyone asks why it was there.[/i]
+
 
 # -----------------------------------------------------------------------------
 # COMPLETION - shown after the player fills all four slots, before the

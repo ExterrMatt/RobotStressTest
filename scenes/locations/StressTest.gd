@@ -59,6 +59,7 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 
 @export_group("Night Timer")
 @export var night_duration_seconds: float = 60.0
+@export var intro_tutorial_duration_seconds: float = 30.0
 @export var timer_label_text: String = "Time"
 
 @export_group("Electricity Meter")
@@ -234,6 +235,8 @@ const WINDOW_ALERT_RED: int = 2
 
 
 func _ready() -> void:
+	if _is_intro_tutorial_stress_test():
+		night_duration_seconds = intro_tutorial_duration_seconds
 	_create_mouse_tooltip()
 	_initialize_audio_players()
 	_initialize_robot_position_state()
@@ -272,7 +275,8 @@ func _process(delta: float) -> void:
 		_fail_stress_test(electricity_failure_text, true)
 		return
 	if _night_elapsed >= night_duration_seconds:
-		_fail_stress_test(timeout_failure_text, false)
+		_handle_night_timer_finished()
+		return
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1703,6 +1707,9 @@ func _consequence_pause_overlap_seconds(start_elapsed: float, end_elapsed: float
 func _complete_stress_test_success() -> void:
 	if _night_finished:
 		return
+	if _is_intro_tutorial_stress_test():
+		_finish_intro_tutorial_stress_test()
+		return
 	_begin_stress_test_summary(
 		true,
 		"",
@@ -1718,12 +1725,37 @@ func _complete_stress_test_success() -> void:
 	)
 
 
+func _handle_night_timer_finished() -> void:
+	if _is_robot_ready_for_normal_timer_end():
+		_complete_stress_test_success()
+		return
+	_fail_stress_test(timeout_failure_text, false)
+
+
+func _is_robot_ready_for_normal_timer_end() -> bool:
+	if stress_test_robot != null \
+			and stress_test_robot.has_method("is_in_default_pose") \
+			and not bool(stress_test_robot.call("is_in_default_pose")):
+		return false
+	return not _is_screw_repair_animation_active()
+
+
+func _is_screw_repair_animation_active() -> bool:
+	for repair in _screw_repair_controllers():
+		if repair.has_method("is_repairing") and bool(repair.call("is_repairing")):
+			return true
+	return false
+
+
 func _fail_robot_wake() -> void:
 	_fail_stress_test(wake_button_failure_text, true)
 
 
 func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 	if _night_finished:
+		return
+	if _is_intro_tutorial_stress_test():
+		_finish_intro_tutorial_stress_test()
 		return
 	_begin_stress_test_summary(
 		false,
@@ -1738,6 +1770,21 @@ func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 		registers_wake,
 		false
 	)
+
+
+func _is_intro_tutorial_stress_test() -> bool:
+	return GameState.is_intro_step("stress_test")
+
+
+func _finish_intro_tutorial_stress_test() -> void:
+	if _night_finished:
+		return
+	_night_finished = true
+	_stop_generator_power_sound()
+	_stop_night_ambient()
+	_hide_mouse_tooltip()
+	_set_stress_test_interaction_enabled(false)
+	finish(0, 0, 0, {}, false)
 
 
 func _begin_stress_test_summary(

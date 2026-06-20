@@ -19,6 +19,7 @@ signal scanlines_enabled_changed(enabled: bool)
 ## to this so the per-day-purchase markers stay in sync without polling.
 signal purchased_today_changed(purchased_ids: Array)
 signal robot_parts_changed(parts: Dictionary)
+signal intro_changed(active: bool, step: String)
 
 const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
@@ -45,6 +46,9 @@ var _phase: int = 0
 var _money: int = 0
 var _brightness_value: float = 50.0
 var _scanlines_enabled: bool = true
+var intro_active: bool = true
+var intro_completed: bool = false
+var intro_step: String = "exposition"
 
 var money: int:
 	get: return _money
@@ -105,6 +109,7 @@ var ingredients: Dictionary = {
 	"nuts_bolts": 0,
 	"electronics": 0,
 	"nanobots": 0,
+	"head_segments": 0,
 	"oil": 0,
 }
 
@@ -136,6 +141,7 @@ func _emit_initial_state() -> void:
 	scanlines_enabled_changed.emit(_scanlines_enabled)
 	purchased_today_changed.emit(purchased_today)
 	robot_parts_changed.emit(robot_parts.duplicate())
+	intro_changed.emit(intro_active, intro_step)
 
 
 # --- money ---
@@ -303,6 +309,25 @@ func reset_daily_purchases() -> void:
 	purchased_today_changed.emit(purchased_today)
 
 
+# --- intro sequence ---
+
+func set_intro_step(step: String) -> void:
+	intro_active = not intro_completed
+	intro_step = step
+	intro_changed.emit(intro_active, intro_step)
+
+
+func is_intro_step(step: String) -> bool:
+	return intro_active and not intro_completed and intro_step == step
+
+
+func complete_intro() -> void:
+	intro_completed = true
+	intro_active = false
+	intro_step = ""
+	intro_changed.emit(intro_active, intro_step)
+
+
 # --- serialization stubs for future save system ---
 ## Returns a dictionary snapshot of all persistent state. Future save system
 ## can write this to disk; from_dict() reverses the operation.
@@ -320,6 +345,9 @@ func to_dict() -> Dictionary:
 		"skills": skills.duplicate(),
 		"owned_tools": owned_tools.duplicate(),
 		"purchased_today": purchased_today.duplicate(),
+		"intro_active": intro_active,
+		"intro_completed": intro_completed,
+		"intro_step": intro_step,
 	}
 
 
@@ -337,6 +365,8 @@ func from_dict(data: Dictionary) -> void:
 		robot_parts["leg"] = equipped_limbs
 	_sync_legacy_limb_count()
 	ingredients = data.get("ingredients", {}).duplicate()
+	for id in ["scrap_metal", "synth_skin", "nuts_bolts", "electronics", "nanobots", "head_segments", "oil"]:
+		ingredients[id] = max(0, int(ingredients.get(id, 0)))
 	var had_legacy_sneaky_shoes: bool = int(ingredients.get("sneaky_shoes", 0)) > 0
 	ingredients.erase("sneaky_shoes")
 	skills.assign(data.get("skills", []))
@@ -345,4 +375,7 @@ func from_dict(data: Dictionary) -> void:
 	if had_legacy_sneaky_shoes:
 		unlock_tool("sneaky_shoes")
 	purchased_today.assign(data.get("purchased_today", []))
+	intro_completed = bool(data.get("intro_completed", false))
+	intro_active = bool(data.get("intro_active", not intro_completed))
+	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))
 	_emit_initial_state()
