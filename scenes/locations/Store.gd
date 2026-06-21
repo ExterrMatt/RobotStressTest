@@ -43,6 +43,9 @@ const SCENE_PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/background
 const STORE_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/store.png"
 const STORE_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const STORE_FRAME_OUTER_WIDTH: float = 800.0
+const INTRO_STORE_STEP: String = "store"
+const INTRO_PICKUP_ITEM_IDS: Array[String] = ["electronics", "nuts_bolts", "nanobots"]
+const INTRO_TABLE_VERTICAL_OFFSET: float = 200.0
 
 ## Pixel size of each item's sprite slot on the table.
 const SLOT_SIZE: Vector2 = Vector2(160, 160)
@@ -64,6 +67,10 @@ const ITEM_NORMAL_MODULATE: Color = Color(1, 1, 1, 1)
 var _bought_anything: bool = false
 var _store_active: bool = false
 var _signals_connected: bool = false
+var _intro_pickup_active: bool = false
+var _intro_collected_item_ids: Dictionary = {}
+var _intro_dialogue_key: String = ""
+var _table_intro_offset_applied: bool = false
 
 ## Map of item_id (String) -> the Control node holding sprite+shadow.
 var _slot_by_id: Dictionary = {}
@@ -74,6 +81,7 @@ var _slot_hits: Array = []
 
 
 @onready var furniture_layer: Control = $FurnitureLayer
+@onready var store_table: TextureRect = $FurnitureLayer/StoreTable
 @onready var item_grid: Control = %ItemGrid
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
@@ -89,15 +97,17 @@ func _ready() -> void:
 		dialogue_box.visible = false
 		dialogue_box.finished.connect(_on_intro_dialogue_finished)
 
-	if GameState.is_intro_step("store"):
-		_enter_intro_dialogue()
+	if GameState.is_intro_step(INTRO_STORE_STEP):
+		_enter_intro_dialogue("store_intro")
 		return
 
 	_enter_store_ui()
 
 
-func _enter_intro_dialogue() -> void:
+func _enter_intro_dialogue(dialogue_key: String) -> void:
+	_intro_dialogue_key = dialogue_key
 	_store_active = false
+	_intro_pickup_active = false
 	furniture_layer.visible = false
 	var main: Node = get_tree().current_scene
 	if main != null:
@@ -114,24 +124,33 @@ func _enter_intro_dialogue() -> void:
 
 	if dialogue_box != null:
 		dialogue_box.visible = true
-		dialogue_box.play_pages(Dialogue.get_pages("intro", "store_intro"))
+		dialogue_box.play_pages(Dialogue.get_pages("intro", dialogue_key))
 
 
 func _on_intro_dialogue_finished() -> void:
-	if not GameState.is_intro_step("store"):
+	if not GameState.is_intro_step(INTRO_STORE_STEP):
 		return
 	if dialogue_box != null:
 		dialogue_box.visible = false
-	var main: Node = get_tree().current_scene
-	if main != null and main.has_method("_play_transition_then"):
-		main._play_transition_then(Callable(self, "_enter_store_ui"))
+	if _intro_dialogue_key == "store_intro":
+		var main: Node = get_tree().current_scene
+		if main != null and main.has_method("_play_transition_then"):
+			main._play_transition_then(Callable(self, "_enter_store_ui"))
+		else:
+			_enter_store_ui()
+	elif _intro_dialogue_key == "store_outro":
+		_finish_intro_store()
 	else:
-		_enter_store_ui()
+		_finish_intro_store()
 
 
 func _enter_store_ui() -> void:
 	_store_active = true
+	_intro_pickup_active = GameState.is_intro_step(INTRO_STORE_STEP)
 	furniture_layer.visible = true
+	if _intro_pickup_active:
+		_intro_collected_item_ids.clear()
+		_apply_intro_table_offset()
 	var main: Node = get_tree().current_scene
 	if main != null:
 		if "scene_image" in main:
@@ -145,6 +164,11 @@ func _enter_store_ui() -> void:
 
 	if main and main.has_method("show_scene_overlay") and furniture_layer:
 		main.show_scene_overlay(furniture_layer, true)
+
+	if _intro_pickup_active:
+		if main and main.has_method("hide_corner_button"):
+			main.hide_corner_button()
+		return
 
 	if not _signals_connected:
 		GameState.money_changed.connect(_on_money_changed)
@@ -220,7 +244,7 @@ func _build_grid() -> void:
 	if rect_size == Vector2.ZERO:
 		rect_size = Vector2(800, 200)
 
-	var visible_items := _daily_visible_items()
+	var visible_items := _visible_items_for_current_mode()
 	for i in visible_items.size():
 		var item: StoreItemData = visible_items[i]
 		if item == null:
@@ -240,6 +264,46 @@ func _build_grid() -> void:
 		_slot_by_id[String(item.id)] = slot
 		_slot_hits.append({"slot": slot, "item": item})
 		_refresh_slot(String(item.id))
+
+
+func _visible_items_for_current_mode() -> Array[StoreItemData]:
+	if _intro_pickup_active:
+		return _intro_pickup_items()
+	return _daily_visible_items()
+
+
+func _intro_pickup_items() -> Array[StoreItemData]:
+	var pickup_items: Array[StoreItemData] = []
+	for item_id in INTRO_PICKUP_ITEM_IDS:
+		pickup_items.append(_intro_pickup_item(item_id))
+	return pickup_items
+
+
+func _intro_pickup_item(item_id: String) -> StoreItemData:
+	var existing := _find_item(item_id)
+	if existing != null:
+		return existing
+	var item := StoreItemData.new()
+	item.id = StringName(item_id)
+	item.display_name = _intro_pickup_display_name(item_id)
+	item.cost = 0
+	item.amount = 1
+	var icon_path := "res://assets/textures/icons/%s.png" % item_id
+	if ResourceLoader.exists(icon_path):
+		item.texture = load(icon_path)
+	return item
+
+
+func _intro_pickup_display_name(item_id: String) -> String:
+	match item_id:
+		"electronics":
+			return "Electronics"
+		"nuts_bolts":
+			return "Nuts & Bolts"
+		"nanobots":
+			return "Nanobots"
+		_:
+			return item_id.capitalize()
 
 
 func _daily_visible_items() -> Array[StoreItemData]:
@@ -331,6 +395,9 @@ func _build_slot(item: StoreItemData, center: Vector2) -> Control:
 		item.display_name if item.display_name != "" else String(item.id),
 		item.cost,
 	]
+	if _intro_pickup_active:
+		var item_name: String = item.display_name if item.display_name != "" else String(item.id)
+		slot.tooltip_text = "Collect %s" % item_name
 
 	# Shadow (optional).
 	var shadow_tex: Texture2D = _resolve_shadow_texture(item)
@@ -402,7 +469,13 @@ func _refresh_slot(item_id: String) -> void:
 		return
 	var slot: Control = _slot_by_id[item_id]
 	var item: StoreItemData = _find_item(item_id)
-	if item == null:
+	if item == null and not _intro_pickup_active:
+		return
+
+	if _intro_pickup_active:
+		for child in slot.get_children():
+			if child is CanvasItem:
+				(child as CanvasItem).modulate = ITEM_NORMAL_MODULATE
 		return
 
 	var bought: bool = GameState.has_purchased_today(item_id)
@@ -436,6 +509,9 @@ func _try_purchase(item: StoreItemData) -> void:
 	var item_id: String = String(item.id)
 	if item_id == "":
 		return
+	if _intro_pickup_active:
+		_collect_intro_pickup_item(item)
+		return
 
 	if item.is_tool and GameState.has_tool(item_id):
 		return
@@ -454,6 +530,69 @@ func _try_purchase(item: StoreItemData) -> void:
 	if not _has_available_lottery_items():
 		_build_grid()
 	_refresh_corner_button()
+
+
+func _collect_intro_pickup_item(item: StoreItemData) -> void:
+	var item_id := String(item.id)
+	if _intro_collected_item_ids.has(item_id):
+		return
+	GameState.add_ingredient(item_id, item.amount)
+	_intro_collected_item_ids[item_id] = true
+
+	if _slot_by_id.has(item_id):
+		var slot := _slot_by_id[item_id] as Control
+		if slot != null:
+			slot.visible = false
+
+	if _intro_collected_item_ids.size() >= INTRO_PICKUP_ITEM_IDS.size():
+		_enter_intro_outro_after_transition()
+
+
+func _enter_intro_outro_after_transition() -> void:
+	_store_active = false
+	_intro_pickup_active = false
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("_play_transition_then"):
+		main._play_transition_then(Callable(self, "_enter_intro_outro_dialogue"))
+	else:
+		_enter_intro_outro_dialogue()
+
+
+func _enter_intro_outro_dialogue() -> void:
+	var main: Node = get_tree().current_scene
+	if main != null:
+		if main.has_method("hide_scene_overlay"):
+			main.hide_scene_overlay()
+		if main.has_method("hide_corner_button"):
+			main.hide_corner_button()
+		if "scene_image" in main:
+			var placeholder := load(SCENE_PLACEHOLDER_TEXTURE_PATH) as Texture2D
+			if placeholder != null:
+				main.scene_image.texture = placeholder
+		if main.has_method("_animate_frame_to") and "_default_frame_outer_width" in main:
+			main._animate_frame_to(Vector2(900.0, 225.0), main._default_frame_outer_width)
+	if dialogue_box != null:
+		dialogue_box.visible = true
+		_intro_dialogue_key = "store_outro"
+		dialogue_box.play_pages(Dialogue.get_pages("intro", "store_outro"))
+
+
+func _finish_intro_store() -> void:
+	finish(0, 0, 0, {}, false)
+
+
+func _apply_intro_table_offset() -> void:
+	if _table_intro_offset_applied:
+		return
+	_table_intro_offset_applied = true
+	_offset_control_vertically(store_table, INTRO_TABLE_VERTICAL_OFFSET)
+
+
+func _offset_control_vertically(control: Control, amount: float) -> void:
+	if control == null:
+		return
+	control.offset_top += amount
+	control.offset_bottom += amount
 
 
 # --- corner button ---

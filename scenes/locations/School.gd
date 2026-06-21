@@ -125,6 +125,25 @@ const CHOICE_FONT_SIZE: int = 36
 # Wrapped in BBCode so the gold tint goes only on the prompt, not on
 # adjacent lecture text.
 const PROMPT_COLOR: String = "#e8c468"
+const DEFAULT_PLAYER_NAME: String = "Noah"
+const INTRO_SCHOOL_STEP: String = "school_first"
+const INTRO_HISTORY_TEACHER: Dictionary = {
+	"id": "history_intro",
+	"name": "Ms. Vey",
+	"subject": "Automaton History",
+	"texture_path": "res://assets/textures/characters/teachers/History.png",
+	"intro_key": "history.intro",
+}
+const INTRO_HISTORY_QUESTION: Dictionary = {
+	"lecture_key": "history.automaton_war.lecture",
+	"prompt": "What was the main catalyst that caused the original automaton-human conflict?",
+	"choices": [
+		"A military automaton refused an order",
+		"Factory automatons demanded payment",
+		"A household unit refused shutdown",
+	],
+	"correct": 0,
+}
 
 # --- Scene refs ---
 @onready var dialogue_box: DialogueBox = %DialogueBox
@@ -151,9 +170,13 @@ func _ready() -> void:
 
 
 func _pick_teacher_and_question() -> void:
-	_current_teacher = TEACHERS.pick_random()
-	var questions: Array = _current_teacher["questions"]
-	_current_question = questions.pick_random()
+	if _is_intro_school_first():
+		_current_teacher = INTRO_HISTORY_TEACHER
+		_current_question = INTRO_HISTORY_QUESTION
+	else:
+		_current_teacher = TEACHERS.pick_random()
+		var questions: Array = _current_teacher["questions"]
+		_current_question = questions.pick_random()
 
 	var tex: Texture2D = load(_current_teacher["texture_path"])
 	if tex == null:
@@ -174,8 +197,9 @@ func _enter_lecture() -> void:
 	# Build a pages list by concatenating the intro pages and the lecture
 	# pages. Each is already a Array[Array[String]].
 	var pages: Array = []
-	pages.append_array(Dialogue.get_pages("school", _current_teacher["intro_key"]))
-	pages.append_array(Dialogue.get_pages("school", _current_question["lecture_key"]))
+	var fmt := _school_format_vars()
+	pages.append_array(Dialogue.get_pages("school", _current_teacher["intro_key"], fmt))
+	pages.append_array(Dialogue.get_pages("school", _current_question["lecture_key"], fmt))
 	dialogue_box.play_pages(pages)
 
 
@@ -220,6 +244,15 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 	for child in choice_grid.get_children():
 		if child is Button:
 			(child as Button).disabled = true
+
+	if _is_intro_school_first():
+		_animate_layout_change(func():
+			_clear_choice_buttons()
+			choice_grid.visible = false
+		)
+		_scene_phase = SchoolPhase.FEEDBACK
+		dialogue_box.play_pages(Dialogue.get_pages("school", "history.automaton_war.feedback", _school_format_vars()))
+		return
 
 	var picked_correct: bool = (picked == correct)
 	var reward: Dictionary
@@ -310,6 +343,9 @@ func _on_dialogue_finished() -> void:
 		SchoolPhase.QUESTION_PROMPT:
 			_show_question_choices()
 		SchoolPhase.FEEDBACK:
+			if _is_intro_school_first():
+				_finish_school()
+				return
 			_enter_post_class_intro()
 		SchoolPhase.POST_CLASS_INTRO:
 			_enter_post_class_prompt()
@@ -354,6 +390,17 @@ func _show_school_cabinet_background() -> void:
 
 func _finish_school() -> void:
 	finish(0, _total_suspicion, 0, _total_ingredients, false)
+
+
+func _is_intro_school_first() -> bool:
+	return GameState.is_intro_step(INTRO_SCHOOL_STEP)
+
+
+func _school_format_vars() -> Dictionary:
+	return {
+		"name": String(_current_teacher.get("name", "")),
+		"player_name": DEFAULT_PLAYER_NAME,
+	}
 
 
 func _accumulate_reward(reward: Dictionary) -> void:

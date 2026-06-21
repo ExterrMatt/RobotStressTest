@@ -18,27 +18,40 @@ Uncle: Yes, you will. You keep your head down in class, you pull your weight at 
 You: That's the speech?
 Uncle: That's the generous version. The other one has a spreadsheet. Get to class.
 
-[school_first]
-The bell rings, and the classroom settles into its usual rhythm.
-Notes open. Chairs squeak. Someone behind you is already asking to borrow a pencil.
-The teacher starts the lesson like the world outside is perfectly normal.
-For the next hour, you let yourself be a student.
-
 [evening_room]
-By evening, your room is quiet in the practical way a room gets when it has to hold too many plans.
-You have tuition covered, a factory shift waiting tomorrow, and not nearly enough supplies of your own.
-The store is still open.
-It is not glamorous, but neither is building impossible things from spare change.
+Uncle: Kid, I need you to pick up some parts from Ed's shop.
+You: What? Why me?
+Uncle: Because you work for me now.
+You: I thought factory tomorrow meant factory tomorrow.
+Uncle: Consider it part of the job.
+You: Fine... What parts?
+Uncle: Small stuff. Extra parts. Mostly.
+You: Mostly?
+Uncle: Ed knows what to give you. Go before he closes.
 
 [store_intro]
-The store is bright, crowded, and pretending very hard that everything on the shelves is normal household equipment.
-Some of it even is.
-You only need enough to start small: parts, tools, anything that will make the next bad idea slightly safer.
+Parts on every surface. Most of it shouldn't be on display.
+You thought about the drone on the way over. You're still not sure you picked the right routes to avoid them.
+A man appears from the back. He doesn't introduce himself. It's probably Ed.
+"Parts or browsing?" he asks gruffly.
+You tell him your uncle sent you.
+He nods. That's apparently enough.
+
+[store_outro]
+Ed retreats back into his office before you've finished zipping your bag. A click sounds from the door as he locks it behind him.
+Your backpack is heavier than you expected. The walk home is not fun.
+You drop everything off with your uncle.
+Uncle: Hey, good job Kid. Keep it up and you might get a raise.
+You: You don't mean that.
+Uncle: Yeah... I don't.
+[i]He sits up and reaches over to the backpack.[/i]
+Uncle: Alright, scram. I don't want you involved in this part of the business.
+You finally head to your room.
 
 [bedroom_night]
-You get home after dark with a bag that feels heavier than it should.
-Your room is the one place in the house that is mostly yours.
-Tomorrow will be factory work. Tonight, you can at least sleep before the plan gets louder.
+Without that backpack on, you feel light as a feather.
+It's been a long day. The bed looks really comfy.
+Tomorrow will be factory work...
 
 [school_second]
 The next morning, class feels easier to sit through because there is something waiting after it.

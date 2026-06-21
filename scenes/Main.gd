@@ -51,7 +51,7 @@ const INTRO_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/IntroDialogue.
 const INTRO_DIALOGUE_LOCATION_ID: StringName = &"intro_dialogue"
 const INTRO_STEPS: Array[Dictionary] = [
 	{"step": "exposition", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
-	{"step": "school_first", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/school.png"},
+	{"step": "school_first", "kind": "location", "phase": 0, "location_id": &"school"},
 	{"step": "evening_room", "kind": "dialogue", "phase": 1, "preview": "res://assets/textures/backgrounds/bedroom_evening.png"},
 	{"step": "store", "kind": "location", "phase": 1, "location_id": &"store"},
 	{"step": "bedroom_night", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
