@@ -57,10 +57,9 @@ const INTRO_STEPS: Array[Dictionary] = [
 	{"step": "bedroom_night", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
 	{"step": "sleep", "kind": "location", "phase": 2, "location_id": &"sleep"},
 	{"step": "work", "kind": "location", "phase": 0, "location_id": &"work"},
-	{"step": "school_second", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/school.png"},
 	{"step": "workshop", "kind": "location", "phase": 1, "location_id": &"workshop"},
 	{"step": "stress_test", "kind": "location", "phase": 2, "location_id": &"stress_test"},
-	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
+	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/scene_placeholder.png"},
 	{"step": "free_reign", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
 ]
 

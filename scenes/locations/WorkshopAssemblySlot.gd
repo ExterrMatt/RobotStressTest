@@ -120,7 +120,10 @@ func accept_segment(segment) -> void:
 		add_child(segment)
 		segment.global_position = gp
 
-	segment.position = Vector2.ZERO
+	if segment is WorkshopSegment:
+		segment.position = segment.placement_offset
+	else:
+		segment.position = Vector2.ZERO
 
 	queue_redraw()
 	placed.emit(self)

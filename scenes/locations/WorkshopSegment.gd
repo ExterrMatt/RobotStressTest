@@ -19,13 +19,20 @@ const CENTER_ON_GRAB_DURATION: float = 0.05
 @export var segment_id: StringName = &""
 
 ## True once placed on its goal. Locked segments ignore clicks.
-var locked: bool = false
+var locked: bool = false:
+	set(value):
+		locked = value
+		_queue_piece_redraws()
 
 ## Other segments that must be dragged and dropped together with this one.
 ## Populated by WorkshopMinigame from the paired_with property on the
 ## owning slot. Always symmetric — if A.pair_partners contains B then
 ## B.pair_partners contains A.
 var pair_partners: Array = []
+
+## Local offset restored when the compact spawned segment is placed into
+## its authored assembly slot.
+var placement_offset: Vector2 = Vector2.ZERO
 
 
 @export_group("Hitbox")
@@ -147,6 +154,12 @@ func _kill_grab_offset_tween() -> void:
 	if _grab_offset_tween and _grab_offset_tween.is_valid():
 		_grab_offset_tween.kill()
 	_grab_offset_tween = null
+
+
+func _queue_piece_redraws() -> void:
+	for child in get_children():
+		if child is WorkshopPiece:
+			child.queue_redraw()
 
 
 # -----------------------------------------------------------------------------

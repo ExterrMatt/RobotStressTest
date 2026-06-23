@@ -536,7 +536,6 @@ func _collect_intro_pickup_item(item: StoreItemData) -> void:
 	var item_id := String(item.id)
 	if _intro_collected_item_ids.has(item_id):
 		return
-	GameState.add_ingredient(item_id, item.amount)
 	_intro_collected_item_ids[item_id] = true
 
 	if _slot_by_id.has(item_id):

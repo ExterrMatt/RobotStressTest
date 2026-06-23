@@ -12,3 +12,7 @@ res://scenes/ui/InventoryOverlay.gd
 res://scenes/locations/IntroDialogue.gd
 res://scenes/locations/Store.gd
 res://scenes/locations/School.gd
+res://scenes/locations/WorkshopPiece.gd
+res://scenes/locations/WorkshopSegment.gd
+res://scenes/locations/WorkshopAssemblySlot.gd
+res://scenes/locations/WorkshopMinigame.tscn

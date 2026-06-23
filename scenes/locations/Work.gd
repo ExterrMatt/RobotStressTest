@@ -320,8 +320,7 @@ func _finish_work(stole: bool) -> void:
 func _finish_intro_work() -> void:
 	var money: int = int(REWARD_COMPLETE.get("money", 0))
 	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0))
-	var ingredients: Dictionary = _copy_ingredients(REWARD_COMPLETE.get("ingredients", {}))
-	ingredients["head_segments"] = int(ingredients.get("head_segments", 0)) + 1
+	var ingredients: Dictionary = {"head_segments": 1}
 	finish(money, suspicion, 0, ingredients, false)
 
 

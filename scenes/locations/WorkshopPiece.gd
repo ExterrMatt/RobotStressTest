@@ -23,6 +23,11 @@ const CENTER_ON_GRAB_DURATION: float = 0.05
 		shadow_texture = value
 		queue_redraw()
 
+@export var outline_texture: Texture2D:
+	set(value):
+		outline_texture = value
+		queue_redraw()
+
 @export_group("Offsets & Drawing")
 @export var visual_offset: Vector2 = Vector2.ZERO:
 	set(value):
@@ -75,6 +80,12 @@ func _draw() -> void:
 			s_pos = (size - shadow_texture.get_size()) / 2.0
 		draw_texture(shadow_texture, s_pos + s_off, SHADOW_MODULATE)
 
+	if outline_texture and _should_draw_outline():
+		var outline_pos: Vector2 = tex_pos
+		if auto_center:
+			outline_pos = (size - outline_texture.get_size()) / 2.0
+		draw_texture(outline_texture, outline_pos)
+
 	if texture:
 		draw_texture(texture, tex_pos)
 
@@ -106,6 +117,17 @@ func end_drag() -> void:
 
 func is_dragging() -> bool:
 	return _dragging
+
+
+func _should_draw_outline() -> bool:
+	if locked:
+		return false
+	var n: Node = get_parent()
+	while n != null:
+		if n is WorkshopSegment:
+			return not n.locked
+		n = n.get_parent()
+	return true
 
 
 func place_in(slot: Control, at_position: Vector2) -> void:
