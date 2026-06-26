@@ -42,14 +42,19 @@ theme_override_font_sizes/font_size = 40
 text = "QUESTION?"
 horizontal_alignment = 1
 
-[node name="ChoiceGrid" type="GridContainer" parent="MarginContainer/VBox" unique_id=911208283]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_constants/h_separation = 18
-theme_override_constants/v_separation = 18
-columns = 3
-
 [node name="Spacer" type="Control" parent="MarginContainer/VBox" unique_id=2001100100]
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="ChoiceGrid" type="GridContainer" parent="." unique_id=911208283]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 24.0
+offset_right = -24.0
+grow_horizontal = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
+columns = 3

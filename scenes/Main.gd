@@ -77,7 +77,7 @@ const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 const DEFAULT_FRAME_SIZE: Vector2 = Vector2(900, 225)
 const STANDARD_SCENE_TEXTURE_SIZE: Vector2 = Vector2(500, 125)
 const STANDARD_SCENE_TEXTURE_SCALE: float = 2.25
-const EXACT_FRAME_LOCATION_IDS: Array[StringName] = [&"workshop"]
+const EXACT_FRAME_LOCATION_IDS: Array[StringName] = []
 
 ## Duration and easing for both the scale animation (frame resize between
 ## locations) and the slide animation (layout shifts inside a location).
@@ -92,6 +92,7 @@ const LARGE_SCENE_HUD_MARGIN: Vector2 = Vector2(64.0, 24.0)
 const LARGE_SCENE_HUD_PANEL_WIDTH: float = 156.0
 const LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 154.0
+const LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT: float = 224.0
 const LARGE_SCENE_HUD_FONT_SIZE: int = 32
 const LARGE_SCENE_HUD_SUSPICION_FONT_SIZE: int = 30
 
@@ -122,6 +123,7 @@ const LARGE_SCENE_HUD_SUSPICION_FONT_SIZE: int = 30
 @onready var teacher_portrait: TextureRect = %TeacherPortrait
 @onready var teacher_tag: PanelContainer = %TeacherTag
 @onready var teacher_name_label: Label = %TeacherNameLabel
+@onready var teacher_tag_divider: PanelContainer = $UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/TeacherTag/TagMargin/TagHBox/TagDiv
 @onready var teacher_subject_label: Label = %SubjectLabel
 ## Bottom-right pill button inside the picture frame, mirroring the teacher
 ## tag in the bottom-left. Locations call show_corner_button() to mount a
@@ -185,6 +187,10 @@ var _large_scene_phase_label: Label = null
 var _large_scene_money_label: Label = null
 var _large_scene_suspicion_label: Label = null
 var _large_scene_anger_label: Label = null
+var _large_scene_work_timer_divider: PanelContainer = null
+var _large_scene_work_timer_label: Label = null
+var _work_hud_active: bool = false
+var _work_hud_elapsed_seconds: float = 0.0
 var _frame_resize_progress: float = 1.0:
 	set(value):
 		_frame_resize_progress = clampf(value, 0.0, 1.0)
@@ -707,9 +713,13 @@ func _refresh_hud() -> void:
 	if _large_scene_money_label != null:
 		_large_scene_money_label.text = "$%d" % GameState.money
 	if _large_scene_suspicion_label != null:
-		_large_scene_suspicion_label.text = "SUSPICION\n%d" % GameState.suspicion
+		_large_scene_suspicion_label.text = "SUS %d" % GameState.suspicion if _work_hud_active else "SUSPICION\n%d" % GameState.suspicion
+		var suspicion_font_size := LARGE_SCENE_HUD_FONT_SIZE if _work_hud_active else LARGE_SCENE_HUD_SUSPICION_FONT_SIZE
+		_large_scene_suspicion_label.add_theme_font_size_override("font_size", suspicion_font_size)
 	if _large_scene_anger_label != null:
 		_large_scene_anger_label.text = "ANGER %d" % GameState.anger
+	if _large_scene_work_timer_label != null:
+		_large_scene_work_timer_label.text = _format_work_hud_elapsed_time()
 
 
 func _create_large_scene_hud() -> void:
@@ -743,6 +753,11 @@ func _create_large_scene_hud() -> void:
 	right_box.add_child(_make_large_scene_hud_divider())
 	_large_scene_anger_label = _make_large_scene_hud_label("ANGER 0", &"HUDStat")
 	right_box.add_child(_large_scene_anger_label)
+	_large_scene_work_timer_divider = _make_large_scene_hud_divider()
+	right_box.add_child(_large_scene_work_timer_divider)
+	_large_scene_work_timer_label = _make_large_scene_hud_label("00:00:00", &"HUDStat")
+	right_box.add_child(_large_scene_work_timer_label)
+	_set_work_hud_timer_visible(false)
 
 	_refresh_hud()
 
@@ -828,12 +843,43 @@ func _position_large_scene_hud_panels() -> void:
 	_large_scene_right_panel.offset_left = -right_outer_gap - LARGE_SCENE_HUD_PANEL_WIDTH
 	_large_scene_right_panel.offset_top = LARGE_SCENE_HUD_MARGIN.y
 	_large_scene_right_panel.offset_right = -right_outer_gap
-	_large_scene_right_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
+	var right_height := LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT if _work_hud_active else LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
+	_large_scene_right_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + right_height
 
 
 func _large_scene_hud_outer_gap(side_space: float) -> float:
 	var available_gap := maxf(0.0, side_space - LARGE_SCENE_HUD_PANEL_WIDTH)
 	return minf(LARGE_SCENE_HUD_MARGIN.x * 0.5, available_gap * 0.5)
+
+
+func set_work_hud_timer_active(active: bool) -> void:
+	_work_hud_active = active
+	if not active:
+		_work_hud_elapsed_seconds = 0.0
+	_set_work_hud_timer_visible(active)
+	_refresh_hud()
+	_update_large_scene_hud_visibility()
+
+
+func set_work_hud_elapsed_seconds(seconds: float) -> void:
+	_work_hud_elapsed_seconds = maxf(0.0, seconds)
+	if _large_scene_work_timer_label != null:
+		_large_scene_work_timer_label.text = _format_work_hud_elapsed_time()
+
+
+func _set_work_hud_timer_visible(visible_value: bool) -> void:
+	if _large_scene_work_timer_divider != null:
+		_large_scene_work_timer_divider.visible = visible_value
+	if _large_scene_work_timer_label != null:
+		_large_scene_work_timer_label.visible = visible_value
+
+
+func _format_work_hud_elapsed_time() -> String:
+	var total_seconds := int(floor(_work_hud_elapsed_seconds))
+	var hours := int(total_seconds / 3600)
+	var minutes := int((total_seconds % 3600) / 60)
+	var seconds := int(total_seconds % 60)
+	return "%02d:%02d:%02d" % [hours, minutes, seconds]
 
 
 func _on_money_changed(_v: int) -> void:    _refresh_hud()
@@ -1958,9 +2004,7 @@ func show_teacher_portrait(
 	_portrait_base_path = tex.resource_path
 	_portrait_allows_alt_variant = allow_alt_variant
 
-	teacher_name_label.text = character_name
-	teacher_subject_label.text = subject.to_upper()
-	teacher_tag.visible = character_name != ""
+	_apply_teacher_tag_text(character_name, subject)
 	teacher_portrait.visible = true
 
 	# Apply the current toggle (loads either base or "2" variant).
@@ -1979,9 +2023,7 @@ func show_bottom_center_portrait(
 
 	_portrait_base_path = tex.resource_path
 	_portrait_allows_alt_variant = false
-	teacher_name_label.text = character_name
-	teacher_subject_label.text = subject.to_upper()
-	teacher_tag.visible = character_name != ""
+	_apply_teacher_tag_text(character_name, subject)
 	teacher_portrait.texture = tex
 	teacher_portrait.visible = true
 	teacher_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -2030,6 +2072,16 @@ func hide_teacher_portrait() -> void:
 	_portrait_base_path = ""
 	_portrait_allows_alt_variant = true
 	_reset_teacher_portrait_layout()
+
+
+func _apply_teacher_tag_text(character_name: String, subject: String) -> void:
+	teacher_name_label.text = character_name
+	teacher_subject_label.text = subject.to_upper()
+	teacher_tag.visible = character_name != ""
+	var hide_subject := character_name == "Uncle" and subject.strip_edges().is_empty()
+	teacher_subject_label.visible = not hide_subject
+	if teacher_tag_divider != null:
+		teacher_tag_divider.visible = not hide_subject
 
 
 func _reset_teacher_portrait_layout() -> void:

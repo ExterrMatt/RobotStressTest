@@ -24,3 +24,4 @@ res://scenes/ui/MainMenu.gd
 res://scenes/locations/Workshop.gd
 res://scenes/locations/IntroDialogue.tscn
 res://scenes/ui/DialogueBox.gd
+res://scenes/locations/School.tscn

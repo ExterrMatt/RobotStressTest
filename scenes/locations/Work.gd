@@ -36,6 +36,7 @@ const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const WORK_FRAME_OUTER_WIDTH: float = 800.0
 const INTRO_HEAD_BOX_LOOK_PAGE_INDEX: int = 4
+const WORK_TIME_LIMIT_SECONDS: float = 60.0
 
 ## Two-phase scene flow. The minigame runs in MINIGAME; the completion
 ## screen lives in COMPLETION_PROMPT (typing the gold question) and
@@ -63,6 +64,8 @@ enum WorkPhase {
 var _scene_phase: WorkPhase = WorkPhase.MINIGAME
 var _intro_work: bool = false
 var _intro_box_open_visual_applied: bool = false
+var _work_elapsed_seconds: float = 0.0
+var _work_timed_out: bool = false
 
 
 func _ready() -> void:
@@ -82,6 +85,7 @@ func _ready() -> void:
 	dialogue_box.page_advanced.connect(_on_dialogue_page_advanced)
 
 	_intro_work = _is_intro_work_scene()
+	set_process(false)
 	if _intro_work:
 		_enter_intro_job()
 		return
@@ -89,14 +93,31 @@ func _ready() -> void:
 	_show_work_minigame()
 
 
+func _process(delta: float) -> void:
+	if _scene_phase != WorkPhase.MINIGAME or _intro_work or _work_timed_out:
+		return
+	_work_elapsed_seconds += delta
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("set_work_hud_elapsed_seconds"):
+		main.set_work_hud_elapsed_seconds(_work_elapsed_seconds)
+	if _work_elapsed_seconds >= WORK_TIME_LIMIT_SECONDS:
+		_finish_work_timeout()
+
+
 func _show_work_minigame() -> void:
 	var main: Node = get_tree().current_scene
 	_scene_phase = WorkPhase.MINIGAME
+	_work_timed_out = false
+	_work_elapsed_seconds = 0.0
 	_set_node_visible(color_background, true)
 	_set_node_visible(furniture_layer, true)
 	_set_node_visible(work_inventory, true)
 
 	if main != null:
+		if not _intro_work and main.has_method("set_work_hud_timer_active"):
+			main.set_work_hud_timer_active(true)
+		if not _intro_work and main.has_method("set_work_hud_elapsed_seconds"):
+			main.set_work_hud_elapsed_seconds(0.0)
 		_set_main_scene_image_and_frame(
 			WORK_BACKGROUND_TEXTURE_PATH,
 			WORK_FRAME_SIZE,
@@ -115,6 +136,7 @@ func _show_work_minigame() -> void:
 	# Listen for slot fills so we know when the puzzle is complete.
 	if work_inventory:
 		work_inventory.slots_changed.connect(_on_slots_changed)
+	set_process(not _intro_work)
 
 
 func _enter_intro_job() -> void:
@@ -126,6 +148,8 @@ func _enter_intro_job() -> void:
 
 
 func _show_intro_placeholder() -> void:
+	_disable_work_hud_timer()
+	set_process(false)
 	_set_node_visible(color_background, false)
 	_set_node_visible(furniture_layer, false)
 	_set_node_visible(work_inventory, false)
@@ -160,6 +184,8 @@ func _enter_intro_head_box() -> void:
 	if _scene_phase != WorkPhase.MINIGAME:
 		return
 
+	_disable_work_hud_timer()
+	set_process(false)
 	_scene_phase = WorkPhase.INTRO_HEAD_BOX
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("_play_transition_then"):
@@ -252,6 +278,8 @@ func _enter_completion_screen() -> void:
 		_enter_intro_head_box()
 		return
 
+	_disable_work_hud_timer()
+	set_process(false)
 	_scene_phase = WorkPhase.COMPLETION_INTRO
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("_play_transition_then"):
@@ -359,6 +387,7 @@ func _on_dialogue_finished() -> void:
 
 
 func _exit_tree() -> void:
+	_disable_work_hud_timer()
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("hide_scene_overlay"):
 		main.hide_scene_overlay()
@@ -385,6 +414,8 @@ func _on_steal_pressed() -> void:
 # --- Helpers ---
 
 func _finish_work(stole: bool) -> void:
+	_disable_work_hud_timer()
+	set_process(false)
 	var money: int = int(REWARD_COMPLETE.get("money", 0))
 	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0))
 	var ingredients: Dictionary = _copy_ingredients(REWARD_COMPLETE.get("ingredients", {}))
@@ -397,9 +428,26 @@ func _finish_work(stole: bool) -> void:
 	finish(money, suspicion, 0, ingredients, false)
 
 
+func _finish_work_timeout() -> void:
+	if _work_timed_out:
+		return
+	_work_timed_out = true
+	_disable_work_hud_timer()
+	set_process(false)
+	finish(0, 0, 0, {}, false)
+
+
 func _finish_intro_work() -> void:
+	_disable_work_hud_timer()
+	set_process(false)
 	var ingredients: Dictionary = {"head_segments": 1}
 	finish(0, 0, 0, ingredients, false)
+
+
+func _disable_work_hud_timer() -> void:
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("set_work_hud_timer_active"):
+		main.set_work_hud_timer_active(false)
 
 
 func _is_intro_work_scene() -> bool:

@@ -7,7 +7,9 @@ const CHOICE_FONT_SIZE: int = 36
 const PROMPT_COLOR: String = "#e8c468"
 
 # --- pan geometry ---
-const SCALE_MULT: float = 1.8
+const INTRO_PAN_SCALE: float = 1.8
+const MINIGAME_PAN_SCALE: float = 1.6
+const PAN_START_SHRINK_DURATION: float = 0.2
 
 const PAN_IMAGE_PATHS: Array[String] = [
 	"res://assets/textures/backgrounds/large_workshop.png",
@@ -17,13 +19,17 @@ const PAN_IMAGE_PATHS: Array[String] = [
 ]
 
 const PAN_WIDTH: float = 500.0
-const PAN_SOURCE_HEIGHT: float = 600.0
+const PAN_SOURCE_HEIGHT: float = 650.0
 
 const INTRO_REGION_Y: float = 0.0
 const INTRO_REGION_HEIGHT: float = 125.0
+const INTRO_FRAME_SIZE: Vector2 = Vector2(PAN_WIDTH * INTRO_PAN_SCALE, INTRO_REGION_HEIGHT * INTRO_PAN_SCALE)
+const INTRO_FRAME_OUTER_WIDTH: float = PAN_WIDTH * INTRO_PAN_SCALE
 
-const MINIGAME_REGION_Y: float = PAN_SOURCE_HEIGHT - 400.0  # = 200
+const MINIGAME_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
+const MINIGAME_FRAME_OUTER_WIDTH: float = 800.0
 const MINIGAME_REGION_HEIGHT: float = 400.0
+const MINIGAME_REGION_Y: float = PAN_SOURCE_HEIGHT - MINIGAME_REGION_HEIGHT
 
 const PAN_DURATION: float = 0.55
 const PAN_TRANS: int = Tween.TRANS_QUAD
@@ -106,38 +112,54 @@ func _apply_pan(t: float) -> void:
 
 	var y: float = lerp(INTRO_REGION_Y, MINIGAME_REGION_Y, t)
 	var h: float = lerp(INTRO_REGION_HEIGHT, MINIGAME_REGION_HEIGHT, t)
+	var scale_value: float = lerpf(INTRO_PAN_SCALE, MINIGAME_PAN_SCALE, t)
 	
-	# The atlas region reads native 500x400 source pixels
 	_atlas.region = Rect2(0, y, PAN_WIDTH, h)
 
 	var main: Node = get_tree().current_scene
 	if main and "scene_image" in main:
 		if not _pan_controls_frame_size:
 			return
-		# Keep the pan at Workshop's original smaller scale; Main animates
-		# down to this from the larger intro dialogue strip.
-		var frame_size := Vector2(PAN_WIDTH * SCALE_MULT, h * SCALE_MULT)
+		var frame_size := Vector2(PAN_WIDTH * scale_value, h * scale_value)
+		var outer_width := lerpf(INTRO_FRAME_OUTER_WIDTH, MINIGAME_FRAME_OUTER_WIDTH, t)
 		if main.has_method("_set_frame_size_immediate_exact"):
-			main._set_frame_size_immediate_exact(frame_size, PAN_WIDTH * SCALE_MULT)
+			main._set_frame_size_immediate_exact(frame_size, outer_width)
 		elif main.has_method("_set_frame_size_immediate"):
-			main._set_frame_size_immediate(frame_size, PAN_WIDTH * SCALE_MULT)
+			main._set_frame_size_immediate(frame_size, outer_width)
 		else:
 			main.scene_image.custom_minimum_size = frame_size
 			if "frame_outer" in main and main.frame_outer:
-				main.frame_outer.custom_minimum_size.x = PAN_WIDTH * SCALE_MULT
+				main.frame_outer.custom_minimum_size.x = outer_width
 
 
 func _start_pan_to_minigame(on_complete: Callable) -> void:
 	if _pan_tween and _pan_tween.is_valid():
 		_pan_tween.kill()
 
+	_pan_controls_frame_size = false
+	await _shrink_to_pan_start()
 	_pan_controls_frame_size = true
+	_pan_t = 0.0
 	_pan_tween = create_tween()
 	_pan_tween.set_trans(PAN_TRANS)
 	_pan_tween.set_ease(PAN_EASE)
 	_pan_tween.tween_property(self, "_pan_t", 1.0, PAN_DURATION)
 	if on_complete.is_valid():
 		_pan_tween.finished.connect(on_complete)
+
+
+func _shrink_to_pan_start() -> void:
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("_animate_frame_to"):
+		main._animate_frame_to(
+			INTRO_FRAME_SIZE,
+			INTRO_FRAME_OUTER_WIDTH,
+			PAN_START_SHRINK_DURATION,
+			false
+		)
+		await get_tree().create_timer(PAN_START_SHRINK_DURATION).timeout
+	elif main != null and main.has_method("_set_frame_size_immediate_exact"):
+		main._set_frame_size_immediate_exact(INTRO_FRAME_SIZE, INTRO_FRAME_OUTER_WIDTH)
 
 
 # --- intro phase ---
@@ -224,8 +246,8 @@ func _on_pan_complete() -> void:
 		(_minigame as WorkshopMinigame).forced_part_id = "head"
 	
 	# The UI was built for the 500x400 source region; scale it with the
-	# background so the interaction layer stays locked to the image.
-	_minigame.scale = Vector2(SCALE_MULT, SCALE_MULT)
+	# final cropped background so the interaction layer stays locked to it.
+	_minigame.scale = Vector2(MINIGAME_PAN_SCALE, MINIGAME_PAN_SCALE)
 	
 	if _minigame.has_signal("collected"):
 		_minigame.collected.connect(_on_minigame_collected)

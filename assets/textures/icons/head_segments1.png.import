@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cvf24ha3knrks"
-path="res://.godot/imported/History17.png-54041dd52e5fdf52f8f60659a7757231.ctex"
+uid="uid://cmbt7v01or4rv"
+path="res://.godot/imported/head_segments1.png-e741c1b1352e6316b8db90950256fdc4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/teachers/History17.png"
-dest_files=["res://.godot/imported/History17.png-54041dd52e5fdf52f8f60659a7757231.ctex"]
+source_file="res://assets/textures/icons/head_segments1.png"
+dest_files=["res://.godot/imported/head_segments1.png-e741c1b1352e6316b8db90950256fdc4.ctex"]
 
 [params]
 

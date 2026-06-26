@@ -28,6 +28,7 @@ signal finished                  ## emitted after the last page is dismissed
 signal page_advanced(index: int) ## emitted whenever a new page starts
 
 const THOUGHT_COLOR: String = "#808080"
+const LINE_SEPARATION_NO_OVERRIDE: int = -1000000
 const SPEAKER_COLORS: Dictionary = {
 	"Uncle": "#328dc5",
 	"Ms. Vey": "#f87031",
@@ -99,6 +100,10 @@ var _shift_held: bool = false
 ## Set by play_pages_autosized so the chosen size survives play_pages'
 ## normal reset-to-configured-size step.
 var _next_font_size: int = 0
+var _next_line_height_factor: float = -1.0
+var _active_line_height_factor: float = -1.0
+var _next_line_separation: int = LINE_SEPARATION_NO_OVERRIDE
+var _active_line_separation: int = LINE_SEPARATION_NO_OVERRIDE
 
 # Node refs (resolved in _ready).
 @onready var _rich_label: RichTextLabel = $Margin/Label
@@ -151,6 +156,10 @@ func play_pages(pages: Array) -> void:
 	# - Otherwise fall back to the configured @export font_size.
 	var size_to_use: int = _next_font_size if _next_font_size > 0 else font_size
 	_next_font_size = 0
+	_active_line_height_factor = _next_line_height_factor
+	_next_line_height_factor = -1.0
+	_active_line_separation = _next_line_separation
+	_next_line_separation = LINE_SEPARATION_NO_OVERRIDE
 	if size_to_use > 0:
 		_apply_font_size(size_to_use)
 	_pages = pages
@@ -180,12 +189,16 @@ func play_pages_autosized(
 	pages: Array,
 	candidates: Array = [42, 36, 28, 24],
 	max_rows: int = 2,
+	line_height_override: float = -1.0,
+	line_separation_override: int = LINE_SEPARATION_NO_OVERRIDE,
 ) -> void:
 	if pages.is_empty():
 		_active = false
 		call_deferred("emit_signal", "finished")
 		return
 	_next_font_size = _pick_largest_fitting_size(pages, candidates, max_rows)
+	_next_line_height_factor = line_height_override
+	_next_line_separation = line_separation_override
 	play_pages(pages)
 
 
@@ -292,11 +305,18 @@ func _show_page(idx: int) -> void:
 	_full_page_text = "\n".join(_format_dialogue_page(page))
 
 	_rich_label.bbcode_enabled = true
-	if line_height_factor > 0.0 and _full_page_text.contains("\n"):
+	if _active_line_separation != LINE_SEPARATION_NO_OVERRIDE:
+		_rich_label.add_theme_constant_override("line_separation", _active_line_separation)
+	else:
+		_rich_label.remove_theme_constant_override("line_separation")
+	var effective_line_height_factor: float = (
+		_active_line_height_factor if _active_line_height_factor > 0.0 else line_height_factor
+	)
+	if effective_line_height_factor > 0.0 and (_full_page_text.contains("\n") or _active_line_height_factor > 0.0):
 		var current_size: int = _rich_label.get_theme_font_size("normal_font_size")
 		if current_size <= 0:
 			current_size = font_size if font_size > 0 else 22
-		var lh: int = int(round(current_size * line_height_factor))
+		var lh: int = int(round(current_size * effective_line_height_factor))
 		_rich_label.text = "[p line_height=%d]%s[/p]" % [lh, _full_page_text]
 	else:
 		_rich_label.text = _full_page_text
