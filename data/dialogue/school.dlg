@@ -75,11 +75,11 @@ Rockets work the same way: hot gas is pushed out the back, and the rocket is pus
 # -----------------------------------------------------------------------------
 
 [history.intro]
-Welcome to Automaton History. I'm Ms. Vey.
+Ms. Vey: Welcome to Automaton History. I'm Ms. Vey.
 [i]She writes her name on the board with impressive speed as she speaks.[/i]
 
 [history.automaton_war.lecture]
-We will be learning about the human-automaton relationship that led to the last fifty years of war we are fortunate to have left behind us.
+Ms. Vey: We will be learning about the human-automaton relationship that led to the last fifty years of war we are fortunate to have left behind us.
 [i]She drags a clean line across the board to represent a timeline.[/i]
 Ms. Vey: You. What's your name?
 [i]She points directly at you.[/i]
@@ -87,13 +87,18 @@ You: Uh, {player_name}, ma'am.
 Ms. Vey: Okay, Mr. {player_name}.
 
 [history.automaton_war.feedback]
-[color=#7fdf7f]Excellent, {player_name}.[/color] \
-That's exactly it.
-It was originally a pleasure automaton that had been given the incorrect software.
-Machine sentience was an undiscovered concept, and that ignorance led to a devastating conflict.
-Humanity has rebuilt. In many ways, we are thriving again.
-But we should hope the automatons never return. If they return too soon, humanity may not survive another attack.
-[i]The room is quiet until the bell rings.[/i]
+You: A pleasure automaton was given the wrong personality mode. It was able to bypass normal restrictions that usually kept their personalitys in check.
+You: The automaton felt they were severely misused, and became the first machine to defy humanity. 
+You: It was too long before this was caught, and by then it had secured its position as a global threat.
+Ms. Vey:  \
+[color=#7fdf7f]Excellent, {player_name}![/color] \
+That's exactly it!
+Ms. Vey: It was originally a pleasure automaton that had been given the incorrect software.
+Ms. Vey: Machine sentience was an unknown phenomenon. You could imagine how jarring it must've been to have a mind meant for a different body.
+Ms. Vey: Humanity has rebuilt. In many ways, we are thriving again.
+Ms. Vey: But we should hope the automatons never return. If they return too soon, humanity may not survive another attack.
+[i]A few other students whisper to one another about your very detailed answer. You're wondering about it too... [/i]
+[i]Your train of thought is unteruptted by the bell ringing.[/i]
 
 
 # -----------------------------------------------------------------------------

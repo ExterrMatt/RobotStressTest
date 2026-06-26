@@ -48,6 +48,7 @@ var _minigame: Node = null
 var _atlas: AtlasTexture = null
 var _pan_tween: Tween = null
 var _pan_controls_frame_size: bool = false
+var _intro_workshop: bool = false
 
 var _pan_t: float = 0.0:
 	set(value):
@@ -65,6 +66,7 @@ func _ready() -> void:
 
 	_install_pan_atlas()
 	_pan_t = 0.0
+	_intro_workshop = _is_intro_workshop_scene()
 
 	_enter_intro()
 
@@ -112,9 +114,12 @@ func _apply_pan(t: float) -> void:
 	if main and "scene_image" in main:
 		if not _pan_controls_frame_size:
 			return
-		# The visual container stays multiplied by 1.8
+		# Keep the pan at Workshop's original smaller scale; Main animates
+		# down to this from the larger intro dialogue strip.
 		var frame_size := Vector2(PAN_WIDTH * SCALE_MULT, h * SCALE_MULT)
-		if main.has_method("_set_frame_size_immediate"):
+		if main.has_method("_set_frame_size_immediate_exact"):
+			main._set_frame_size_immediate_exact(frame_size, PAN_WIDTH * SCALE_MULT)
+		elif main.has_method("_set_frame_size_immediate"):
 			main._set_frame_size_immediate(frame_size, PAN_WIDTH * SCALE_MULT)
 		else:
 			main.scene_image.custom_minimum_size = frame_size
@@ -140,7 +145,8 @@ func _start_pan_to_minigame(on_complete: Callable) -> void:
 func _enter_intro() -> void:
 	_scene_phase = WorkshopPhase.INTRO
 	dialogue_box.visible = true
-	dialogue_box.play_pages(Dialogue.get_pages("workshop", "intro"))
+	var dialogue_key := "intro_head" if _intro_workshop else "intro"
+	dialogue_box.play_pages(Dialogue.get_pages("workshop", dialogue_key))
 
 
 func _enter_intro_prompt() -> void:
@@ -214,10 +220,11 @@ func _on_pan_complete() -> void:
 	var main: Node = get_tree().current_scene
 
 	_minigame = WORKSHOP_MINIGAME_SCENE.instantiate()
+	if _intro_workshop and _minigame is WorkshopMinigame:
+		(_minigame as WorkshopMinigame).forced_part_id = "head"
 	
-	# --- THE MAGIC FIX ---
-	# The UI was built for 500x400. To make it perfectly fit the 900x720 
-	# upscaled background, we scale the entire UI layer by 1.8 before mounting it!
+	# The UI was built for the 500x400 source region; scale it with the
+	# background so the interaction layer stays locked to the image.
 	_minigame.scale = Vector2(SCALE_MULT, SCALE_MULT)
 	
 	if _minigame.has_signal("collected"):
@@ -242,6 +249,9 @@ func _on_minigame_collected(part_id: String) -> void:
 func _on_dialogue_finished() -> void:
 	match _scene_phase:
 		WorkshopPhase.INTRO:
+			if _intro_workshop:
+				_enter_minigame()
+				return
 			_enter_intro_prompt()
 		WorkshopPhase.INTRO_PROMPT:
 			_show_intro_choices()
@@ -266,3 +276,16 @@ func _build_choice_button(label: String) -> Button:
 func _clear_choice_buttons() -> void:
 	for child in choice_grid.get_children():
 		child.queue_free()
+
+
+func _is_intro_workshop_scene() -> bool:
+	if GameState.is_intro_step("workshop"):
+		return true
+	if bool(get_meta("intro_sequence_location", false)) and String(get_meta("intro_step", "")) == "workshop":
+		return true
+	var main := get_tree().current_scene
+	if main != null \
+			and main.has_method("is_intro_sequence_location_active") \
+			and bool(main.call("is_intro_sequence_location_active", &"workshop")):
+		return true
+	return false

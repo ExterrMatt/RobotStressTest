@@ -64,11 +64,7 @@ func _gui_input(event: InputEvent) -> void:
 	# Pick up on left-click press.
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not _dragging:
-			_dragging = true
-			# Remember where on the sprite the player grabbed.
-			_grab_offset = get_local_mouse_position()
-			_slide_grab_offset_to_center()
-			drag_started.emit(self)
+			start_drag()
 			# Eat the event so it doesn't bubble.
 			accept_event()
 
@@ -98,6 +94,18 @@ func end_drag(release_global_pos: Vector2) -> void:
 
 func is_dragging() -> bool:
 	return _dragging
+
+
+## Begin dragging this item. WorkInventory calls this from global _input so
+## draggable pieces win clicks even when a Button is beneath them.
+func start_drag() -> void:
+	if _dragging:
+		return
+	_dragging = true
+	# Remember where on the sprite the player grabbed.
+	_grab_offset = get_local_mouse_position()
+	_slide_grab_offset_to_center()
+	drag_started.emit(self)
 
 
 ## Tween back to the home slot's center. Used when the drop is invalid.

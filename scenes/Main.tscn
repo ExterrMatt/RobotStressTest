@@ -200,6 +200,7 @@ layout_mode = 2
 clip_contents = true
 texture = ExtResource("3_rarhs")
 expand_mode = 1
+stretch_mode = 5
 
 [node name="TeacherPortrait" type="TextureRect" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=1100000001]
 unique_name_in_owner = true

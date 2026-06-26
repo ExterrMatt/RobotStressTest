@@ -24,6 +24,7 @@ signal intro_changed(active: bool, step: String)
 const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
 const ARREST_THRESHOLD: int = 100  # tweak later; suspicion at/above this triggers arrest event
+const DEFAULT_PLAYER_NAME: String = "Noah"
 const LEGACY_TOOL_ID_MAP: Dictionary = {
 	"electric_prod": "taser",
 }
@@ -46,6 +47,7 @@ var _phase: int = 0
 var _money: int = 0
 var _brightness_value: float = 50.0
 var _scanlines_enabled: bool = true
+var player_name: String = ""
 var intro_active: bool = true
 var intro_completed: bool = false
 var intro_step: String = "exposition"
@@ -142,6 +144,30 @@ func _emit_initial_state() -> void:
 	purchased_today_changed.emit(purchased_today)
 	robot_parts_changed.emit(robot_parts.duplicate())
 	intro_changed.emit(intro_active, intro_step)
+
+
+func reset_for_new_game() -> void:
+	_day = 1
+	_phase = 0
+	_money = 0
+	_suspicion = 0
+	_anger = 0
+	player_name = ""
+	equipped_limbs = 0
+
+	for id in robot_parts.keys():
+		robot_parts[id] = 0
+	for id in ingredients.keys():
+		ingredients[id] = 0
+	skills.clear()
+	owned_tools = ["mouth", "hand"]
+	purchased_today.clear()
+
+	intro_active = true
+	intro_completed = false
+	intro_step = "exposition"
+
+	_emit_initial_state()
 
 
 # --- money ---
@@ -328,6 +354,37 @@ func complete_intro() -> void:
 	intro_changed.emit(intro_active, intro_step)
 
 
+func set_player_name(value: String) -> void:
+	var normalized := normalize_player_name(value)
+	player_name = DEFAULT_PLAYER_NAME if normalized.is_empty() else normalized
+
+
+func get_player_name() -> String:
+	return DEFAULT_PLAYER_NAME if player_name.strip_edges().is_empty() else player_name
+
+
+func normalize_player_name(value: String) -> String:
+	var cleaned := ""
+	var previous_was_separator := false
+	var raw := String(value).strip_edges()
+	for i in raw.length():
+		var c := raw.substr(i, 1)
+		var lower := c.to_lower()
+		var is_letter := lower >= "a" and lower <= "z"
+		var is_separator := c == "-" or c == "'"
+		if is_letter:
+			cleaned += lower
+			previous_was_separator = false
+		elif is_separator and not cleaned.is_empty() and not previous_was_separator:
+			cleaned += c
+			previous_was_separator = true
+	while cleaned.ends_with("-") or cleaned.ends_with("'"):
+		cleaned = cleaned.substr(0, cleaned.length() - 1)
+	if cleaned.is_empty():
+		return ""
+	return cleaned.substr(0, 1).to_upper() + cleaned.substr(1)
+
+
 # --- serialization stubs for future save system ---
 ## Returns a dictionary snapshot of all persistent state. Future save system
 ## can write this to disk; from_dict() reverses the operation.
@@ -345,6 +402,7 @@ func to_dict() -> Dictionary:
 		"skills": skills.duplicate(),
 		"owned_tools": owned_tools.duplicate(),
 		"purchased_today": purchased_today.duplicate(),
+		"player_name": player_name,
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
 		"intro_step": intro_step,
@@ -375,6 +433,7 @@ func from_dict(data: Dictionary) -> void:
 	if had_legacy_sneaky_shoes:
 		unlock_tool("sneaky_shoes")
 	purchased_today.assign(data.get("purchased_today", []))
+	set_player_name(String(data.get("player_name", DEFAULT_PLAYER_NAME)))
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))

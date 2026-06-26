@@ -27,6 +27,21 @@ class_name DialogueBox
 signal finished                  ## emitted after the last page is dismissed
 signal page_advanced(index: int) ## emitted whenever a new page starts
 
+const THOUGHT_COLOR: String = "#808080"
+const SPEAKER_COLORS: Dictionary = {
+	"Uncle": "#328dc5",
+	"Ms. Vey": "#f87031",
+	"Ms Vey": "#f87031",
+	"Ms. Okorie": "#f87031",
+	"Ms Okorie": "#f87031",
+	"Mr. Caldera": "#f87031",
+	"Mr Caldera": "#f87031",
+	"Her": "#b7d6d8",
+	"Robot": "#b7d6d8",
+	"You": "#d8b9b7",
+	"Ed": "#6b5f2a",
+}
+
 # ---- TUNABLES (visible in the editor) -----------------------------------
 
 ## Characters per second when typing normally. Higher = faster.
@@ -274,7 +289,7 @@ func _on_gui_input(event: InputEvent) -> void:
 func _show_page(idx: int) -> void:
 	var page: Array = _pages[idx]
 	# Join lines on this page with line breaks. Each line is its own visual line.
-	_full_page_text = "\n".join(page)
+	_full_page_text = "\n".join(_format_dialogue_page(page))
 
 	_rich_label.bbcode_enabled = true
 	if line_height_factor > 0.0 and _full_page_text.contains("\n"):
@@ -292,6 +307,55 @@ func _show_page(idx: int) -> void:
 	_typing_timer = 0.0
 	_set_arrow_visible(false)
 	page_advanced.emit(idx)
+
+
+func _format_dialogue_page(page: Array) -> Array[String]:
+	var formatted: Array[String] = []
+	for raw_line in page:
+		formatted.append(_format_dialogue_line(String(raw_line)))
+	return formatted
+
+
+func _format_dialogue_line(line: String) -> String:
+	var stripped := line.strip_edges()
+	var leading_tags := _leading_bbcode_tags(stripped)
+	var content_start := stripped.substr(leading_tags.length()).strip_edges()
+	var lower := content_start.to_lower()
+	for thought_prefix in ["thought:", "thoughts:"]:
+		if lower.begins_with(thought_prefix):
+			return _color_dialogue_text(
+				leading_tags + content_start.substr(thought_prefix.length()).strip_edges(),
+				THOUGHT_COLOR
+			)
+
+	var colon_index := content_start.find(":")
+	if colon_index <= 0:
+		return line
+	var speaker := content_start.substr(0, colon_index).strip_edges()
+	if not SPEAKER_COLORS.has(speaker):
+		return line
+	var speaker_prefix := content_start.substr(0, colon_index + 1)
+	var speech := content_start.substr(colon_index + 1)
+	return leading_tags + speaker_prefix + _color_dialogue_text(speech, String(SPEAKER_COLORS[speaker]))
+
+
+func _color_dialogue_text(text: String, color: String) -> String:
+	return "[color=%s]%s[/color]" % [color, text]
+
+
+func _leading_bbcode_tags(text: String) -> String:
+	var tags := ""
+	var cursor := 0
+	while cursor < text.length() and text.substr(cursor, 1) == "[":
+		var close := text.find("]", cursor)
+		if close < 0:
+			break
+		var tag := text.substr(cursor, close - cursor + 1)
+		if tag.begins_with("[/"):
+			break
+		tags += tag
+		cursor = close + 1
+	return tags
 
 
 ## Reveals one more character. Returns true if a character was revealed,

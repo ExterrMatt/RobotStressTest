@@ -201,7 +201,7 @@ func _build_menu_row(id: String, label: String) -> Button:
 	btn.custom_minimum_size = _menu_option_button_size()
 	btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	btn.focus_mode = Control.FOCUS_ALL
-	btn.disabled = id == "endless"
+	btn.disabled = id == "endless" or id == "load"
 	_apply_menu_option_button_style(btn)
 
 	btn.pressed.connect(_activate.bind(id))
@@ -329,6 +329,11 @@ func _activate(id: String) -> void:
 
 
 func _start_new_game() -> void:
+	if get_node_or_null("/root/GameState") != null:
+		GameState.reset_for_new_game()
+	if get_node_or_null("/root/DayCycle") != null and DayCycle.has_method("reset_for_new_game"):
+		DayCycle.reset_for_new_game()
+
 	# Tell Main.tscn to play the FlowerLoad wipe (starting fully-covered)
 	# inside its picture frame on _ready, then swap scenes. Doing the
 	# wipe on Main's side means it's correctly scoped to the picture

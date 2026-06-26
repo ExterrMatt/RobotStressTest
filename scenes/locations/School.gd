@@ -100,6 +100,25 @@ const TEACHERS: Array = [
 			},
 		],
 	},
+	{
+		"id": "history",
+		"name": "Ms. Vey",
+		"subject": "Automaton History",
+		"texture_path": "res://assets/textures/characters/teachers/History1.png",
+		"intro_key": "history.intro",
+		"questions": [
+			{
+				"lecture_key": "history.automaton_war.lecture",
+				"prompt": "What was the main catalyst that caused the original automaton-human conflict?",
+				"choices": [
+					"A military automaton refused an order",
+					"Factory automatons demanded payment",
+					"A household unit refused shutdown",
+				],
+				"correct": 0,
+			},
+		],
+	},
 ]
 
 # Reward values (mirror the original StubLocation outcomes).
@@ -127,11 +146,15 @@ const CHOICE_FONT_SIZE: int = 36
 const PROMPT_COLOR: String = "#e8c468"
 const DEFAULT_PLAYER_NAME: String = "Noah"
 const INTRO_SCHOOL_STEP: String = "school_first"
+const SCHOOL_CABINET_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/school_cabinet.png"
+const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
+const HISTORY_TEXTURE_DIR: String = "res://assets/textures/characters/teachers"
+const HISTORY_TEXTURE_MAX_VARIANT: int = 15
 const INTRO_HISTORY_TEACHER: Dictionary = {
 	"id": "history_intro",
 	"name": "Ms. Vey",
 	"subject": "Automaton History",
-	"texture_path": "res://assets/textures/characters/teachers/History.png",
+	"texture_path": "res://assets/textures/characters/teachers/History1.png",
 	"intro_key": "history.intro",
 }
 const INTRO_HISTORY_QUESTION: Dictionary = {
@@ -178,12 +201,43 @@ func _pick_teacher_and_question() -> void:
 		var questions: Array = _current_teacher["questions"]
 		_current_question = questions.pick_random()
 
-	var tex: Texture2D = load(_current_teacher["texture_path"])
+	var texture_path: String = _teacher_texture_path(_current_teacher)
+	var tex: Texture2D = load(texture_path)
 	if tex == null:
-		push_warning("School: missing teacher texture %s" % _current_teacher["texture_path"])
+		push_warning("School: missing teacher texture %s" % texture_path)
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("show_teacher_portrait"):
-		main.show_teacher_portrait(tex, _current_teacher["name"], _current_teacher["subject"])
+		main.show_teacher_portrait(
+			tex,
+			_current_teacher["name"],
+			_current_teacher["subject"],
+			not _is_intro_school_first()
+		)
+
+
+func _teacher_texture_path(teacher: Dictionary) -> String:
+	if _is_intro_school_first():
+		return String(teacher["texture_path"])
+	if String(teacher.get("id", "")) == "history":
+		return _random_history_texture_path()
+	return String(teacher["texture_path"])
+
+
+func _random_history_texture_path() -> String:
+	var candidates: Array[String] = []
+	for n in range(1, HISTORY_TEXTURE_MAX_VARIANT + 1):
+		if n == 2:
+			continue
+		var candidate := _history_texture_path(n)
+		if ResourceLoader.exists(candidate):
+			candidates.append(candidate)
+	if not candidates.is_empty():
+		return candidates.pick_random()
+	return String(INTRO_HISTORY_TEACHER["texture_path"])
+
+
+func _history_texture_path(number: int) -> String:
+	return "%s/History%d.png" % [HISTORY_TEXTURE_DIR, number]
 
 
 # --- Lecture phase ---
@@ -285,6 +339,14 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("_play_transition_then"):
+		main._play_transition_then(Callable(self, "_show_school_cabinet_background_and_play_post_class"))
+	else:
+		_show_school_cabinet_background_and_play_post_class()
+
+
+func _show_school_cabinet_background_and_play_post_class() -> void:
 	_show_school_cabinet_background()
 	dialogue_box.play_pages(Dialogue.get_pages("school", "post_class"))
 
@@ -379,13 +441,11 @@ func _show_school_cabinet_background() -> void:
 	if main.has_method("hide_teacher_portrait"):
 		main.hide_teacher_portrait()
 	if "scene_image" in main:
-		var cabinet: Texture2D = load("res://assets/textures/backgrounds/school_cabinet.png")
+		var cabinet: Texture2D = load(SCHOOL_CABINET_BACKGROUND_TEXTURE_PATH)
 		if cabinet:
 			main.scene_image.texture = cabinet
-	if main.has_method("_animate_frame_size_to"):
-		main._animate_frame_size_to(Vector2(900, 225))
-	if main.has_method("_animate_frame_outer_width_to") and "frame_outer" in main:
-		main._animate_frame_outer_width_to(main._default_frame_outer_width)
+	if main.has_method("_animate_frame_to") and "_default_frame_outer_width" in main:
+		main._animate_frame_to(DEFAULT_DIALOGUE_FRAME_SIZE, main._default_frame_outer_width)
 
 
 func _finish_school() -> void:
@@ -397,9 +457,12 @@ func _is_intro_school_first() -> bool:
 
 
 func _school_format_vars() -> Dictionary:
+	var player_name := DEFAULT_PLAYER_NAME
+	if GameState.has_method("get_player_name"):
+		player_name = String(GameState.call("get_player_name"))
 	return {
 		"name": String(_current_teacher.get("name", "")),
-		"player_name": DEFAULT_PLAYER_NAME,
+		"player_name": player_name,
 	}
 
 

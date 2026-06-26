@@ -3,6 +3,8 @@ class_name WorkshopMinigame
 
 signal collected(part_id: String)
 
+@export var forced_part_id: String = ""
+
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
 		"display_name": "Head",
@@ -25,22 +27,24 @@ const INGREDIENT_PATHS: Dictionary = {
 }
 const HEAD_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot head"
 const HEAD_ASSEMBLY_SIZE: Vector2 = Vector2(200, 200)
+## Back-to-front draw order for the assembled head. Godot draws later Control
+## siblings on top, so this is the reverse of the visible layer stack.
 const HEAD_SEGMENT_IDS: Array[StringName] = [
 	&"neck",
 	&"metal_head",
-	&"left_ear",
-	&"right_ear",
-	&"left_side_panel",
-	&"right_side_panel",
-	&"forehead",
-	&"left_cheek",
-	&"right_cheek",
-	&"mouth",
-	&"nose",
 	&"left_eye",
 	&"right_eye",
-	&"left_eyelid",
+	&"mouth",
+	&"nose",
 	&"right_eyelid",
+	&"left_eyelid",
+	&"forehead",
+	&"right_side_panel",
+	&"left_side_panel",
+	&"right_cheek",
+	&"left_cheek",
+	&"right_ear",
+	&"left_ear",
 	&"hair",
 ]
 const HEAD_EYE_SEGMENT_IDS: Array[StringName] = [&"left_eye", &"right_eye"]
@@ -343,12 +347,27 @@ func _input(event: InputEvent) -> void:
 		if _active_drag_segment:
 			_active_drag_segment.update_drag(event.global_position)
 			_sync_passenger_segments_to_active_drag()
+			get_viewport().set_input_as_handled()
 		elif _active_drag_piece:
 			_active_drag_piece.update_drag(event.global_position)
+			get_viewport().set_input_as_handled()
 
 
 func _handle_left_press(global_pos: Vector2) -> void:
 	if _active_drag_segment or _active_drag_piece:
+		get_viewport().set_input_as_handled()
+		return
+
+	var seg: WorkshopSegment = _find_topmost_segment_at(global_pos)
+	if seg != null:
+		_pick_up_segment(seg, global_pos)
+		get_viewport().set_input_as_handled()
+		return
+
+	var hit: WorkshopPiece = _find_topmost_piece_at(global_pos)
+	if hit != null:
+		_pick_up_piece(hit, global_pos)
+		get_viewport().set_input_as_handled()
 		return
 
 	if _hit_button(craft_button, global_pos):
@@ -356,23 +375,15 @@ func _handle_left_press(global_pos: Vector2) -> void:
 			UI_SOUND.play_inaccessible_button(self)
 		else:
 			_on_craft_pressed()
+		get_viewport().set_input_as_handled()
 		return
 	if _hit_button(collect_button, global_pos):
 		if collect_button.disabled:
 			UI_SOUND.play_inaccessible_button(self)
 		else:
 			_on_collect_pressed()
+		get_viewport().set_input_as_handled()
 		return
-
-	var seg: WorkshopSegment = _find_topmost_segment_at(global_pos)
-	if seg != null:
-		_pick_up_segment(seg, global_pos)
-		return
-
-	var hit: WorkshopPiece = _find_topmost_piece_at(global_pos)
-	if hit == null:
-		return
-	_pick_up_piece(hit, global_pos)
 
 
 func _handle_left_release(global_pos: Vector2) -> void:
@@ -394,12 +405,7 @@ func _handle_left_release(global_pos: Vector2) -> void:
 		var all_valid: bool = true
 		for seg in group:
 			seg.end_drag()
-			var target: WorkshopAssemblySlot = null
-			for slot_id in _active_assembly_slot_ids:
-				var slot: WorkshopAssemblySlot = _assembly_slots[slot_id]
-				if _is_valid_segment_drop(seg, slot, global_pos):
-					target = slot
-					break
+			var target: WorkshopAssemblySlot = _best_segment_drop_target(seg, global_pos)
 			if target == null:
 				all_valid = false
 			drops.append([seg, target])
@@ -410,6 +416,7 @@ func _handle_left_release(global_pos: Vector2) -> void:
 				var placing_slot: WorkshopAssemblySlot = entry[1]
 				_accept_segment_into_slot(placing_seg, placing_slot)
 			_refresh_collect_button()
+		get_viewport().set_input_as_handled()
 		return
 
 	if _active_drag_piece != null:
@@ -420,11 +427,13 @@ func _handle_left_release(global_pos: Vector2) -> void:
 
 		if craft_bin.accepts_point(global_pos):
 			_drop_into_bin(piece, global_pos)
+			get_viewport().set_input_as_handled()
 			return
 
 		_return_piece_home_or_discard(piece)
 		craft_bin.contents_changed.emit()
 		_refresh_tray_counts()
+		get_viewport().set_input_as_handled()
 
 
 # --- hit testing helpers ---
@@ -522,19 +531,44 @@ func _segment_id_matches_slot(segment_id: StringName, slot_id: StringName) -> bo
 
 
 func _is_valid_segment_drop(segment: WorkshopSegment, slot: WorkshopAssemblySlot, release_global_pos: Vector2) -> bool:
-	if slot == null or slot.filled:
-		return false
+	return _segment_drop_score(segment, slot, release_global_pos) > -1.0e19
+
+
+func _best_segment_drop_target(segment: WorkshopSegment, release_global_pos: Vector2) -> WorkshopAssemblySlot:
+	var best_slot: WorkshopAssemblySlot = null
+	var best_score: float = -1.0e20
+	for slot_id in _active_assembly_slot_ids:
+		var slot: WorkshopAssemblySlot = _assembly_slots.get(slot_id)
+		var score: float = _segment_drop_score(segment, slot, release_global_pos)
+		if score > best_score:
+			best_score = score
+			best_slot = slot
+	return best_slot
+
+
+func _segment_drop_score(segment: WorkshopSegment, slot: WorkshopAssemblySlot, release_global_pos: Vector2) -> float:
+	if segment == null or slot == null or slot.filled:
+		return -1.0e20
 	if not _slot_accepts_segment(slot, segment):
-		return false
-	var release_hits_slot: bool = slot.get_global_hitbox().has_point(release_global_pos)
+		return -1.0e20
+	if not _head_prerequisites_met(segment.segment_id):
+		return -1.0e20
+
+	var slot_hitbox: Rect2 = slot.get_global_hitbox()
+	var segment_hitbox: Rect2 = segment.get_global_hitbox()
+	var release_hits_slot: bool = slot_hitbox.has_point(release_global_pos)
+	var overlap_area: float = _rect_overlap_area(segment_hitbox, slot_hitbox)
 	if not release_hits_slot:
 		if _crafted_part_id == "leg":
-			return false
-		if not _segment_overlaps_slot(segment, slot):
-			return false
-	if not _head_prerequisites_met(segment.segment_id):
-		return false
-	return true
+			return -1.0e20
+		if overlap_area <= 0.0:
+			return -1.0e20
+
+	var slot_center: Vector2 = slot_hitbox.position + slot_hitbox.size * 0.5
+	var score: float = overlap_area - release_global_pos.distance_squared_to(slot_center) * 0.001
+	if release_hits_slot:
+		score += 1000000.0
+	return score
 
 
 func _segment_overlaps_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> bool:
@@ -543,6 +577,16 @@ func _segment_overlaps_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot
 	if not _slot_accepts_segment(slot, segment):
 		return false
 	return segment.get_global_hitbox().intersects(slot.get_global_hitbox())
+
+
+func _rect_overlap_area(a: Rect2, b: Rect2) -> float:
+	var left: float = maxf(a.position.x, b.position.x)
+	var top: float = maxf(a.position.y, b.position.y)
+	var right: float = minf(a.end.x, b.end.x)
+	var bottom: float = minf(a.end.y, b.end.y)
+	if right <= left or bottom <= top:
+		return 0.0
+	return (right - left) * (bottom - top)
 
 
 func _head_prerequisites_met(segment_id: StringName) -> bool:
@@ -619,8 +663,89 @@ func _sync_passenger_segments_to_active_drag() -> void:
 func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
 	if segment == null or slot == null:
 		return
+	_apply_socket_art_for_segment(segment, slot)
+	_clear_placed_head_outline(segment, slot)
 	slot.accept_segment(segment)
 	segment.position = _placement_offset_for_slot(segment, slot)
+
+
+func _apply_socket_art_for_segment(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
+	if _crafted_part_id != "head":
+		return
+	if not HEAD_EYE_SEGMENT_IDS.has(segment.segment_id):
+		return
+	if not HEAD_EYE_SEGMENT_IDS.has(slot.accepts_segment_id):
+		return
+
+	var segment_data: Dictionary = _segments.get(slot.accepts_segment_id, {})
+	var piece_defs: Array = segment_data.get("pieces", [])
+	if piece_defs.is_empty():
+		return
+
+	segment.segment_id = slot.accepts_segment_id
+	var piece_index: int = 0
+	for child in segment.get_children():
+		if not _node_is_workshop_piece(child):
+			continue
+		var piece := child as WorkshopPiece
+		if piece == null:
+			continue
+		var piece_def: Dictionary = piece_defs[mini(piece_index, piece_defs.size() - 1)]
+		piece.item_id = StringName(piece_def.get("id", slot.accepts_segment_id))
+		piece.segment_id = slot.accepts_segment_id
+		piece.texture = piece_def.get("texture")
+		piece.outline_texture = piece_def.get("outline")
+		piece.shadow_texture = piece_def.get("shadow")
+		piece.position = Vector2.ZERO
+		if piece.texture != null:
+			piece.size = piece.texture.get_size()
+		piece.queue_redraw()
+		piece_index += 1
+
+	_refit_segment_bounds(segment)
+
+
+func _refit_segment_bounds(segment: WorkshopSegment) -> void:
+	var bounds: Rect2 = Rect2()
+	var found_any: bool = false
+	for child in segment.get_children():
+		if not _node_is_workshop_piece(child):
+			continue
+		var piece := child as WorkshopPiece
+		if piece == null:
+			continue
+		var tex_rect: Rect2 = _piece_visible_rect(piece)
+		if tex_rect.size.x <= 0.0 or tex_rect.size.y <= 0.0:
+			continue
+		if not found_any:
+			bounds = tex_rect
+			found_any = true
+		else:
+			bounds = bounds.merge(tex_rect)
+
+	if not found_any:
+		return
+
+	for child in segment.get_children():
+		if child is WorkshopPiece:
+			var piece := child as WorkshopPiece
+			piece.position -= bounds.position
+	segment.size = bounds.size
+	segment.placement_offset = bounds.position
+
+
+func _clear_placed_head_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
+	if _crafted_part_id != "head":
+		return
+
+	for child in segment.get_children():
+		if not _node_is_workshop_piece(child):
+			continue
+		var piece := child as WorkshopPiece
+		if piece == null:
+			continue
+		piece.outline_texture = null
+		piece.queue_redraw()
 
 
 func _placement_offset_for_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> Vector2:
@@ -930,6 +1055,12 @@ func _bin_has_recipe() -> bool:
 
 func _matching_recipe_part_id() -> String:
 	var counts: Dictionary = craft_bin.count_items()
+	if not forced_part_id.strip_edges().is_empty():
+		var forced_data: Dictionary = CRAFTABLE_PARTS.get(forced_part_id, {})
+		if forced_data.is_empty():
+			return ""
+		var forced_recipe: Dictionary = forced_data.get("recipe", {})
+		return forced_part_id if _counts_contain_recipe(counts, forced_recipe) else ""
 	for part_id in CRAFTABLE_PARTS:
 		var part_data: Dictionary = CRAFTABLE_PARTS[part_id]
 		var recipe: Dictionary = part_data.get("recipe", {})

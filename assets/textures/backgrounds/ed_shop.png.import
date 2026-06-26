@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://drcck6qsesyhc"
-path="res://.godot/imported/hawaiian_uncle.png-f15b36f8b64ad89ccd656fdc071ee825.ctex"
+uid="uid://cq75fn5plvwg"
+path="res://.godot/imported/ed_shop.png-4b056e759315cee921da2d148ebc10c5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/uncle/hawaiian_uncle.png"
-dest_files=["res://.godot/imported/hawaiian_uncle.png-f15b36f8b64ad89ccd656fdc071ee825.ctex"]
+source_file="res://assets/textures/backgrounds/ed_shop.png"
+dest_files=["res://.godot/imported/ed_shop.png-4b056e759315cee921da2d148ebc10c5.ctex"]
 
 [params]
 

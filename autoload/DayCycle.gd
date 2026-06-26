@@ -40,6 +40,11 @@ func _ready() -> void:
 	pass
 
 
+func reset_for_new_game() -> void:
+	nightly_wakes = 0
+	nightly_stress_test_completed = false
+
+
 ## Returns the human-readable name of a phase enum value.
 func phase_name(p: int) -> String:
 	match p:

@@ -10,13 +10,13 @@ Uncle: Good. Patrol drones made two passes over the block last night. Nothing ca
 You: Should I be worried?
 Uncle: You should. Be quiet and punctual. Worry's expensive.
 You: Almost as expensive as rent.
-Uncle: The arrangement's fair. I keep the roof over your head, you pull your weight. Food, heat, power- none of it runs free.
+Uncle: Our arrangement's fair. I keep the roof over your head, you pull your weight. Food, heat, and power ain't free.
 You: Dad left money.
-Uncle: Tuition. He had it set aside- just enough for your credits. That's what he left. Everything else is yours to sort out now. You're an adult now.
+Uncle: Tuition. He had it set aside- just enough for your credits. That's what he left. Everything else is yours to sort out. You're an adult now.
 You: Then I guess I have to work...
-Uncle: Yes, you will. You keep your head down in class, you pull your weight at the factory, we both win.
+Uncle: Yeah, you do. You keep your head down in class, you pull your weight at the factory, we both win.
 You: That's the speech?
-Uncle: That's the generous version. The other one has a spreadsheet. Get to class.
+Uncle: That's the generous version. The other one has a spreadsheet. Now get to class.
 
 [evening_room]
 Uncle: Kid, I need you to pick up some parts from Ed's shop.
@@ -27,14 +27,14 @@ Uncle: Consider it part of the job.
 You: Fine... What parts?
 Uncle: Small stuff. Extra parts. Mostly.
 You: Mostly?
-Uncle: Ed knows what to give you. Go before he closes.
+Uncle: Ed knows what to give you. Say it's for Ben. Go before he closes.
 
 [store_intro]
-Parts on every surface. Most of it shouldn't be on display.
-You thought about the drone on the way over. You're still not sure you picked the right routes to avoid them.
+Parts on every surface. Lots of it shouldn't be on display... It's a mess in here.
+You thought about the patrol drones on the way over. You're still not sure you picked the right routes to avoid them.
 A man appears from the back. He doesn't introduce himself. It's probably Ed.
-"Parts or browsing?" he asks gruffly.
-You tell him your uncle sent you.
+Ed: "Parts or browsing?" he asks gruffly.
+You: My Uncle Ben sent me.
 He nods. That's apparently enough.
 
 [store_outro]
@@ -50,16 +50,37 @@ You finally head to your room.
 
 [bedroom_night]
 Without that backpack on, you feel light as a feather.
-It's been a long day. The bed looks really comfy.
-Tomorrow will be factory work...
+Thoughts: It's been a long day. The bed looks really comfy.
+Thoughts: Tomorrow will be factory work...
+
+[pre_workshop]
+The head segments weigh your bag down. You had to dump everything in- there was no way that box was fitting inside.
+You rack your mind thinking about why that box was marked trash. The pieces looked perfectly fine to you...
+Maybe your uncle couldn't manage put it together? No.. he's probably put together thousands of those things.
+Uncle Ben has a workshop in the garage. He couldve chosen to use the shed we have in the backyard.
+You wonder why he didn't... 
+It'd be out of the way, hidden from prying eyes...
+But that generator is pretty loud, and the shed's pretty old too. And small... You start to understand why he chose the garage instead. 
+You decide you'll try and be quiet while you work on the bot.
+You wonder how he'd react if he saw you with stolen factory property...
+
+[pre_stress_test]
+The assembled head rests on the bench.
+For a while, nothing happens.
+Thoughts: This is stupid... 
+Thoughts: I'm risking getting kicked out for what? A robot head? What am I gonna do? Talk to it??
+Your shoulders slump and you sit back in your chair.
+Your chair creaks as you lean back and breathe out a long sigh. But a sound that certainly didn't come from your chair brings your attention back to the robot.
+It's still there... Static, unmoving...
+You lean in closer.
+...If this thing can wake up, you need to know how.
 
 [robot_first_talk]
 The head goes still after the test...
 The silence is nice...
-...
-... "hello?"
-...
-You lean in closer, tentatively.
+Thoughts: ...
+Her: ... hello?
+Thoughts: ...
 You: ... Hi...
 
 [free_reign]

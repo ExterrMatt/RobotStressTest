@@ -1,32 +1,201 @@
 extends LocationBase
 
 const BLUE_SHIRT_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/blue_shirt_uncle1.png"
+const BLUE_SHIRT_ALT_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/blue_shirt_uncle2.png"
+const HAWAIIAN_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/hawaiian_uncle1.png"
+const HAWAIIAN_ALT_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/hawaiian_uncle2.png"
+const ED_SHOP_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/ed_shop.png"
+const LIVING_ROOM_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/living_room_evening.png"
+const ROBOT_EYES_SHUT_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/robot_eyes_shut.png"
+const ROBOT_EYES_OPEN_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/robot_eyes_open.png"
+const UNCLE_PORTRAIT_SCALE: float = 1.1
+const STORE_OUTRO_HOME_PAGE_INDEX: int = 2
+const ROBOT_FIRST_TALK_HELLO_PAGE_INDEX: int = 3
+const UNCLE_DIALOGUE_STEPS: Dictionary = {
+	"exposition": BLUE_SHIRT_ALT_UNCLE_TEXTURE_PATH,
+	"evening_room": BLUE_SHIRT_UNCLE_TEXTURE_PATH,
+}
 
 @onready var dialogue_box: DialogueBox = %DialogueBox
+
+var _intro_key: String = ""
+var _store_outro_home_visual_applied: bool = false
+var _robot_eyes_open_applied: bool = false
+var _name_prompt_panel: Control = null
+var _name_line_edit: LineEdit = null
 
 
 func _ready() -> void:
 	Dialogue.load_file("intro", "res://data/dialogue/intro.dlg")
 	dialogue_box.finished.connect(_on_dialogue_finished)
-	var key := GameState.intro_step
-	if key.is_empty():
-		key = "exposition"
-	_apply_intro_portrait(key)
-	dialogue_box.play_pages(Dialogue.get_pages("intro", key))
+	dialogue_box.page_advanced.connect(_on_page_advanced)
+	_intro_key = GameState.intro_step
+	if _intro_key.is_empty():
+		_intro_key = "exposition"
+	if _should_prompt_for_player_name():
+		_show_player_name_prompt()
+		return
+	_apply_intro_visuals(_intro_key)
+	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key))
+
+
+func _should_prompt_for_player_name() -> bool:
+	return _intro_key == "exposition" and GameState.player_name.strip_edges().is_empty()
+
+
+func _show_player_name_prompt() -> void:
+	var main := get_tree().current_scene
+	if main != null and main.has_method("hide_teacher_portrait"):
+		main.hide_teacher_portrait()
+	dialogue_box.visible = false
+	_build_name_prompt_panel()
+	_name_prompt_panel.visible = true
+	_name_line_edit.text = ""
+	_name_line_edit.call_deferred("grab_focus")
+
+
+func _build_name_prompt_panel() -> void:
+	if _name_prompt_panel != null:
+		return
+	var parent := dialogue_box.get_parent() as Control
+	if parent == null:
+		return
+
+	var panel := PanelContainer.new()
+	panel.name = "NamePromptPanel"
+	panel.theme_type_variation = &"HUDPanel"
+	panel.custom_minimum_size = Vector2(0.0, 140.0)
+	panel.visible = false
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	margin.add_child(vbox)
+
+	var label := Label.new()
+	label.text = "What is your name?"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 32)
+	vbox.add_child(label)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	vbox.add_child(row)
+
+	_name_line_edit = LineEdit.new()
+	_name_line_edit.placeholder_text = GameState.DEFAULT_PLAYER_NAME
+	_name_line_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_name_line_edit.add_theme_font_size_override("font_size", 28)
+	_name_line_edit.text_changed.connect(_on_name_text_changed)
+	_name_line_edit.text_submitted.connect(func(_text: String): _accept_player_name())
+	row.add_child(_name_line_edit)
+
+	var continue_button := Button.new()
+	continue_button.text = "CONTINUE"
+	continue_button.custom_minimum_size = Vector2(180.0, 48.0)
+	continue_button.pressed.connect(_accept_player_name)
+	row.add_child(continue_button)
+
+	parent.add_child(panel)
+	parent.move_child(panel, dialogue_box.get_index())
+	_name_prompt_panel = panel
+
+
+func _accept_player_name() -> void:
+	GameState.set_player_name(_name_line_edit.text)
+	if _name_prompt_panel != null:
+		_name_prompt_panel.visible = false
+	dialogue_box.visible = true
+	_apply_intro_visuals(_intro_key)
+	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key))
+
+
+func _on_name_text_changed(new_text: String) -> void:
+	var normalized := GameState.normalize_player_name(new_text)
+	if normalized == new_text:
+		return
+	var caret_column := _name_line_edit.caret_column
+	_name_line_edit.text = normalized
+	_name_line_edit.caret_column = mini(caret_column, normalized.length())
 
 
 func _on_dialogue_finished() -> void:
 	finish(0, 0, 0, {}, false)
 
 
-func _apply_intro_portrait(key: String) -> void:
+func _on_page_advanced(index: int) -> void:
+	if _intro_key == "robot_first_talk":
+		if not _robot_eyes_open_applied and index >= ROBOT_FIRST_TALK_HELLO_PAGE_INDEX:
+			_robot_eyes_open_applied = true
+			_set_scene_image(ROBOT_EYES_OPEN_BACKGROUND_TEXTURE_PATH)
+		return
+	if _intro_key != "store_outro":
+		return
+	if _store_outro_home_visual_applied:
+		return
+	if index < STORE_OUTRO_HOME_PAGE_INDEX:
+		return
+	_store_outro_home_visual_applied = true
+	var main := get_tree().current_scene
+	if main != null and main.has_method("_play_transition_then"):
+		main._play_transition_then(Callable(self, "_show_store_outro_home_visuals"))
+	else:
+		_show_store_outro_home_visuals()
+
+
+func _apply_intro_visuals(key: String) -> void:
 	var main := get_tree().current_scene
 	if main == null:
 		return
-	if key == "exposition":
-		var tex := load(BLUE_SHIRT_UNCLE_TEXTURE_PATH) as Texture2D
-		if tex != null and main.has_method("show_teacher_portrait"):
-			main.show_teacher_portrait(tex, "Uncle", "")
+	if key == "store_outro":
+		_set_scene_image(ED_SHOP_BACKGROUND_TEXTURE_PATH)
+		if main.has_method("hide_teacher_portrait"):
+			main.hide_teacher_portrait()
+		return
+	if key == "robot_first_talk":
+		_set_scene_image(ROBOT_EYES_SHUT_BACKGROUND_TEXTURE_PATH)
+		if main.has_method("hide_teacher_portrait"):
+			main.hide_teacher_portrait()
+		return
+	if UNCLE_DIALOGUE_STEPS.has(key):
+		_show_uncle_portrait(String(UNCLE_DIALOGUE_STEPS[key]))
 		return
 	if main.has_method("hide_teacher_portrait"):
 		main.hide_teacher_portrait()
+
+
+func _show_store_outro_home_visuals() -> void:
+	_set_scene_image(LIVING_ROOM_BACKGROUND_TEXTURE_PATH)
+	_show_uncle_portrait(HAWAIIAN_UNCLE_TEXTURE_PATH)
+
+
+func _show_uncle_portrait(texture_path: String = BLUE_SHIRT_UNCLE_TEXTURE_PATH) -> void:
+	var main := get_tree().current_scene
+	if main == null:
+		return
+	var tex := load(texture_path) as Texture2D
+	if main.has_method("hide_teacher_portrait"):
+		main.hide_teacher_portrait()
+	if tex == null:
+		return
+	if main.has_method("show_bottom_center_portrait"):
+		main.show_bottom_center_portrait(tex, UNCLE_PORTRAIT_SCALE, "Uncle")
+	elif main.has_method("show_teacher_portrait"):
+		main.show_teacher_portrait(tex, "Uncle", "", false)
+
+
+func _set_scene_image(texture_path: String) -> void:
+	var main := get_tree().current_scene
+	if main == null:
+		return
+	if not ("scene_image" in main):
+		return
+	var tex := load(texture_path) as Texture2D
+	if tex != null:
+		main.scene_image.texture = tex

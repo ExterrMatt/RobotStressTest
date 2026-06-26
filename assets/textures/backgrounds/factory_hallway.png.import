@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cfr3j8idaftk7"
-path="res://.godot/imported/blue_shirt_uncle3.png-96b8889c7fdfabc13d63f8abd7af55c3.ctex"
+uid="uid://bb1h3lffrdyun"
+path="res://.godot/imported/factory_hallway.png-585db32cd0a468a0616b76f3a54e3a51.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/uncle/blue_shirt_uncle3.png"
-dest_files=["res://.godot/imported/blue_shirt_uncle3.png-96b8889c7fdfabc13d63f8abd7af55c3.ctex"]
+source_file="res://assets/textures/backgrounds/factory_hallway.png"
+dest_files=["res://.godot/imported/factory_hallway.png-585db32cd0a468a0616b76f3a54e3a51.ctex"]
 
 [params]
 

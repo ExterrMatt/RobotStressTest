@@ -40,6 +40,7 @@ extends LocationBase
 ## configured texture failed to load).
 const PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/icons/placeholder_item.png"
 const SCENE_PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/backgrounds/scene_placeholder.png"
+const ED_SHOP_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/ed_shop.png"
 const STORE_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/store.png"
 const STORE_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const STORE_FRAME_OUTER_WIDTH: float = 800.0
@@ -115,10 +116,12 @@ func _enter_intro_dialogue(dialogue_key: String) -> void:
 			main.hide_scene_overlay()
 		if main.has_method("hide_corner_button"):
 			main.hide_corner_button()
+		if main.has_method("hide_teacher_portrait"):
+			main.hide_teacher_portrait()
 		if "scene_image" in main:
-			var placeholder := load(SCENE_PLACEHOLDER_TEXTURE_PATH) as Texture2D
-			if placeholder != null:
-				main.scene_image.texture = placeholder
+			var ed_shop := load(ED_SHOP_BACKGROUND_TEXTURE_PATH) as Texture2D
+			if ed_shop != null:
+				main.scene_image.texture = ed_shop
 		if main.has_method("_animate_frame_to") and "_default_frame_outer_width" in main:
 			main._animate_frame_to(Vector2(900.0, 225.0), main._default_frame_outer_width)
 
@@ -138,8 +141,6 @@ func _on_intro_dialogue_finished() -> void:
 			main._play_transition_then(Callable(self, "_enter_store_ui"))
 		else:
 			_enter_store_ui()
-	elif _intro_dialogue_key == "store_outro":
-		_finish_intro_store()
 	else:
 		_finish_intro_store()
 
@@ -544,37 +545,7 @@ func _collect_intro_pickup_item(item: StoreItemData) -> void:
 			slot.visible = false
 
 	if _intro_collected_item_ids.size() >= INTRO_PICKUP_ITEM_IDS.size():
-		_enter_intro_outro_after_transition()
-
-
-func _enter_intro_outro_after_transition() -> void:
-	_store_active = false
-	_intro_pickup_active = false
-	var main: Node = get_tree().current_scene
-	if main != null and main.has_method("_play_transition_then"):
-		main._play_transition_then(Callable(self, "_enter_intro_outro_dialogue"))
-	else:
-		_enter_intro_outro_dialogue()
-
-
-func _enter_intro_outro_dialogue() -> void:
-	var main: Node = get_tree().current_scene
-	if main != null:
-		if main.has_method("hide_scene_overlay"):
-			main.hide_scene_overlay()
-		if main.has_method("hide_corner_button"):
-			main.hide_corner_button()
-		if "scene_image" in main:
-			var placeholder := load(SCENE_PLACEHOLDER_TEXTURE_PATH) as Texture2D
-			if placeholder != null:
-				main.scene_image.texture = placeholder
-		if main.has_method("_animate_frame_to") and "_default_frame_outer_width" in main:
-			main._animate_frame_to(Vector2(900.0, 225.0), main._default_frame_outer_width)
-	if dialogue_box != null:
-		dialogue_box.visible = true
-		_intro_dialogue_key = "store_outro"
-		dialogue_box.play_pages(Dialogue.get_pages("intro", "store_outro"))
-
+		_finish_intro_store()
 
 func _finish_intro_store() -> void:
 	finish(0, 0, 0, {}, false)

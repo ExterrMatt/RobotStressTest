@@ -54,12 +54,15 @@ const INTRO_STEPS: Array[Dictionary] = [
 	{"step": "school_first", "kind": "location", "phase": 0, "location_id": &"school"},
 	{"step": "evening_room", "kind": "dialogue", "phase": 1, "preview": "res://assets/textures/backgrounds/bedroom_evening.png"},
 	{"step": "store", "kind": "location", "phase": 1, "location_id": &"store"},
+	{"step": "store_outro", "kind": "dialogue", "phase": 1, "preview": "res://assets/textures/backgrounds/ed_shop.png"},
 	{"step": "bedroom_night", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
 	{"step": "sleep", "kind": "location", "phase": 2, "location_id": &"sleep"},
 	{"step": "work", "kind": "location", "phase": 0, "location_id": &"work"},
+	{"step": "pre_workshop", "kind": "dialogue", "phase": 1, "preview": "res://assets/textures/backgrounds/bedroom_evening.png"},
 	{"step": "workshop", "kind": "location", "phase": 1, "location_id": &"workshop"},
+	{"step": "pre_stress_test", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/large_workshop.png", "preview_region": Rect2(0, 0, 500, 125)},
 	{"step": "stress_test", "kind": "location", "phase": 2, "location_id": &"stress_test"},
-	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/scene_placeholder.png"},
+	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/robot_eyes_shut.png"},
 	{"step": "free_reign", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
 ]
 
@@ -68,11 +71,13 @@ const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 
-## Default rendered size of the framed scene image. Matches the size hard-
-## coded in Main.tscn for SceneImage.custom_minimum_size, and the 1.8x
-## upscaling of standard 500x125 backgrounds (500*1.8 = 900, 125*1.8 = 225).
-## Locations with taller source art override via LocationData.frame_size.
+## Default authored size of the framed scene image. Standard 500x125 scene
+## textures are normalized to STANDARD_SCENE_TEXTURE_SCALE at runtime, and
+## locations with taller source art can override via LocationData.frame_size.
 const DEFAULT_FRAME_SIZE: Vector2 = Vector2(900, 225)
+const STANDARD_SCENE_TEXTURE_SIZE: Vector2 = Vector2(500, 125)
+const STANDARD_SCENE_TEXTURE_SCALE: float = 2.25
+const EXACT_FRAME_LOCATION_IDS: Array[StringName] = [&"workshop"]
 
 ## Duration and easing for both the scale animation (frame resize between
 ## locations) and the slide animation (layout shifts inside a location).
@@ -82,11 +87,19 @@ const ANIM_TRANS: int = Tween.TRANS_QUAD
 const ANIM_EASE: int = Tween.EASE_IN_OUT
 const EXPANDING_FULLSCREEN_TRANSITION_DURATION_SCALE: float = 1.0
 const SHRINKING_FULLSCREEN_TARGET_OUTSET: float = 3.0
+const LARGE_SCENE_HUD_FRAME_HEIGHT_THRESHOLD: float = 360.0
+const LARGE_SCENE_HUD_MARGIN: Vector2 = Vector2(64.0, 24.0)
+const LARGE_SCENE_HUD_PANEL_WIDTH: float = 156.0
+const LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT: float = 178.0
+const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 154.0
+const LARGE_SCENE_HUD_FONT_SIZE: int = 32
+const LARGE_SCENE_HUD_SUSPICION_FONT_SIZE: int = 30
 
 @export_category("Debug")
 @export var debug_hotkeys_enabled: bool = true
 
 # HUD labels
+@onready var hud_bar: PanelContainer = %HUDBar
 @onready var day_label: Label = %DayLabel
 @onready var phase_label: Label = %PhaseLabel
 @onready var money_label: Label = %MoneyLabel
@@ -129,6 +142,7 @@ const SHRINKING_FULLSCREEN_TARGET_OUTSET: float = 3.0
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 
 var _locations: Array[LocationData] = []
+var _location_scene_cache: Dictionary = {}
 var _current_location_node: Node = null
 var _current_location_fullscreen: bool = false
 var _current_location_id: StringName = &""
@@ -140,6 +154,7 @@ var _alt_portrait: bool = false
 ## Base texture path of the currently-shown teacher portrait (no "2" suffix),
 ## so we can swap variants when the toggle changes.
 var _portrait_base_path: String = ""
+var _portrait_allows_alt_variant: bool = true
 
 ## Set true on the very first selection-screen show, so we don't play a
 ## transition before the player has even seen anything.
@@ -160,6 +175,16 @@ var _frame_outer_width_start: float = 0.0
 var _frame_outer_width_target: float = 0.0
 var _frame_visual_size_start: Vector2 = Vector2.ZERO
 var _frame_visual_size_target: Vector2 = Vector2.ZERO
+var _frame_chrome_size: Vector2 = Vector2.ZERO
+var _scene_image_texture_seen: Texture2D = null
+var _large_scene_hud_layer: Control = null
+var _large_scene_left_panel: PanelContainer = null
+var _large_scene_right_panel: PanelContainer = null
+var _large_scene_day_label: Label = null
+var _large_scene_phase_label: Label = null
+var _large_scene_money_label: Label = null
+var _large_scene_suspicion_label: Label = null
+var _large_scene_anger_label: Label = null
 var _frame_resize_progress: float = 1.0:
 	set(value):
 		_frame_resize_progress = clampf(value, 0.0, 1.0)
@@ -219,22 +244,25 @@ func _ready() -> void:
 	_create_mouse_tooltip()
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
+	_scene_image_texture_seen = scene_image.texture
+	_create_large_scene_hud()
 
 	# Make sure we start at the canonical default size — defensive in case
 	# the .tscn ever drifts from DEFAULT_FRAME_SIZE.
 	scene_image.custom_minimum_size = DEFAULT_FRAME_SIZE
+	_frame_chrome_size = _compute_frame_chrome_size()
 
 	# Cache FrameOuter's editor-set minimum width as the "default" we
 	# animate back to. Unlike the scene image, we don't hardcode this
 	# constant — the .tscn is the source of truth so it can be tweaked
 	# in the editor without touching code.
-	_default_frame_outer_width = frame_outer.custom_minimum_size.x
+	_default_frame_outer_width = _outer_width_for_frame_size(DEFAULT_FRAME_SIZE)
 	_frame_size_start = scene_image.custom_minimum_size
 	_frame_size_target = scene_image.custom_minimum_size
 	_frame_outer_width_start = _default_frame_outer_width
 	_frame_outer_width_target = _default_frame_outer_width
-	_frame_visual_size_start = scene_image.custom_minimum_size
-	_frame_visual_size_target = scene_image.custom_minimum_size
+	_frame_visual_size_start = _target_frame_visual_size(scene_image.custom_minimum_size, _default_frame_outer_width)
+	_frame_visual_size_target = _frame_visual_size_start
 
 	_load_locations()
 
@@ -250,6 +278,7 @@ func _ready() -> void:
 
 	_apply_brightness(GameState.brightness_value)
 	_apply_scanlines_enabled(GameState.scanlines_enabled)
+	_update_large_scene_hud_visibility()
 	_refresh_hud()
 	var intro_autoload: Node = get_node_or_null("/root/IntroTransition")
 	var debug_jump := {}
@@ -264,8 +293,13 @@ func _ready() -> void:
 	if not debug_jump.is_empty():
 		_debug_set_phase_for_number(int(debug_jump.get("number", 1)))
 	_refresh_hud()
-	_show_selection_screen()
-	if not debug_jump.is_empty():
+	if should_start_intro_sequence:
+		_intro_sequence_enabled = true
+		_open_intro_current_step(true)
+		if should_play_intro_wipe:
+			call_deferred("_play_intro_wipe")
+	elif not debug_jump.is_empty():
+		_show_selection_screen()
 		call_deferred(
 			"_debug_jump_for_phase_number",
 			int(debug_jump.get("number", 1)),
@@ -273,10 +307,16 @@ func _ready() -> void:
 			bool(debug_jump.get("ctrl", false))
 		)
 	elif should_play_intro_wipe:
+		_show_selection_screen()
 		call_deferred("_play_intro_wipe")
-	if should_start_intro_sequence:
-		call_deferred("_start_intro_sequence")
+	else:
+		_show_selection_screen()
 
+
+func _process(_delta: float) -> void:
+	_sync_scene_image_frame_to_texture()
+	if _large_scene_hud_layer != null and _large_scene_hud_layer.visible:
+		_position_large_scene_hud_panels()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -433,20 +473,23 @@ func _start_intro_sequence() -> void:
 		_open_intro_current_step()
 
 
-func _open_intro_current_step() -> void:
+func _open_intro_current_step(open_immediately: bool = false) -> void:
 	if not _intro_sequence_enabled:
 		return
 	var step_def := _intro_current_step_def()
 	if step_def.is_empty():
-		_complete_intro_sequence()
-		return
+		GameState.set_intro_step("exposition")
+		step_def = _intro_current_step_def()
+		if step_def.is_empty():
+			_complete_intro_sequence()
+			return
 
 	_set_phase_for_intro_step(int(step_def.get("phase", GameState.phase)))
 	match String(step_def.get("kind", "")):
 		"dialogue":
-			_open_intro_dialogue_step(step_def)
+			_open_intro_dialogue_step(step_def, open_immediately)
 		"location":
-			_open_intro_location_step(StringName(step_def.get("location_id", &"")))
+			_open_intro_location_step(StringName(step_def.get("location_id", &"")), open_immediately)
 		_:
 			_advance_intro_sequence()
 
@@ -476,7 +519,7 @@ func _set_phase_for_intro_step(phase: int) -> void:
 	_refresh_hud()
 
 
-func _open_intro_dialogue_step(step_def: Dictionary) -> void:
+func _open_intro_dialogue_step(step_def: Dictionary, open_immediately: bool = false) -> void:
 	if load(INTRO_DIALOGUE_SCENE_PATH) == null:
 		push_error("Intro: could not load %s" % INTRO_DIALOGUE_SCENE_PATH)
 		_advance_intro_sequence()
@@ -487,10 +530,13 @@ func _open_intro_dialogue_step(step_def: Dictionary) -> void:
 	loc.display_name = "Intro"
 	loc.scene_path = INTRO_DIALOGUE_SCENE_PATH
 	loc.preview_texture = _load_intro_preview(step_def)
-	_on_location_picked(loc)
+	if open_immediately:
+		_open_location_immediately(loc)
+	else:
+		_on_location_picked(loc)
 
 
-func _open_intro_location_step(location_id: StringName) -> void:
+func _open_intro_location_step(location_id: StringName, open_immediately: bool = false) -> void:
 	var loc := _location_by_id(location_id)
 	if loc == null:
 		push_warning("Intro: LocationData not found for id '%s'." % location_id)
@@ -502,12 +548,34 @@ func _open_intro_location_step(location_id: StringName) -> void:
 		intro_loc.display_name = loc.display_name
 		intro_loc.description = loc.description
 		intro_loc.scene_path = loc.scene_path
-		intro_loc.preview_texture = load("res://assets/textures/backgrounds/scene_placeholder.png")
+		var preview_path := "res://assets/textures/backgrounds/factory_lights.png"
+		if location_id == &"store":
+			preview_path = "res://assets/textures/backgrounds/ed_shop.png"
+		intro_loc.preview_texture = load(preview_path)
 		intro_loc.frame_size = DEFAULT_FRAME_SIZE
 		intro_loc.frame_outer_width = _default_frame_outer_width
-		_on_location_picked(intro_loc)
+		if open_immediately:
+			_open_location_immediately(intro_loc)
+		else:
+			_on_location_picked(intro_loc)
 		return
-	_on_location_picked(loc)
+	if open_immediately:
+		_open_location_immediately(loc)
+	else:
+		_on_location_picked(loc)
+
+
+func _open_location_immediately(loc: LocationData) -> void:
+	var packed := _load_location_scene(loc)
+	if packed == null:
+		_log("ERROR: could not load %s" % loc.scene_path)
+		return
+	_log("[b]-> %s[/b]" % loc.display_name)
+	_apply_location_pick_swap(loc, packed, false, false)
+	if _uses_exact_frame_size(loc):
+		_set_frame_size_immediate_exact(_location_frame_size(loc), _location_frame_outer_width(loc))
+	else:
+		_set_frame_size_immediate(_location_frame_size(loc), _location_frame_outer_width(loc))
 
 
 func _location_by_id(location_id: StringName) -> LocationData:
@@ -523,7 +591,16 @@ func _load_intro_preview(step_def: Dictionary) -> Texture2D:
 		return PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 	if not ResourceLoader.exists(path):
 		return PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
-	return load(path) as Texture2D
+	var tex := load(path) as Texture2D
+	if tex == null:
+		return PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
+	if step_def.has("preview_region"):
+		var atlas := AtlasTexture.new()
+		atlas.atlas = tex
+		atlas.region = step_def["preview_region"]
+		atlas.filter_clip = true
+		return atlas
+	return tex
 
 
 func _advance_intro_sequence() -> void:
@@ -546,6 +623,20 @@ func _complete_intro_sequence() -> void:
 	DayCycle.nightly_stress_test_completed = false
 	GameState.reset_daily_purchases()
 	_show_selection_screen()
+
+
+func is_intro_sequence_location_active(location_id: StringName) -> bool:
+	return _intro_sequence_enabled and _current_location_id == location_id
+
+
+func restart_intro_current_step() -> void:
+	if not _intro_sequence_enabled:
+		return
+	_cancel_active_transitions()
+	_clear_current_location()
+	_current_location_fullscreen = false
+	_current_location_id = &""
+	_open_intro_current_step(true)
 
 
 func _debug_give_all_items() -> void:
@@ -582,8 +673,23 @@ func _load_locations() -> void:
 		var res: LocationData = load(path)
 		if res:
 			_locations.append(res)
+			if res.fullscreen_scene:
+				_load_location_scene(res)
 		else:
 			push_warning("Failed to load location resource: %s" % path)
+
+
+func _load_location_scene(loc: LocationData) -> PackedScene:
+	if loc == null:
+		return null
+	if loc.scene_path.is_empty():
+		return null
+	if _location_scene_cache.has(loc.scene_path):
+		return _location_scene_cache[loc.scene_path]
+	var packed: PackedScene = load(loc.scene_path)
+	if packed != null:
+		_location_scene_cache[loc.scene_path] = packed
+	return packed
 
 
 # --- HUD ---
@@ -594,6 +700,140 @@ func _refresh_hud() -> void:
 	money_label.text = "$%d" % GameState.money
 	suspicion_label.text = str(GameState.suspicion)
 	anger_label.text = str(GameState.anger)
+	if _large_scene_day_label != null:
+		_large_scene_day_label.text = "DAY %d" % GameState.day
+	if _large_scene_phase_label != null:
+		_large_scene_phase_label.text = DayCycle.phase_name(GameState.phase).to_upper()
+	if _large_scene_money_label != null:
+		_large_scene_money_label.text = "$%d" % GameState.money
+	if _large_scene_suspicion_label != null:
+		_large_scene_suspicion_label.text = "SUSPICION\n%d" % GameState.suspicion
+	if _large_scene_anger_label != null:
+		_large_scene_anger_label.text = "ANGER %d" % GameState.anger
+
+
+func _create_large_scene_hud() -> void:
+	_large_scene_hud_layer = Control.new()
+	_large_scene_hud_layer.name = "LargeSceneHUDLayer"
+	_large_scene_hud_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_large_scene_hud_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_large_scene_hud_layer.z_index = 50
+	add_child(_large_scene_hud_layer)
+
+	_large_scene_left_panel = _make_large_scene_hud_panel("LargeSceneLeftHUD", true)
+	_large_scene_hud_layer.add_child(_large_scene_left_panel)
+
+	var left_box := _make_large_scene_hud_vbox(_large_scene_left_panel)
+	_large_scene_day_label = _make_large_scene_hud_label("DAY 1", &"HUDStat")
+	left_box.add_child(_large_scene_day_label)
+	left_box.add_child(_make_large_scene_hud_divider())
+	_large_scene_phase_label = _make_large_scene_hud_label("MORNING", &"HUDStat")
+	left_box.add_child(_large_scene_phase_label)
+	left_box.add_child(_make_large_scene_hud_divider())
+	_large_scene_money_label = _make_large_scene_hud_label("$0", &"HUDStat")
+	left_box.add_child(_large_scene_money_label)
+
+	_large_scene_right_panel = _make_large_scene_hud_panel("LargeSceneRightHUD", false)
+	_large_scene_hud_layer.add_child(_large_scene_right_panel)
+
+	var right_box := _make_large_scene_hud_vbox(_large_scene_right_panel)
+	_large_scene_suspicion_label = _make_large_scene_hud_label("SUSPICION\n0", &"HUDStat")
+	_large_scene_suspicion_label.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_SUSPICION_FONT_SIZE)
+	right_box.add_child(_large_scene_suspicion_label)
+	right_box.add_child(_make_large_scene_hud_divider())
+	_large_scene_anger_label = _make_large_scene_hud_label("ANGER 0", &"HUDStat")
+	right_box.add_child(_large_scene_anger_label)
+
+	_refresh_hud()
+
+
+func _make_large_scene_hud_panel(node_name: String, left_anchor: bool) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.name = node_name
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.theme_type_variation = &"HUDPanel"
+	if left_anchor:
+		panel.anchor_left = 0.0
+		panel.anchor_right = 0.0
+	else:
+		panel.anchor_left = 1.0
+		panel.anchor_right = 1.0
+	panel.anchor_top = 0.0
+	panel.anchor_bottom = 0.0
+	return panel
+
+
+func _make_large_scene_hud_vbox(panel: PanelContainer) -> VBoxContainer:
+	var margin := MarginContainer.new()
+	margin.name = "Margin"
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.name = "Stats"
+	box.add_theme_constant_override("separation", 8)
+	margin.add_child(box)
+	return box
+
+
+func _make_large_scene_hud_label(label_text: String, variation: StringName) -> Label:
+	var label := Label.new()
+	label.text = label_text
+	label.theme_type_variation = variation
+	label.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	return label
+
+
+func _make_large_scene_hud_divider() -> PanelContainer:
+	var divider := PanelContainer.new()
+	divider.custom_minimum_size = Vector2(104.0, 3.0)
+	divider.theme_type_variation = &"PanelDivider"
+	return divider
+
+
+func _update_large_scene_hud_visibility() -> void:
+	if hud_bar == null or _large_scene_hud_layer == null:
+		return
+	var use_large_hud := _target_or_current_frame_size().y > LARGE_SCENE_HUD_FRAME_HEIGHT_THRESHOLD
+	hud_bar.visible = not use_large_hud
+	_large_scene_hud_layer.visible = use_large_hud
+	if use_large_hud:
+		var parent_container := hud_bar.get_parent() as Container
+		if parent_container != null:
+			parent_container.queue_sort()
+		_position_large_scene_hud_panels()
+		call_deferred("_position_large_scene_hud_panels")
+
+
+func _position_large_scene_hud_panels() -> void:
+	if _large_scene_left_panel == null or _large_scene_right_panel == null:
+		return
+	var viewport_width := get_viewport_rect().size.x
+	var image_rect := _current_scene_image_global_rect()
+	var left_space := maxf(0.0, image_rect.position.x)
+	var right_space := maxf(0.0, viewport_width - image_rect.end.x)
+	var left_outer_gap := _large_scene_hud_outer_gap(left_space)
+	var right_outer_gap := _large_scene_hud_outer_gap(right_space)
+
+	_large_scene_left_panel.offset_left = left_outer_gap
+	_large_scene_left_panel.offset_top = LARGE_SCENE_HUD_MARGIN.y
+	_large_scene_left_panel.offset_right = left_outer_gap + LARGE_SCENE_HUD_PANEL_WIDTH
+	_large_scene_left_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT
+
+	_large_scene_right_panel.offset_left = -right_outer_gap - LARGE_SCENE_HUD_PANEL_WIDTH
+	_large_scene_right_panel.offset_top = LARGE_SCENE_HUD_MARGIN.y
+	_large_scene_right_panel.offset_right = -right_outer_gap
+	_large_scene_right_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
+
+
+func _large_scene_hud_outer_gap(side_space: float) -> float:
+	var available_gap := maxf(0.0, side_space - LARGE_SCENE_HUD_PANEL_WIDTH)
+	return minf(LARGE_SCENE_HUD_MARGIN.x * 0.5, available_gap * 0.5)
 
 
 func _on_money_changed(_v: int) -> void:    _refresh_hud()
@@ -795,7 +1035,7 @@ func _on_location_picked(loc: LocationData) -> void:
 	# Validate the scene up-front so we can bail before starting the wipe
 	# if something's wrong. The actual instantiation + swap-in happens at
 	# the midpoint so the player doesn't see the location UI snap in.
-	var packed: PackedScene = load(loc.scene_path)
+	var packed := _load_location_scene(loc)
 	if packed == null:
 		_log("ERROR: could not load %s" % loc.scene_path)
 		return
@@ -808,7 +1048,10 @@ func _on_location_picked(loc: LocationData) -> void:
 			_play_expanding_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed, false))
 	else:
 		if _current_location_fullscreen:
-			_set_frame_size_immediate(_location_frame_size(loc), _location_frame_outer_width(loc))
+			if _uses_exact_frame_size(loc):
+				_set_frame_size_immediate_exact(_location_frame_size(loc), _location_frame_outer_width(loc))
+			else:
+				_set_frame_size_immediate(_location_frame_size(loc), _location_frame_outer_width(loc))
 			_play_shrinking_fullscreen_transition_after_layout(
 				Callable(),
 				_apply_location_pick_swap.bind(loc, packed, false, false)
@@ -827,12 +1070,16 @@ func _apply_location_pick_swap(
 ) -> void:
 	_clear_current_location()
 	_current_location_node = packed.instantiate()
+	if _intro_sequence_enabled:
+		_current_location_node.set_meta("intro_sequence_location", true)
+		_current_location_node.set_meta("intro_step", GameState.intro_step)
+		_current_location_node.set_meta("intro_location_id", String(loc.id))
 	_current_location_fullscreen = loc.fullscreen_scene
 	_current_location_id = loc.id
 	location_host.add_child(_current_location_node)
 
 	if _current_location_node.has_signal("finished"):
-		_current_location_node.finished.connect(_on_location_finished)
+		_current_location_node.finished.connect(_on_location_finished.bind(_current_location_node))
 	else:
 		push_warning("Location %s did not expose a `finished` signal." % loc.display_name)
 
@@ -856,7 +1103,7 @@ func _apply_location_pick_swap(
 	# the .tscn default", which we cached at _ready.
 	var target_outer: float = _location_frame_outer_width(loc)
 	if animate_frame:
-		_animate_frame_to(target, target_outer)
+		_animate_frame_to(target, target_outer, ANIM_DURATION, not _uses_exact_frame_size(loc))
 
 
 func _apply_fullscreen_location_pick_swap(
@@ -874,7 +1121,88 @@ func _location_frame_size(loc: LocationData) -> Vector2:
 
 
 func _location_frame_outer_width(loc: LocationData) -> float:
-	return loc.frame_outer_width if loc.frame_outer_width > 0.0 else _default_frame_outer_width
+	var frame_size := _location_frame_size(loc)
+	var requested_width := loc.frame_outer_width if loc.frame_outer_width > 0.0 else _default_frame_outer_width
+	return maxf(requested_width, _outer_width_for_frame_size(frame_size))
+
+
+func _uses_exact_frame_size(loc: LocationData) -> bool:
+	return loc != null and EXACT_FRAME_LOCATION_IDS.has(loc.id)
+
+
+func _sync_scene_image_frame_to_texture() -> void:
+	if scene_image == null or frame_outer == null or scene_image.texture == _scene_image_texture_seen:
+		return
+	_scene_image_texture_seen = scene_image.texture
+	var size_target: Vector2 = _frame_size_target if _is_frame_resize_playing() else scene_image.custom_minimum_size
+	var normalized_size := _normalized_frame_size_for_texture(size_target, scene_image.texture)
+	var outer_target := maxf(
+		_frame_outer_width_target if _is_frame_resize_playing() else frame_outer.custom_minimum_size.x,
+		_outer_width_for_frame_size(normalized_size)
+	)
+	if normalized_size.is_equal_approx(size_target) \
+			and is_equal_approx(frame_outer.custom_minimum_size.x, outer_target):
+		return
+	_animate_frame_to(normalized_size, outer_target)
+
+
+func _normalized_frame_size_for_texture(requested_size: Vector2, texture: Texture2D) -> Vector2:
+	var size_value := requested_size if requested_size != Vector2.ZERO else DEFAULT_FRAME_SIZE
+	if texture == null:
+		return size_value
+	var texture_size := _texture_display_source_size(texture)
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return size_value
+	if _is_standard_scene_texture_size(texture_size):
+		return texture_size * STANDARD_SCENE_TEXTURE_SCALE
+
+	var texture_aspect := texture_size.x / texture_size.y
+	var size_aspect := size_value.x / size_value.y if size_value.y > 0.0 else texture_aspect
+	if is_equal_approx(size_aspect, texture_aspect):
+		return size_value
+
+	var width_limited := Vector2(size_value.x, size_value.x / texture_aspect)
+	if width_limited.y <= size_value.y:
+		return width_limited
+	return Vector2(size_value.y * texture_aspect, size_value.y)
+
+
+func _is_standard_scene_texture_size(texture_size: Vector2) -> bool:
+	return is_equal_approx(texture_size.x, STANDARD_SCENE_TEXTURE_SIZE.x) \
+		and is_equal_approx(texture_size.y, STANDARD_SCENE_TEXTURE_SIZE.y)
+
+
+func _texture_display_source_size(texture: Texture2D) -> Vector2:
+	if texture is AtlasTexture:
+		var atlas_texture := texture as AtlasTexture
+		if atlas_texture.region.size != Vector2.ZERO:
+			return atlas_texture.region.size
+	return texture.get_size()
+
+
+func _outer_width_for_frame_size(frame_size: Vector2) -> float:
+	return frame_size.x + _frame_chrome_size.x
+
+
+func _compute_frame_chrome_size() -> Vector2:
+	var chrome := Vector2.ZERO
+	chrome += _panel_style_minimum_size(frame_outer)
+	var inset_dark := frame_outer.get_node_or_null("FrameInsetDark") as PanelContainer
+	chrome += _panel_style_minimum_size(inset_dark)
+	var inset_mid: PanelContainer = null
+	if inset_dark != null:
+		inset_mid = inset_dark.get_node_or_null("FrameInsetMid") as PanelContainer
+	chrome += _panel_style_minimum_size(inset_mid)
+	return chrome
+
+
+func _panel_style_minimum_size(panel: PanelContainer) -> Vector2:
+	if panel == null:
+		return Vector2.ZERO
+	var style := panel.get_theme_stylebox("panel")
+	if style == null:
+		return Vector2.ZERO
+	return style.get_minimum_size()
 
 
 func _clear_current_location() -> void:
@@ -944,10 +1272,14 @@ func _animate_frame_outer_width_to(target_width: float) -> void:
 func _animate_frame_to(
 		target_size: Vector2,
 		target_outer_width: float,
-		duration: float = ANIM_DURATION
+		duration: float = ANIM_DURATION,
+		normalize_texture_size: bool = true
 ) -> void:
 	if scene_image == null or frame_outer == null:
 		return
+	if normalize_texture_size:
+		target_size = _normalized_frame_size_for_texture(target_size, scene_image.texture)
+	target_outer_width = maxf(target_outer_width, _outer_width_for_frame_size(target_size))
 
 	if _frame_outer_tween and _frame_outer_tween.is_valid():
 		_frame_outer_tween.kill()
@@ -965,14 +1297,32 @@ func _animate_frame_to(
 	_frame_visual_size_start = _current_frame_visual_size()
 	_frame_visual_size_target = _target_frame_visual_size(target_size, target_outer_width)
 	_frame_resize_progress = 0.0
+	_update_large_scene_hud_visibility()
 
 	_frame_size_tween = create_tween()
 	_frame_size_tween.set_trans(ANIM_TRANS)
 	_frame_size_tween.set_ease(ANIM_EASE)
 	_frame_size_tween.tween_property(self, "_frame_resize_progress", 1.0, maxf(0.01, duration))
+	_scene_image_texture_seen = scene_image.texture
 
 
 func _set_frame_size_immediate(size_value: Vector2, outer_width: float) -> void:
+	_set_frame_size_immediate_internal(size_value, outer_width, true)
+
+
+func _set_frame_size_immediate_exact(size_value: Vector2, outer_width: float) -> void:
+	_set_frame_size_immediate_internal(size_value, outer_width, false)
+
+
+func _set_frame_size_immediate_internal(
+		size_value: Vector2,
+		outer_width: float,
+		normalize_texture_size: bool
+) -> void:
+	if normalize_texture_size:
+		size_value = _normalized_frame_size_for_texture(size_value, scene_image.texture)
+	outer_width = maxf(outer_width, _outer_width_for_frame_size(size_value))
+
 	if _frame_size_tween and _frame_size_tween.is_valid():
 		_frame_size_tween.kill()
 	if _frame_outer_tween and _frame_outer_tween.is_valid():
@@ -986,24 +1336,37 @@ func _set_frame_size_immediate(size_value: Vector2, outer_width: float) -> void:
 	_frame_visual_size_target = _frame_visual_size_start
 	_frame_resize_progress = 1.0
 	_apply_frame_resize_progress()
+	_scene_image_texture_seen = scene_image.texture
+	_update_large_scene_hud_visibility()
 
 
 func _apply_frame_resize_progress() -> void:
 	if scene_image == null or frame_outer == null:
 		return
 
-	scene_image.custom_minimum_size = _frame_size_start.lerp(_frame_size_target, _frame_resize_progress)
-	frame_outer.custom_minimum_size.x = lerpf(
+	var frame_size := _frame_size_start.lerp(_frame_size_target, _frame_resize_progress)
+	var outer_width := lerpf(
 		_frame_outer_width_start,
 		_frame_outer_width_target,
 		_frame_resize_progress
 	)
+	scene_image.custom_minimum_size = frame_size
+	frame_outer.custom_minimum_size = Vector2(outer_width, frame_size.y + _frame_chrome_size.y)
 	frame_outer.position = _center_resize_offset()
 	_queue_frame_layout()
+	_update_large_scene_hud_visibility()
 
 
 func _is_frame_resize_playing() -> bool:
 	return _frame_size_tween != null and _frame_size_tween.is_valid()
+
+
+func _target_or_current_frame_size() -> Vector2:
+	if _frame_size_target != Vector2.ZERO:
+		return _frame_size_target
+	if scene_image != null:
+		return scene_image.custom_minimum_size
+	return DEFAULT_FRAME_SIZE
 
 
 func _queue_frame_layout() -> void:
@@ -1033,7 +1396,7 @@ func _target_frame_visual_size(target_size: Vector2, target_outer_width: float) 
 	var current_size := _current_frame_visual_size()
 	return Vector2(
 		target_outer_width,
-		target_size.y if target_size.y > 0.0 else current_size.y
+		target_size.y + _frame_chrome_size.y if target_size.y > 0.0 else current_size.y
 	)
 
 
@@ -1482,7 +1845,9 @@ func _cancel_active_transitions() -> void:
 
 # --- result handling ---
 
-func _on_location_finished(result: Dictionary) -> void:
+func _on_location_finished(result: Dictionary, source: Node = null) -> void:
+	if source != null and source != _current_location_node:
+		return
 	if _intro_sequence_enabled:
 		_apply_result(result)
 		_advance_intro_sequence()
@@ -1577,14 +1942,21 @@ func _log(text: String) -> void:
 ##
 ## When the X-key toggle is active, this will load the "2" variant of the
 ## texture (e.g., Health.png -> Health2.png) instead of the base texture.
-func show_teacher_portrait(tex: Texture2D, character_name: String = "", subject: String = "") -> void:
+func show_teacher_portrait(
+		tex: Texture2D,
+		character_name: String = "",
+		subject: String = "",
+		allow_alt_variant: bool = true
+) -> void:
 	if tex == null:
 		hide_teacher_portrait()
 		return
 
+	_reset_teacher_portrait_layout()
 	# Record the base (non-"2") path so we can flip variants on the X toggle.
 	# tex.resource_path is the imported texture's res:// path.
 	_portrait_base_path = tex.resource_path
+	_portrait_allows_alt_variant = allow_alt_variant
 
 	teacher_name_label.text = character_name
 	teacher_subject_label.text = subject.to_upper()
@@ -1595,11 +1967,81 @@ func show_teacher_portrait(tex: Texture2D, character_name: String = "", subject:
 	_refresh_teacher_portrait_variant()
 
 
+func show_bottom_center_portrait(
+		tex: Texture2D,
+		scale_multiplier: float = 1.0,
+		character_name: String = "",
+		subject: String = ""
+) -> void:
+	if tex == null:
+		hide_teacher_portrait()
+		return
+
+	_portrait_base_path = tex.resource_path
+	_portrait_allows_alt_variant = false
+	teacher_name_label.text = character_name
+	teacher_subject_label.text = subject.to_upper()
+	teacher_tag.visible = character_name != ""
+	teacher_portrait.texture = tex
+	teacher_portrait.visible = true
+	teacher_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	teacher_portrait.stretch_mode = TextureRect.STRETCH_SCALE
+
+	var portrait_scale := _current_scene_texture_display_scale() * maxf(0.01, scale_multiplier)
+	var portrait_size := tex.get_size() * portrait_scale
+	var scene_display_size := _current_scene_display_size()
+	var max_portrait_height := scene_display_size.y * maxf(0.01, scale_multiplier)
+	if max_portrait_height > 0.0 and portrait_size.y > max_portrait_height:
+		portrait_size *= max_portrait_height / portrait_size.y
+	teacher_portrait.anchor_left = 0.5
+	teacher_portrait.anchor_right = 0.5
+	teacher_portrait.anchor_top = 1.0
+	teacher_portrait.anchor_bottom = 1.0
+	teacher_portrait.offset_left = -portrait_size.x * 0.5
+	teacher_portrait.offset_right = portrait_size.x * 0.5
+	teacher_portrait.offset_top = -portrait_size.y
+	teacher_portrait.offset_bottom = 0.0
+
+
+func _current_scene_texture_display_scale() -> float:
+	if scene_image == null or scene_image.texture == null:
+		return 1.0
+	var texture_size := _texture_display_source_size(scene_image.texture)
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return 1.0
+	var display_size := _current_scene_display_size()
+	if display_size.x <= 0.0 or display_size.y <= 0.0:
+		return 1.0
+	return minf(display_size.x / texture_size.x, display_size.y / texture_size.y)
+
+
+func _current_scene_display_size() -> Vector2:
+	if scene_image == null:
+		return DEFAULT_FRAME_SIZE
+	if scene_image.texture == null:
+		return scene_image.custom_minimum_size
+	return _normalized_frame_size_for_texture(scene_image.custom_minimum_size, scene_image.texture)
+
+
 func hide_teacher_portrait() -> void:
 	teacher_portrait.visible = false
 	teacher_portrait.texture = null
 	teacher_tag.visible = false
 	_portrait_base_path = ""
+	_portrait_allows_alt_variant = true
+	_reset_teacher_portrait_layout()
+
+
+func _reset_teacher_portrait_layout() -> void:
+	if teacher_portrait == null:
+		return
+	teacher_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	teacher_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	teacher_portrait.set_anchors_preset(Control.PRESET_FULL_RECT)
+	teacher_portrait.offset_left = 0.0
+	teacher_portrait.offset_top = 0.0
+	teacher_portrait.offset_right = 0.0
+	teacher_portrait.offset_bottom = 0.0
 
 
 ## Re-applies the current teacher portrait texture based on _alt_portrait.
@@ -1611,8 +2053,8 @@ func _refresh_teacher_portrait_variant() -> void:
 		return
 
 	var path_to_load: String = _portrait_base_path
-	if _alt_portrait:
-		path_to_load = _portrait_base_path.get_basename() + "2." + _portrait_base_path.get_extension()
+	if _alt_portrait and _portrait_allows_alt_variant:
+		path_to_load = _portrait_alt_path(_portrait_base_path)
 		if not ResourceLoader.exists(path_to_load):
 			# No "2" variant on disk - silently fall back to the base.
 			path_to_load = _portrait_base_path
@@ -1620,6 +2062,12 @@ func _refresh_teacher_portrait_variant() -> void:
 	var tex: Texture2D = load(path_to_load)
 	if tex:
 		teacher_portrait.texture = tex
+
+
+func _portrait_alt_path(base_path: String) -> String:
+	if base_path.get_file().begins_with("History"):
+		return base_path.get_base_dir().path_join("History2.%s" % base_path.get_extension())
+	return base_path.get_basename() + "2." + base_path.get_extension()
 
 
 ## Show a button in the bottom-right of the framed picture, mirroring the

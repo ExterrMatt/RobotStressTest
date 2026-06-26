@@ -60,6 +60,7 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @export_group("Night Timer")
 @export var night_duration_seconds: float = 60.0
 @export var intro_tutorial_duration_seconds: float = 30.0
+@export var intro_head_interaction_unlock_remaining_seconds: float = 5.0
 @export var timer_label_text: String = "Time"
 
 @export_group("Electricity Meter")
@@ -70,6 +71,7 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @export var electricity_lights_off_decay_multiplier: float = 2.0
 @export var electricity_wake_threshold_percent: float = 130.0
 @export var electricity_meter_visual_max_percent: float = 105.0
+@export var electricity_low_end_score_threshold: float = 25.0
 
 @export_group("Darkness Effects")
 @export var screw_repair_lights_off_duration_multiplier: float = 2.0
@@ -114,7 +116,8 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @export var gas_high_failure_text: String = "She woke up because you let the gas pressure rise too high."
 @export var gas_low_failure_text: String = "She woke up because you let the gas pressure fall too low."
 @export var electricity_failure_text: String = "She woke up because you over supplied her with electricity."
-@export var uncle_failure_text: String = "Your uncle caught you."
+@export var uncle_failure_text: String = "Your uncle caught you. Click the lights and shut off the generator."
+@export var electricity_low_end_failure_text: String = "You did not supply enough electricity to the robot during the stress test. Pull on the generator's pull cord to generate electricity."
 @export var timeout_failure_text: String = "You ran out of time."
 @export var wake_button_failure_text: String = "She woke up."
 
@@ -162,6 +165,7 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @onready var failure_title_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureTitleLabel
 @onready var failure_reason_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureReasonLabel
 @onready var failure_continue_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureContinueButton
+@onready var end_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton
 
 var _zoom_level: int = ZOOM_LEVEL_FIRST
 var _current_zoom_region: Control = null
@@ -194,6 +198,8 @@ var _dragging_gas_valve: bool = false
 var _pending_failure_registers_wake: bool = false
 var _failure_result_emitted: bool = false
 var _failure_transition_playing: bool = false
+var _intro_failure_restart_pending: bool = false
+var _intro_head_interaction_unlocked: bool = true
 var _summary_result: Dictionary = {}
 var _summary_registers_completion: bool = false
 var _summary_success: bool = false
@@ -253,6 +259,7 @@ func _process(delta: float) -> void:
 
 	var previous_elapsed := _night_elapsed
 	_night_elapsed += delta
+	_update_intro_head_interaction_gate()
 	_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * delta)
 	if _electricity_percent <= 0.0 and _emergency_power_shutoff_pressed:
 		_set_emergency_power_shutoff_pressed(false)
@@ -1092,6 +1099,10 @@ func _is_loud_night_ambient(path: String) -> bool:
 
 func _initialize_stress_systems() -> void:
 	_rng.randomize()
+	if end_button != null:
+		var show_end_button := not _is_intro_tutorial_stress_test()
+		end_button.visible = show_end_button
+		end_button.disabled = not show_end_button
 	_night_elapsed = 0.0
 	_night_finished = false
 	_play_random_night_ambient()
@@ -1115,6 +1126,8 @@ func _initialize_stress_systems() -> void:
 	_pending_failure_registers_wake = false
 	_failure_result_emitted = false
 	_failure_transition_playing = false
+	_intro_failure_restart_pending = false
+	_intro_head_interaction_unlocked = not _is_intro_tutorial_stress_test()
 	_summary_result = {}
 	_summary_registers_completion = false
 	_electricity_target_elapsed = 0.0
@@ -1148,8 +1161,10 @@ func _initialize_stress_systems() -> void:
 		failure_title_label.text = summary_title_text
 	if failure_continue_button != null:
 		failure_continue_button.disabled = false
+		failure_continue_button.text = "CONTINUE"
 
 	_set_stress_test_interaction_enabled(true)
+	_update_intro_head_interaction_gate()
 	_update_generator_power_sound()
 	set_process(true)
 	_refresh_stress_hud()
@@ -1726,18 +1741,14 @@ func _complete_stress_test_success() -> void:
 
 
 func _handle_night_timer_finished() -> void:
-	if _is_robot_ready_for_normal_timer_end():
-		_complete_stress_test_success()
+	if _is_intro_tutorial_stress_test():
+		_finish_intro_tutorial_stress_test()
 		return
-	_fail_stress_test(timeout_failure_text, false)
-
-
-func _is_robot_ready_for_normal_timer_end() -> bool:
-	if stress_test_robot != null \
-			and stress_test_robot.has_method("is_in_default_pose") \
-			and not bool(stress_test_robot.call("is_in_default_pose")):
-		return false
-	return not _is_screw_repair_animation_active()
+	var electricity := _electricity_summary()
+	if float(electricity.get("score", 0.0)) < electricity_low_end_score_threshold:
+		_fail_stress_test(electricity_low_end_failure_text, false)
+		return
+	_complete_stress_test_success()
 
 
 func _is_screw_repair_animation_active() -> bool:
@@ -1755,7 +1766,7 @@ func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 	if _night_finished:
 		return
 	if _is_intro_tutorial_stress_test():
-		_finish_intro_tutorial_stress_test()
+		_begin_intro_tutorial_failure(reason)
 		return
 	_begin_stress_test_summary(
 		false,
@@ -1768,6 +1779,23 @@ func _fail_stress_test(reason: String, registers_wake: bool) -> void:
 			"skip_advance": false,
 		},
 		registers_wake,
+		false
+	)
+
+
+func _begin_intro_tutorial_failure(reason: String) -> void:
+	_intro_failure_restart_pending = true
+	_begin_stress_test_summary(
+		false,
+		reason,
+		{
+			"money_delta": 0,
+			"suspicion_delta": 0,
+			"anger_delta": 0,
+			"ingredients": {},
+			"skip_advance": true,
+		},
+		false,
 		false
 	)
 
@@ -1828,12 +1856,17 @@ func _begin_stress_test_summary(
 
 func _update_summary_text() -> void:
 	if failure_title_label != null:
-		failure_title_label.text = summary_title_text
+		failure_title_label.text = "You failed" if _intro_failure_restart_pending else summary_title_text
 	if failure_reason_label != null:
 		failure_reason_label.text = _build_summary_text()
+	if failure_continue_button != null:
+		failure_continue_button.text = "RETRY" if _intro_failure_restart_pending else "CONTINUE"
 
 
 func _build_summary_text() -> String:
+	if _intro_failure_restart_pending:
+		return _summary_reason if not _summary_reason.is_empty() else "The stress test has to be repeated."
+
 	var lines: Array[String] = []
 	if _summary_success:
 		lines.append("Result: %s" % summary_success_text)
@@ -1946,6 +1979,8 @@ func _finish_stress_test_summary() -> void:
 
 
 func _on_end_button_pressed() -> void:
+	if _is_intro_tutorial_stress_test():
+		return
 	_complete_stress_test_success()
 
 
@@ -1966,12 +2001,40 @@ func _on_give_up_button_pressed() -> void:
 func _on_failure_continue_button_pressed() -> void:
 	if _failure_transition_playing:
 		return
+	if _intro_failure_restart_pending:
+		_restart_intro_tutorial_stress_test()
+		return
 	_finish_stress_test_summary()
+
+
+func _restart_intro_tutorial_stress_test() -> void:
+	_intro_failure_restart_pending = false
+	get_tree().paused = false
+	var main := _main_controller()
+	if main != null and main.has_method("restart_intro_current_step"):
+		main.call("restart_intro_current_step")
+	else:
+		get_tree().reload_current_scene()
+
+
+func _update_intro_head_interaction_gate() -> void:
+	if not _is_intro_tutorial_stress_test():
+		return
+	if _intro_head_interaction_unlocked:
+		return
+	var remaining := maxf(0.0, night_duration_seconds - _night_elapsed)
+	if remaining > maxf(0.0, intro_head_interaction_unlock_remaining_seconds):
+		return
+	_intro_head_interaction_unlocked = true
+	_set_robot_interaction_enabled(true)
 
 
 func _set_robot_interaction_enabled(value: bool) -> void:
 	if stress_test_robot != null and stress_test_robot.has_method("set_interaction_enabled"):
-		stress_test_robot.call("set_interaction_enabled", value)
+		var enabled := value
+		if _is_intro_tutorial_stress_test():
+			enabled = enabled and _intro_head_interaction_unlocked
+		stress_test_robot.call("set_interaction_enabled", enabled)
 
 
 func _set_stress_test_interaction_enabled(value: bool) -> void:

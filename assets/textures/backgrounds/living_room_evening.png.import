@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bnmcso8hfxfit"
-path="res://.godot/imported/History14.png-ae2d4724df374192cc9a43f70dcab859.ctex"
+uid="uid://jk2e5guv1u7f"
+path="res://.godot/imported/living_room_evening.png-d52ce37c9f719c2614d26fc648928083.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/teachers/History14.png"
-dest_files=["res://.godot/imported/History14.png-ae2d4724df374192cc9a43f70dcab859.ctex"]
+source_file="res://assets/textures/backgrounds/living_room_evening.png"
+dest_files=["res://.godot/imported/living_room_evening.png-d52ce37c9f719c2614d26fc648928083.ctex"]
 
 [params]
 

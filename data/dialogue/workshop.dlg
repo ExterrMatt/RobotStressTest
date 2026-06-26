@@ -9,11 +9,14 @@
 # -----------------------------------------------------------------------------
 
 [intro]
-[i]The workbench is cluttered the way you left it.[/i] \
-[i]Stripped wire, half-bent brackets, a coffee ring on the schematics.[/i]
+[i]The workbench is clean the way you left it.[/i] \
+[i]It's hard to tell if your uncle's been here since last time.[/i]
 
-[i]You can feel the shape of what comes next in your hands.[/i]
+[intro_head]
+[i]You prepare to lay the stolen head segments across the bench.[/i] \
+[i]It should be easy enough to put her together. Like a weird jigsaw puzzle.[/i]
 
+[i]Thoughts: Hmm, I called it a her... Can a robot be a 'her'?[/i]
 
 # -----------------------------------------------------------------------------
 # TINKER - placeholder flavor when the player picks the tinker option.
@@ -21,11 +24,8 @@
 # -----------------------------------------------------------------------------
 
 [tinker]
-[i]You poke at a junction box for a while.[/i] \
+[i]You work on one of your uncle's many abandoned side projects. Little knickknacks and gadgets...[/i] \
 [i]Nothing useful happens.[/i]
-
-[i]Still — it's nice to feel your fingers move.[/i]
-
 
 # -----------------------------------------------------------------------------
 # PROCEED - typed out when the player chooses to commit to a build.
@@ -33,7 +33,7 @@
 # -----------------------------------------------------------------------------
 
 [proceed]
-[i]Right. Time to build.[/i]
+[i]You set down your bag.[/i]
 
 
 # -----------------------------------------------------------------------------

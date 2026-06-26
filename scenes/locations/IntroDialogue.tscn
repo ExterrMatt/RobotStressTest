@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://ca8os21gjca0g"]
 
-[ext_resource type="Script" path="res://scenes/locations/IntroDialogue.gd" id="1"]
+[ext_resource type="Script" uid="uid://dgej6iqfce7ug" path="res://scenes/locations/IntroDialogue.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://b8dlgbox4dlg0" path="res://scenes/ui/DialogueBox.tscn" id="2"]
 
-[node name="IntroDialogue" type="Control"]
+[node name="IntroDialogue" type="Control" unique_id=849574903]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=50802824]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,18 +20,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_bottom = 12
 
-[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBox" type="VBoxContainer" parent="MarginContainer" unique_id=1630349114]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
-[node name="Spacer" type="Control" parent="MarginContainer/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="DialogueBox" parent="MarginContainer/VBox" instance=ExtResource("2")]
+[node name="DialogueBox" parent="MarginContainer/VBox" unique_id=1025240617 instance=ExtResource("2")]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBox" unique_id=504141339]
+layout_mode = 2
+size_flags_vertical = 3

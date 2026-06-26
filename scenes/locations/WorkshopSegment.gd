@@ -22,6 +22,7 @@ const CENTER_ON_GRAB_DURATION: float = 0.05
 var locked: bool = false:
 	set(value):
 		locked = value
+		_set_piece_locks(value)
 		_queue_piece_redraws()
 
 ## Other segments that must be dragged and dropped together with this one.
@@ -160,6 +161,13 @@ func _queue_piece_redraws() -> void:
 	for child in get_children():
 		if child is WorkshopPiece:
 			child.queue_redraw()
+
+
+func _set_piece_locks(value: bool) -> void:
+	for child in get_children():
+		if child is WorkshopPiece:
+			var piece := child as WorkshopPiece
+			piece.locked = value
 
 
 # -----------------------------------------------------------------------------

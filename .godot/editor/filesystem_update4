@@ -16,3 +16,11 @@ res://scenes/locations/WorkshopPiece.gd
 res://scenes/locations/WorkshopSegment.gd
 res://scenes/locations/WorkshopAssemblySlot.gd
 res://scenes/locations/WorkshopMinigame.tscn
+res://scenes/locations/DraggableItem.gd
+res://scenes/locations/WorkInventory.gd
+res://scenes/locations/WorkInventory.tscn
+res://autoload/DayCycle.gd
+res://scenes/ui/MainMenu.gd
+res://scenes/locations/Workshop.gd
+res://scenes/locations/IntroDialogue.tscn
+res://scenes/ui/DialogueBox.gd

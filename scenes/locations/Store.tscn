@@ -164,20 +164,20 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_bottom = 12
 
 [node name="VBox" type="VBoxContainer" parent="MarginContainer" unique_id=345175127]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
+
+[node name="DialogueBox" parent="MarginContainer/VBox" unique_id=1668586574 instance=ExtResource("3_dialogue")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="Spacer" type="Control" parent="MarginContainer/VBox" unique_id=652928884]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
-
-[node name="DialogueBox" parent="MarginContainer/VBox" unique_id=1668586574 instance=ExtResource("3_dialogue")]
-unique_name_in_owner = true
-layout_mode = 2

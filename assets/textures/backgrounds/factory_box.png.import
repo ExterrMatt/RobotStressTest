@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cywnfkso8b87x"
-path="res://.godot/imported/History.png-9d665264dd2839686351a9c2f5c14074.ctex"
+uid="uid://bqjppxruvgpb5"
+path="res://.godot/imported/factory_box.png-8e760e86c06feb6d26c167b659ed7594.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/teachers/History.png"
-dest_files=["res://.godot/imported/History.png-9d665264dd2839686351a9c2f5c14074.ctex"]
+source_file="res://assets/textures/backgrounds/factory_box.png"
+dest_files=["res://.godot/imported/factory_box.png-8e760e86c06feb6d26c167b659ed7594.ctex"]
 
 [params]
 

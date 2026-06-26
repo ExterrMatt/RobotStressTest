@@ -28,11 +28,14 @@ const CHOICE_FONT_SIZE: int = 36
 
 # Gold color for the in-box prompt ("What do you do?"). Matches School.
 const PROMPT_COLOR: String = "#e8c468"
-const SCENE_PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/backgrounds/scene_placeholder.png"
+const FACTORY_LIGHTS_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_lights.png"
+const FACTORY_HALLWAY_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_hallway.png"
+const FACTORY_BOX_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_box.png"
 const WORK_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work.png"
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const WORK_FRAME_OUTER_WIDTH: float = 800.0
+const INTRO_HEAD_BOX_LOOK_PAGE_INDEX: int = 4
 
 ## Two-phase scene flow. The minigame runs in MINIGAME; the completion
 ## screen lives in COMPLETION_PROMPT (typing the gold question) and
@@ -58,6 +61,8 @@ enum WorkPhase {
 @onready var work_inventory: WorkInventory = $WorkInventory
 
 var _scene_phase: WorkPhase = WorkPhase.MINIGAME
+var _intro_work: bool = false
+var _intro_box_open_visual_applied: bool = false
 
 
 func _ready() -> void:
@@ -74,8 +79,10 @@ func _ready() -> void:
 	# Hook the box's finished signal so we can route to the choice phase
 	# once the gold prompt is done typing out.
 	dialogue_box.finished.connect(_on_dialogue_finished)
+	dialogue_box.page_advanced.connect(_on_dialogue_page_advanced)
 
-	if GameState.is_intro_step("work"):
+	_intro_work = _is_intro_work_scene()
+	if _intro_work:
 		_enter_intro_job()
 		return
 
@@ -90,12 +97,12 @@ func _show_work_minigame() -> void:
 	_set_node_visible(work_inventory, true)
 
 	if main != null:
-		if "scene_image" in main:
-			var work_background := load(WORK_BACKGROUND_TEXTURE_PATH) as Texture2D
-			if work_background != null:
-				main.scene_image.texture = work_background
-		if main.has_method("_animate_frame_to"):
-			main._animate_frame_to(WORK_FRAME_SIZE, WORK_FRAME_OUTER_WIDTH)
+		_set_main_scene_image_and_frame(
+			WORK_BACKGROUND_TEXTURE_PATH,
+			WORK_FRAME_SIZE,
+			WORK_FRAME_OUTER_WIDTH
+		)
+		call_deferred("_refresh_work_minigame_scene_image")
 
 	# Hand the furniture layer off to Main so it sits inside the framed picture.
 	if main and main.has_method("show_scene_overlay") and furniture_layer:
@@ -132,18 +139,18 @@ func _show_intro_placeholder() -> void:
 		main.hide_inventory_overlay()
 	if main.has_method("hide_corner_button"):
 		main.hide_corner_button()
-	if "scene_image" in main:
-		var placeholder := load(SCENE_PLACEHOLDER_TEXTURE_PATH) as Texture2D
-		if placeholder != null:
-			main.scene_image.texture = placeholder
-	if main.has_method("_animate_frame_to") and "_default_frame_outer_width" in main:
-		main._animate_frame_to(DEFAULT_DIALOGUE_FRAME_SIZE, main._default_frame_outer_width)
+	_set_main_scene_image_and_frame(
+		FACTORY_LIGHTS_BACKGROUND_TEXTURE_PATH,
+		DEFAULT_DIALOGUE_FRAME_SIZE,
+		_default_main_frame_outer_width(main)
+	)
 
 
 func _on_slots_changed(filled_count: int) -> void:
 	# Show the finish/steal choices only when all four slots are filled.
 	if filled_count >= 4 and work_inventory != null and work_inventory.is_complete():
-		if GameState.is_intro_step("work"):
+		if _is_intro_work_scene():
+			_intro_work = true
 			_enter_intro_head_box()
 			return
 		_enter_completion_screen()
@@ -153,6 +160,15 @@ func _enter_intro_head_box() -> void:
 	if _scene_phase != WorkPhase.MINIGAME:
 		return
 
+	_scene_phase = WorkPhase.INTRO_HEAD_BOX
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("_play_transition_then"):
+		main._play_transition_then(Callable(self, "_apply_intro_head_box"))
+	else:
+		_apply_intro_head_box()
+
+
+func _apply_intro_head_box() -> void:
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("hide_scene_overlay"):
 		main.hide_scene_overlay()
@@ -161,24 +177,90 @@ func _enter_intro_head_box() -> void:
 	if main and main.has_method("hide_corner_button"):
 		main.hide_corner_button()
 	_set_node_visible(color_background, false)
-	if main and "scene_image" in main:
-		var placeholder: Texture2D = load("res://assets/textures/backgrounds/scene_placeholder.png")
-		if placeholder:
-			main.scene_image.texture = placeholder
-	if main and main.has_method("_animate_frame_size_to"):
-		main._animate_frame_size_to(Vector2(900, 225))
+	_set_main_scene_image_and_frame(
+		FACTORY_HALLWAY_BACKGROUND_TEXTURE_PATH,
+		DEFAULT_DIALOGUE_FRAME_SIZE,
+		_default_main_frame_outer_width(main)
+	)
 
 	_scene_phase = WorkPhase.INTRO_HEAD_BOX
+	_intro_box_open_visual_applied = false
 	_set_node_visible(dialogue_box, true)
 	_set_node_visible(choice_grid, false)
 	dialogue_box.play_pages(Dialogue.get_pages("work", "intro_head_box"))
+
+
+func _on_dialogue_page_advanced(index: int) -> void:
+	if _scene_phase != WorkPhase.INTRO_HEAD_BOX:
+		return
+	if index == INTRO_HEAD_BOX_LOOK_PAGE_INDEX and not _intro_box_open_visual_applied:
+		_intro_box_open_visual_applied = true
+		var main: Node = get_tree().current_scene
+		if main != null and main.has_method("_play_transition_then"):
+			main._play_transition_then(_set_scene_image.bind(FACTORY_BOX_BACKGROUND_TEXTURE_PATH))
+		else:
+			_set_scene_image(FACTORY_BOX_BACKGROUND_TEXTURE_PATH)
+
+
+func _set_scene_image(texture_path: String) -> void:
+	_set_main_scene_image_and_frame(
+		texture_path,
+		DEFAULT_DIALOGUE_FRAME_SIZE,
+		_default_main_frame_outer_width(get_tree().current_scene)
+	)
+
+
+func _set_main_scene_image_and_frame(
+		texture_path: String,
+		frame_size: Vector2,
+		outer_width: float
+) -> void:
+	var main: Node = get_tree().current_scene
+	if main == null:
+		return
+	if not ("scene_image" in main):
+		return
+	var texture := load(texture_path) as Texture2D
+	if texture != null:
+		main.scene_image.texture = texture
+	if main.has_method("_animate_frame_to"):
+		main._animate_frame_to(frame_size, outer_width)
+
+
+func _default_main_frame_outer_width(main: Node) -> float:
+	if main != null and "_default_frame_outer_width" in main:
+		return main._default_frame_outer_width
+	return DEFAULT_DIALOGUE_FRAME_SIZE.x
+
+
+func _refresh_work_minigame_scene_image() -> void:
+	if _scene_phase != WorkPhase.MINIGAME:
+		return
+	_set_main_scene_image_and_frame(
+		WORK_BACKGROUND_TEXTURE_PATH,
+		WORK_FRAME_SIZE,
+		WORK_FRAME_OUTER_WIDTH
+	)
 
 
 func _enter_completion_screen() -> void:
 	# Guard against re-entry if slots_changed fires more than once.
 	if _scene_phase != WorkPhase.MINIGAME:
 		return
+	if _is_intro_work_scene():
+		_intro_work = true
+		_enter_intro_head_box()
+		return
 
+	_scene_phase = WorkPhase.COMPLETION_INTRO
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("_play_transition_then"):
+		main._play_transition_then(Callable(self, "_apply_completion_screen"))
+	else:
+		_apply_completion_screen()
+
+
+func _apply_completion_screen() -> void:
 	var main: Node = get_tree().current_scene
 
 	# Tear down the in-frame minigame visuals so the buttons have room below.
@@ -194,15 +276,13 @@ func _enter_completion_screen() -> void:
 	# work area; on the completion screen it would just be a distracting slab.
 	_set_node_visible(color_background, false)
 
-	# Swap the picture to the shared scene placeholder and shrink the frame
-	# back to default so the dialogue box and buttons below the picture come
-	# into view.
-	if main and "scene_image" in main:
-		var placeholder: Texture2D = load("res://assets/textures/backgrounds/scene_placeholder.png")
-		if placeholder:
-			main.scene_image.texture = placeholder
-	if main and main.has_method("_animate_frame_size_to"):
-		main._animate_frame_size_to(Vector2(900, 225))
+	# Keep the factory work image visible for the completion dialogue. The
+	# placeholder background is a fallback asset and should not appear here.
+	_set_main_scene_image_and_frame(
+		WORK_BACKGROUND_TEXTURE_PATH,
+		DEFAULT_DIALOGUE_FRAME_SIZE,
+		_default_main_frame_outer_width(main)
+	)
 
 	_enter_completion_intro()
 	
@@ -318,10 +398,21 @@ func _finish_work(stole: bool) -> void:
 
 
 func _finish_intro_work() -> void:
-	var money: int = int(REWARD_COMPLETE.get("money", 0))
-	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0))
 	var ingredients: Dictionary = {"head_segments": 1}
-	finish(money, suspicion, 0, ingredients, false)
+	finish(0, 0, 0, ingredients, false)
+
+
+func _is_intro_work_scene() -> bool:
+	if GameState.is_intro_step("work"):
+		return true
+	if bool(get_meta("intro_sequence_location", false)) and String(get_meta("intro_step", "")) == "work":
+		return true
+	var main := get_tree().current_scene
+	if main != null \
+			and main.has_method("is_intro_sequence_location_active") \
+			and bool(main.call("is_intro_sequence_location_active", &"work")):
+		return true
+	return false
 
 
 func _copy_ingredients(src: Dictionary) -> Dictionary:
