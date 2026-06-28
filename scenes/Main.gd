@@ -86,6 +86,7 @@ const ANIM_EASE: int = Tween.EASE_IN_OUT
 # Selection screen / location host
 @onready var selection_screen: VBoxContainer = %SelectionScreen
 @onready var location_grid: GridContainer = %LocationGrid
+@onready var location_description: Label = %LocationDescription
 @onready var location_host: Control = %LocationHost
 
 # Log overlay
@@ -353,14 +354,19 @@ func _apply_selection_screen_swap() -> void:
 func _build_location_button(loc: LocationData) -> Button:
 	var btn := Button.new()
 	btn.text = loc.display_name.to_upper()
-	btn.tooltip_text = loc.description
 	btn.custom_minimum_size = Vector2(0, 80)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.add_theme_font_size_override("font_size", 58)
 	if loc.icon:
 		btn.icon = loc.icon
 		btn.expand_icon = true
-	btn.pressed.connect(_on_location_picked.bind(loc))
+	if loc.disabled:
+		btn.disabled = true
+		btn.modulate = Color(1, 1, 1, 0.35)
+	else:
+		btn.pressed.connect(_on_location_picked.bind(loc))
+	btn.mouse_entered.connect(func() -> void: location_description.text = loc.description)
+	btn.mouse_exited.connect(func() -> void: location_description.text = "")
 	return btn
 
 

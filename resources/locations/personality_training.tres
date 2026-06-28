@@ -6,11 +6,12 @@
 [resource]
 script = ExtResource("1")
 id = &"personality_training"
-display_name = "Personality Training"
-description = "Train the robot's personality. (To be detailed.)"
+display_name = "Calibration"
+description = "Recalibrate robot's brain, improve mood regulation."
 allowed_phases = [2]
 scene_path = "res://scenes/locations/PersonalityTraining.tscn"
 preview_texture = ExtResource("2")
 frame_size = Vector2(800, 640)
 frame_outer_width = 800.0
 free_action = false
+disabled = true
