@@ -86,6 +86,7 @@ const ANIM_EASE: int = Tween.EASE_IN_OUT
 # Selection screen / location host
 @onready var selection_screen: VBoxContainer = %SelectionScreen
 @onready var location_grid: GridContainer = %LocationGrid
+@onready var location_description: Label = %LocationDescription
 @onready var location_host: Control = %LocationHost
 
 # Log overlay
@@ -177,6 +178,10 @@ func _ready() -> void:
 
 	_refresh_hud()
 	_show_selection_screen()
+	var intro_autoload: Node = get_node_or_null("/root/IntroTransition")
+	if intro_autoload and intro_autoload.consume_intro():
+		call_deferred("_play_intro_wipe")
+
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -215,6 +220,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
+	# 2 (debug): grant a leg and jump to the current day's night choices.
+	if key_event.keycode == KEY_2 or key_event.keycode == KEY_KP_2:
+		_debug_grant_leg_and_jump_to_night()
+		get_viewport().set_input_as_handled()
+		return
+
 
 func _debug_grant_scrap_and_open_workshop() -> void:
 	# Give one scrap_metal.
@@ -242,6 +253,17 @@ func _debug_grant_scrap_and_open_workshop() -> void:
 	# Reuse the existing pick handler. It already guards against
 	# double-firing while a transition is mid-wipe.
 	_on_location_picked(workshop_loc)
+
+
+func _debug_grant_leg_and_jump_to_night() -> void:
+	GameState.equipped_limbs = max(0, GameState.equipped_limbs + 1)
+	_log("[color=#88ff88]+ leg x1 (debug)[/color]")
+
+	if GameState.phase == DayCycle.Phase.NIGHT:
+		_show_selection_screen()
+		return
+
+	GameState.phase = DayCycle.Phase.NIGHT
 
 func _load_locations() -> void:
 	for path in LOCATION_RESOURCE_PATHS:
@@ -332,14 +354,19 @@ func _apply_selection_screen_swap() -> void:
 func _build_location_button(loc: LocationData) -> Button:
 	var btn := Button.new()
 	btn.text = loc.display_name.to_upper()
-	btn.tooltip_text = loc.description
 	btn.custom_minimum_size = Vector2(0, 80)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.add_theme_font_size_override("font_size", 58)
 	if loc.icon:
 		btn.icon = loc.icon
 		btn.expand_icon = true
-	btn.pressed.connect(_on_location_picked.bind(loc))
+	if loc.disabled:
+		btn.disabled = true
+		btn.modulate = Color(1, 1, 1, 0.35)
+	else:
+		btn.pressed.connect(_on_location_picked.bind(loc))
+	btn.mouse_entered.connect(func() -> void: location_description.text = loc.description)
+	btn.mouse_exited.connect(func() -> void: location_description.text = "")
 	return btn
 
 
@@ -560,6 +587,9 @@ func _apply_result(result: Dictionary) -> void:
 
 	for ing_id in ingredients:
 		var amt: int = ingredients[ing_id]
+		if String(ing_id) == "leg":
+			GameState.equipped_limbs = max(0, GameState.equipped_limbs + amt)
+			continue
 		GameState.add_ingredient(ing_id, amt)
 
 	_log_result(money_delta, suspicion_delta, anger_delta, ingredients)
@@ -803,3 +833,17 @@ func hide_inventory_overlay() -> void:
 	if _inventory_overlay and is_instance_valid(_inventory_overlay):
 		_inventory_overlay.queue_free()
 	_inventory_overlay = null
+
+func _play_intro_wipe() -> void:
+	if transition == null:
+		return
+	if "_tween" in transition and transition._tween:
+		transition._tween.kill()
+	transition.visible = true
+	transition._frame_index = 9
+	var lift_duration: float = transition.duration_sec * 0.5
+	var lift_tween: Tween = transition.create_tween()
+	lift_tween.set_trans(Tween.TRANS_LINEAR)
+	lift_tween.tween_property(transition, "_frame_index", transition.total_frames - 1, lift_duration)
+	lift_tween.tween_callback(func(): transition.visible = false)
+	transition._tween = lift_tween

@@ -1,0 +1,163 @@
+[gd_scene format=3 uid="uid://bnn6c51qbigsy"]
+
+[ext_resource type="Script" uid="uid://c13yosc3q66ph" path="res://scenes/ui/MainMenu.gd" id="1_iwbf0"]
+[ext_resource type="PackedScene" uid="uid://v7pvuxqf3sxd" path="res://scenes/Background.tscn" id="2_2ysvc"]
+[ext_resource type="Texture2D" uid="uid://batdb2pyq3mp2" path="res://assets/textures/characters/robot/main_menu_robot.png" id="3_2ysvc"]
+[ext_resource type="PackedScene" path="res://scenes/Scanlines.tscn" id="3_xpiny"]
+
+[node name="MainMenu" type="Control" unique_id=794610192]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_iwbf0")
+
+[node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=777788677]
+layer = -10
+
+[node name="Background" parent="BackgroundLayer" unique_id=431882361 instance=ExtResource("2_2ysvc")]
+
+[node name="EmbersLayer" type="Control" parent="." unique_id=1591965417]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="UI" type="MarginContainer" parent="." unique_id=960088324]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 44
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 44
+theme_override_constants/margin_bottom = 36
+
+[node name="HBox" type="HBoxContainer" parent="UI" unique_id=1031454858]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="LeftColumn" type="VBoxContainer" parent="UI/HBox" unique_id=2102736360]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.55
+theme_override_constants/separation = 24
+
+[node name="Logo" type="VBoxContainer" parent="UI/HBox/LeftColumn" unique_id=880187014]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TagLabel" type="Label" parent="UI/HBox/LeftColumn/Logo" unique_id=187783224]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 20
+text = "[ A GAME BY DRAGGINDRAGON ]"
+
+[node name="TitleLine1" type="Label" parent="UI/HBox/LeftColumn/Logo" unique_id=1380989661]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 88
+text = "SCREW LOOSE"
+
+[node name="SubtitleLabel" type="Label" parent="UI/HBox/LeftColumn/Logo" unique_id=1261575460]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 24
+text = "•  ROBOT STRESS-TEST PROTOCOL"
+
+[node name="Spacer" type="Control" parent="UI/HBox/LeftColumn" unique_id=809946493]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MenuList" type="VBoxContainer" parent="UI/HBox/LeftColumn" unique_id=1479610095]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FooterSpacer" type="Control" parent="UI/HBox/LeftColumn" unique_id=1247852114]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="UI/HBox/LeftColumn" unique_id=741105515]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Keys" type="Label" parent="UI/HBox/LeftColumn/Footer" unique_id=1108803581]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 18
+text = "↑↓ NAVIGATE     ENTER SELECT     ESC BACK     1–5 HOTKEYS"
+
+[node name="RightColumn" type="VBoxContainer" parent="UI/HBox" unique_id=1093341199]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.45
+theme_override_constants/separation = 12
+
+[node name="SubjectTagWrap" type="HBoxContainer" parent="UI/HBox/RightColumn" unique_id=1277584864]
+layout_mode = 2
+alignment = 2
+
+[node name="SubjectTagLabel" type="Label" parent="UI/HBox/RightColumn/SubjectTagWrap" unique_id=168954299]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 18
+text = "SUBJECT 07 // STATUS: DORMANT"
+
+[node name="RobotFrame" type="PanelContainer" parent="UI/HBox/RightColumn" unique_id=774236696]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"FrameOuter"
+
+[node name="Control" type="Control" parent="UI/HBox/RightColumn/RobotFrame" unique_id=249631452]
+layout_mode = 2
+
+[node name="RobotImage2" type="TextureRect" parent="UI/HBox/RightColumn/RobotFrame/Control" unique_id=2091313544]
+layout_mode = 0
+offset_right = 516.0
+offset_bottom = 556.0
+scale = Vector2(2.965, 2.965)
+pivot_offset = Vector2(258, 0)
+texture = ExtResource("3_2ysvc")
+stretch_mode = 5
+
+[node name="BuildInfo" type="VBoxContainer" parent="UI/HBox/RightColumn" unique_id=2038652137]
+layout_mode = 2
+alignment = 2
+
+[node name="VersionLabel" type="Label" parent="UI/HBox/RightColumn/BuildInfo" unique_id=219211181]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 18
+text = "v0.1.0 // IN DEVELOPMENT"
+horizontal_alignment = 2
+
+[node name="StudioLabel" type="Label" parent="UI/HBox/RightColumn/BuildInfo" unique_id=211393971]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 16
+text = "DO NOT DISTRIBUTE >:("
+horizontal_alignment = 2
+
+[node name="ScanlineLayer" type="CanvasLayer" parent="." unique_id=2059562072]
+layer = 10
+
+[node name="Scanlines" parent="ScanlineLayer" unique_id=475422882 instance=ExtResource("3_xpiny")]
+grow_horizontal = 2
+grow_vertical = 2

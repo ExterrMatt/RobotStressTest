@@ -196,6 +196,7 @@ z_index = 1
 texture_filter = 1
 custom_minimum_size = Vector2(900, 225)
 layout_mode = 2
+clip_contents = true
 texture = ExtResource("3_rarhs")
 expand_mode = 1
 
@@ -359,6 +360,14 @@ layout_mode = 2
 theme_override_constants/h_separation = 18
 theme_override_constants/v_separation = 18
 columns = 3
+
+[node name="LocationDescription" type="Label" parent="UI/VBox/SelectionScreen" unique_id=111222333]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+horizontal_alignment = 1
+autowrap_mode = 3
+text = ""
 
 [node name="LocationHost" type="Control" parent="UI/VBox" unique_id=482344626]
 unique_name_in_owner = true

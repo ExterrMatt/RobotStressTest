@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Robot Stress Test"
-run/main_scene="res://scenes/Main.tscn"
+run/main_scene="res://scenes/ui/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -24,6 +24,7 @@ config/icon="res://icon.svg"
 GameState="*res://autoload/GameState.gd"
 DayCycle="*res://autoload/DayCycle.gd"
 Dialogue="*res://autoload/Dialogue.gd"
+IntroTransition="*res://autoload/IntroTransition.gd"
 
 [display]
 

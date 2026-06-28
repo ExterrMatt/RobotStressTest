@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LocationData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/textures/backgrounds/maintenance.png" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -9,4 +10,7 @@ display_name = "Maintenance"
 description = "Repair damage. Apply upgrades. Equip body parts."
 allowed_phases = [0]
 scene_path = "res://scenes/locations/Maintenance.tscn"
+preview_texture = ExtResource("2")
+frame_size = Vector2(800, 640)
+frame_outer_width = 800.0
 free_action = false

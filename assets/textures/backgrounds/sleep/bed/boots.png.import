@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqtgip56fdv45"
-path="res://.godot/imported/personality_test.png-e6debbc601cfe3d34682ae4a6062e580.ctex"
+uid="uid://ib5mdj3b37ew"
+path="res://.godot/imported/boots.png-5c6093390573694a6a46d9e0a351ea63.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/backgrounds/personality_test.png"
-dest_files=["res://.godot/imported/personality_test.png-e6debbc601cfe3d34682ae4a6062e580.ctex"]
+source_file="res://assets/textures/backgrounds/sleep/bed/boots.png"
+dest_files=["res://.godot/imported/boots.png-5c6093390573694a6a46d9e0a351ea63.ctex"]
 
 [params]
 

@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+[ext_resource type="Script" path="res://scenes/locations/Maintenance.gd" id="2"]
+[ext_resource type="PackedScene" uid="uid://k8jls1dgr68d" path="res://scenes/locations/PersonalityTestRobot.tscn" id="3"]
 
 [node name="Maintenance" instance=ExtResource("1")]
+script = ExtResource("2")
 title_text = "Maintenance"
 blurb_text = "Repair damage. Apply upgrades. Equip body parts. Buff and shine."
 outcomes = [{
@@ -24,3 +27,20 @@ outcomes = [{
 "anger": -2,
 "ingredients": {}
 }]
+
+[node name="RobotLayer" type="Control" parent="." index="3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PersonalityTestRobot" parent="RobotLayer" index="0" instance=ExtResource("3")]
+layout_mode = 1
+offset_left = 160.99998
+offset_top = 58.999996
+offset_right = 461.0
+offset_bottom = 509.0
+scale = Vector2(1.6, 1.6)

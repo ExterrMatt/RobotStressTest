@@ -52,6 +52,9 @@ class_name LocationData
 ## (Reserved for things like checking inventory; nothing uses it yet.)
 @export var free_action: bool = false
 
+## If true, the location button is shown but greyed out and cannot be clicked.
+@export var disabled: bool = false
+
 
 func available_in_phase(phase: int) -> bool:
 	return phase in allowed_phases

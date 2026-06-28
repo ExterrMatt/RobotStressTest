@@ -1,14 +1,390 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bo2ai38ii4gpu"]
 
-[ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
+[ext_resource type="Script" uid="uid://cj6pcv21gmhu5" path="res://scenes/locations/Sleep.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://diah3lxrbt302" path="res://assets/textures/backgrounds/sleep/carpet.png" id="2_carpet"]
+[ext_resource type="Texture2D" uid="uid://c1ireuj5oyk8i" path="res://assets/textures/backgrounds/sleep/stuff_shadow.png" id="3_stuff_shadow"]
+[ext_resource type="Texture2D" uid="uid://by0nkqptr8xp8" path="res://assets/textures/backgrounds/sleep/wall.png" id="4_wall"]
+[ext_resource type="Texture2D" uid="uid://cbi30kr5ewtcf" path="res://assets/textures/backgrounds/sleep/stuff.png" id="5_stuff"]
+[ext_resource type="Texture2D" uid="uid://bp8d8hk8ekn5o" path="res://assets/textures/backgrounds/sleep/coin.png" id="6_coin"]
+[ext_resource type="Texture2D" uid="uid://dmwsxwlhb7jni" path="res://assets/textures/backgrounds/sleep/left_stuff_under.png" id="7_left_stuff_under"]
+[ext_resource type="Texture2D" uid="uid://lcn4l4te5xop" path="res://assets/textures/backgrounds/sleep/left_stuff.png" id="8_left_stuff"]
+[ext_resource type="Texture2D" uid="uid://d1ila1fq45ipp" path="res://assets/textures/backgrounds/sleep/bed/drawer.png" id="9_drawer"]
+[ext_resource type="Texture2D" uid="uid://ib5mdj3b37ew" path="res://assets/textures/backgrounds/sleep/bed/boots.png" id="10_boots"]
+[ext_resource type="Texture2D" uid="uid://b6bvilgmtm8kf" path="res://assets/textures/backgrounds/sleep/bed/bedframe.png" id="11_bedframe"]
+[ext_resource type="Texture2D" uid="uid://tok2soq47nhg" path="res://assets/textures/backgrounds/sleep/bed/mattress_texture.png" id="12_mattress_texture"]
+[ext_resource type="Texture2D" uid="uid://c3jdbliob1hk" path="res://assets/textures/backgrounds/sleep/bed/mattress_texture_indent_2.png" id="13_mattress_texture_indent"]
+[ext_resource type="Texture2D" uid="uid://bhfm50nuw8cfi" path="res://assets/textures/backgrounds/sleep/bed/mattress_edge.png" id="14_mattress_edge"]
+[ext_resource type="Texture2D" uid="uid://dim2jad8d5kma" path="res://assets/textures/backgrounds/sleep/bed/pillow_shadow_light.png" id="15_pillow_shadow_light"]
+[ext_resource type="Texture2D" uid="uid://do60demwvspjt" path="res://assets/textures/backgrounds/sleep/bed/pillow_shadow_heavy.png" id="16_pillow_shadow_heavy"]
+[ext_resource type="Texture2D" uid="uid://sjmpdc6r8cly" path="res://assets/textures/backgrounds/sleep/bed/pillow.png" id="17_pillow"]
+[ext_resource type="Texture2D" uid="uid://d3fht6umtfbpg" path="res://assets/textures/backgrounds/sleep/bed/pillow_indented.png" id="18_pillow_indented"]
+[ext_resource type="Texture2D" uid="uid://daqvhg0yhl0hu" path="res://assets/textures/backgrounds/sleep/bed/bot_full_shadow_light.png" id="19_bot_shadow_light"]
+[ext_resource type="Texture2D" uid="uid://dvtc6jc3wvk5j" path="res://assets/textures/backgrounds/sleep/bed/bot_full_shadow_heavy.png" id="20_bot_shadow_heavy"]
+[ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="21_stress_test_robot"]
+[ext_resource type="Texture2D" uid="uid://dr8ugk2gassrm" path="res://assets/textures/backgrounds/sleep/bed/blanket.png" id="22_blanket"]
+[ext_resource type="Texture2D" uid="uid://bjo7rj73fkj3w" path="res://assets/textures/backgrounds/sleep/bed/blanket_bump.png" id="23_blanket_bump"]
+[ext_resource type="Texture2D" uid="uid://ufmxbsfwbwlw" path="res://assets/textures/backgrounds/sleep/darkness.png" id="24_2grgb"]
 
-[node name="Sleep" instance=ExtResource("1")]
-title_text = "Sleep"
-blurb_text = "Skip the stress-test. Tomorrow's anger reflects tonight's neglect."
-outcomes = [{
-"label": "Sleep through the night",
-"money": 0,
-"suspicion": 0,
-"anger": 0,
-"ingredients": {}
-}]
+[node name="Sleep" type="Control" unique_id=1825695232]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="FullscreenLayer" type="CanvasLayer" parent="." unique_id=79984590]
+layer = 20
+
+[node name="FullscreenRoot" type="Control" parent="FullscreenLayer" unique_id=858780601]
+texture_filter = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BlackBackground" type="ColorRect" parent="FullscreenLayer/FullscreenRoot" unique_id=1900132189]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="SceneScaler" type="AspectRatioContainer" parent="FullscreenLayer/FullscreenRoot" unique_id=1009576149]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+ratio = 1.5
+stretch_mode = 3
+
+[node name="CameraWindow" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler" unique_id=155330849]
+clip_contents = true
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SceneCanvas" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=861895042]
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Carpet" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=485704299]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_carpet")
+expand_mode = 1
+
+[node name="StuffShadow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1816483734]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_stuff_shadow")
+expand_mode = 1
+
+[node name="Wall" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=404599112]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_wall")
+expand_mode = 1
+
+[node name="Stuff" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=15466229]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_stuff")
+expand_mode = 1
+
+[node name="Coin" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1260292798]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_coin")
+expand_mode = 1
+
+[node name="LeftStuffUnder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=569353465]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_left_stuff_under")
+expand_mode = 1
+
+[node name="LeftStuff" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=865515028]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_left_stuff")
+expand_mode = 1
+
+[node name="Drawer" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=436322511]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_drawer")
+expand_mode = 1
+
+[node name="Boots" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1462477543]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_boots")
+expand_mode = 1
+
+[node name="Bed" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=41566590]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Bedframe" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=2077664184]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_bedframe")
+expand_mode = 1
+
+[node name="MattressTexture" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=378681946]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("12_mattress_texture")
+expand_mode = 1
+
+[node name="MattressTextureIndent" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=848638401]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("13_mattress_texture_indent")
+expand_mode = 1
+
+[node name="MattressEdge" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=822679182]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("14_mattress_edge")
+expand_mode = 1
+
+[node name="PillowShadowLight" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=327253643]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("15_pillow_shadow_light")
+expand_mode = 1
+
+[node name="PillowShadowHeavy" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=1198459714]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("16_pillow_shadow_heavy")
+expand_mode = 1
+
+[node name="Pillow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=439397510]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("17_pillow")
+expand_mode = 1
+
+[node name="PillowIndented" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=1399905318]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("18_pillow_indented")
+expand_mode = 1
+
+[node name="BotShadowLight" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=1565086679]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("19_bot_shadow_light")
+expand_mode = 1
+
+[node name="BotShadowHeavy" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=222425575]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("20_bot_shadow_heavy")
+expand_mode = 1
+
+[node name="BotPlaceholder" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=1282768383 instance=ExtResource("21_stress_test_robot")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -257.0
+offset_top = -435.66663
+offset_right = -7.0
+offset_bottom = -85.66663
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(2.134936, 2.134936)
+
+[node name="Blanket" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=383073771]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("22_blanket")
+expand_mode = 1
+
+[node name="BlanketBump" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=111041679]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("23_blanket_bump")
+expand_mode = 1
+
+[node name="Darkness" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1418230190]
+modulate = Color(1, 1, 1, 0.8156863)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -335.99994
+offset_right = -426.66675
+offset_bottom = -335.99994
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.5, 1.5)
+mouse_filter = 2
+texture = ExtResource("24_2grgb")
+expand_mode = 3
+stretch_mode = 4
+
+[node name="BedClickArea" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1006934508]
+layout_mode = 1
+anchor_left = 0.206667
+anchor_top = 0.0475
+anchor_right = 0.76
+anchor_bottom = 1.0
+mouse_default_cursor_shape = 2
+
+[node name="EndButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1362903481]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -103.0
+offset_top = -131.0
+offset_right = -7.0
+offset_bottom = -74.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_default_cursor_shape = 2
+text = "END"
+
+[connection signal="gui_input" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/BedClickArea" to="." method="_on_bed_click_area_gui_input"]
+[connection signal="pressed" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton" to="." method="_on_end_button_pressed"]
