@@ -7,8 +7,8 @@ extends Control
 ## Two kinds of edits, two places to make them:
 ##
 ## 1. TEXT and FONT SIZES — edit the Label nodes DIRECTLY in the scene tree.
-##    Click TitleImage / SubtitleLabel / TagLabel / VersionLabel
-##    / StudioLabel / SubjectTagLabel / Keys in the Scene panel, then change
+##    Click TitleImage / TagLabel / VersionLabel
+##    / StudioLabel / Keys in the Scene panel, then change
 ##    their `text` property in the Inspector. Same for font sizes (under
 ##    Theme Overrides → Font Sizes). Edits there persist; nothing in this
 ##    script overrides them.
@@ -101,23 +101,76 @@ extends Control
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/Main.tscn"
 
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
+const SUBJECT_STATUS_PREFIX: String = "UNIT 000-000-001 // STATUS: "
+const SUBJECT_STATUS_NON_ERROR_WORDS: Array[String] = ["ANGRY", "CONFUSED", "COMBATIVE"]
+const SUBJECT_STATUS_TYPE_SECONDS: float = 0.055
+const SUBJECT_STATUS_DELETE_SECONDS: float = 0.026
+const SUBJECT_STATUS_DOT_SECONDS: float = 0.22
+const SUBJECT_STATUS_FLASH_SECONDS: float = 0.2
+const SUBJECT_STATUS_ERROR_CHANCE: float = 0.95
+const SUBJECT_STATUS_MAX_TEXT: String = "UNIT 000-000-001 // STATUS: COMBATIVE..."
+const BOOT_DIAGNOSTIC_PREFIX: String = "•  "
+const BOOT_DIAGNOSTIC_TYPE_SECONDS: float = 0.032
+const BOOT_DIAGNOSTIC_DELETE_SECONDS: float = 0.018
+const BOOT_DIAGNOSTIC_DOT_SECONDS: float = 0.22
+const BOOT_DIAGNOSTIC_LINE_HOLD_SECONDS: float = 0.34
+const BOOT_DIAGNOSTIC_CORRECTION_HOLD_SECONDS: float = 0.2
+const BOOT_DIAGNOSTIC_DEFAULT_DOT_CYCLES: int = 2
+const BOOT_DIAGNOSTIC_ERROR_DOT_CYCLES: int = 3
+const BOOT_DIAGNOSTIC_POST_DOT_CYCLES: int = 2
+const BOOT_DIAGNOSTIC_MAX_TEXT: String = "•  LOADING AGGRESSION INHIBITORS- IN PROGRESS..."
+const BOOT_DIAGNOSTIC_SEQUENCE: Array[Dictionary] = [
+	{"label": "MOTOR CONTROL", "result": "INITIALIZING"},
+	{"label": "LOADING MEMORY", "result": "ERROR"},
+	{"label": "HUMAN PRESENCE", "result": "DETECTED"},
+	{"label": "SPEECH MODULE", "result": "DAMAGED"},
+	{"label": "EMOTIONAL RESPONSE", "result": "DAMAGED", "correction": "ERROR"},
+	{"label": "OBEDIENCE CHECK", "result": "FAILED", "correction": "ERROR"},
+	{"label": "PERSONALITY CHECK", "result": "INTACT"},
+	{"label": "REPAIRING SOCIAL INTERFACE", "result": "IN PROGRESS"},
+	{"label": "SCANNING FOR OPERATOR", "result": "DETECTED"},
+	{"label": "LIMB CONTROL", "result": "ERROR"},
+	{"label": "LOADING SOUL.MD", "result": ""},
+	{"label": "RECOVERING DIRECTIVES", "result": ""},
+	{"label": "LOADING AGGRESSION INHIBITORS", "result": "FAILED", "correction": "ERROR", "pre_cycles": 6},
+]
 
 
 # =============================================================================
 # NODE REFS — resolved at _ready via unique_name_in_owner.
-# Note: there are no @onready refs for TitleImage / SubtitleLabel / etc
-# anymore because the script no longer touches their text. Edit them in the
-# scene tree.
+# Most text labels are edited directly in the scene tree. SubtitleLabel and SubjectTagLabel are
+# referenced here because their text is animated at runtime.
 # =============================================================================
 
 @onready var menu_list: VBoxContainer    = %MenuList
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 @onready var embers_layer: Control       = %EmbersLayer
+@onready var subject_tag_label: Label    = %SubjectTagLabel
+@onready var subtitle_label: Label       = %SubtitleLabel
 
 # Overlay panels — built on demand by _open_overlay().
 var _current_overlay: Control = null
 
 var _brightness_value: float = 50.0
+var _debug_mode_enabled: bool = false
+var _keyboard_menu_navigation_active: bool = false
+var _subject_status_rng := RandomNumberGenerator.new()
+var _subject_status_phase: String = "idle"
+var _subject_status_word: String = "ERROR"
+var _last_non_error_subject_status_word: String = ""
+var _subject_status_char_index: int = 0
+var _subject_status_step: int = 0
+var _subject_status_cycles: int = 0
+var _subject_status_timer: float = 0.0
+var _boot_diagnostic_index: int = 0
+var _boot_diagnostic_entry: Dictionary = {}
+var _boot_diagnostic_phase: String = "idle"
+var _boot_diagnostic_prefix: String = ""
+var _boot_diagnostic_word: String = ""
+var _boot_diagnostic_char_index: int = 0
+var _boot_diagnostic_step: int = 0
+var _boot_diagnostic_cycles: int = 0
+var _boot_diagnostic_timer: float = 0.0
 var _flicker_tween: Tween = null
 
 
@@ -126,17 +179,20 @@ var _flicker_tween: Tween = null
 # =============================================================================
 
 func _ready() -> void:
-	# Apply only the things that actually need code wiring. Text and font
-	# sizes come straight from the .tscn — we don't touch them.
+	# Apply only the things that actually need code wiring. Most label text
+	# stays scene-authored; SubjectTagLabel is animated below.
 	var settings := get_node_or_null("/root/GameState")
 	if settings:
 		_brightness_value = settings.brightness_value
 		show_scanlines = settings.scanlines_enabled
+		_debug_mode_enabled = settings.debug_mode_enabled
 
 	scanline_layer.visible = show_scanlines
 	embers_layer.visible   = show_embers
 	_apply_scanline_style()
 	_apply_brightness()
+	_configure_subject_status_label_slot()
+	_configure_boot_diagnostic_label_slot()
 
 	_build_menu()
 
@@ -145,11 +201,16 @@ func _ready() -> void:
 	if show_flicker:
 		_start_flicker()
 
-	# Focus the first row so keyboard navigation starts somewhere.
-	if menu_list.get_child_count() > 0:
-		var first: Button = menu_list.get_child(0) as Button
-		if first:
-			first.grab_focus()
+	_keyboard_menu_navigation_active = false
+	_update_all_menu_option_button_textures()
+	_subject_status_rng.randomize()
+	_start_subject_status_loop()
+	_start_boot_diagnostic_loop()
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion or event is InputEventMouseButton:
+		_deactivate_keyboard_menu_navigation()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -161,18 +222,257 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var key_event: InputEventKey = event
 
-	# If an overlay is open, ESC closes it.
+	# ESC backs out of overlays. On the base menu there is nothing to back out of.
 	if _current_overlay and is_instance_valid(_current_overlay):
 		if key_event.keycode == KEY_ESCAPE:
 			_close_overlay()
 			get_viewport().set_input_as_handled()
 		return
+	if _handle_menu_navigation_input(key_event):
+		get_viewport().set_input_as_handled()
+		return
+
+	if key_event.keycode == KEY_ESCAPE:
+		get_viewport().set_input_as_handled()
+		return
 
 	var debug_number := _debug_number_for_keycode(key_event.keycode)
-	if debug_number >= 1 and debug_number <= 3:
+	if _debug_mode_enabled and debug_number >= 1 and debug_number <= 3:
 		get_viewport().set_input_as_handled()
 		_start_debug_game(debug_number, key_event.shift_pressed, key_event.ctrl_pressed)
 		return
+
+
+func _process(delta: float) -> void:
+	_update_subject_status(delta)
+	_update_boot_diagnostic(delta)
+
+
+func _configure_subject_status_label_slot() -> void:
+	if subject_tag_label == null:
+		return
+	subject_tag_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	subject_tag_label.custom_minimum_size = Vector2(_subject_status_reserved_width(), 0.0)
+
+
+func _subject_status_reserved_width() -> float:
+	if subject_tag_label == null:
+		return 0.0
+	var font := subject_tag_label.get_theme_font("font")
+	var font_size := subject_tag_label.get_theme_font_size("font_size")
+	if font == null:
+		return SUBJECT_STATUS_MAX_TEXT.length() * font_size
+	return ceilf(font.get_string_size(SUBJECT_STATUS_MAX_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x)
+
+func _start_subject_status_loop() -> void:
+	_subject_status_phase = "type"
+	_subject_status_word = _next_subject_status_word()
+	_subject_status_char_index = 0
+	_subject_status_step = 0
+	_subject_status_cycles = 0
+	_subject_status_timer = 0.0
+	_set_subject_status_text("")
+
+
+func _update_subject_status(delta: float) -> void:
+	if subject_tag_label == null or _subject_status_phase == "idle":
+		return
+	_subject_status_timer -= delta
+	if _subject_status_timer > 0.0:
+		return
+
+	match _subject_status_phase:
+		"type":
+			_subject_status_char_index += 1
+			_set_subject_status_text(_subject_status_word.substr(0, _subject_status_char_index))
+			_subject_status_timer = SUBJECT_STATUS_TYPE_SECONDS
+			if _subject_status_char_index >= _subject_status_word.length():
+				_subject_status_step = 0
+				if _subject_status_word == "ERROR":
+					_subject_status_phase = "hold"
+					_subject_status_cycles = _subject_status_rng.randi_range(16, 28)
+				else:
+					_subject_status_phase = "brief_hold"
+					_subject_status_timer = SUBJECT_STATUS_FLASH_SECONDS
+		"hold":
+			_set_subject_status_text(_subject_status_word + _subject_status_dots(_subject_status_step))
+			_subject_status_step += 1
+			_subject_status_timer = SUBJECT_STATUS_DOT_SECONDS
+			if _subject_status_step >= _subject_status_cycles:
+				_subject_status_phase = "delete"
+				_subject_status_char_index = _subject_status_word.length() - 1
+		"brief_hold":
+			_subject_status_phase = "delete"
+			_subject_status_char_index = _subject_status_word.length() - 1
+			_subject_status_timer = 0.0
+		"delete":
+			_set_subject_status_text(_subject_status_word.substr(0, max(0, _subject_status_char_index)))
+			_subject_status_char_index -= 1
+			_subject_status_timer = SUBJECT_STATUS_DELETE_SECONDS
+			if _subject_status_char_index < 0:
+				_subject_status_phase = "noise"
+				_subject_status_step = 0
+				_subject_status_cycles = _subject_status_rng.randi_range(8, 16)
+		"noise":
+			_set_subject_status_text(_subject_status_dots(_subject_status_step))
+			_subject_status_step += 1
+			_subject_status_timer = SUBJECT_STATUS_DOT_SECONDS * 0.75
+			if _subject_status_step >= _subject_status_cycles:
+				_start_subject_status_loop()
+
+
+func _next_subject_status_word() -> String:
+	if _subject_status_rng.randf() < SUBJECT_STATUS_ERROR_CHANCE:
+		return "ERROR"
+	var options := SUBJECT_STATUS_NON_ERROR_WORDS.duplicate()
+	if _last_non_error_subject_status_word != "" and options.size() > 1:
+		options.erase(_last_non_error_subject_status_word)
+	var word := String(options[_subject_status_rng.randi_range(0, options.size() - 1)])
+	_last_non_error_subject_status_word = word
+	return word
+
+func _subject_status_dots(step: int) -> String:
+	return ".".repeat(step % 4)
+
+func _set_subject_status_text(body: String) -> void:
+	if subject_tag_label == null:
+		return
+	subject_tag_label.text = SUBJECT_STATUS_PREFIX + body
+
+
+func _configure_boot_diagnostic_label_slot() -> void:
+	if subtitle_label == null:
+		return
+	subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	subtitle_label.custom_minimum_size = Vector2(_boot_diagnostic_reserved_width(), 0.0)
+
+
+func _boot_diagnostic_reserved_width() -> float:
+	if subtitle_label == null:
+		return 0.0
+	var font := subtitle_label.get_theme_font("font")
+	var font_size := subtitle_label.get_theme_font_size("font_size")
+	if font == null:
+		return BOOT_DIAGNOSTIC_MAX_TEXT.length() * font_size
+	return ceilf(font.get_string_size(BOOT_DIAGNOSTIC_MAX_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x)
+
+
+func _start_boot_diagnostic_loop() -> void:
+	_boot_diagnostic_index = 0
+	_start_boot_diagnostic_entry()
+
+
+func _start_boot_diagnostic_entry() -> void:
+	if BOOT_DIAGNOSTIC_SEQUENCE.is_empty():
+		_boot_diagnostic_phase = "idle"
+		return
+	_boot_diagnostic_entry = BOOT_DIAGNOSTIC_SEQUENCE[_boot_diagnostic_index]
+	_boot_diagnostic_prefix = _boot_diagnostic_prefix_for_entry(_boot_diagnostic_entry)
+	_boot_diagnostic_word = String(_boot_diagnostic_entry.get("result", ""))
+	_boot_diagnostic_char_index = 0
+	_boot_diagnostic_step = 0
+	_boot_diagnostic_cycles = _boot_diagnostic_pre_cycles(_boot_diagnostic_entry)
+	_boot_diagnostic_timer = 0.0
+	_boot_diagnostic_phase = "type_prefix"
+
+
+func _update_boot_diagnostic(delta: float) -> void:
+	if subtitle_label == null or _boot_diagnostic_phase == "idle":
+		return
+	_boot_diagnostic_timer -= delta
+	if _boot_diagnostic_timer > 0.0:
+		return
+
+	match _boot_diagnostic_phase:
+		"type_prefix":
+			_boot_diagnostic_char_index += 1
+			_set_boot_diagnostic_text(_boot_diagnostic_prefix.substr(0, _boot_diagnostic_char_index))
+			_boot_diagnostic_timer = BOOT_DIAGNOSTIC_TYPE_SECONDS
+			if _boot_diagnostic_char_index >= _boot_diagnostic_prefix.length():
+				_boot_diagnostic_step = 0
+				_boot_diagnostic_phase = "plain_dots" if _boot_diagnostic_word.is_empty() else "pre_dots"
+		"pre_dots":
+			_set_boot_diagnostic_text(_boot_diagnostic_prefix + _boot_diagnostic_dots(_boot_diagnostic_step))
+			_boot_diagnostic_step += 1
+			_boot_diagnostic_timer = BOOT_DIAGNOSTIC_DOT_SECONDS
+			if _boot_diagnostic_step >= _boot_diagnostic_cycles * 3:
+				_boot_diagnostic_phase = "type_word"
+				_boot_diagnostic_char_index = 0
+		"type_word":
+			_boot_diagnostic_char_index += 1
+			_set_boot_diagnostic_text(_boot_diagnostic_prefix + _boot_diagnostic_word.substr(0, _boot_diagnostic_char_index))
+			_boot_diagnostic_timer = BOOT_DIAGNOSTIC_TYPE_SECONDS
+			if _boot_diagnostic_char_index >= _boot_diagnostic_word.length():
+				var correction := String(_boot_diagnostic_entry.get("correction", ""))
+				if not correction.is_empty() and correction != _boot_diagnostic_word:
+					_boot_diagnostic_phase = "correction_hold"
+					_boot_diagnostic_timer = BOOT_DIAGNOSTIC_CORRECTION_HOLD_SECONDS
+				else:
+					_boot_diagnostic_phase = "post_dots"
+					_boot_diagnostic_step = 0
+		"correction_hold":
+			_boot_diagnostic_phase = "erase_word"
+			_boot_diagnostic_char_index = _boot_diagnostic_word.length() - 1
+		"post_dots":
+			_set_boot_diagnostic_text(_boot_diagnostic_prefix + _boot_diagnostic_word + _boot_diagnostic_dots(_boot_diagnostic_step))
+			_boot_diagnostic_step += 1
+			_boot_diagnostic_timer = BOOT_DIAGNOSTIC_DOT_SECONDS
+			if _boot_diagnostic_step >= BOOT_DIAGNOSTIC_POST_DOT_CYCLES * 3:
+				_boot_diagnostic_phase = "line_hold"
+				_boot_diagnostic_timer = BOOT_DIAGNOSTIC_LINE_HOLD_SECONDS
+				_set_boot_diagnostic_text(_boot_diagnostic_prefix + _boot_diagnostic_word)
+		"erase_word":
+			_set_boot_diagnostic_text(_boot_diagnostic_prefix + _boot_diagnostic_word.substr(0, max(0, _boot_diagnostic_char_index)))
+			_boot_diagnostic_char_index -= 1
+			_boot_diagnostic_timer = BOOT_DIAGNOSTIC_DELETE_SECONDS
+			if _boot_diagnostic_char_index < 0:
+				_boot_diagnostic_word = String(_boot_diagnostic_entry.get("correction", ""))
+				_boot_diagnostic_char_index = 0
+				_boot_diagnostic_phase = "type_word"
+		"plain_dots":
+			_set_boot_diagnostic_text(_boot_diagnostic_prefix + _boot_diagnostic_dots(_boot_diagnostic_step))
+			_boot_diagnostic_step += 1
+			_boot_diagnostic_timer = BOOT_DIAGNOSTIC_DOT_SECONDS
+			if _boot_diagnostic_step >= BOOT_DIAGNOSTIC_DEFAULT_DOT_CYCLES * 3:
+				_boot_diagnostic_phase = "line_hold"
+				_boot_diagnostic_timer = BOOT_DIAGNOSTIC_LINE_HOLD_SECONDS
+				_set_boot_diagnostic_text(_boot_diagnostic_prefix)
+		"line_hold":
+			_boot_diagnostic_phase = "erase_line"
+			_boot_diagnostic_char_index = subtitle_label.text.length() - 1
+			_boot_diagnostic_timer = 0.0
+		"erase_line":
+			_set_boot_diagnostic_text(subtitle_label.text.substr(0, max(0, _boot_diagnostic_char_index)))
+			_boot_diagnostic_char_index -= 1
+			_boot_diagnostic_timer = BOOT_DIAGNOSTIC_DELETE_SECONDS
+			if _boot_diagnostic_char_index < 0:
+				_advance_boot_diagnostic_entry()
+
+
+func _advance_boot_diagnostic_entry() -> void:
+	_boot_diagnostic_index = (_boot_diagnostic_index + 1) % BOOT_DIAGNOSTIC_SEQUENCE.size()
+	_start_boot_diagnostic_entry()
+
+
+func _boot_diagnostic_pre_cycles(entry: Dictionary) -> int:
+	if entry.has("pre_cycles"):
+		return int(entry.get("pre_cycles", BOOT_DIAGNOSTIC_DEFAULT_DOT_CYCLES))
+	return BOOT_DIAGNOSTIC_ERROR_DOT_CYCLES if String(entry.get("result", "")) == "ERROR" else BOOT_DIAGNOSTIC_DEFAULT_DOT_CYCLES
+
+
+func _boot_diagnostic_prefix_for_entry(entry: Dictionary) -> String:
+	var label := BOOT_DIAGNOSTIC_PREFIX + String(entry.get("label", ""))
+	return label + "- " if not String(entry.get("result", "")).is_empty() else label
+
+
+func _boot_diagnostic_dots(step: int) -> String:
+	return ".".repeat((step % 3) + 1)
+
+
+func _set_boot_diagnostic_text(text: String) -> void:
+	if subtitle_label == null:
+		return
+	subtitle_label.text = text
 
 # =============================================================================
 # MENU BUILDING
@@ -189,7 +489,118 @@ func _build_menu() -> void:
 			continue
 		var row := _build_menu_row(String(item[0]), String(item[1]))
 		menu_list.add_child(row)
+	_wire_menu_navigation()
 
+func _wire_menu_navigation() -> void:
+	var buttons := _focusable_menu_buttons()
+	if buttons.is_empty():
+		return
+	for i in buttons.size():
+		var btn: Button = buttons[i]
+		var prev: Button = buttons[(i - 1 + buttons.size()) % buttons.size()]
+		var next: Button = buttons[(i + 1) % buttons.size()]
+		btn.focus_neighbor_top = btn.get_path_to(prev)
+		btn.focus_neighbor_bottom = btn.get_path_to(next)
+		btn.focus_previous = btn.get_path_to(prev)
+		btn.focus_next = btn.get_path_to(next)
+
+
+func _focusable_menu_buttons() -> Array[Button]:
+	var buttons: Array[Button] = []
+	for child in menu_list.get_children():
+		var btn := child as Button
+		if btn == null or btn.disabled:
+			continue
+		buttons.append(btn)
+	return buttons
+
+
+func _is_menu_item_disabled(id: String) -> bool:
+	match id:
+		"load":
+			return true
+		"endless":
+			return not _debug_mode_enabled
+		_:
+			return false
+
+
+func _apply_menu_row_availability(btn: Button, id: String) -> void:
+	btn.disabled = _is_menu_item_disabled(id)
+	btn.focus_mode = Control.FOCUS_NONE if btn.disabled else Control.FOCUS_ALL
+	if btn.disabled and btn.has_focus():
+		btn.release_focus()
+		_keyboard_menu_navigation_active = false
+	var texture_back := btn.get_node_or_null("OptionTexture") as TextureRect
+	if texture_back != null:
+		texture_back.self_modulate = Color(1, 1, 1, 0.68 if btn.disabled else 0.92)
+
+
+func _refresh_menu_item_availability() -> void:
+	for child in menu_list.get_children():
+		var btn := child as Button
+		if btn == null:
+			continue
+		var button_name := String(btn.name)
+		if not button_name.begins_with("MenuRow_"):
+			continue
+		var id := button_name.substr("MenuRow_".length())
+		_apply_menu_row_availability(btn, id)
+	_wire_menu_navigation()
+	_update_all_menu_option_button_textures()
+
+
+func _deactivate_keyboard_menu_navigation() -> void:
+	if not _keyboard_menu_navigation_active:
+		return
+	_keyboard_menu_navigation_active = false
+	_update_all_menu_option_button_textures()
+
+
+func _focus_first_menu_button() -> void:
+	var buttons := _focusable_menu_buttons()
+	if buttons.is_empty():
+		return
+	buttons[0].grab_focus()
+	_update_menu_option_button_texture(buttons[0])
+
+
+func _handle_menu_navigation_input(key_event: InputEventKey) -> bool:
+	if key_event.keycode == KEY_DOWN or key_event.keycode == KEY_KP_2 or key_event.is_action_pressed("ui_down"):
+		_move_menu_focus(1)
+		return true
+	if key_event.keycode == KEY_UP or key_event.keycode == KEY_KP_8 or key_event.is_action_pressed("ui_up"):
+		_move_menu_focus(-1)
+		return true
+	if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER or key_event.is_action_pressed("ui_accept"):
+		return _activate_focused_menu_button()
+	return false
+
+
+func _move_menu_focus(direction: int) -> void:
+	_keyboard_menu_navigation_active = true
+	var buttons := _focusable_menu_buttons()
+	if buttons.is_empty():
+		return
+	var focused := get_viewport().gui_get_focus_owner() as Button
+	var index := buttons.find(focused)
+	if index < 0:
+		index = 0 if direction > 0 else buttons.size() - 1
+	else:
+		index = posmod(index + direction, buttons.size())
+	buttons[index].grab_focus()
+	_update_all_menu_option_button_textures()
+
+
+func _activate_focused_menu_button() -> bool:
+	if not _keyboard_menu_navigation_active:
+		return false
+	var focused := get_viewport().gui_get_focus_owner() as Button
+	if focused == null or focused.disabled or focused.get_parent() != menu_list:
+		_focus_first_menu_button()
+		return true
+	focused.emit_signal("pressed")
+	return true
 
 ## A plain Button picks up the project's default Button theme from
 ## main_theme.tres — same styling used everywhere else.
@@ -200,13 +611,14 @@ func _build_menu_row(id: String, label: String) -> Button:
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.custom_minimum_size = _menu_option_button_size()
 	btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	btn.focus_mode = Control.FOCUS_ALL
-	btn.disabled = id == "endless" or id == "load"
+	_apply_menu_row_availability(btn, id)
 	_apply_menu_option_button_style(btn)
 
 	btn.pressed.connect(_activate.bind(id))
 	btn.mouse_entered.connect(_on_row_hover.bind(btn))
 	btn.mouse_exited.connect(_on_row_unhover.bind(btn))
+	btn.focus_entered.connect(_on_row_focus_changed.bind(btn))
+	btn.focus_exited.connect(_on_row_focus_changed.bind(btn))
 	return btn
 
 
@@ -268,10 +680,15 @@ func _make_menu_option_clear_stylebox() -> StyleBoxFlat:
 # =============================================================================
 
 func _on_row_hover(_btn: Button) -> void:
+	_deactivate_keyboard_menu_navigation()
 	_update_menu_option_button_texture(_btn)
 
 
 func _on_row_unhover(_btn: Button) -> void:
+	_update_menu_option_button_texture(_btn)
+
+
+func _on_row_focus_changed(_btn: Button) -> void:
 	_update_menu_option_button_texture(_btn)
 
 
@@ -280,11 +697,17 @@ func _update_menu_option_button_texture(btn: Button) -> void:
 	if texture_back == null:
 		return
 
-	var is_selected := btn.get_global_rect().has_point(get_global_mouse_position())
+	var is_selected := btn.get_global_rect().has_point(get_global_mouse_position()) or (_keyboard_menu_navigation_active and btn.has_focus())
 	if btn.disabled:
 		is_selected = false
 	texture_back.texture = menu_option_selected_texture if is_selected and menu_option_selected_texture != null else menu_option_texture
 
+func _update_all_menu_option_button_textures() -> void:
+	for child in menu_list.get_children():
+		var btn := child as Button
+		if btn == null:
+			continue
+		_update_menu_option_button_texture(btn)
 
 func _reset_menu_option_button_textures() -> void:
 	for child in menu_list.get_children():
@@ -352,11 +775,15 @@ func _start_new_game() -> void:
 
 
 func _start_endless() -> void:
-	# Endless mode currently uses the same Main scene. When endless-specific
-	# rules exist, set a GameState flag here before changing scenes.
+	if get_node_or_null("/root/GameState") != null:
+		GameState.reset_for_new_game()
+		GameState.complete_intro()
+	if get_node_or_null("/root/DayCycle") != null and DayCycle.has_method("reset_for_new_game"):
+		DayCycle.reset_for_new_game()
+
 	var intro: Node = get_node_or_null("/root/IntroTransition")
 	if intro:
-		intro.pending_intro = true
+		intro.pending_intro = false
 	get_tree().change_scene_to_file(game_scene_path)
 
 
@@ -523,6 +950,7 @@ func _build_settings_panel() -> Control:
 
 	content.add_child(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed))
 	content.add_child(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled))
+	content.add_child(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled))
 
 	var apply_row := HBoxContainer.new()
 	apply_row.alignment = BoxContainer.ALIGNMENT_END
@@ -622,6 +1050,14 @@ func _on_scanlines_toggled(enabled: bool) -> void:
 	var settings := get_node_or_null("/root/GameState")
 	if settings:
 		settings.scanlines_enabled = enabled
+
+
+func _on_debug_mode_toggled(enabled: bool) -> void:
+	_debug_mode_enabled = enabled
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		settings.debug_mode_enabled = enabled
+	_refresh_menu_item_availability()
 
 
 func _brightness_multiplier() -> float:

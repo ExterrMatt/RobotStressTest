@@ -25,6 +25,7 @@ GameState="*res://autoload/GameState.gd"
 DayCycle="*res://autoload/DayCycle.gd"
 Dialogue="*res://autoload/Dialogue.gd"
 IntroTransition="*res://autoload/IntroTransition.gd"
+CursorTheme="*res://autoload/CursorTheme.gd"
 
 [display]
 

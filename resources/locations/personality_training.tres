@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="LocationData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://cqtgip56fdv45" path="res://assets/textures/backgrounds/personality_test.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://77whj054g2hl" path="res://assets/textures/backgrounds/placeholder_personality_test.png" id="2"]
 
 [resource]
 script = ExtResource("1")

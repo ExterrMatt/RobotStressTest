@@ -6,10 +6,14 @@ const PIXEL_FONT: FontFile = preload("res://assets/fonts/Jersey10-Regular.ttf")
 @export var mouse_offset: Vector2 = Vector2(18.0, 18.0)
 @export var viewport_margin: float = 8.0
 @export var max_label_width: float = 320.0
+@export var show_delay_seconds: float = 1.5
 
 var _label: Label = null
 var _last_text: String = ""
 var _last_mouse_position: Vector2 = Vector2.INF
+var _pending_text: String = ""
+var _pending_elapsed_seconds: float = 0.0
+var _pending_show: bool = false
 
 
 func _ready() -> void:
@@ -37,6 +41,24 @@ func show_text(text: String) -> void:
 	if text.strip_edges().is_empty():
 		hide_tooltip()
 		return
+	if _pending_show and text == _pending_text:
+		return
+	if visible and text == _last_text:
+		return
+	if show_delay_seconds <= 0.0:
+		_pending_show = false
+		_pending_text = ""
+		_pending_elapsed_seconds = 0.0
+		_show_now(text)
+		return
+	_pending_text = text
+	_pending_elapsed_seconds = 0.0
+	_pending_show = true
+	visible = false
+	_last_mouse_position = Vector2.INF
+
+
+func _show_now(text: String) -> void:
 	var was_visible := visible
 	if _label != null:
 		if text != _last_text:
@@ -54,10 +76,21 @@ func show_text(text: String) -> void:
 
 func hide_tooltip() -> void:
 	visible = false
+	_pending_show = false
+	_pending_text = ""
+	_pending_elapsed_seconds = 0.0
 	_last_mouse_position = Vector2.INF
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _pending_show:
+		_pending_elapsed_seconds += delta
+		if _pending_elapsed_seconds >= show_delay_seconds:
+			var text := _pending_text
+			_pending_show = false
+			_pending_text = ""
+			_pending_elapsed_seconds = 0.0
+			_show_now(text)
 	if visible:
 		_update_position()
 

@@ -109,7 +109,7 @@ const TEACHERS: Array = [
 		"questions": [
 			{
 				"lecture_key": "history.automaton_war.lecture",
-				"prompt": "What was the main catalyst that caused the original automaton-human conflict?",
+				"prompt": "What event originally started the first Automaton War?",
 				"choices": [
 					"A military automaton refused an order",
 					"Factory automatons demanded payment",
@@ -164,7 +164,7 @@ const INTRO_HISTORY_TEACHER: Dictionary = {
 }
 const INTRO_HISTORY_QUESTION: Dictionary = {
 	"lecture_key": "history.automaton_war.lecture",
-	"prompt": "What was the main catalyst that caused the original automaton-human conflict?",
+	"prompt": "What Caused The First Automaton War?",
 	"choices": [
 		"A military automaton refused an order",
 		"Factory automatons demanded payment",

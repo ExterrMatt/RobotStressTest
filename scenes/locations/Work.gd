@@ -32,6 +32,7 @@ const FACTORY_LIGHTS_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/ba
 const FACTORY_HALLWAY_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_hallway.png"
 const FACTORY_BOX_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_box.png"
 const WORK_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work.png"
+const WORK_SCRAP_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work_scrap.png"
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const WORK_FRAME_OUTER_WIDTH: float = 800.0
@@ -94,13 +95,13 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if _scene_phase != WorkPhase.MINIGAME or _intro_work or _work_timed_out:
+	if _scene_phase != WorkPhase.MINIGAME or _work_timed_out:
 		return
 	_work_elapsed_seconds += delta
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("set_work_hud_elapsed_seconds"):
 		main.set_work_hud_elapsed_seconds(_work_elapsed_seconds)
-	if _work_elapsed_seconds >= WORK_TIME_LIMIT_SECONDS:
+	if not _intro_work and _work_elapsed_seconds >= WORK_TIME_LIMIT_SECONDS:
 		_finish_work_timeout()
 
 
@@ -114,9 +115,9 @@ func _show_work_minigame() -> void:
 	_set_node_visible(work_inventory, true)
 
 	if main != null:
-		if not _intro_work and main.has_method("set_work_hud_timer_active"):
+		if main.has_method("set_work_hud_timer_active"):
 			main.set_work_hud_timer_active(true)
-		if not _intro_work and main.has_method("set_work_hud_elapsed_seconds"):
+		if main.has_method("set_work_hud_elapsed_seconds"):
 			main.set_work_hud_elapsed_seconds(0.0)
 		_set_main_scene_image_and_frame(
 			WORK_BACKGROUND_TEXTURE_PATH,
@@ -136,7 +137,7 @@ func _show_work_minigame() -> void:
 	# Listen for slot fills so we know when the puzzle is complete.
 	if work_inventory:
 		work_inventory.slots_changed.connect(_on_slots_changed)
-	set_process(not _intro_work)
+	set_process(true)
 
 
 func _enter_intro_job() -> void:
@@ -304,10 +305,10 @@ func _apply_completion_screen() -> void:
 	# work area; on the completion screen it would just be a distracting slab.
 	_set_node_visible(color_background, false)
 
-	# Keep the factory work image visible for the completion dialogue. The
-	# placeholder background is a fallback asset and should not appear here.
+	# Show the scrap-focused work image for the completion dialogue and
+	# steal-or-finish choice.
 	_set_main_scene_image_and_frame(
-		WORK_BACKGROUND_TEXTURE_PATH,
+		WORK_SCRAP_BACKGROUND_TEXTURE_PATH,
 		DEFAULT_DIALOGUE_FRAME_SIZE,
 		_default_main_frame_outer_width(main)
 	)
@@ -353,6 +354,7 @@ func _auto_advance_completion_prompt(prompt_text: String) -> void:
 
 func _show_completion_choices() -> void:
 	_scene_phase = WorkPhase.COMPLETION_CHOICES
+	lock_entry_input()
 	_clear_choice_buttons()
 	_set_node_visible(choice_grid, true)
 

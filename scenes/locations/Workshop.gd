@@ -7,8 +7,9 @@ const CHOICE_FONT_SIZE: int = 36
 const PROMPT_COLOR: String = "#e8c468"
 
 # --- pan geometry ---
-const INTRO_PAN_SCALE: float = 1.8
-const MINIGAME_PAN_SCALE: float = 1.6
+const PAN_FRAME_SCALE_MULTIPLIER: float = 1.075
+const INTRO_PAN_SCALE: float = 1.8 * PAN_FRAME_SCALE_MULTIPLIER
+const MINIGAME_PAN_SCALE: float = 1.6 * PAN_FRAME_SCALE_MULTIPLIER
 const PAN_START_SHRINK_DURATION: float = 0.2
 
 const PAN_IMAGE_PATHS: Array[String] = [
@@ -26,10 +27,10 @@ const INTRO_REGION_HEIGHT: float = 125.0
 const INTRO_FRAME_SIZE: Vector2 = Vector2(PAN_WIDTH * INTRO_PAN_SCALE, INTRO_REGION_HEIGHT * INTRO_PAN_SCALE)
 const INTRO_FRAME_OUTER_WIDTH: float = PAN_WIDTH * INTRO_PAN_SCALE
 
-const MINIGAME_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
-const MINIGAME_FRAME_OUTER_WIDTH: float = 800.0
 const MINIGAME_REGION_HEIGHT: float = 400.0
 const MINIGAME_REGION_Y: float = PAN_SOURCE_HEIGHT - MINIGAME_REGION_HEIGHT
+const MINIGAME_FRAME_SIZE: Vector2 = Vector2(PAN_WIDTH * MINIGAME_PAN_SCALE, MINIGAME_REGION_HEIGHT * MINIGAME_PAN_SCALE)
+const MINIGAME_FRAME_OUTER_WIDTH: float = PAN_WIDTH * MINIGAME_PAN_SCALE
 
 const PAN_DURATION: float = 0.55
 const PAN_TRANS: int = Tween.TRANS_QUAD
@@ -73,6 +74,7 @@ func _ready() -> void:
 	_install_pan_atlas()
 	_pan_t = 0.0
 	_intro_workshop = _is_intro_workshop_scene()
+	_hide_end_button()
 
 	_enter_intro()
 
@@ -194,6 +196,7 @@ func _auto_advance_intro_prompt(prompt_text: String) -> void:
 
 func _show_intro_choices() -> void:
 	_scene_phase = WorkshopPhase.INTRO_CHOICES
+	lock_entry_input()
 	_clear_choice_buttons()
 	choice_grid.visible = true
 
@@ -238,6 +241,7 @@ func _enter_minigame() -> void:
 
 func _on_pan_complete() -> void:
 	_pan_t = 1.0
+	lock_entry_input()
 
 	var main: Node = get_tree().current_scene
 
@@ -251,8 +255,34 @@ func _on_pan_complete() -> void:
 	
 	if _minigame.has_signal("collected"):
 		_minigame.collected.connect(_on_minigame_collected)
+	if _minigame.has_signal("ended"):
+		_minigame.ended.connect(_on_end_button_pressed)
+	_configure_minigame_end_button()
 	if main and main.has_method("show_scene_overlay"):
 		main.show_scene_overlay(_minigame, true)
+
+
+func _hide_end_button() -> void:
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("hide_corner_button"):
+		main.hide_corner_button()
+
+
+func _configure_minigame_end_button() -> void:
+	if _minigame == null:
+		return
+	var end_button := _minigame.get_node_or_null("EndButton") as Button
+	if end_button == null:
+		return
+	var available := not _intro_workshop
+	end_button.visible = available
+	end_button.disabled = not available
+
+
+func _on_end_button_pressed() -> void:
+	if _intro_workshop:
+		return
+	finish(0, 0, 0, {}, false)
 
 
 func _on_minigame_collected(part_id: String) -> void:
@@ -301,8 +331,6 @@ func _clear_choice_buttons() -> void:
 
 
 func _is_intro_workshop_scene() -> bool:
-	if GameState.is_intro_step("workshop"):
-		return true
 	if bool(get_meta("intro_sequence_location", false)) and String(get_meta("intro_step", "")) == "workshop":
 		return true
 	var main := get_tree().current_scene

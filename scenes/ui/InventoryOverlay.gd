@@ -19,7 +19,7 @@ const TEXTURE_PATHS: Dictionary = {
 	"nuts_bolts": "res://assets/textures/icons/nuts_bolts.png",
 	"electronics": "res://assets/textures/icons/electronics.png",
 	"nanobots": "res://assets/textures/icons/nanobots.png",
-	"head_segments": "res://assets/textures/icons/placeholder_item.png",
+	"head_segments": "res://assets/textures/icons/head_segments.png",
 	"oil": "res://assets/textures/icons/oil.png",
 	"sneaky_shoes": "res://assets/textures/icons/sneaky_shoes.png",
 	"leg": "res://assets/textures/icons/leg.png",
@@ -191,9 +191,10 @@ func _build_tile(entry: Dictionary) -> Panel:
 	var tile := Panel.new()
 	tile.custom_minimum_size = TILE_SIZE
 	tile.tooltip_text = entry["name"]
+	var is_head_segments: bool = String(entry.get("id", "")) == "head_segments"
 
-	# Sprite (centered).
-	var sprite_holder := CenterContainer.new()
+	# Sprite.
+	var sprite_holder: Control = Control.new() if is_head_segments else CenterContainer.new()
 	sprite_holder.anchor_left = 0.0
 	sprite_holder.anchor_top = 0.0
 	sprite_holder.anchor_right = 1.0
@@ -202,13 +203,23 @@ func _build_tile(entry: Dictionary) -> Panel:
 	tile.add_child(sprite_holder)
 
 	var sprite := TextureRect.new()
-	sprite.custom_minimum_size = SPRITE_SIZE
+	var sprite_size: Vector2 = SPRITE_SIZE * 1.05 if is_head_segments else SPRITE_SIZE
+	sprite.custom_minimum_size = sprite_size
 	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.texture = entry["texture"]
 	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	sprite_holder.add_child(sprite)
+	if is_head_segments:
+		sprite.anchor_left = 0.5
+		sprite.anchor_right = 0.5
+		sprite.anchor_top = 0.0
+		sprite.anchor_bottom = 0.0
+		sprite.offset_left = -sprite_size.x * 0.5
+		sprite.offset_right = sprite_size.x * 0.5
+		sprite.offset_top = 0.0
+		sprite.offset_bottom = sprite_size.y
 
 	# Count badge in the bottom-right of the tile (Minecraft style).
 	# Hidden when count is 1 AND the entry is a tool (looks cleaner that way),

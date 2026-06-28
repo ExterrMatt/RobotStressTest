@@ -2,6 +2,7 @@ extends Control
 class_name WorkshopMinigame
 
 signal collected(part_id: String)
+signal ended()
 
 @export var forced_part_id: String = ""
 
@@ -22,7 +23,7 @@ const INGREDIENT_PATHS: Dictionary = {
 	"nanobots":      "res://assets/textures/icons/nanobots.png",
 	"electronics":   "res://assets/textures/icons/electronics.png",
 	"synth_skin":    "res://assets/textures/icons/synth_skin.png",
-	"head_segments": "res://assets/textures/icons/placeholder_item.png",
+	"head_segments": "res://assets/textures/icons/head_segments.png",
 	"oil":           "res://assets/textures/icons/oil.png",
 }
 const HEAD_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot head"
@@ -55,7 +56,7 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts_shadow.png",
 	"electronics":   "res://assets/textures/icons/electronics_shadow.png",
 	"synth_skin":    "res://assets/textures/icons/synth_skin_shadow.png",
-	"head_segments": "res://assets/textures/icons/placeholder_item.png",
+	"head_segments": "res://assets/textures/icons/head_segments.png",
 	"oil":           "res://assets/textures/icons/oil_shadow.png",
 }
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
@@ -97,6 +98,7 @@ void fragment() {
 @onready var craft_button: Button = %CraftButton
 @onready var assembly: Control = %AssemblyArea
 @onready var collect_button: Button = %CollectButton
+@onready var end_button: Button = %EndButton
 
 var _segments: Dictionary = {}
 var _assembly_slots: Dictionary = {}
@@ -183,6 +185,11 @@ func _ready() -> void:
 	collect_button.disabled = true
 	collect_button.visible = false
 	collect_button.text = "COLLECT"
+	end_button.pressed.connect(_on_end_button_pressed)
+
+
+func _on_end_button_pressed() -> void:
+	ended.emit()
 
 
 func _process(_delta: float) -> void:
@@ -208,20 +215,19 @@ func _draw_shadows_recursive(node: Node) -> void:
 			var s_xform: Transform2D = _shadow_drawer.get_global_transform().affine_inverse() * child.get_global_transform()
 			_shadow_drawer.draw_set_transform_matrix(s_xform)
 			
-			var v_off: Vector2 = child.visual_offset if typeof(child.visual_offset) == TYPE_VECTOR2 else Vector2.ZERO
 			var s_off: Vector2 = child.shadow_offset if typeof(child.shadow_offset) == TYPE_VECTOR2 else Vector2.ZERO
-			
-			var tex_pos: Vector2 = v_off
-			if child.auto_center and child.texture != null:
-				tex_pos = (child.size - child.texture.get_size()) / 2.0
-				
-			var s_pos: Vector2 = tex_pos
-			if child.auto_center:
-				s_pos = (child.size - child.shadow_texture.get_size()) / 2.0
 			
 			# Draw FULLY opaque white. If drawn full black, intersections remain max black. 
 			# The CanvasGroup applies the 50% opacity uniformly to the resulting combined shapes later!
-			_shadow_drawer.draw_texture(child.shadow_texture, s_pos + s_off, Color(1, 1, 1, 1))
+			_shadow_drawer.draw_texture_rect(
+				child.shadow_texture,
+				Rect2(
+					child.texture_draw_position(child.shadow_texture) + s_off,
+					child.texture_draw_size(child.shadow_texture)
+				),
+				false,
+				Color(1, 1, 1, 1)
+			)
 			
 		_draw_shadows_recursive(child)
 
@@ -309,7 +315,7 @@ func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vecto
 		return
 	var ghost := TextureRect.new()
 	ghost.texture = piece.texture
-	ghost.size = piece.texture.get_size()
+	ghost.size = piece.texture_draw_size()
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ghost.material = _get_placement_hint_material()
 	_placement_hint_layer.add_child(ghost)
@@ -317,10 +323,12 @@ func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vecto
 
 
 func _piece_texture_draw_position(piece: WorkshopPiece) -> Vector2:
-	var tex_pos: Vector2 = piece.visual_offset if typeof(piece.visual_offset) == TYPE_VECTOR2 else Vector2.ZERO
-	if piece.auto_center and piece.texture != null:
-		tex_pos = (piece.size - piece.texture.get_size()) / 2.0
-	return tex_pos
+	return piece.texture_draw_position()
+
+
+func _debug_mode_enabled() -> bool:
+	var settings := get_node_or_null("/root/GameState")
+	return settings != null and settings.debug_mode_enabled
 
 
 # --- global input pipe ---
@@ -330,6 +338,13 @@ func _input(event: InputEvent) -> void:
 	if main and "transition" in main:
 		var tr = main.transition
 		if tr and tr.has_method("is_playing") and tr.is_playing():
+			return
+
+	if event is InputEventKey:
+		var key_event: InputEventKey = event
+		if _debug_mode_enabled() and key_event.pressed and not key_event.echo and (key_event.keycode == KEY_6 or key_event.physical_keycode == KEY_6 or key_event.keycode == KEY_KP_6 or key_event.physical_keycode == KEY_KP_6):
+			_auto_assemble_craft_bin_segments()
+			get_viewport().set_input_as_handled()
 			return
 
 	if event is InputEventMouseButton:
@@ -495,6 +510,54 @@ func _node_is_workshop_piece(node: Node) -> bool:
 	var script: Script = node.get_script()
 	return script != null and script.resource_path == WORKSHOP_PIECE_SCRIPT_PATH
 
+
+func _auto_assemble_craft_bin_segments() -> void:
+	if _active_drag_segment != null or _active_drag_piece != null:
+		return
+	if _active_assembly_slot_ids.is_empty():
+		return
+
+	var placed_any: bool = true
+	while placed_any:
+		placed_any = false
+		for segment in _craft_bin_segments_in_slot_order():
+			var slot: WorkshopAssemblySlot = _auto_assemble_slot_for_segment(segment)
+			if slot == null:
+				continue
+			segment.end_drag()
+			_accept_segment_into_slot(segment, slot)
+			placed_any = true
+	_refresh_collect_button()
+
+
+func _craft_bin_segments_in_slot_order() -> Array[WorkshopSegment]:
+	var segments: Array[WorkshopSegment] = []
+	for child in craft_bin.get_children():
+		if child is WorkshopSegment and not child.locked and child.visible and child.is_visible_in_tree():
+			segments.append(child)
+	segments.sort_custom(func(a: WorkshopSegment, b: WorkshopSegment): return _slot_sort_index(a) < _slot_sort_index(b))
+	return segments
+
+
+func _slot_sort_index(segment: WorkshopSegment) -> int:
+	var slot: WorkshopAssemblySlot = _slot_for_segment(segment)
+	if slot == null:
+		return 999999
+	var index: int = _active_assembly_slot_ids.find(slot.accepts_segment_id)
+	return index if index >= 0 else 999999
+
+
+func _auto_assemble_slot_for_segment(segment: WorkshopSegment) -> WorkshopAssemblySlot:
+	for slot_id in _active_assembly_slot_ids:
+		var slot: WorkshopAssemblySlot = _assembly_slots.get(slot_id)
+		if slot == null or slot.filled:
+			continue
+		if not _slot_accepts_segment(slot, segment):
+			continue
+		if not _head_prerequisites_met(segment.segment_id):
+			continue
+		return slot
+	return null
 
 func _slot_for_segment(segment: WorkshopSegment) -> WorkshopAssemblySlot:
 	var exact_slot: WorkshopAssemblySlot = _assembly_slots.get(segment.segment_id)
@@ -867,6 +930,9 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	piece.segment_id = &""
 	piece.texture = load(tex_path)
 	piece.auto_center = true
+	if id == "head_segments":
+		piece.visual_scale = 1.05
+		piece.auto_top_center = true
 
 	var shadow_path: String = String(INGREDIENT_SHADOW_PATHS.get(id, ""))
 	if shadow_path != "" and ResourceLoader.exists(shadow_path):
@@ -908,10 +974,15 @@ func _available_count(id: String) -> int:
 	return total - in_bin
 
 
-func _refresh_tray_counts() -> void:
+func _refresh_tray_counts(remove_depleted_slots: bool = false) -> void:
 	for slot in ingredients_tray.get_children():
 		var id: String = String(slot.name).trim_prefix("Tray_")
 		var available: int = _available_count(id)
+		if remove_depleted_slots and available <= 0:
+			slot.visible = false
+			ingredients_tray.remove_child(slot)
+			slot.queue_free()
+			continue
 		var badge: Label = slot.get_node_or_null("Count")
 		if badge:
 			badge.text = "x%d" % max(available, 0)
@@ -1098,7 +1169,7 @@ func _on_craft_pressed() -> void:
 
 	_spawn_segments_stacked_at_bin_center()
 
-	_refresh_tray_counts()
+	_refresh_tray_counts(true)
 	craft_button.disabled = true
 	craft_button.text = "CRAFTED %s" % _part_display_name(_crafted_part_id).to_upper()
 	collect_button.visible = true
@@ -1116,6 +1187,7 @@ func _consume_recipe_pieces(recipe: Dictionary) -> void:
 		for piece in craft_bin.pieces_with_id(StringName(id)):
 			if consumed >= need:
 				break
+			piece.visible = false
 			var parent: Node = piece.get_parent()
 			if parent != null:
 				parent.remove_child(piece)
@@ -1287,10 +1359,11 @@ func _piece_visible_rect(piece: WorkshopPiece) -> Rect2:
 	var used: Rect2i = img.get_used_rect()
 	if used.size.x <= 0 or used.size.y <= 0:
 		return Rect2()
-	var tex_pos: Vector2 = piece.visual_offset if typeof(piece.visual_offset) == TYPE_VECTOR2 else Vector2.ZERO
-	if piece.auto_center:
-		tex_pos = (piece.size - piece.texture.get_size()) / 2.0
-	return Rect2(tex_pos + Vector2(used.position), Vector2(used.size))
+	var scale_value: float = max(0.001, piece.visual_scale)
+	return Rect2(
+		piece.texture_draw_position() + Vector2(used.position) * scale_value,
+		Vector2(used.size) * scale_value
+	)
 
 
 func _spawn_segment_order() -> Array[StringName]:

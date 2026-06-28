@@ -10,8 +10,9 @@
 [ext_resource type="Texture2D" uid="uid://de33xva2c1dsm" path="res://assets/textures/characters/robot/stresstest/legs/left_leg.png" id="6_left_leg"]
 [ext_resource type="Texture2D" uid="uid://bv3g7cpd5tr7t" path="res://assets/textures/characters/robot/stresstest/legs/right_leg_up_thigh.png" id="7_right_leg_up_thigh"]
 [ext_resource type="Texture2D" uid="uid://fpjo774ulgtr" path="res://assets/textures/characters/robot/stresstest/torso/torso.png" id="7_torso"]
+[ext_resource type="Texture2D" uid="uid://dsbe00k78t3bg" path="res://assets/textures/characters/robot/stresstest/torso/chest.png" id="8_chest"]
 [ext_resource type="Texture2D" uid="uid://c7v7w41qtcsis" path="res://assets/textures/characters/robot/stresstest/legs/right_leg_up_shin.png" id="8_right_leg_up_shin"]
-[ext_resource type="Texture2D" uid="uid://bv64k26fbogdy" path="res://assets/textures/characters/robot/stresstest/torso/torso_skin.png" id="8_torso_skin"]
+[ext_resource type="Texture2D" uid="uid://nkkq7dx3k1vj" path="res://assets/textures/characters/robot/stresstest/torso/big_coconuts.png" id="9_big_coconuts"]
 [ext_resource type="Texture2D" uid="uid://bdbmnhqa4ihdi" path="res://assets/textures/characters/robot/stresstest/legs/left_leg_up_thigh.png" id="9_left_leg_up_thigh"]
 [ext_resource type="Texture2D" uid="uid://bcwbycge67oxy" path="res://assets/textures/characters/robot/stresstest/torso/nipples.png" id="9_nipples"]
 [ext_resource type="Texture2D" uid="uid://xb2lrxbotlhf" path="res://assets/textures/characters/robot/stresstest/legs/left_leg_up_shin.png" id="10_left_leg_up_shin"]
@@ -97,8 +98,8 @@ mouse_filter = 2
 texture = ExtResource("7_torso")
 expand_mode = 1
 
-[node name="TorsoSkin" type="TextureRect" parent="Torso" unique_id=1974583020]
-visible = false
+[node name="Chest" type="TextureRect" parent="Torso" unique_id=1974583020]
+z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -106,11 +107,23 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("8_torso_skin")
+texture = ExtResource("8_chest")
+expand_mode = 1
+
+[node name="BigCoconuts" type="TextureRect" parent="Torso" unique_id=1796253818]
+z_index = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_big_coconuts")
 expand_mode = 1
 
 [node name="Nipples" type="TextureRect" parent="Torso" unique_id=266794297]
-z_index = 1
+z_index = 3
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -516,37 +529,37 @@ centered = false
 region_enabled = true
 region_rect = Rect2(2000, 0, 250, 350)
 
-[node name="VegetableMissionIntro" type="Node2D" parent="AnimationLayers"]
+[node name="VegetableMissionIntro" type="Node2D" parent="AnimationLayers" unique_id=1253382922]
 
-[node name="RightLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro"]
+[node name="RightLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro" unique_id=538891138]
 visible = false
 texture = ExtResource("26_vegetable_mission_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 250, 350)
 
-[node name="RightLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro"]
+[node name="RightLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro" unique_id=286000767]
 visible = false
 texture = ExtResource("26_vegetable_mission_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(250, 0, 250, 350)
 
-[node name="LeftLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro"]
+[node name="LeftLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro" unique_id=746316772]
 visible = false
 texture = ExtResource("26_vegetable_mission_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(500, 0, 250, 350)
 
-[node name="LeftLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro"]
+[node name="LeftLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro" unique_id=1372692178]
 visible = false
 texture = ExtResource("26_vegetable_mission_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(750, 0, 250, 350)
 
-[node name="Vegetable" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro"]
+[node name="Vegetable" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro" unique_id=302706197]
 visible = false
 texture = ExtResource("26_vegetable_mission_intro")
 centered = false
@@ -611,37 +624,37 @@ centered = false
 region_enabled = true
 region_rect = Rect2(2000, 0, 250, 350)
 
-[node name="VegetableMissionLoopMedium" type="Node2D" parent="AnimationLayers"]
+[node name="VegetableMissionLoopMedium" type="Node2D" parent="AnimationLayers" unique_id=371959530]
 
-[node name="RightLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium"]
+[node name="RightLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium" unique_id=1890215548]
 visible = false
 texture = ExtResource("27_vegetable_mission_loop_medium")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 250, 350)
 
-[node name="RightLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium"]
+[node name="RightLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium" unique_id=591873375]
 visible = false
 texture = ExtResource("27_vegetable_mission_loop_medium")
 centered = false
 region_enabled = true
 region_rect = Rect2(250, 0, 250, 350)
 
-[node name="LeftLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium"]
+[node name="LeftLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium" unique_id=936008516]
 visible = false
 texture = ExtResource("27_vegetable_mission_loop_medium")
 centered = false
 region_enabled = true
 region_rect = Rect2(500, 0, 250, 350)
 
-[node name="LeftLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium"]
+[node name="LeftLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium" unique_id=632260973]
 visible = false
 texture = ExtResource("27_vegetable_mission_loop_medium")
 centered = false
 region_enabled = true
 region_rect = Rect2(750, 0, 250, 350)
 
-[node name="Vegetable" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium"]
+[node name="Vegetable" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium" unique_id=883295180]
 visible = false
 texture = ExtResource("27_vegetable_mission_loop_medium")
 centered = false
@@ -649,7 +662,7 @@ region_enabled = true
 region_rect = Rect2(1000, 0, 250, 350)
 
 [node name="BoobCover" type="TextureRect" parent="." unique_id=931354332]
-z_index = 1
+z_index = 4
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -673,7 +686,7 @@ script = ExtResource("2_hover_box")
 priority = 10
 click_action = 1
 hover_description = "Raise Head"
-hidden_while_active_image_paths = Array[NodePath]([NodePath("HairBack"), NodePath("Torso/Neck"), NodePath("Head/HeadBase"), NodePath("Head/SquintEyes"), NodePath("Head/HairFrontNormal"), NodePath("Head/HairFrontBangs"), NodePath("Torso/TorsoBase"), NodePath("Torso/TorsoSkin"), NodePath("Torso/TorsoCrunch"), NodePath("Arms/RightArm"), NodePath("Arms/LeftArm")])
+hidden_while_active_image_paths = Array[NodePath]([NodePath("HairBack"), NodePath("Torso/Neck"), NodePath("Head/HeadBase"), NodePath("Head/SquintEyes"), NodePath("Head/HairFrontNormal"), NodePath("Head/HairFrontBangs"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Nipples"), NodePath("Torso/TorsoCrunch"), NodePath("Arms/RightArm"), NodePath("Arms/LeftArm")])
 shown_while_active_image_paths = Array[NodePath]([NodePath("AnimationLayers")])
 intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/HairBack"), NodePath("AnimationLayers/Head"), NodePath("AnimationLayers/Neck"), NodePath("AnimationLayers/SquintEyes"), NodePath("AnimationLayers/Torso"), NodePath("AnimationLayers/HairFrontNormal"), NodePath("AnimationArmLayers/LeftArm"), NodePath("AnimationArmLayers/RightArm"), NodePath("AnimationLayers/Banana")])
 loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBLoopMedium/HairBack"), NodePath("AnimationLayers/MouthBLoopMedium/Neck"), NodePath("AnimationLayers/MouthBLoopMedium/Head"), NodePath("AnimationLayers/MouthBLoopMedium/SquintEyes"), NodePath("AnimationArmLayers/MouthBLoopMedium/LeftArm"), NodePath("AnimationArmLayers/MouthBLoopMedium/RightArm"), NodePath("AnimationLayers/MouthBLoopMedium/Torso"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontNormal"), NodePath("AnimationLayers/MouthBLoopMedium/Banana")])
@@ -694,7 +707,7 @@ priority = 20
 click_action = 1
 hover_description = "Raise Legs"
 hidden_while_active_image_paths = Array[NodePath]([NodePath("Legs/RightLeg"), NodePath("Legs/LeftLeg"), NodePath("Legs/RightLegUpThigh"), NodePath("Legs/RightLegUpShin"), NodePath("Legs/LeftLegUpThigh"), NodePath("Legs/LeftLegUpShin"), NodePath("Torso/TorsoBase"), NodePath("AnimationLayers/Torso"), NodePath("AnimationLayers/Nipples"), NodePath("AnimationLayers/MouthBLoopMedium/Torso"), NodePath("AnimationLayers/MouthBLoopMedium/Nipples")])
-shown_while_active_image_paths = Array[NodePath]([NodePath("Torso/TorsoCrunch"), NodePath("Torso/Nipples")])
+shown_while_active_image_paths = Array[NodePath]([NodePath("Torso/TorsoCrunch"), NodePath("Torso/Chest"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Nipples")])
 intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/Vegetable")])
 loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Vegetable")])
 intro_frame_count = 16

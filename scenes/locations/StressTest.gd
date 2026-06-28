@@ -839,6 +839,7 @@ func _create_mouse_tooltip() -> void:
 	add_child(_tooltip_layer)
 
 	_mouse_tooltip = MOUSE_TOOLTIP_SCRIPT.new() as MouseFollowTooltip
+	_mouse_tooltip.show_delay_seconds = 0.0
 	_tooltip_layer.add_child(_mouse_tooltip)
 
 

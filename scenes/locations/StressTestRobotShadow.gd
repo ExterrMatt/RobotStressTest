@@ -80,7 +80,9 @@ extends Control
 @export var back_present_source_paths: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
 	^"Torso/TorsoBase",
-	^"Torso/TorsoSkin",
+	^"Torso/Chest",
+	^"Torso/BigCoconuts",
+	^"Torso/Nipples",
 	^"Torso/TorsoCrunch",
 	^"AnimationLayers/Torso",
 	^"AnimationLayers/MouthBLoopMedium/Torso",

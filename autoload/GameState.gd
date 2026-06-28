@@ -15,6 +15,7 @@ signal phase_changed(new_phase: int)
 signal arrested()
 signal brightness_changed(new_value: float)
 signal scanlines_enabled_changed(enabled: bool)
+signal debug_mode_changed(enabled: bool)
 ## Emitted when the set of items bought today changes. The overlay listens
 ## to this so the per-day-purchase markers stay in sync without polling.
 signal purchased_today_changed(purchased_ids: Array)
@@ -47,6 +48,7 @@ var _phase: int = 0
 var _money: int = 0
 var _brightness_value: float = 50.0
 var _scanlines_enabled: bool = true
+var _debug_mode_enabled: bool = false
 var player_name: String = ""
 var intro_active: bool = true
 var intro_completed: bool = false
@@ -85,6 +87,14 @@ var scanlines_enabled: bool:
 			return
 		_scanlines_enabled = value
 		scanlines_enabled_changed.emit(_scanlines_enabled)
+
+var debug_mode_enabled: bool:
+	get: return _debug_mode_enabled
+	set(value):
+		if value == _debug_mode_enabled:
+			return
+		_debug_mode_enabled = value
+		debug_mode_changed.emit(_debug_mode_enabled)
 
 var _suspicion: int = 0
 var _anger: int = 0
@@ -141,6 +151,7 @@ func _emit_initial_state() -> void:
 	phase_changed.emit(_phase)
 	brightness_changed.emit(_brightness_value)
 	scanlines_enabled_changed.emit(_scanlines_enabled)
+	debug_mode_changed.emit(_debug_mode_enabled)
 	purchased_today_changed.emit(purchased_today)
 	robot_parts_changed.emit(robot_parts.duplicate())
 	intro_changed.emit(intro_active, intro_step)
@@ -406,6 +417,7 @@ func to_dict() -> Dictionary:
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
 		"intro_step": intro_step,
+		"debug_mode_enabled": _debug_mode_enabled,
 	}
 
 
@@ -437,4 +449,5 @@ func from_dict(data: Dictionary) -> void:
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))
+	_debug_mode_enabled = bool(data.get("debug_mode_enabled", false))
 	_emit_initial_state()

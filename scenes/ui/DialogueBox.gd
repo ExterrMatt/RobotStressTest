@@ -30,7 +30,7 @@ signal page_advanced(index: int) ## emitted whenever a new page starts
 const THOUGHT_COLOR: String = "#808080"
 const LINE_SEPARATION_NO_OVERRIDE: int = -1000000
 const SPEAKER_COLORS: Dictionary = {
-	"Uncle": "#328dc5",
+	"Uncle": "#40a1dd",
 	"Ms. Vey": "#f87031",
 	"Ms Vey": "#f87031",
 	"Ms. Okorie": "#f87031",
@@ -39,7 +39,7 @@ const SPEAKER_COLORS: Dictionary = {
 	"Mr Caldera": "#f87031",
 	"Her": "#b7d6d8",
 	"Robot": "#b7d6d8",
-	"You": "#d8b9b7",
+	"You": "#e4b22d",
 	"Ed": "#6b5f2a",
 }
 
@@ -51,6 +51,12 @@ const SPEAKER_COLORS: Dictionary = {
 
 ## How much SHIFT speeds up the typewriter. 3.0 = three times faster.
 @export_range(1.0, 10.0, 0.1) var fast_forward_multiplier: float = 3.0
+
+## Holding the advance button this long starts debug-skip mode.
+@export_range(0.1, 3.0, 0.1) var hold_skip_delay_seconds: float = 1.0
+
+## Pages advanced per second after hold-skip starts.
+@export_range(1.0, 60.0, 0.5) var hold_skip_pages_per_second: float = 9.5
 
 ## Pause (seconds) inserted at sentence-ending punctuation for natural rhythm.
 ## Set to 0 to disable.
@@ -95,6 +101,9 @@ var _active: bool = false
 var _typing_timer: float = 0.0
 var _is_typing: bool = false
 var _shift_held: bool = false
+var _advance_held: bool = false
+var _advance_hold_seconds: float = 0.0
+var _hold_skip_timer: float = 0.0
 
 ## One-shot font size override consumed by the next play_pages call.
 ## Set by play_pages_autosized so the chosen size survives play_pages'
@@ -165,6 +174,8 @@ func play_pages(pages: Array) -> void:
 	_pages = pages
 	_page_index = 0
 	_active = true
+	_reset_advance_hold()
+	_restore_enter_hold_from_current_input()
 	_show_page(0)
 
 
@@ -266,7 +277,10 @@ func _apply_font_size(size_px: int) -> void:
 
 
 func _process(delta: float) -> void:
-	if not _active or not _is_typing:
+	if not _active:
+		return
+	_update_hold_skip(delta)
+	if not _is_typing:
 		return
 	# Poll shift directly - more reliable than relying on key events being
 	# delivered to a non-focused panel.
@@ -292,9 +306,33 @@ func _process(delta: float) -> void:
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed:
+			_begin_advance_hold()
 			_advance_click()
 			accept_event()
+			return
+		_end_advance_hold()
+		accept_event()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _active or not visible:
+		return
+	if not (event is InputEventKey):
+		return
+	var key_event := event as InputEventKey
+	if key_event.echo:
+		return
+	if key_event.keycode != KEY_ENTER and key_event.keycode != KEY_KP_ENTER:
+		return
+	if key_event.pressed:
+		_begin_advance_hold()
+		_advance_click()
+	else:
+		_end_advance_hold()
+	get_viewport().set_input_as_handled()
 
 
 # ---- Internal ------------------------------------------------------------
@@ -424,10 +462,59 @@ func _advance_click() -> void:
 	_page_index += 1
 	if _page_index >= _pages.size():
 		_active = false
+		_reset_advance_hold()
 		_set_arrow_visible(false)
 		finished.emit()
 		return
 	_show_page(_page_index)
+
+
+func _begin_advance_hold() -> void:
+	_advance_held = true
+	_advance_hold_seconds = 0.0
+	_hold_skip_timer = 0.0
+
+
+func _end_advance_hold() -> void:
+	_reset_advance_hold()
+
+
+func _reset_advance_hold() -> void:
+	_advance_held = false
+	_advance_hold_seconds = 0.0
+	_hold_skip_timer = 0.0
+
+
+func _debug_mode_enabled() -> bool:
+	var settings := get_node_or_null("/root/GameState")
+	return settings != null and settings.debug_mode_enabled
+
+
+func _restore_enter_hold_from_current_input() -> void:
+	if not _debug_mode_enabled():
+		return
+	if Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER):
+		_advance_held = true
+		_advance_hold_seconds = hold_skip_delay_seconds
+		_hold_skip_timer = 0.0
+
+
+func _update_hold_skip(delta: float) -> void:
+	if not _advance_held:
+		return
+	if not _debug_mode_enabled():
+		_reset_advance_hold()
+		return
+	_advance_hold_seconds += delta
+	if _advance_hold_seconds < hold_skip_delay_seconds:
+		return
+	if _is_typing:
+		_finish_typing()
+	_hold_skip_timer -= delta
+	var interval := 1.0 / maxf(1.0, hold_skip_pages_per_second)
+	while _active and not _is_typing and _hold_skip_timer <= 0.0:
+		_advance_click()
+		_hold_skip_timer += interval
 
 
 func _set_arrow_visible(v: bool) -> void:

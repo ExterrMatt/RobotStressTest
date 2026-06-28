@@ -31,7 +31,8 @@ const HAND_RUB_SOUND_PATHS: Array[String] = [
 const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
 	^"Torso/TorsoBase",
-	^"Torso/TorsoSkin",
+	^"Torso/Chest",
+	^"Torso/BigCoconuts",
 	^"Torso/Nipples",
 	^"Torso/TorsoCrunch",
 	^"BoobCover",

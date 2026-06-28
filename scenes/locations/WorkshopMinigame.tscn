@@ -158,6 +158,18 @@ theme_override_font_sizes/font_size = 11
 disabled = true
 text = "COLLECT"
 
+[node name="EndButton" type="Button" parent="."]
+unique_name_in_owner = true
+z_index = 50
+layout_mode = 0
+offset_left = 438.0
+offset_top = 360.0
+offset_right = 488.0
+offset_bottom = 384.0
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 11
+text = "END"
+
 [node name="AssemblyLeg" type="Control" parent="AssemblyArea" unique_id=282533586]
 custom_minimum_size = Vector2(350, 350)
 anchors_preset = 0

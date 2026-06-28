@@ -45,6 +45,7 @@ const DISABLED_LOCATION_IDS: Dictionary = {
 const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
 	"Laptop",
 ]
+const WORK_LOCATION_ID: StringName = &"work"
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
 const INTRO_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/IntroDialogue.tscn"
@@ -61,6 +62,7 @@ const INTRO_STEPS: Array[Dictionary] = [
 	{"step": "pre_workshop", "kind": "dialogue", "phase": 1, "preview": "res://assets/textures/backgrounds/bedroom_evening.png"},
 	{"step": "workshop", "kind": "location", "phase": 1, "location_id": &"workshop"},
 	{"step": "pre_stress_test", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/large_workshop.png", "preview_region": Rect2(0, 0, 500, 125)},
+	{"step": "pre_stress_test_bedroom", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
 	{"step": "stress_test", "kind": "location", "phase": 2, "location_id": &"stress_test"},
 	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/robot_eyes_shut.png"},
 	{"step": "free_reign", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
@@ -91,10 +93,10 @@ const LARGE_SCENE_HUD_FRAME_HEIGHT_THRESHOLD: float = 360.0
 const LARGE_SCENE_HUD_MARGIN: Vector2 = Vector2(64.0, 24.0)
 const LARGE_SCENE_HUD_PANEL_WIDTH: float = 156.0
 const LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT: float = 178.0
-const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 154.0
-const LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT: float = 224.0
+const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 118.0
+const LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_FONT_SIZE: int = 32
-const LARGE_SCENE_HUD_SUSPICION_FONT_SIZE: int = 30
+const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
 
 @export_category("Debug")
 @export var debug_hotkeys_enabled: bool = true
@@ -144,6 +146,7 @@ const LARGE_SCENE_HUD_SUSPICION_FONT_SIZE: int = 30
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 
 var _locations: Array[LocationData] = []
+var _locations_loaded: bool = false
 var _location_scene_cache: Dictionary = {}
 var _current_location_node: Node = null
 var _current_location_fullscreen: bool = false
@@ -190,6 +193,7 @@ var _large_scene_anger_label: Label = null
 var _large_scene_work_timer_divider: PanelContainer = null
 var _large_scene_work_timer_label: Label = null
 var _work_hud_active: bool = false
+var _large_scene_timer_running: bool = false
 var _work_hud_elapsed_seconds: float = 0.0
 var _frame_resize_progress: float = 1.0:
 	set(value):
@@ -226,6 +230,7 @@ var _inventory_overlay: Control = null
 ## _inventory_overlay above, which is the per-location work-minigame
 ## inventory that flanks the picture frame.
 var _player_inventory_overlay: InventoryOverlay = null
+var _settings_overlay_layer: CanvasLayer = null
 
 var _fullscreen_transition_layer: CanvasLayer = null
 var _fullscreen_transition: TextureRect = null
@@ -251,8 +256,6 @@ func _ready() -> void:
 	# Cache the placeholder texture BEFORE anything else can swap it.
 	_default_scene_image = scene_image.texture
 	_scene_image_texture_seen = scene_image.texture
-	_create_large_scene_hud()
-
 	# Make sure we start at the canonical default size — defensive in case
 	# the .tscn ever drifts from DEFAULT_FRAME_SIZE.
 	scene_image.custom_minimum_size = DEFAULT_FRAME_SIZE
@@ -270,8 +273,6 @@ func _ready() -> void:
 	_frame_visual_size_start = _target_frame_visual_size(scene_image.custom_minimum_size, _default_frame_outer_width)
 	_frame_visual_size_target = _frame_visual_size_start
 
-	_load_locations()
-
 	GameState.money_changed.connect(_on_money_changed)
 	GameState.suspicion_changed.connect(_on_suspicion_changed)
 	GameState.anger_changed.connect(_on_anger_changed)
@@ -280,6 +281,7 @@ func _ready() -> void:
 	GameState.arrested.connect(_on_arrested)
 	GameState.brightness_changed.connect(_on_brightness_changed)
 	GameState.scanlines_enabled_changed.connect(_on_scanlines_enabled_changed)
+	GameState.debug_mode_changed.connect(_on_debug_mode_changed)
 	DayCycle.day_ended.connect(_on_day_ended)
 
 	_apply_brightness(GameState.brightness_value)
@@ -290,6 +292,8 @@ func _ready() -> void:
 	var debug_jump := {}
 	if intro_autoload and intro_autoload.has_method("consume_debug_jump"):
 		debug_jump = intro_autoload.call("consume_debug_jump")
+	if not _debug_mode_enabled():
+		debug_jump = {}
 	var should_start_intro_sequence: bool = debug_jump.is_empty() \
 			and GameState.intro_active \
 			and not GameState.intro_completed
@@ -334,14 +338,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var key_event: InputEventKey = event
 
+	if key_event.keycode == KEY_ESCAPE:
+		_toggle_runtime_settings_overlay()
+		get_viewport().set_input_as_handled()
+		return
+
+	var debug_mode_active := _debug_mode_enabled()
+
 	# Tab toggles the debug event log overlay.
-	if debug_hotkeys_enabled and key_event.keycode == KEY_TAB:
+	if debug_mode_active and key_event.keycode == KEY_TAB:
 		log_overlay.visible = not log_overlay.visible
 		get_viewport().set_input_as_handled()
 		return
 
 	# X swaps the alt teacher portrait variant.
-	if debug_hotkeys_enabled and key_event.keycode == KEY_X:
+	if debug_mode_active and key_event.keycode == KEY_X:
 		_alt_portrait = not _alt_portrait
 		_refresh_teacher_portrait_variant()
 		get_viewport().set_input_as_handled()
@@ -358,12 +369,143 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 
-	if not debug_hotkeys_enabled:
+	if not debug_mode_active:
 		return
 
 	if _handle_debug_number_shortcut(key_event):
 		get_viewport().set_input_as_handled()
 		return
+
+
+func _debug_mode_enabled() -> bool:
+	return debug_hotkeys_enabled and GameState.debug_mode_enabled
+
+
+func _toggle_runtime_settings_overlay() -> void:
+	if _runtime_settings_overlay_open():
+		_close_runtime_settings_overlay()
+	else:
+		_open_runtime_settings_overlay()
+
+
+func _runtime_settings_overlay_open() -> bool:
+	return _settings_overlay_layer != null and is_instance_valid(_settings_overlay_layer)
+
+
+func _open_runtime_settings_overlay() -> void:
+	if _runtime_settings_overlay_open():
+		return
+	var layer := CanvasLayer.new()
+	layer.name = "RuntimeSettingsOverlayLayer"
+	layer.layer = 300
+	_settings_overlay_layer = layer
+	add_child(layer)
+
+	var back := ColorRect.new()
+	back.name = "RuntimeSettingsOverlayBack"
+	back.color = Color(0.008, 0.012, 0.039, 0.72)
+	back.anchor_right = 1.0
+	back.anchor_bottom = 1.0
+	back.mouse_filter = Control.MOUSE_FILTER_STOP
+	back.gui_input.connect(func(ev):
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			_close_runtime_settings_overlay()
+	)
+	layer.add_child(back)
+
+	var center := CenterContainer.new()
+	center.anchor_right = 1.0
+	center.anchor_bottom = 1.0
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	back.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"HUDPanel"
+	panel.custom_minimum_size = Vector2(560, 0)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	center.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 28)
+	margin.add_theme_constant_override("margin_top", 24)
+	margin.add_theme_constant_override("margin_right", 28)
+	margin.add_theme_constant_override("margin_bottom", 24)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "SETTINGS"
+	title.add_theme_font_size_override("font_size", 32)
+	vbox.add_child(title)
+	vbox.add_child(_build_runtime_slider_row("BRIGHTNESS", GameState.brightness_value, _on_runtime_brightness_changed))
+	vbox.add_child(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled))
+
+	var button_row := HBoxContainer.new()
+	button_row.alignment = BoxContainer.ALIGNMENT_END
+	button_row.add_theme_constant_override("separation", 12)
+	var close_btn := Button.new()
+	close_btn.text = "CLOSE"
+	close_btn.pressed.connect(_close_runtime_settings_overlay)
+	button_row.add_child(close_btn)
+	var quit_btn := Button.new()
+	quit_btn.text = "QUIT"
+	quit_btn.pressed.connect(_quit_game)
+	button_row.add_child(quit_btn)
+	vbox.add_child(button_row)
+
+
+func _close_runtime_settings_overlay() -> void:
+	if _settings_overlay_layer != null and is_instance_valid(_settings_overlay_layer):
+		_settings_overlay_layer.queue_free()
+	_settings_overlay_layer = null
+
+
+func _build_runtime_slider_row(label_text: String, initial: float, changed_callback: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size = Vector2(160, 0)
+	row.add_child(lbl)
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 100.0
+	slider.value = initial
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(changed_callback)
+	row.add_child(slider)
+	return row
+
+
+func _build_runtime_toggle_row(label_text: String, initial: bool, toggled_callback: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size = Vector2(160, 0)
+	row.add_child(lbl)
+	var toggle := CheckButton.new()
+	toggle.button_pressed = initial
+	toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	toggle.toggled.connect(toggled_callback)
+	row.add_child(toggle)
+	return row
+
+
+func _on_runtime_brightness_changed(value: float) -> void:
+	GameState.brightness_value = value
+
+
+func _on_runtime_scanlines_toggled(enabled: bool) -> void:
+	GameState.scanlines_enabled = enabled
+
+
+
+func _quit_game() -> void:
+	get_tree().quit()
 
 
 func _handle_debug_number_shortcut(key_event: InputEventKey) -> bool:
@@ -452,6 +594,7 @@ func _debug_jump_to_bedroom_phase(number: int) -> void:
 
 
 func _debug_open_location_by_id(location_id: StringName) -> void:
+	_load_locations()
 	var target_loc: LocationData = null
 	for loc in _locations:
 		if loc.id == location_id:
@@ -526,7 +669,7 @@ func _set_phase_for_intro_step(phase: int) -> void:
 
 
 func _open_intro_dialogue_step(step_def: Dictionary, open_immediately: bool = false) -> void:
-	if load(INTRO_DIALOGUE_SCENE_PATH) == null:
+	if not ResourceLoader.exists(INTRO_DIALOGUE_SCENE_PATH):
 		push_error("Intro: could not load %s" % INTRO_DIALOGUE_SCENE_PATH)
 		_advance_intro_sequence()
 		return
@@ -585,6 +728,7 @@ func _open_location_immediately(loc: LocationData) -> void:
 
 
 func _location_by_id(location_id: StringName) -> LocationData:
+	_load_locations()
 	for loc in _locations:
 		if loc.id == location_id:
 			return loc
@@ -617,7 +761,15 @@ func _advance_intro_sequence() -> void:
 		_complete_intro_sequence()
 		return
 	GameState.set_intro_step(String(INTRO_STEPS[index + 1].get("step", "")))
-	call_deferred("_open_intro_current_step")
+	call_deferred("_open_intro_current_step_after_transitions")
+
+
+func _open_intro_current_step_after_transitions() -> void:
+	await get_tree().process_frame
+	while _intro_sequence_enabled and _is_any_transition_playing():
+		await get_tree().process_frame
+	if _intro_sequence_enabled:
+		_open_intro_current_step()
 
 
 func _complete_intro_sequence() -> void:
@@ -675,12 +827,13 @@ func _debug_clear_inventory() -> void:
 	_log("[color=#ffcc88]Debug: inventory cleared[/color]")
 
 func _load_locations() -> void:
+	if _locations_loaded:
+		return
+	_locations_loaded = true
 	for path in LOCATION_RESOURCE_PATHS:
 		var res: LocationData = load(path)
 		if res:
 			_locations.append(res)
-			if res.fullscreen_scene:
-				_load_location_scene(res)
 		else:
 			push_warning("Failed to load location resource: %s" % path)
 
@@ -713,8 +866,8 @@ func _refresh_hud() -> void:
 	if _large_scene_money_label != null:
 		_large_scene_money_label.text = "$%d" % GameState.money
 	if _large_scene_suspicion_label != null:
-		_large_scene_suspicion_label.text = "SUS %d" % GameState.suspicion if _work_hud_active else "SUSPICION\n%d" % GameState.suspicion
-		var suspicion_font_size := LARGE_SCENE_HUD_FONT_SIZE if _work_hud_active else LARGE_SCENE_HUD_SUSPICION_FONT_SIZE
+		_large_scene_suspicion_label.text = "SUS %d" % GameState.suspicion
+		var suspicion_font_size := LARGE_SCENE_HUD_FONT_SIZE
 		_large_scene_suspicion_label.add_theme_font_size_override("font_size", suspicion_font_size)
 	if _large_scene_anger_label != null:
 		_large_scene_anger_label.text = "ANGER %d" % GameState.anger
@@ -747,8 +900,8 @@ func _create_large_scene_hud() -> void:
 	_large_scene_hud_layer.add_child(_large_scene_right_panel)
 
 	var right_box := _make_large_scene_hud_vbox(_large_scene_right_panel)
-	_large_scene_suspicion_label = _make_large_scene_hud_label("SUSPICION\n0", &"HUDStat")
-	_large_scene_suspicion_label.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_SUSPICION_FONT_SIZE)
+	_large_scene_suspicion_label = _make_large_scene_hud_label("SUS 0", &"HUDStat")
+	_large_scene_suspicion_label.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
 	right_box.add_child(_large_scene_suspicion_label)
 	right_box.add_child(_make_large_scene_hud_divider())
 	_large_scene_anger_label = _make_large_scene_hud_label("ANGER 0", &"HUDStat")
@@ -812,11 +965,16 @@ func _make_large_scene_hud_divider() -> PanelContainer:
 
 
 func _update_large_scene_hud_visibility() -> void:
-	if hud_bar == null or _large_scene_hud_layer == null:
+	if hud_bar == null:
 		return
 	var use_large_hud := _target_or_current_frame_size().y > LARGE_SCENE_HUD_FRAME_HEIGHT_THRESHOLD
 	hud_bar.visible = not use_large_hud
-	_large_scene_hud_layer.visible = use_large_hud
+	if use_large_hud and _large_scene_hud_layer == null:
+		_create_large_scene_hud()
+		_refresh_hud()
+	if _large_scene_hud_layer != null:
+		_large_scene_hud_layer.visible = use_large_hud
+	_set_work_hud_timer_visible(use_large_hud and _large_scene_timer_section_visible())
 	if use_large_hud:
 		var parent_container := hud_bar.get_parent() as Container
 		if parent_container != null:
@@ -843,7 +1001,9 @@ func _position_large_scene_hud_panels() -> void:
 	_large_scene_right_panel.offset_left = -right_outer_gap - LARGE_SCENE_HUD_PANEL_WIDTH
 	_large_scene_right_panel.offset_top = LARGE_SCENE_HUD_MARGIN.y
 	_large_scene_right_panel.offset_right = -right_outer_gap
-	var right_height := LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT if _work_hud_active else LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
+	var right_height := LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT \
+		if _large_scene_timer_section_visible() \
+		else LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
 	_large_scene_right_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + right_height
 
 
@@ -853,16 +1013,20 @@ func _large_scene_hud_outer_gap(side_space: float) -> float:
 
 
 func set_work_hud_timer_active(active: bool) -> void:
+	if _current_location_id != WORK_LOCATION_ID:
+		return
 	_work_hud_active = active
-	if not active:
+	_large_scene_timer_running = active
+	if active:
 		_work_hud_elapsed_seconds = 0.0
-	_set_work_hud_timer_visible(active)
 	_refresh_hud()
 	_update_large_scene_hud_visibility()
 
 
 func set_work_hud_elapsed_seconds(seconds: float) -> void:
-	_work_hud_elapsed_seconds = maxf(0.0, seconds)
+	if _current_location_id != WORK_LOCATION_ID:
+		return
+	_work_hud_elapsed_seconds = minf(maxf(0.0, seconds), float(LARGE_SCENE_TIMER_MAX_TICKS) / 100.0)
 	if _large_scene_work_timer_label != null:
 		_large_scene_work_timer_label.text = _format_work_hud_elapsed_time()
 
@@ -874,12 +1038,19 @@ func _set_work_hud_timer_visible(visible_value: bool) -> void:
 		_large_scene_work_timer_label.visible = visible_value
 
 
+func _large_scene_timer_section_visible() -> bool:
+	return _current_location_id == WORK_LOCATION_ID and (_work_hud_active or _work_hud_elapsed_seconds > 0.0)
+
+
 func _format_work_hud_elapsed_time() -> String:
-	var total_seconds := int(floor(_work_hud_elapsed_seconds))
-	var hours := int(total_seconds / 3600)
-	var minutes := int((total_seconds % 3600) / 60)
-	var seconds := int(total_seconds % 60)
-	return "%02d:%02d:%02d" % [hours, minutes, seconds]
+	var ticks := mini(
+		int(floor(maxf(0.0, _work_hud_elapsed_seconds) * 100.0)),
+		LARGE_SCENE_TIMER_MAX_TICKS
+	)
+	var first := int(ticks / 10000)
+	var second := int((ticks / 100) % 100)
+	var third := int(ticks % 100)
+	return "%02d:%02d:%02d" % [first, second, third]
 
 
 func _on_money_changed(_v: int) -> void:    _refresh_hud()
@@ -888,6 +1059,9 @@ func _on_anger_changed(_v: int) -> void:     _refresh_hud()
 func _on_day_changed(_v: int) -> void:       _refresh_hud()
 func _on_brightness_changed(value: float) -> void: _apply_brightness(value)
 func _on_scanlines_enabled_changed(enabled: bool) -> void: _apply_scanlines_enabled(enabled)
+func _on_debug_mode_changed(enabled: bool) -> void:
+	if not enabled and log_overlay != null:
+		log_overlay.visible = false
 func _on_phase_changed(_v: int) -> void:
 	_refresh_hud()
 	if _suppress_phase_selection_refresh:
@@ -919,6 +1093,7 @@ func _apply_scanlines_enabled(enabled: bool) -> void:
 #   so the frame's already at its new size as the wipe lifts.
 
 func _show_selection_screen() -> void:
+	_load_locations()
 	# Rebuild the button grid NOW. The grid sits below the picture frame
 	# and isn't visible until the location host is hidden, which happens
 	# at the midpoint - so the rebuild is invisible until then anyway.
@@ -1115,6 +1290,9 @@ func _apply_location_pick_swap(
 		animate_frame: bool = true
 ) -> void:
 	_clear_current_location()
+	_work_hud_active = false
+	_large_scene_timer_running = false
+	_work_hud_elapsed_seconds = 0.0
 	_current_location_node = packed.instantiate()
 	if _intro_sequence_enabled:
 		_current_location_node.set_meta("intro_sequence_location", true)
@@ -1123,6 +1301,9 @@ func _apply_location_pick_swap(
 	_current_location_fullscreen = loc.fullscreen_scene
 	_current_location_id = loc.id
 	location_host.add_child(_current_location_node)
+	if _current_location_node.has_method("lock_entry_input"):
+		var entry_lock_seconds := 0.55 if loc.fullscreen_scene else 0.2
+		_current_location_node.call("lock_entry_input", entry_lock_seconds)
 
 	if _current_location_node.has_signal("finished"):
 		_current_location_node.finished.connect(_on_location_finished.bind(_current_location_node))

@@ -6,17 +6,20 @@ Uncle: You're up early.
 You: Yeah, I've gotta get to class.
 Uncle: Right. Factory tomorrow then.
 You: That's the deal...
-Uncle: Good. Patrol drones made two passes over the block last night. Nothing came of it, but they're getting curious again. You should keep your head down.
+Uncle: Good. Patrol drones made two passes over the block last night... Nothing came of it, but they're getting curious again. 
+Uncle: You should keep your head down.
 You: Should I be worried?
 Uncle: You should. Be quiet and punctual. Worry's expensive.
 You: Almost as expensive as rent.
 Uncle: Our arrangement's fair. I keep the roof over your head, you pull your weight. Food, heat, and power ain't free.
 You: Dad left money.
-Uncle: Tuition. He had it set aside- just enough for your credits. That's what he left. Everything else is yours to sort out. You're an adult now.
+Uncle: Tuition. He had it set aside- just enough for your credits. That's what he left. 
+Uncle: Everything else is yours to sort out. You're an adult now.
 You: Then I guess I have to work...
 Uncle: Yeah, you do. You keep your head down in class, you pull your weight at the factory, we both win.
 You: That's the speech?
-Uncle: That's the generous version. The other one has a spreadsheet. Now get to class.
+Uncle: That's the generous version. The other one has a spreadsheet. 
+Uncle: Now get to class.
 
 [evening_room]
 Uncle: Kid, I need you to pick up some parts from Ed's shop.
@@ -33,7 +36,8 @@ Uncle: Ed knows what to give you. Say it's for Ben. Go before he closes.
 Parts on every surface. Lots of it shouldn't be on display... It's a mess in here.
 You thought about the patrol drones on the way over. You're still not sure you picked the right routes to avoid them.
 A man appears from the back. He doesn't introduce himself. It's probably Ed.
-Ed: "Parts or browsing?" he asks gruffly.
+Ed: Parts or browsing? 
+He has a deep, mean voice.
 You: My Uncle Ben sent me.
 He nods. That's apparently enough.
 
@@ -54,15 +58,18 @@ Thoughts: It's been a long day. The bed looks really comfy.
 Thoughts: Tomorrow will be factory work...
 
 [pre_workshop]
-The head segments weigh your bag down. You had to dump everything in- there was no way that box was fitting inside.
+The bot's head weighs your bag down. You had to dump everything in- there was no way that box was fitting inside.
 You rack your mind thinking about why that box was marked trash. The pieces looked perfectly fine to you...
-Maybe your uncle couldn't manage put it together? No.. he's probably put together thousands of those things.
-Uncle Ben has a workshop in the garage. He couldve chosen to use the shed we have in the backyard.
+Maybe your uncle couldn't manage to put it together? 
+Thoughts: No.. he's probably put together thousands of these things.
+Uncle Ben has a workshop in the garage. It's where he keeps his tools, and it should be private enough.
+He could've chosen to use the shed we have in the backyard. It's definitely more private than the garage. 
 You wonder why he didn't... 
-It'd be out of the way, hidden from prying eyes...
-But that generator is pretty loud, and the shed's pretty old too. And small... You start to understand why he chose the garage instead. 
-You decide you'll try and be quiet while you work on the bot.
-You wonder how he'd react if he saw you with stolen factory property...
+Thoughts: It'd be out of the way, hidden from prying eyes...
+Thoughts: But that generator is pretty loud, and the shed's pretty old too. And small... 
+You start to understand why he chose the garage instead. 
+You decide you'll try and be quiet while you work on the bot in the garage.
+Thoughts: I wonder how he'd react if he saw I took this home...
 
 [pre_stress_test]
 The assembled head rests on the bench.
@@ -71,9 +78,17 @@ Thoughts: This is stupid...
 Thoughts: I'm risking getting kicked out for what? A robot head? What am I gonna do? Talk to it??
 Your shoulders slump and you sit back in your chair.
 Your chair creaks as you lean back and breathe out a long sigh. But a sound that certainly didn't come from your chair brings your attention back to the robot.
-It's still there... Static, unmoving...
+It's still there... Unmoving...
 You lean in closer.
 ...If this thing can wake up, you need to know how.
+
+[pre_stress_test_bedroom]
+Thoughts: How am I gonna turn this thing on? There wasn't any batteries or fuel in the box...
+You try looking through your bag again to see if you missed something.
+You can hear your uncle's footsteps creaking the floorboards above you. He's probably getting ready for bed.
+Thoughts: Damn. That really limits how much noise I can make... There's probably a battery or two in the garage but he'd hear me rummaging through his stuff...
+Thoughts: I guess the shed will have to do... If he checks his window I'll just shut the lights and cut the power...
+You head to the shed.
 
 [robot_first_talk]
 The head goes still after the test...
@@ -85,5 +100,7 @@ You: ... Hi...
 
 [free_reign]
 [This is the end of the demo]
-Stress Tests are now scored and now last 1 minute.
-More to come! Please leave your thoughts of the game in the comments. I hope you enjoy this early version!
+Thank you for playing! This was my first ever game.
+I have a vision for many more game features, so keep an eye out for any future updates!
+Please leave your thoughts of the game in the comments. I hope you enjoyed this early version!
+Thoughts: Stress Tests are now more difficult.

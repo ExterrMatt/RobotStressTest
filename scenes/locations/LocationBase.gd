@@ -21,6 +21,45 @@ class_name LocationBase
 
 signal finished(result: Dictionary)
 
+const DEFAULT_ENTRY_INPUT_LOCK_SECONDS: float = 0.2
+
+var _finished_emitted: bool = false
+var _entry_input_blocker_layer: CanvasLayer = null
+var _entry_input_blocker: Control = null
+var _entry_input_lock_serial: int = 0
+
+
+func lock_entry_input(seconds: float = DEFAULT_ENTRY_INPUT_LOCK_SECONDS) -> void:
+	if seconds <= 0.0:
+		return
+
+	_entry_input_lock_serial += 1
+	var lock_serial := _entry_input_lock_serial
+	_ensure_entry_input_blocker()
+	_entry_input_blocker.visible = true
+
+	await get_tree().create_timer(seconds).timeout
+	if lock_serial != _entry_input_lock_serial:
+		return
+	if _entry_input_blocker != null and is_instance_valid(_entry_input_blocker):
+		_entry_input_blocker.visible = false
+
+
+func _ensure_entry_input_blocker() -> void:
+	if _entry_input_blocker != null and is_instance_valid(_entry_input_blocker):
+		return
+
+	_entry_input_blocker_layer = CanvasLayer.new()
+	_entry_input_blocker_layer.name = "EntryInputBlockerLayer"
+	_entry_input_blocker_layer.layer = 4095
+	add_child(_entry_input_blocker_layer)
+
+	_entry_input_blocker = Control.new()
+	_entry_input_blocker.name = "EntryInputBlocker"
+	_entry_input_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	_entry_input_blocker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_entry_input_blocker_layer.add_child(_entry_input_blocker)
+
 
 ## Convenience: build a result dict and emit. Subclasses call this when done.
 func finish(
@@ -30,6 +69,9 @@ func finish(
 	ingredients: Dictionary = {},
 	skip_advance: bool = false,
 ) -> void:
+	if _finished_emitted:
+		return
+	_finished_emitted = true
 	finished.emit({
 		"money_delta": money_delta,
 		"suspicion_delta": suspicion_delta,

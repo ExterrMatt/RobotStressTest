@@ -39,9 +39,19 @@ const CENTER_ON_GRAB_DURATION: float = 0.05
 		shadow_offset = value if typeof(value) == TYPE_VECTOR2 else Vector2.ZERO
 		queue_redraw()
 
+@export var visual_scale: float = 1.0:
+	set(value):
+		visual_scale = max(0.001, value)
+		queue_redraw()
+
 @export var auto_center: bool = false:
 	set(value):
 		auto_center = value
+		queue_redraw()
+
+@export var auto_top_center: bool = false:
+	set(value):
+		auto_top_center = value
 		queue_redraw()
 
 
@@ -65,35 +75,87 @@ func _process(_delta: float) -> void:
 
 
 func _draw() -> void:
-	var v_off: Vector2 = visual_offset if typeof(visual_offset) == TYPE_VECTOR2 else Vector2.ZERO
 	var s_off: Vector2 = shadow_offset if typeof(shadow_offset) == TYPE_VECTOR2 else Vector2.ZERO
-
-	var tex_pos: Vector2 = v_off
-	if auto_center and texture:
-		tex_pos = (size - texture.get_size()) / 2.0
 
 	# Only draw the local shadow in the editor so authoring still looks right.
 	# At runtime, WorkshopMinigame renders all shadows in a unified CanvasGroup.
 	if shadow_texture and Engine.is_editor_hint():
-		var s_pos: Vector2 = tex_pos
-		if auto_center:
-			s_pos = (size - shadow_texture.get_size()) / 2.0
-		draw_texture(shadow_texture, s_pos + s_off, SHADOW_MODULATE)
+		draw_texture_rect(
+			shadow_texture,
+			Rect2(texture_draw_position(shadow_texture) + s_off, texture_draw_size(shadow_texture)),
+			false,
+			SHADOW_MODULATE
+		)
 
 	if outline_texture and _should_draw_outline():
-		var outline_pos: Vector2 = tex_pos
-		if auto_center:
-			outline_pos = (size - outline_texture.get_size()) / 2.0
-		draw_texture(outline_texture, outline_pos)
+		draw_texture_rect(
+			outline_texture,
+			Rect2(texture_draw_position(outline_texture), texture_draw_size(outline_texture)),
+			false
+		)
 
 	if texture:
-		draw_texture(texture, tex_pos)
+		draw_texture_rect(texture, Rect2(texture_draw_position(texture), texture_draw_size(texture)), false)
+
+
+func texture_draw_size(draw_texture: Texture2D = null) -> Vector2:
+	var tex: Texture2D = draw_texture if draw_texture != null else texture
+	if tex == null:
+		return Vector2.ZERO
+	return tex.get_size() * visual_scale
+
+
+func texture_draw_position(draw_texture: Texture2D = null) -> Vector2:
+	var tex: Texture2D = draw_texture if draw_texture != null else texture
+	if tex == null:
+		return Vector2.ZERO
+	var v_off: Vector2 = visual_offset if typeof(visual_offset) == TYPE_VECTOR2 else Vector2.ZERO
+	var draw_size: Vector2 = texture_draw_size(tex)
+	if auto_top_center:
+		return Vector2((size.x - draw_size.x) * 0.5, 0.0) + v_off
+	if auto_center:
+		return (size - draw_size) / 2.0 + v_off
+	return v_off
 
 
 func hit_test(global_pos: Vector2) -> bool:
 	if locked or not visible or not is_visible_in_tree():
 		return false
-	return get_global_rect().has_point(global_pos)
+	return _global_texture_hit_rect().has_point(global_pos)
+
+
+func _global_texture_hit_rect() -> Rect2:
+	var local_rect := _local_texture_hit_rect()
+	var transform := get_global_transform()
+	var points := [
+		transform * local_rect.position,
+		transform * Vector2(local_rect.end.x, local_rect.position.y),
+		transform * local_rect.end,
+		transform * Vector2(local_rect.position.x, local_rect.end.y),
+	]
+	var hit_rect := Rect2(points[0], Vector2.ZERO)
+	for i in range(1, points.size()):
+		hit_rect = hit_rect.expand(points[i])
+	return hit_rect
+
+
+func _local_texture_hit_rect() -> Rect2:
+	if texture == null:
+		return Rect2(Vector2.ZERO, size)
+
+	var draw_position := texture_draw_position(texture)
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		return Rect2(draw_position, texture_draw_size(texture))
+
+	var used_rect := image.get_used_rect()
+	if used_rect.size.x <= 0 or used_rect.size.y <= 0:
+		return Rect2(draw_position, texture_draw_size(texture))
+
+	return Rect2(
+		draw_position + Vector2(used_rect.position) * visual_scale,
+		Vector2(used_rect.size) * visual_scale
+	)
 
 
 func start_drag(global_pos: Vector2) -> void:
