@@ -1,13 +1,17 @@
 class_name MouseFollowTooltip
-extends PanelContainer
+extends Control
 
 const PIXEL_FONT: FontFile = preload("res://assets/fonts/Jersey10-Regular.ttf")
+
+## Inner padding between the panel border and the text, on every side.
+const CONTENT_MARGIN: float = 8.0
 
 @export var mouse_offset: Vector2 = Vector2(18.0, 18.0)
 @export var viewport_margin: float = 8.0
 @export var max_label_width: float = 320.0
 @export var show_delay_seconds: float = 1.5
 
+var _panel: Panel = null
 var _label: Label = null
 var _last_text: String = ""
 var _last_mouse_position: Vector2 = Vector2.INF
@@ -16,6 +20,12 @@ var _pending_elapsed_seconds: float = 0.0
 var _pending_show: bool = false
 
 
+## We extend plain Control (not PanelContainer) and lay the background +
+## label out by hand. A PanelContainer auto-sizes to its child's minimum
+## size, and an autowrap Label's minimum size isn't known until a frame
+## after its text changes — so the first hover rendered an empty/oversized
+## box that only corrected once the layout warmed up. Manual layout makes
+## the size we compute the size that's drawn, on the very first hover.
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
@@ -25,12 +35,17 @@ func _ready() -> void:
 	style.bg_color = Color(0.03, 0.035, 0.05, 0.88)
 	style.border_color = Color(0.85, 0.78, 0.42, 0.95)
 	style.set_border_width_all(2)
-	style.set_content_margin_all(8)
-	add_theme_stylebox_override("panel", style)
+
+	_panel = Panel.new()
+	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_panel.add_theme_stylebox_override("panel", style)
+	add_child(_panel)
 
 	_label = Label.new()
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_label.position = Vector2(CONTENT_MARGIN, CONTENT_MARGIN)
 	_label.add_theme_font_override("font", PIXEL_FONT)
 	_label.add_theme_font_size_override("font_size", 22)
 	_label.add_theme_color_override("font_color", Color(1.0, 0.96, 0.74, 1.0))
@@ -63,13 +78,8 @@ func _show_now(text: String) -> void:
 		return
 	var was_visible := visible
 	if text != _last_text:
-		var content_size := _fit_label_size(text)
-		# Size the panel directly from the measured content plus the panel
-		# stylebox's content margins, instead of reset_size() (which reads a
-		# minimum size the layout hasn't computed yet on the first hover).
-		var panel_style := get_theme_stylebox("panel")
-		var chrome := panel_style.get_minimum_size() if panel_style != null else Vector2(16.0, 16.0)
-		var panel_size := content_size + chrome
+		var content_size := _apply_label_text(text)
+		var panel_size := content_size + Vector2(CONTENT_MARGIN, CONTENT_MARGIN) * 2.0
 		custom_minimum_size = panel_size
 		size = panel_size
 		_last_text = text
@@ -113,30 +123,21 @@ func _update_position(force: bool = false) -> void:
 	)
 
 
-## Wrap the text manually, assign it to the label with autowrap OFF, and
-## return the measured content size.
-##
-## Why manual wrapping: a Label with autowrap enabled reports a minimum size
-## that depends on its current width. Before the container has laid it out
-## that width is 0, so it wraps every word and reports a huge height — the
-## PanelContainer obeys that on the first frame and only corrects once layout
-## gives the label a real width (the "hover a second box and it fixes itself"
-## bug). With explicit "\n" breaks and autowrap OFF the label's minimum size
-## is width-independent and matches the size we compute here, so the panel is
-## correct on the very first hover.
-func _fit_label_size(text: String) -> Vector2:
-	if _label == null:
-		return Vector2.ZERO
+## Word-wrap the text, assign it to the label (autowrap off, so its size is
+## width-independent and deterministic), size the label to fit, and return
+## the content size. Measured directly from the font, so it's correct in the
+## same frame the text is set.
+func _apply_label_text(text: String) -> Vector2:
 	var font_size := _label.get_theme_font_size("font_size")
 	var wrapped := _wrap_text(text, font_size, maxf(1.0, max_label_width))
-	_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_label.text = wrapped
 	# width = -1 measures the block honoring only the explicit "\n" breaks.
 	var block := PIXEL_FONT.get_multiline_string_size(
 		wrapped, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size
 	)
 	var content_size := Vector2(ceilf(block.x), ceilf(block.y))
-	_label.custom_minimum_size = content_size
+	_label.size = content_size
+	_label.position = Vector2(CONTENT_MARGIN, CONTENT_MARGIN)
 	return content_size
 
 
