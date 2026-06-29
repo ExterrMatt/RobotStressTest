@@ -5,6 +5,9 @@ const PIXEL_FONT: FontFile = preload("res://assets/fonts/Jersey10-Regular.ttf")
 
 ## Inner padding between the panel border and the text, on every side.
 const CONTENT_MARGIN: float = 8.0
+## Font size used for the tooltip label. A constant (not read back from the
+## theme) so measurement never depends on theme propagation timing.
+const FONT_SIZE: int = 22
 
 @export var mouse_offset: Vector2 = Vector2(18.0, 18.0)
 @export var viewport_margin: float = 8.0
@@ -47,9 +50,23 @@ func _ready() -> void:
 	_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_label.position = Vector2(CONTENT_MARGIN, CONTENT_MARGIN)
 	_label.add_theme_font_override("font", PIXEL_FONT)
-	_label.add_theme_font_size_override("font_size", 22)
+	_label.add_theme_font_size_override("font_size", FONT_SIZE)
 	_label.add_theme_color_override("font_color", Color(1.0, 0.96, 0.74, 1.0))
 	add_child(_label)
+
+	_warm_up_font()
+
+
+## Force the TextServer to shape/rasterize the font at our display size now,
+## before the first hover. The first time a font is measured at a given size
+## in a session it can report stale metrics (cold glyph cache), which sized
+## the first tooltip's box wrong until a second hover warmed it up — the
+## "hover a different button and come back and it's fine" symptom. Touching
+## it here makes the first real hover hit a hot cache.
+func _warm_up_font() -> void:
+	const SAMPLE := "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 .,'!?()-"
+	PIXEL_FONT.get_string_size(SAMPLE, HORIZONTAL_ALIGNMENT_LEFT, -1.0, FONT_SIZE)
+	PIXEL_FONT.get_multiline_string_size(SAMPLE + "\n" + SAMPLE, HORIZONTAL_ALIGNMENT_LEFT, -1.0, FONT_SIZE)
 
 
 func show_text(text: String) -> void:
@@ -78,13 +95,30 @@ func _show_now(text: String) -> void:
 		return
 	var was_visible := visible
 	if text != _last_text:
-		var content_size := _apply_label_text(text)
-		var panel_size := content_size + Vector2(CONTENT_MARGIN, CONTENT_MARGIN) * 2.0
-		custom_minimum_size = panel_size
-		size = panel_size
+		_resize_to_text(text)
 		_last_text = text
+		# Safety net: if the font cache was still cold on this first measure
+		# (so the box came out the wrong size), re-measuring one frame later
+		# hits a hot cache and corrects it. A no-op once the cache is warm.
+		call_deferred("_remeasure_if_current", text)
 	visible = true
 	if not was_visible:
+		_update_position(true)
+
+
+## Measure `text`, then size the label and panel to fit it.
+func _resize_to_text(text: String) -> void:
+	var content_size := _apply_label_text(text)
+	var panel_size := content_size + Vector2(CONTENT_MARGIN, CONTENT_MARGIN) * 2.0
+	custom_minimum_size = panel_size
+	size = panel_size
+
+
+func _remeasure_if_current(text: String) -> void:
+	if _last_text != text or not is_instance_valid(self):
+		return
+	_resize_to_text(text)
+	if visible:
 		_update_position(true)
 
 
@@ -128,12 +162,11 @@ func _update_position(force: bool = false) -> void:
 ## the content size. Measured directly from the font, so it's correct in the
 ## same frame the text is set.
 func _apply_label_text(text: String) -> Vector2:
-	var font_size := _label.get_theme_font_size("font_size")
-	var wrapped := _wrap_text(text, font_size, maxf(1.0, max_label_width))
+	var wrapped := _wrap_text(text, FONT_SIZE, maxf(1.0, max_label_width))
 	_label.text = wrapped
 	# width = -1 measures the block honoring only the explicit "\n" breaks.
 	var block := PIXEL_FONT.get_multiline_string_size(
-		wrapped, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size
+		wrapped, HORIZONTAL_ALIGNMENT_LEFT, -1.0, FONT_SIZE
 	)
 	var content_size := Vector2(ceilf(block.x), ceilf(block.y))
 	_label.size = content_size
