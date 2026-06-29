@@ -41,6 +41,7 @@ const PHASE_BACKGROUNDS: Dictionary = {
 }
 const DISABLED_LOCATION_IDS: Dictionary = {
 	&"maintenance": true,
+	&"personality_training": true,
 }
 const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
 	"Laptop",

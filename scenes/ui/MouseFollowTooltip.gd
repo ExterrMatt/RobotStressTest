@@ -65,6 +65,7 @@ func _show_now(text: String) -> void:
 			var previous_position := position
 			_label.text = text
 			_fit_label_size(text)
+			_label.update_minimum_size()
 			reset_size()
 			if was_visible:
 				position = previous_position
