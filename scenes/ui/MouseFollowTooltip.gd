@@ -14,10 +14,6 @@ var _last_mouse_position: Vector2 = Vector2.INF
 var _pending_text: String = ""
 var _pending_elapsed_seconds: float = 0.0
 var _pending_show: bool = false
-## Bumped whenever the desired tooltip state changes (new hover / hide).
-## _show_now() captures it before awaiting a layout frame and bails if it
-## changed, so a hover that ended during the wait never reveals a stale box.
-var _generation: int = 0
 
 
 func _ready() -> void:
@@ -49,7 +45,6 @@ func show_text(text: String) -> void:
 		return
 	if visible and text == _last_text:
 		return
-	_generation += 1
 	if show_delay_seconds <= 0.0:
 		_pending_show = false
 		_pending_text = ""
@@ -67,33 +62,24 @@ func _show_now(text: String) -> void:
 	if _label == null:
 		return
 	var was_visible := visible
-	var previous_position := position
 	if text != _last_text:
 		_label.text = text
-		_fit_label_size(text)
+		var content_size := _fit_label_size(text)
+		# Size the panel directly from the measured content plus the panel
+		# stylebox's content margins, instead of reset_size() (which reads a
+		# minimum size the layout hasn't computed yet on the first hover).
+		var panel_style := get_theme_stylebox("panel")
+		var chrome := panel_style.get_minimum_size() if panel_style != null else Vector2(16.0, 16.0)
+		var panel_size := content_size + chrome
+		custom_minimum_size = panel_size
+		size = panel_size
 		_last_text = text
-	# reset_size() reads the panel's combined minimum size, which the layout
-	# system only refreshes on the next frame after the label's text changes.
-	# Calling it in the same frame (as the old code did) reads a stale size,
-	# so the very first hover shows an empty, oversized box. Wait one frame so
-	# the size is correct, keeping the panel hidden until then. A generation
-	# guard bails if the hover ended or changed during the wait.
-	var generation := _generation
-	if not is_inside_tree():
-		return
-	await get_tree().process_frame
-	if _generation != generation or not is_inside_tree():
-		return
-	reset_size()
-	if was_visible:
-		position = previous_position
 	visible = true
 	if not was_visible:
 		_update_position(true)
 
 
 func hide_tooltip() -> void:
-	_generation += 1
 	visible = false
 	_pending_show = false
 	_pending_text = ""
@@ -121,18 +107,34 @@ func _update_position(force: bool = false) -> void:
 	_last_mouse_position = mouse_position
 	var viewport_size := get_viewport_rect().size
 	var desired := mouse_position + mouse_offset
-	var tooltip_size := get_combined_minimum_size()
+	var tooltip_size := size
 	position = Vector2(
 		clampf(desired.x, viewport_margin, maxf(viewport_margin, viewport_size.x - tooltip_size.x - viewport_margin)),
 		clampf(desired.y, viewport_margin, maxf(viewport_margin, viewport_size.y - tooltip_size.y - viewport_margin))
 	)
 
 
-func _fit_label_size(text: String) -> void:
+## Compute the label's content size directly from the font and return it.
+## We size the panel from this rather than relying on the container's
+## combined minimum size, which isn't computed until a frame after the text
+## changes — that lag is what made the first hover render an empty,
+## oversized box.
+func _fit_label_size(text: String) -> Vector2:
 	if _label == null:
-		return
+		return Vector2.ZERO
 	var font_size := _label.get_theme_font_size("font_size")
-	var text_width := PIXEL_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
-	var label_width := minf(ceilf(text_width), maxf(1.0, max_label_width))
-	_label.autowrap_mode = TextServer.AUTOWRAP_OFF if text_width <= max_label_width else TextServer.AUTOWRAP_WORD_SMART
-	_label.custom_minimum_size = Vector2(label_width, 0.0)
+	var single_line_width := PIXEL_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
+	var content_size: Vector2
+	if single_line_width <= max_label_width:
+		_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		content_size = PIXEL_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+	else:
+		_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var wrap_width := maxf(1.0, max_label_width)
+		var multiline := PIXEL_FONT.get_multiline_string_size(
+			text, HORIZONTAL_ALIGNMENT_LEFT, wrap_width, font_size
+		)
+		content_size = Vector2(wrap_width, multiline.y)
+	content_size = Vector2(ceilf(content_size.x), ceilf(content_size.y))
+	_label.custom_minimum_size = content_size
+	return content_size
