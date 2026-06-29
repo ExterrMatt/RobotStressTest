@@ -25,3 +25,15 @@ res://scenes/locations/RobotHoverBox.gd
 res://scenes/locations/Sleep.gd
 res://scenes/locations/StressTestRobot.gd
 res://scenes/ui/MainMenu.gd
+res://autoload/CursorTheme.gd
+res://scenes/locations/EmergencyPowerButton.gd
+res://scenes/locations/HeadScrewRepair.gd
+res://scenes/locations/IntroDialogue.gd
+res://scenes/locations/PersonalityTraining.gd
+res://scenes/locations/PullCord.gd
+res://scenes/locations/StressTestRobotShadow.gd
+res://scenes/locations/StressTestZoomRegion.gd
+res://scenes/ui/FixedWidthTimerLabel.gd
+res://scenes/ui/GlowingLabel.gd
+res://scenes/ui/MouseFollowTooltip.gd
+res://scenes/ui/UiSound.gd
