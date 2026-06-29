@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cpksrgmqudgb6"
-path="res://.godot/imported/mouth_b_intro.png-7b1560ebe4f2659c0a0c9a9fe9e4c501.ctex"
+path="res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_intro.png"
-dest_files=["res://.godot/imported/mouth_b_intro.png-7b1560ebe4f2659c0a0c9a9fe9e4c501.ctex"]
+source_file="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png"
+dest_files=["res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex"]
 
 [params]
 
