@@ -153,6 +153,7 @@ var _current_overlay: Control = null
 
 var _brightness_value: float = 50.0
 var _debug_mode_enabled: bool = false
+var _window_mode: int = 0
 var _keyboard_menu_navigation_active: bool = false
 var _subject_status_rng := RandomNumberGenerator.new()
 var _subject_status_phase: String = "idle"
@@ -186,6 +187,7 @@ func _ready() -> void:
 		_brightness_value = settings.brightness_value
 		show_scanlines = settings.scanlines_enabled
 		_debug_mode_enabled = settings.debug_mode_enabled
+		_window_mode = settings.window_mode
 
 	scanline_layer.visible = show_scanlines
 	embers_layer.visible   = show_embers
@@ -948,6 +950,8 @@ func _build_settings_panel() -> Control:
 	var shell: Dictionary = _build_overlay_shell("SETTINGS")
 	var content: VBoxContainer = shell["content"]
 
+	content.add_child(_build_option_row("DISPLAY MODE", \
+		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], _window_mode, _on_window_mode_selected))
 	content.add_child(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed))
 	content.add_child(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled))
 	content.add_child(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled))
@@ -993,6 +997,27 @@ func _build_toggle_row(label_text: String, initial: bool, toggled_callback: Call
 	toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	toggle.toggled.connect(toggled_callback)
 	row.add_child(toggle)
+	return row
+
+
+## Dropdown row for multi-choice settings. Item indices are used as the value,
+## so `selected_index` and the callback argument map directly onto the option
+## enum (e.g. GameState.WindowMode).
+func _build_option_row(label_text: String, options: Array, selected_index: int, selected_callback: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size = Vector2(160, 0)
+	row.add_child(lbl)
+
+	var option := OptionButton.new()
+	for i in options.size():
+		option.add_item(String(options[i]), i)
+	option.selected = clampi(selected_index, 0, options.size() - 1)
+	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	option.item_selected.connect(selected_callback)
+	row.add_child(option)
 	return row
 
 
@@ -1050,6 +1075,13 @@ func _on_scanlines_toggled(enabled: bool) -> void:
 	var settings := get_node_or_null("/root/GameState")
 	if settings:
 		settings.scanlines_enabled = enabled
+
+
+func _on_window_mode_selected(index: int) -> void:
+	_window_mode = index
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		settings.window_mode = index
 
 
 func _on_debug_mode_toggled(enabled: bool) -> void:

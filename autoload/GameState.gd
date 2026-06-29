@@ -16,11 +16,18 @@ signal arrested()
 signal brightness_changed(new_value: float)
 signal scanlines_enabled_changed(enabled: bool)
 signal debug_mode_changed(enabled: bool)
+## Emitted when the display/window mode setting changes. WindowManager listens
+## and applies the change via DisplayServer. Value is a WindowMode entry.
+signal window_mode_changed(mode: int)
 ## Emitted when the set of items bought today changes. The overlay listens
 ## to this so the per-day-purchase markers stay in sync without polling.
 signal purchased_today_changed(purchased_ids: Array)
 signal robot_parts_changed(parts: Dictionary)
 signal intro_changed(active: bool, step: String)
+
+## Display/window fit options, exposed in the settings menu. Persisted as an
+## int. Defaults to WINDOWED to match the project's authored window size.
+enum WindowMode { WINDOWED = 0, WINDOWED_FULLSCREEN = 1, FULLSCREEN = 2 }
 
 const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
@@ -49,6 +56,7 @@ var _money: int = 0
 var _brightness_value: float = 50.0
 var _scanlines_enabled: bool = true
 var _debug_mode_enabled: bool = false
+var _window_mode: int = WindowMode.WINDOWED
 var player_name: String = ""
 var intro_active: bool = true
 var intro_completed: bool = false
@@ -95,6 +103,15 @@ var debug_mode_enabled: bool:
 			return
 		_debug_mode_enabled = value
 		debug_mode_changed.emit(_debug_mode_enabled)
+
+var window_mode: int:
+	get: return _window_mode
+	set(value):
+		var clamped: int = clampi(value, WindowMode.WINDOWED, WindowMode.FULLSCREEN)
+		if clamped == _window_mode:
+			return
+		_window_mode = clamped
+		window_mode_changed.emit(_window_mode)
 
 var _suspicion: int = 0
 var _anger: int = 0
@@ -152,6 +169,7 @@ func _emit_initial_state() -> void:
 	brightness_changed.emit(_brightness_value)
 	scanlines_enabled_changed.emit(_scanlines_enabled)
 	debug_mode_changed.emit(_debug_mode_enabled)
+	window_mode_changed.emit(_window_mode)
 	purchased_today_changed.emit(purchased_today)
 	robot_parts_changed.emit(robot_parts.duplicate())
 	intro_changed.emit(intro_active, intro_step)
@@ -418,6 +436,7 @@ func to_dict() -> Dictionary:
 		"intro_completed": intro_completed,
 		"intro_step": intro_step,
 		"debug_mode_enabled": _debug_mode_enabled,
+		"window_mode": _window_mode,
 	}
 
 
@@ -450,4 +469,5 @@ func from_dict(data: Dictionary) -> void:
 	intro_active = bool(data.get("intro_active", not intro_completed))
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))
 	_debug_mode_enabled = bool(data.get("debug_mode_enabled", false))
+	_window_mode = clampi(int(data.get("window_mode", WindowMode.WINDOWED)), WindowMode.WINDOWED, WindowMode.FULLSCREEN)
 	_emit_initial_state()
