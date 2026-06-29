@@ -63,7 +63,6 @@ func _show_now(text: String) -> void:
 		return
 	var was_visible := visible
 	if text != _last_text:
-		_label.text = text
 		var content_size := _fit_label_size(text)
 		# Size the panel directly from the measured content plus the panel
 		# stylebox's content margins, instead of reset_size() (which reads a
@@ -114,27 +113,50 @@ func _update_position(force: bool = false) -> void:
 	)
 
 
-## Compute the label's content size directly from the font and return it.
-## We size the panel from this rather than relying on the container's
-## combined minimum size, which isn't computed until a frame after the text
-## changes — that lag is what made the first hover render an empty,
-## oversized box.
+## Wrap the text manually, assign it to the label with autowrap OFF, and
+## return the measured content size.
+##
+## Why manual wrapping: a Label with autowrap enabled reports a minimum size
+## that depends on its current width. Before the container has laid it out
+## that width is 0, so it wraps every word and reports a huge height — the
+## PanelContainer obeys that on the first frame and only corrects once layout
+## gives the label a real width (the "hover a second box and it fixes itself"
+## bug). With explicit "\n" breaks and autowrap OFF the label's minimum size
+## is width-independent and matches the size we compute here, so the panel is
+## correct on the very first hover.
 func _fit_label_size(text: String) -> Vector2:
 	if _label == null:
 		return Vector2.ZERO
 	var font_size := _label.get_theme_font_size("font_size")
-	var single_line_width := PIXEL_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
-	var content_size: Vector2
-	if single_line_width <= max_label_width:
-		_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		content_size = PIXEL_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
-	else:
-		_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var wrap_width := maxf(1.0, max_label_width)
-		var multiline := PIXEL_FONT.get_multiline_string_size(
-			text, HORIZONTAL_ALIGNMENT_LEFT, wrap_width, font_size
-		)
-		content_size = Vector2(wrap_width, multiline.y)
-	content_size = Vector2(ceilf(content_size.x), ceilf(content_size.y))
+	var wrapped := _wrap_text(text, font_size, maxf(1.0, max_label_width))
+	_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_label.text = wrapped
+	# width = -1 measures the block honoring only the explicit "\n" breaks.
+	var block := PIXEL_FONT.get_multiline_string_size(
+		wrapped, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size
+	)
+	var content_size := Vector2(ceilf(block.x), ceilf(block.y))
 	_label.custom_minimum_size = content_size
 	return content_size
+
+
+## Greedy word-wrap to a max pixel width, returning the text with "\n"
+## inserted between lines. A single word wider than max_width gets its own
+## line (never split mid-word).
+func _wrap_text(text: String, font_size: int, max_width: float) -> String:
+	var words := text.split(" ", false)
+	var lines: PackedStringArray = []
+	var current := ""
+	for word in words:
+		var candidate := word if current.is_empty() else current + " " + word
+		var candidate_width := PIXEL_FONT.get_string_size(
+			candidate, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size
+		).x
+		if current.is_empty() or candidate_width <= max_width:
+			current = candidate
+		else:
+			lines.append(current)
+			current = word
+	if not current.is_empty():
+		lines.append(current)
+	return "\n".join(lines)
