@@ -14,6 +14,10 @@ var _last_mouse_position: Vector2 = Vector2.INF
 var _pending_text: String = ""
 var _pending_elapsed_seconds: float = 0.0
 var _pending_show: bool = false
+## Bumped whenever the desired tooltip state changes (new hover / hide).
+## _show_now() captures it before awaiting a layout frame and bails if it
+## changed, so a hover that ended during the wait never reveals a stale box.
+var _generation: int = 0
 
 
 func _ready() -> void:
@@ -45,6 +49,7 @@ func show_text(text: String) -> void:
 		return
 	if visible and text == _last_text:
 		return
+	_generation += 1
 	if show_delay_seconds <= 0.0:
 		_pending_show = false
 		_pending_text = ""
@@ -59,23 +64,36 @@ func show_text(text: String) -> void:
 
 
 func _show_now(text: String) -> void:
+	if _label == null:
+		return
 	var was_visible := visible
-	if _label != null:
-		if text != _last_text:
-			var previous_position := position
-			_label.text = text
-			_fit_label_size(text)
-			_label.update_minimum_size()
-			reset_size()
-			if was_visible:
-				position = previous_position
-			_last_text = text
+	var previous_position := position
+	if text != _last_text:
+		_label.text = text
+		_fit_label_size(text)
+		_last_text = text
+	# reset_size() reads the panel's combined minimum size, which the layout
+	# system only refreshes on the next frame after the label's text changes.
+	# Calling it in the same frame (as the old code did) reads a stale size,
+	# so the very first hover shows an empty, oversized box. Wait one frame so
+	# the size is correct, keeping the panel hidden until then. A generation
+	# guard bails if the hover ended or changed during the wait.
+	var generation := _generation
+	if not is_inside_tree():
+		return
+	await get_tree().process_frame
+	if _generation != generation or not is_inside_tree():
+		return
+	reset_size()
+	if was_visible:
+		position = previous_position
 	visible = true
 	if not was_visible:
 		_update_position(true)
 
 
 func hide_tooltip() -> void:
+	_generation += 1
 	visible = false
 	_pending_show = false
 	_pending_text = ""
