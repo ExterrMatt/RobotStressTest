@@ -3,8 +3,8 @@
 [ext_resource type="PackedScene" path="res://scenes/locations/StubLocation.tscn" id="1"]
 
 [node name="PersonalityTraining" instance=ExtResource("1")]
-title_text = "Personality Training"
-blurb_text = "Train the robot's personality. (To be detailed in design doc.)"
+title_text = "Calibration"
+blurb_text = "Recalibrate robot's brain, improve mood regulation."
 outcomes = [{
 "label": "Run a training session (placeholder: anger -3)",
 "money": 0,

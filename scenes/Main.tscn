@@ -360,6 +360,14 @@ theme_override_constants/h_separation = 18
 theme_override_constants/v_separation = 18
 columns = 3
 
+[node name="HoverInfoLabel" type="Label" parent="UI/VBox/SelectionScreen" unique_id=115882341]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"Prompt"
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="LocationHost" type="Control" parent="UI/VBox" unique_id=482344626]
 unique_name_in_owner = true
 visible = false
