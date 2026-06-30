@@ -24,6 +24,14 @@ extends Node
 ## Map of file_id -> Dictionary[key: String, pages: Array]
 var _files: Dictionary = {}
 
+## Map of file_id -> path, for files that failed to open. Used to surface a
+## visible on-screen error (see get_pages) instead of a silent empty box.
+## The usual cause is the .dlg file not being packed into an exported build:
+## .dlg is a plain-text, non-resource file, so export_presets.cfg must list it
+## under include_filter (e.g. include_filter="*.dlg") or it won't ship in the
+## .pck and FileAccess.open() returns null at runtime.
+var _load_errors: Dictionary = {}
+
 
 ## Load a .dlg file under the given id. Safe to call repeatedly; idempotent.
 ##   file_id: short tag like "school" used to namespace lookups.
@@ -33,9 +41,11 @@ func load_file(file_id: String, path: String) -> void:
 		return
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
-		push_error("Dialogue: could not open %s" % path)
+		push_error("Dialogue: could not open %s (not packed into the export?)" % path)
 		_files[file_id] = {}
+		_load_errors[file_id] = path
 		return
+	_load_errors.erase(file_id)
 	var text: String = f.get_as_text()
 	f.close()
 	_files[file_id] = _parse(text)
@@ -47,6 +57,11 @@ func load_file(file_id: String, path: String) -> void:
 ##
 ## Returns [] if the key is unknown (and pushes a warning so you notice in dev).
 func get_pages(file_id: String, key: String, fmt: Dictionary = {}) -> Array:
+	# If the file itself never loaded, don't fail silently into an empty box -
+	# that looks identical to "dialogue closed instantly" and is the symptom of
+	# a .dlg file missing from an exported build. Surface it on screen instead.
+	if _load_errors.has(file_id):
+		return _load_error_pages(file_id)
 	var file_data: Dictionary = _files.get(file_id, {})
 	if not file_data.has(key):
 		push_warning("Dialogue: unknown key '%s' in file '%s'" % [key, file_id])
@@ -62,6 +77,19 @@ func get_pages(file_id: String, key: String, fmt: Dictionary = {}) -> Array:
 			formatted_page.append(String(line).format(fmt))
 		out.append(formatted_page)
 	return out
+
+
+## Build a single visible page explaining that a dialogue file failed to load.
+## Shown in place of the real prose so the failure is obvious in the running
+## game (including exported EXEs, where push_error only reaches the console).
+func _load_error_pages(file_id: String) -> Array:
+	var path: String = String(_load_errors.get(file_id, "?"))
+	return [[
+		"[color=#ff5555][Dialogue file failed to load: %s]\n"
+		% path
+		+ "If this only happens in the exported game, the .dlg file was not "
+		+ "packed into the build.[/color]"
+	]]
 
 
 # --- Parser ---------------------------------------------------------------
