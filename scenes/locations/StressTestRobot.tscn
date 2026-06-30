@@ -31,7 +31,7 @@
 [ext_resource type="Texture2D" uid="uid://bxesi2kdev4ne" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_flexed_fingers.png" id="21_left_flexed_fingers"]
 [ext_resource type="Texture2D" uid="uid://5sgu57censnv" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_flexed_fingers.png" id="22_right_flexed_fingers"]
 [ext_resource type="Texture2D" uid="uid://dnrw61gxy34nv" path="res://assets/textures/characters/robot/stresstest/boob_cover.png" id="23_boob_cover"]
-[ext_resource type="Texture2D" uid="uid://cpksrgmqudgb6" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_intro.png" id="24_mouth_b_intro"]
+[ext_resource type="Texture2D" uid="uid://cpksrgmqudgb6" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png" id="24_mouth_b_intro"]
 [ext_resource type="Texture2D" uid="uid://belnxxgc3k8qa" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png" id="25_mouth_b_loop_medium"]
 [ext_resource type="Texture2D" uid="uid://c71qt80w3mb1h" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/vegetable_mssion_intro.png" id="26_vegetable_mission_intro"]
 [ext_resource type="Texture2D" uid="uid://byojxnpwinxol" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/vegetable_mission_loop_medium.png" id="27_vegetable_mission_loop_medium"]

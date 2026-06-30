@@ -6,13 +6,34 @@ Every line of prose lives in a plain-text `.dlg` file you can edit by hand.
 ## Files
 
 ```
-autoload/Dialogue.gd          # singleton: loads/parses .dlg files
-scenes/ui/DialogueBox.gd      # reusable bounded dialogue box widget
-scenes/ui/DialogueBox.tscn    # scene to instance anywhere
-data/dialogue/*.dlg           # all the prose, one file per area
+autoload/Dialogue.gd            # singleton: loads/parses .dlg files
+scenes/ui/DialogueBox.gd        # reusable bounded dialogue box widget
+scenes/ui/DialogueBox.tscn      # scene to instance anywhere
+data/dialogue/*.dlg             # all the prose, one file per area (EDIT THESE)
+data/dialogue/DialogueBundle.gd # Resource class holding baked dialogue text
+data/dialogue/dialogue_bundle.tres  # auto-generated bake of the .dlg files
 ```
 
 `Dialogue` is registered as an autoload in `project.godot`.
+
+## Why there's a `.tres` bundle (exports)
+
+`.dlg` files are plain text, **not** Godot resources, so they are easily left
+out of an exported build (they only ship if `export_presets.cfg` lists them
+under `include_filter`, which is fragile). The result is a game that has
+dialogue in the editor but none in the exported `.exe`.
+
+To make exports bulletproof, the `.dlg` files are baked into
+`dialogue_bundle.tres` — a real resource that the `all_resources` export
+filter **always** packs. At runtime `Dialogue` prefers the live `.dlg` on disk
+(so editing is instant in the editor) and falls back to the bundle when the raw
+`.dlg` isn't present (i.e. in most exports).
+
+**You still just edit the `.dlg` files.** The bundle keeps itself in sync: every
+time you run the game from the editor, `Dialogue` rewrites the entry for each
+`.dlg` it loads if it changed. So edit a `.dlg`, play once to refresh the bake,
+then export. (If you ever edit dialogue and export *without* playing first, run
+the game once in the editor so the bundle picks up your changes.)
 
 ## Editing dialogue
 
