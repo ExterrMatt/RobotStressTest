@@ -37,3 +37,4 @@ res://scenes/ui/FixedWidthTimerLabel.gd
 res://scenes/ui/GlowingLabel.gd
 res://scenes/ui/MouseFollowTooltip.gd
 res://scenes/ui/UiSound.gd
+res://autoload/WindowManager.gd
