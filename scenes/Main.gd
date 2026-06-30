@@ -441,6 +441,11 @@ func _open_runtime_settings_overlay() -> void:
 	title.text = "SETTINGS"
 	title.add_theme_font_size_override("font_size", 32)
 	vbox.add_child(title)
+	# Display mode is a player-facing comfort setting, not a debug toggle, so it
+	# belongs in the mid-game menu just like it does in the main menu. (DEBUG MODE
+	# is deliberately kept out of the runtime menu so it can't be toggled mid-run.)
+	vbox.add_child(_build_runtime_option_row("DISPLAY MODE", \
+		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], GameState.window_mode, _on_runtime_window_mode_selected))
 	vbox.add_child(_build_runtime_slider_row("BRIGHTNESS", GameState.brightness_value, _on_runtime_brightness_changed))
 	vbox.add_child(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled))
 
@@ -496,12 +501,35 @@ func _build_runtime_toggle_row(label_text: String, initial: bool, toggled_callba
 	return row
 
 
+func _build_runtime_option_row(label_text: String, options: Array, selected_index: int, selected_callback: Callable) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size = Vector2(160, 0)
+	row.add_child(lbl)
+	var option := OptionButton.new()
+	for i in options.size():
+		option.add_item(String(options[i]), i)
+	option.selected = clampi(selected_index, 0, options.size() - 1)
+	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	option.item_selected.connect(selected_callback)
+	row.add_child(option)
+	return row
+
+
 func _on_runtime_brightness_changed(value: float) -> void:
 	GameState.brightness_value = value
 
 
 func _on_runtime_scanlines_toggled(enabled: bool) -> void:
 	GameState.scanlines_enabled = enabled
+
+
+func _on_runtime_window_mode_selected(index: int) -> void:
+	# GameState.window_mode's setter clamps, persists, and notifies WindowManager,
+	# which applies the DisplayServer change - works mid-game and while paused.
+	GameState.window_mode = index
 
 
 
