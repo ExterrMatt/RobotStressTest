@@ -373,6 +373,18 @@ func _handle_left_press(global_pos: Vector2) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
+	# The END button must always be clickable so the player can leave the
+	# minigame - otherwise lacking a craft recipe can soft-lock them. Route it
+	# through the same manual hit-test the other buttons use, and check it first
+	# so an overlapping piece can never swallow the click.
+	if _hit_button(end_button, global_pos):
+		if end_button.disabled:
+			UI_SOUND.play_inaccessible_button(self)
+		else:
+			_on_end_button_pressed()
+		get_viewport().set_input_as_handled()
+		return
+
 	var seg: WorkshopSegment = _find_topmost_segment_at(global_pos)
 	if seg != null:
 		_pick_up_segment(seg, global_pos)
