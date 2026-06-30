@@ -32,6 +32,15 @@ var _files: Dictionary = {}
 ## .pck and FileAccess.open() returns null at runtime.
 var _load_errors: Dictionary = {}
 
+## Path to the baked .tres bundle (see DialogueBundle.gd). A .tres IS a real
+## Godot resource, so it is always packed by the "all_resources" export filter -
+## unlike the plain-text .dlg files, which only ship if export_presets.cfg lists
+## them under include_filter. The bundle is the fallback source whenever the raw
+## .dlg file is not present in the running build (i.e. in most exports).
+const BUNDLE_PATH: String = "res://data/dialogue/dialogue_bundle.tres"
+var _bundle: DialogueBundle = null
+var _bundle_loaded: bool = false
+
 
 ## Load a .dlg file under the given id. Safe to call repeatedly; idempotent.
 ##   file_id: short tag like "school" used to namespace lookups.
@@ -39,16 +48,61 @@ var _load_errors: Dictionary = {}
 func load_file(file_id: String, path: String) -> void:
 	if _files.has(file_id):
 		return
-	var f := FileAccess.open(path, FileAccess.READ)
-	if f == null:
-		push_error("Dialogue: could not open %s (not packed into the export?)" % path)
+	var text: String = _read_source(file_id, path)
+	if text == "":
+		push_error(
+			"Dialogue: could not load '%s' from %s or the baked bundle (%s)"
+			% [file_id, path, BUNDLE_PATH]
+		)
 		_files[file_id] = {}
 		_load_errors[file_id] = path
 		return
 	_load_errors.erase(file_id)
-	var text: String = f.get_as_text()
-	f.close()
 	_files[file_id] = _parse(text)
+
+
+## Resolve the raw text for a dialogue file, preferring the live .dlg on disk
+## (so editing stays instant in the editor) and falling back to the baked
+## bundle resource (so exports work even when the .dlg files are not packed).
+func _read_source(file_id: String, path: String) -> String:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f != null:
+		var text: String = f.get_as_text()
+		f.close()
+		# In the editor, keep the baked bundle current so the next export ships
+		# whatever the .dlg files currently say. No-op in shipped builds.
+		if OS.has_feature("editor"):
+			_sync_bundle_entry(file_id, text)
+		return text
+	var bundle := _get_bundle()
+	if bundle != null and bundle.sources.has(file_id):
+		return String(bundle.sources[file_id])
+	return ""
+
+
+## Lazily load (and cache) the baked bundle. Returns null if it doesn't exist.
+func _get_bundle() -> DialogueBundle:
+	if not _bundle_loaded:
+		_bundle_loaded = true
+		if ResourceLoader.exists(BUNDLE_PATH):
+			_bundle = load(BUNDLE_PATH) as DialogueBundle
+	return _bundle
+
+
+## Editor-only: write the current .dlg text into the baked bundle if it changed,
+## so the .tres that ships in exports never drifts out of sync with the source.
+func _sync_bundle_entry(file_id: String, text: String) -> void:
+	var bundle := _get_bundle()
+	if bundle == null:
+		bundle = DialogueBundle.new()
+		_bundle = bundle
+		_bundle_loaded = true
+	if bundle.sources.has(file_id) and String(bundle.sources[file_id]) == text:
+		return
+	bundle.sources[file_id] = text
+	var err: int = ResourceSaver.save(bundle, BUNDLE_PATH)
+	if err != OK:
+		push_warning("Dialogue: could not update baked bundle %s (error %d)" % [BUNDLE_PATH, err])
 
 
 ## Get the pages for a key. Each page is an Array[String] of lines.
@@ -85,10 +139,11 @@ func get_pages(file_id: String, key: String, fmt: Dictionary = {}) -> Array:
 func _load_error_pages(file_id: String) -> Array:
 	var path: String = String(_load_errors.get(file_id, "?"))
 	return [[
-		"[color=#ff5555][Dialogue file failed to load: %s]\n"
-		% path
-		+ "If this only happens in the exported game, the .dlg file was not "
-		+ "packed into the build.[/color]"
+		"[color=#ff5555][Dialogue '%s' failed to load]\n"
+		% file_id
+		+ "Neither the source file (%s) nor the baked bundle (%s) could be read."
+		% [path, BUNDLE_PATH]
+		+ "[/color]"
 	]]
 
 
