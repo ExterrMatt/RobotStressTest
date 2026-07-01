@@ -1,38 +1,37 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1782787464
-export_presets.cfg::TextFile::-1::1782787382::0::1::::<><><>0<>0<><>::
+::res://::1782858672
+export_presets.cfg::TextFile::-1::1782799156::0::1::::<><><>0<>0<><>::
 icon.svg::CompressedTexture2D::4062773066978308223::1778711437::1782787469::1::::<><><>0<>0<>b271856429f96701842f8c0834522098<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
 ::res://assets/::1782705556
-::res://assets/fonts/::1782787313
+::res://assets/fonts/::1782787467
 Jersey10-Regular.ttf::FontFile::8216688361414985612::1778712572::1782787467::1::::<><><>0<>0<>a4319c4db0ecdbc93bf4d1a2a8a5c724<>res://.godot/imported/Jersey10-Regular.ttf-200460e514ca6d2634756f713ee1b38e.fontdata::
 ::res://assets/sounds/::1782705557
-::res://assets/sounds/emergency_button/::1782787313
+::res://assets/sounds/emergency_button/::1782787467
 emergency_power_button.mp3::AudioStreamMP3::7956286958573482971::1782705556::1782787467::1::::<><><>0<>0<>8f70ab76c334182c6b094ffd269822f6<>res://.godot/imported/emergency_power_button.mp3-23307681daab85f0c6306e342de310fe.mp3str::
-::res://assets/sounds/generator/::1782787314
+::res://assets/sounds/generator/::1782787467
 generator_chug.mp3::AudioStreamMP3::6653082779567899219::1782705556::1782787467::1::::<><><>0<>0<>7ef8dbc45bfa5520391b9ebc2e3fcebb<>res://.godot/imported/generator_chug.mp3-2891d8bc22e22992ca5fbc485fa16dfa.mp3str::
 generator_hum.mp3::AudioStreamMP3::2569088746978909861::1782705556::1782787467::1::::<><><>0<>0<>61663f5589b063911601c76cff018c25<>res://.godot/imported/generator_hum.mp3-71b2f4bd8ddfbb0ed2f2840996514992.mp3str::
 generator_no_power.mp3::AudioStreamMP3::2745874168952685317::1782705556::1782787467::1::::<><><>0<>0<>67e537ee8e7e60330629adbcf2204249<>res://.godot/imported/generator_no_power.mp3-9df308a2c7d4e444f7b13f03c3c7d516.mp3str::
 generator_shutting_off.mp3::AudioStreamMP3::2429035651744082859::1782705556::1782787467::1::::<><><>0<>0<>858a620e0f9b6bac1d815ddd60f7ccab<>res://.godot/imported/generator_shutting_off.mp3-b923148f31e1daeb75d2a7fed8e28285.mp3str::
-::res://assets/sounds/hands/::1782787314
+::res://assets/sounds/hands/::1782787467
 hand_rub_long_1.mp3::AudioStreamMP3::7789658304981780068::1782705556::1782787467::1::::<><><>0<>0<>782b95cc4ec893ced218abfe735208bf<>res://.godot/imported/hand_rub_long_1.mp3-304911860a1bc96e963c96a143c03e04.mp3str::
 hand_rub_long_2.mp3::AudioStreamMP3::8329117472310453310::1782705556::1782787467::1::::<><><>0<>0<>3fbfbf5117c454a3bbc67987402e4e76<>res://.godot/imported/hand_rub_long_2.mp3-89d931f3190ff98039cacd87529fd5aa.mp3str::
 hand_rub_long_3.mp3::AudioStreamMP3::6572372999745502272::1782705556::1782787467::1::::<><><>0<>0<>88bdd634619ffbf3aa7089948839083c<>res://.godot/imported/hand_rub_long_3.mp3-5d71b4b8e59d9f67f4b5821268c9228d.mp3str::
 hand_rub_loud.mp3::AudioStreamMP3::4913029466661414569::1782705556::1782787467::1::::<><><>0<>0<>9fee1b8dec434ed654a7f3c0c3ab2cd0<>res://.godot/imported/hand_rub_loud.mp3-0dcf3d2e39f5b9c9bd28d2e6cf26bab1.mp3str::
-::res://assets/sounds/light_bulb/::1782787314
+::res://assets/sounds/light_bulb/::1782787467
 light_bulb_hum.mp3::AudioStreamMP3::8155990420153091329::1782705556::1782787467::1::::<><><>0<>0<>631407ab827965180b0cd633e2d32dbe<>res://.godot/imported/light_bulb_hum.mp3-7f739b11485640fbc8d265be0b79c6d0.mp3str::
-::res://assets/sounds/menu_buttons/::1782787314
+::res://assets/sounds/menu_buttons/::1782787467
 button_noise_inaccessable.mp3::AudioStreamMP3::4237801755196856350::1782705556::1782787467::1::::<><><>0<>0<>0e5c035610808a251601802adc18ab0e<>res://.godot/imported/button_noise_inaccessable.mp3-f2fa4ad459c9b45b7d54551e8569d994.mp3str::
-::res://assets/sounds/night_sounds/::1782787314
+::res://assets/sounds/night_sounds/::1782799145
 1_min_night_sounds.mp3::AudioStreamMP3::1809246168745302546::1782705557::1782787467::1::::<><><>0<>0<>d0cce32c0a69c686e1da65f5e3b3ddc5<>res://.godot/imported/1_min_night_sounds.mp3-20f3f9a8746431fdcc759cae2f22f3d0.mp3str::
-13_min_night_sounds.mp3::AudioStreamMP3::4982974122462458536::1782705557::1782787468::1::::<><><>0<>0<>a56566d7e2de397bab0e9ea2c376ae56<>res://.godot/imported/13_min_night_sounds.mp3-934853fa308cd8ae39f5dff49befbddd.mp3str::
 loud_crickets.mp3::AudioStreamMP3::6672311681361680368::1782705557::1782787467::1::::<><><>0<>0<>595f1506bf10e2913bced1f0a83752fd<>res://.godot/imported/loud_crickets.mp3-7a81606da042d673636284d9fc693480.mp3str::
 loud_night_sounds.mp3::AudioStreamMP3::5318645089711031283::1782705557::1782787467::1::::<><><>0<>0<>5b078a990b20739e5c78dfe7ed179068<>res://.godot/imported/loud_night_sounds.mp3-66d35f3ed0322c529564a80033693a04.mp3str::
-::res://assets/sounds/pull_string/::1782787313
+::res://assets/sounds/pull_string/::1782787467
 pull_string_off.mp3::AudioStreamMP3::9116314980726540890::1782705557::1782787467::1::::<><><>0<>0<>ec7d080e31844471d604847051bb7a14<>res://.godot/imported/pull_string_off.mp3-75f0cdf47aa20a747e23dfae4f2d43ff.mp3str::
 pull_string_on.mp3::AudioStreamMP3::9205418035882852330::1782705557::1782787467::1::::<><><>0<>0<>4fd5ca5896bab02404504d82c799d1f3<>res://.godot/imported/pull_string_on.mp3-0a52c0aeec4b65072d15c7014a530839.mp3str::
-::res://assets/sounds/rip_cord/::1782787313
+::res://assets/sounds/rip_cord/::1782787467
 ripcord.mp3::AudioStreamMP3::7776921370237597744::1782705557::1782787467::1::::<><><>0<>0<>c609f09f072d60050f129192a000ff13<>res://.godot/imported/ripcord.mp3-015141b904403b0c9b47b47dfabd9bb1.mp3str::
-::res://assets/sounds/screws/::1782787313
+::res://assets/sounds/screws/::1782787467
 screw_coming_loose_1.mp3::AudioStreamMP3::8726087367600299402::1782705557::1782787467::1::::<><><>0<>0<>1a4e37f86c69823999299bfcd221c7d1<>res://.godot/imported/screw_coming_loose_1.mp3-a7f1490fd6371eaa9eea396e1cd03ec6.mp3str::
 screw_coming_loose_2.mp3::AudioStreamMP3::4533213884000827316::1782705557::1782787467::1::::<><><>0<>0<>eb32413e4a172f0e51a7d43d30b0629b<>res://.godot/imported/screw_coming_loose_2.mp3-039942818f3b4bff610c21b982080026.mp3str::
 screw_coming_loose_3.mp3::AudioStreamMP3::4934732910214562461::1782705557::1782787467::1::::<><><>0<>0<>3d1f99f74c412f2bcea03abb0032d16e<>res://.godot/imported/screw_coming_loose_3.mp3-e63936efcdecfad7b4da8c8af2489207.mp3str::
@@ -40,12 +39,12 @@ screw_in_1.mp3::AudioStreamMP3::6293033289676354520::1782705557::1782787467::1::
 screw_in_2.mp3::AudioStreamMP3::1591677168072340517::1782705557::1782787467::1::::<><><>0<>0<>377756faabd7d2d2a9d14bcea2802b31<>res://.godot/imported/screw_in_2.mp3-85d9dd4af0c9a4286bfb132356c87b9c.mp3str::
 screw_in_3.mp3::AudioStreamMP3::4453200287335084918::1782705557::1782787467::1::::<><><>0<>0<>1ba5d9d26c4bf9dd78a7ce873a405fd9<>res://.godot/imported/screw_in_3.mp3-a2addd7ca6517c84ddc5d336d877e680.mp3str::
 screw_in_4.mp3::AudioStreamMP3::8785191067704917236::1782705557::1782787467::1::::<><><>0<>0<>6009ba7ceddf6e37f1c8e164ea7f727b<>res://.godot/imported/screw_in_4.mp3-110904b8e268996fd1cb5507e0095a52.mp3str::
-::res://assets/sounds/wood/::1782787313
+::res://assets/sounds/wood/::1782787467
 wood_creak.mp3::AudioStreamMP3::6436080713433057192::1782705557::1782787467::1::::<><><>0<>0<>0d1bcc008a3c432b0cb90621ebc9f453<>res://.godot/imported/wood_creak.mp3-cbc87de955ce61e30a5a1475d90a21f3.mp3str::
 wood_creak_long.mp3::AudioStreamMP3::9164911732870077280::1782705557::1782787467::1::::<><><>0<>0<>318a435b59f777e83587efe69c31b636<>res://.godot/imported/wood_creak_long.mp3-ca283cf1618fda0f6b33ff16eafa10ce.mp3str::
 wood_creak_slight.mp3::AudioStreamMP3::5467906602112351266::1782705557::1782787467::1::::<><><>0<>0<>b04a43249c97a58366019faf7e814b35<>res://.godot/imported/wood_creak_slight.mp3-a8099a5329956b99e1efc5eb1beed913.mp3str::
 ::res://assets/textures/::1779326126
-::res://assets/textures/asepritefiles/::1782787320
+::res://assets/textures/asepritefiles/::1782787472
 (Bed, StressTest) Robot Vegetable-Mission Medium Loop.png::CompressedTexture2D::4945812479764264132::1782705557::1782787472::1::::<><><>0<>0<>0c2c7c5491677630b240bca01340f52b<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission Medium Loop.png-ad7e9b7ed8c8a13ce6f7f7974510d887.ctex::
 (Bed, StressTest) Robot Vegetable-Mission-Intro.png::CompressedTexture2D::5300773249546261467::1782705557::1782787471::1::::<><><>0<>0<>87416b7bccd73139cf24ac912c5abf0b<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission-Intro.png-876f771cdf25f3e28257b0fff1171054.ctex::
 electrical_generator.png::CompressedTexture2D::4121821759869020902::1782705557::1782787471::1::::<><><>0<>0<>43da6ba6f0374a466cdf94054559abf0<>res://.godot/imported/electrical_generator.png-00f25902e94020199c50b795694d17d8.ctex::
@@ -53,7 +52,7 @@ large_workshop_placeholder.png::CompressedTexture2D::7257541348602475801::178270
 Stress Test Bot.png::CompressedTexture2D::6527154148771642737::1782705557::1782787471::1::::<><><>0<>0<>33da11ca9f26f6343669ea54388631ce<>res://.godot/imported/Stress Test Bot.png-eaa0dedb0f105f438d064da463fcad3b.ctex::
 Stress Test Shed real.png::CompressedTexture2D::7550728217247629630::1782705557::1782787471::1::::<><><>0<>0<>8b0ec77b34bc5050117ab5b6adfff0d2<>res://.godot/imported/Stress Test Shed real.png-63aa97354fc7020aabe8d8da7643e296.ctex::
 Stress Test Shed.png::CompressedTexture2D::5733040214497596::1782705557::1782787471::1::::<><><>0<>0<>951c01dce9f66e954241addb0537db74<>res://.godot/imported/Stress Test Shed.png-49fb5ccc7106881aa742e8e332032df3.ctex::
-::res://assets/textures/backgrounds/::1782787320
+::res://assets/textures/backgrounds/::1782787473
 bedroom_evening.png::CompressedTexture2D::5016043500698100473::1778738314::1782787469::1::::<><><>0<>0<>18997cb137fa485a700645a9ec965f86<>res://.godot/imported/bedroom_evening.png-5d2783d6dd788185447c9940aaa2af38.ctex::
 bedroom_morning.png::CompressedTexture2D::590344480680096236::1778739094::1782787471::1::::<><><>0<>0<>f91af4342c0e1daba29db589d0c81d54<>res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex::
 bedroom_night.png::CompressedTexture2D::1860716824234239661::1778740332::1782787471::1::::<><><>0<>0<>78f8818fb94781e1748fd191707c0b52<>res://.godot/imported/bedroom_night.png-332efe34657d693e16426d9dd86b614d.ctex::
@@ -81,10 +80,10 @@ school_cabinet.png::CompressedTexture2D::2195209066701259876::1782705557::178278
 store.png::CompressedTexture2D::2458786479390739977::1778987602::1782787472::1::::<><><>0<>0<>4d606fe3183d6b1b0270293e024d0a68<>res://.godot/imported/store.png-8c54716408e6c098c6590df324264017.ctex::
 work.png::CompressedTexture2D::8772444295820861781::1778882052::1782787472::1::::<><><>0<>0<>d2a6ac9574dd939bdb257924f202de85<>res://.godot/imported/work.png-23eb61895458e082d4df190ae91d13df.ctex::
 work_scrap.png::CompressedTexture2D::2248572996157268048::1782705557::1782787472::1::::<><><>0<>0<>e7b0f854b0afbf00f02ec698b00125b4<>res://.godot/imported/work_scrap.png-796227444644ad5c78625eea4e4acc61.ctex::
-::res://assets/textures/backgrounds/load/::1782787318
+::res://assets/textures/backgrounds/load/::1782787471
 FlowerLoad.png::CompressedTexture2D::5101804189681311314::1782705557::1782787471::1::::<><><>0<>0<>2deac4036f791b770eb3434787495f65<>res://.godot/imported/FlowerLoad.png-58f868f13fbcd49515326b566b030dab.ctex::
 FlowerLoadOG.png::CompressedTexture2D::1635614282974209882::1782705557::1782787471::1::::<><><>0<>0<>81856599d00f835fd7eef42ac97750bb<>res://.godot/imported/FlowerLoadOG.png-1366eb3b2e0bab143cad0739267cf1c4.ctex::
-::res://assets/textures/backgrounds/sleep/::1782787319
+::res://assets/textures/backgrounds/sleep/::1782787472
 carpet.png::CompressedTexture2D::7721248435424136293::1782705557::1782787471::1::::<><><>0<>0<>b0508352c1b3ea10ccc778048c8ba03c<>res://.godot/imported/carpet.png-8375162806d5438aa1b65b3beda38ed1.ctex::
 coin.png::CompressedTexture2D::3507619270941338990::1782705557::1782787471::1::::<><><>0<>0<>e30e373745b592e41b3bb65040df6133<>res://.godot/imported/coin.png-cafce05c648257ea1caba13015f08b85.ctex::
 darkness.png::CompressedTexture2D::1414868519290428012::1782705557::1782787472::1::::<><><>0<>0<>0b7b8431e3377c63b7d4b6dae40bac64<>res://.godot/imported/darkness.png-1c964416c4944002f5d5277095831e6a.ctex::
@@ -93,7 +92,7 @@ left_stuff_under.png::CompressedTexture2D::8048079637281820438::1782705557::1782
 stuff.png::CompressedTexture2D::4861290506566267397::1782705557::1782787472::1::::<><><>0<>0<>7d58c1a6da0d448d3cb6a06f48419556<>res://.godot/imported/stuff.png-2593600d7039676695c077e2f2556dff.ctex::
 stuff_shadow.png::CompressedTexture2D::6615306721813141810::1782705557::1782787471::1::::<><><>0<>0<>e702e84f1615f296d9caaaf3128e3c83<>res://.godot/imported/stuff_shadow.png-11b8d9d539f5fa71d617a3c40f417d19.ctex::
 wall.png::CompressedTexture2D::4123370418135369139::1782705557::1782787471::1::::<><><>0<>0<>a0d8a01c0a48ea12e2677c6a0066d171<>res://.godot/imported/wall.png-8940ae24988e340273dd58c3f691b151.ctex::
-::res://assets/textures/backgrounds/sleep/bed/::1782787319
+::res://assets/textures/backgrounds/sleep/bed/::1782787472
 bedframe.png::CompressedTexture2D::4565629145022303341::1782705557::1782787471::1::::<><><>0<>0<>bd7ea63439a55ca3052464be5462faeb<>res://.godot/imported/bedframe.png-dd603e76bd0bcfd2cb99e458ae9a24d3.ctex::
 blanket.png::CompressedTexture2D::8421822480645147046::1782705557::1782787471::1::::<><><>0<>0<>0177f355484ead76aa1f7e94d6dbcbad<>res://.godot/imported/blanket.png-17dc85004a40e07ad56ef2944fde53aa.ctex::
 blanket_bump.png::CompressedTexture2D::3048995390680310034::1782705557::1782787471::1::::<><><>0<>0<>f65498e08178978fc23c59de0bf6a1a4<>res://.godot/imported/blanket_bump.png-6bf97bd53fe92c1e84b0c28d93550017.ctex::
@@ -110,20 +109,20 @@ pillow_indented.png::CompressedTexture2D::9135332170438823520::1782705557::17827
 pillow_shadow_heavy.png::CompressedTexture2D::8207425084247906977::1782705557::1782787472::1::::<><><>0<>0<>1811ec3bef0a34dc756b55876bb5b700<>res://.godot/imported/pillow_shadow_heavy.png-f66895cd12596e18411314fb783d7766.ctex::
 pillow_shadow_light.png::CompressedTexture2D::7747200770321100480::1782705557::1782787472::1::::<><><>0<>0<>f0467dd40900fad6794c0174f012267b<>res://.godot/imported/pillow_shadow_light.png-3b700b604ff211b7ed18c1176228dbaf.ctex::
 pillow_slightly_indented.png::CompressedTexture2D::2408558399223690985::1782705557::1782787472::1::::<><><>0<>0<>62e558a021eaf59d2ac88c71bdace9a1<>res://.godot/imported/pillow_slightly_indented.png-bde345b8764d1065aa75206f6a366ee4.ctex::
-::res://assets/textures/backgrounds/stress_test/::1782787316
+::res://assets/textures/backgrounds/stress_test/::1782787470
 shed_background.png::CompressedTexture2D::9012591598830923139::1782705557::1782787470::1::::<><><>0<>0<>66fc616989c1049711d39ddddeff7701<>res://.godot/imported/shed_background.png-cd95e0159284497d7bdc8bb240c34a4d.ctex::
-::res://assets/textures/backgrounds/stress_test/floor/::1782787318
+::res://assets/textures/backgrounds/stress_test/floor/::1782787471
 floor.png::CompressedTexture2D::4813064051592679644::1782705557::1782787471::1::::<><><>0<>0<>bef8defa9f3f1837926351dcd4bea425<>res://.godot/imported/floor.png-fee327431a52a201304394661585f661.ctex::
 floor_wire_darkness.png::CompressedTexture2D::9218431151823185677::1782705557::1782787471::1::::<><><>0<>0<>c1ba01779ffb8037163451a13938f3f2<>res://.godot/imported/floor_wire_darkness.png-d411f4a18638c5f67dbd535dff33d244.ctex::
 table.png::CompressedTexture2D::8658041684001950544::1782705557::1782787470::1::::<><><>0<>0<>4c87a5e5b4a0e6e8d5bbb28ec11a27de<>res://.godot/imported/table.png-404128459249e7c0af2928861f28022b.ctex::
-::res://assets/textures/backgrounds/stress_test/side_wall/::1782787317
+::res://assets/textures/backgrounds/stress_test/side_wall/::1782787470
 generator.png::CompressedTexture2D::8383457190247204528::1782705557::1782787470::1::::<><><>0<>0<>1cc54cb6ecc8e6c49f3ab39e62487dac<>res://.godot/imported/generator.png-950371274074ed041abfa15080ccba87.ctex::
 generator_gauge.png::CompressedTexture2D::4864810054833848312::1782705557::1782787470::1::::<><><>0<>0<>561bc8da7a2e2494b95ae9dcef9d7a59<>res://.godot/imported/generator_gauge.png-82cef5d05a83d7f95ffd729c25ad02ee.ctex::
 rip_cord_dock.png::CompressedTexture2D::5479837130353308855::1782705557::1782787470::1::::<><><>0<>0<>482b2189b4d1823071cb0b3ef1fcb15f<>res://.godot/imported/rip_cord_dock.png-d61b7b3cd9780f99e275d56839968251.ctex::
 side_panel.png::CompressedTexture2D::1080112701747260113::1782705557::1782787470::1::::<><><>0<>0<>a566f2fd05c23507a0d5cad32c30284b<>res://.godot/imported/side_panel.png-75573f31938b6eafbd57e690d7ccb658.ctex::
 side_table.png::CompressedTexture2D::7344720171674184643::1782705557::1782787470::1::::<><><>0<>0<>6bd4467aa8c435a5b617eaf2bf356a6f<>res://.godot/imported/side_table.png-c6386e66883139c5156862b0e4442a20.ctex::
 side_wall.png::CompressedTexture2D::3541058904192326080::1782705557::1782787470::1::::<><><>0<>0<>b4972eaa390332aaabd92dd072cf73d0<>res://.godot/imported/side_wall.png-d79cce2bb9d9ea0c6ee50e741fe86bf6.ctex::
-::res://assets/textures/backgrounds/stress_test/window/::1782787317
+::res://assets/textures/backgrounds/stress_test/window/::1782787470
 bulb.png::CompressedTexture2D::3823700250766964724::1782705557::1782787470::1::::<><><>0<>0<>8043df6d35d50f9779b5bb4d7117f74e<>res://.godot/imported/bulb.png-2bed61fbe51d56d8f26d1ec14bec0292.ctex::
 bulb_over_window.png::CompressedTexture2D::3946399823030120865::1782705557::1782787470::1::::<><><>0<>0<>3ed8845b941011433c95319a619ea36e<>res://.godot/imported/bulb_over_window.png-3be2c176993e3c9d83c4ad2542e980df.ctex::
 button.png::CompressedTexture2D::838437770593934161::1782705557::1782787470::1::::<><><>0<>0<>97c951e78c3c4459498b0634fa23f320<>res://.godot/imported/button.png-281f635fc122a7aad7aabbe911019982.ctex::
@@ -133,9 +132,9 @@ uncle_window.png::CompressedTexture2D::3215580040637654962::1782705557::17827874
 window.png::CompressedTexture2D::5918130620547501299::1782705557::1782787470::1::::<><><>0<>0<>2fa44de623085a936778ac3530839891<>res://.godot/imported/window.png-d13436df7463f8718ad44a8fa60b2bfc.ctex::
 window_light_on.png::CompressedTexture2D::2997832442605488938::1782705557::1782787470::1::::<><><>0<>0<>86e5c09f1b0f856a8af589a0d3b343b8<>res://.godot/imported/window_light_on.png-0d5a2f97930e7f11ab45803079afc50e.ctex::
 ::res://assets/textures/characters/::1782705557
-::res://assets/textures/characters/robot/::1782787315
+::res://assets/textures/characters/robot/::1782787469
 main_menu_robot.png::CompressedTexture2D::2425829240207907689::1782705557::1782787469::1::::<><><>0<>0<>86d9b9eab87fe1bb3689d6a0ca8cab82<>res://.godot/imported/main_menu_robot.png-44435dd6efc1b9fa097e557f2a0886a7.ctex::
-::res://assets/textures/characters/robot/personalitytest/::1782787321
+::res://assets/textures/characters/robot/personalitytest/::1782787473
 body.png::CompressedTexture2D::890509079151108831::1779349589::1782787472::1::::<><><>0<>0<>93fded109a3ef81d11b4501f8b1b2f44<>res://.godot/imported/body.png-d5498e158b85613871b6c89927c43c2a.ctex::
 boobs.png::CompressedTexture2D::1254481926234081061::1779349589::1782787472::1::::<><><>0<>0<>bac1b378799f30e234a5c9df8b69cee7<>res://.godot/imported/boobs.png-ceec1d4b7ec86062cc993422385b8273.ctex::
 boob_cover.png::CompressedTexture2D::7600761202917324097::1779349591::1782787472::1::::<><><>0<>0<>ccdeddcb445d09745ff8aca3bd7ae440<>res://.godot/imported/boob_cover.png-56b58be415a1d6b954334f418e86b7b2.ctex::
@@ -153,32 +152,32 @@ right_arm.png::CompressedTexture2D::2773722867742942580::1779349588::1782787473:
 right_foot.png::CompressedTexture2D::1016944657225742514::1779349593::1782787473::1::::<><><>0<>0<>adaea469dc1e93cc14ba313189f7b312<>res://.godot/imported/right_foot.png-7bee546e38fd44eab9f1ce3297aa474b.ctex::
 right_leg.png::CompressedTexture2D::537584867043120954::1779349592::1782787473::1::::<><><>0<>0<>8e62fe974818d5e22f58dd2d6eeebd0b<>res://.godot/imported/right_leg.png-735bbe35c7593c77ce13f0f28f884bd7.ctex::
 shadow.png::CompressedTexture2D::2639805732386729804::1782705557::1782787473::1::::<><><>0<>0<>14f127a5b701c114024933b2dd90c7f8<>res://.godot/imported/shadow.png-22a2071de5fd10195c7c78903c2485b4.ctex::
-::res://assets/textures/characters/robot/stresstest/::1782787320
+::res://assets/textures/characters/robot/stresstest/::1782787472
 boob_cover.png::CompressedTexture2D::8108203949598805891::1782705557::1782787472::1::::<><><>0<>0<>fed9c1bc064a3c9f922fd741d2406c08<>res://.godot/imported/boob_cover.png-ec77a9c265291e260a62d4aa2083080a.ctex::
 stress_test_bot_full2.png::CompressedTexture2D::1572027802881034747::1782705557::1782787472::1::::<><><>0<>0<>b1e6c5a35f00a29d8d94d1e859396a2c<>res://.godot/imported/stress_test_bot_full2.png-1d1fa861d704cd7c2af5a4fe37519117.ctex::
 stress_test_bot_full.png::CompressedTexture2D::4130082471108196362::1779326181::1782787472::1::::<><><>0<>0<>bedb8aba5591feb17aa4e77cef519add<>res://.godot/imported/stress_test_bot_full.png-2730ed9951efe32fba279a49cae51286.ctex::
 ::res://assets/textures/characters/robot/stresstest/animations/::1782705557
 ::res://assets/textures/characters/robot/stresstest/animations/head/::1782705557
-::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/::1782787324
+::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/::1782787476
 mouth_b_Intro.png::CompressedTexture2D::5847441398295037489::1782705557::1782787476::1::::<><><>0<>0<>085c84ad29ed83010b2e921df818ccc6<>res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex::
-::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/::1782787322
+::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/::1782787475
 mouth_b_loop_medium.png::CompressedTexture2D::2690715825140264564::1782705557::1782787475::1::::<><><>0<>0<>273ccf79f34b66fb818558d18fee9a08<>res://.godot/imported/mouth_b_loop_medium.png-5fb6407195719ce02a3e84f34df8dc3d.ctex::
 ::res://assets/textures/characters/robot/stresstest/animations/legs/::1782705557
-::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/::1782787323
+::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/::1782787475
 vegetable_mssion_intro.png::CompressedTexture2D::7073565360305384607::1782705557::1782787475::1::::<><><>0<>0<>9bfa96392fa7c300510af936cc9b24b2<>res://.godot/imported/vegetable_mssion_intro.png-20d76ada59998ec641325a2341ae9bdc.ctex::
-::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/::1782787322
+::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/::1782787474
 vegetable_mission_loop_medium.png::CompressedTexture2D::4100442452743852075::1782705557::1782787474::1::::<><><>0<>0<>4140f29d2edd3542d7540e8a3dcdb5a4<>res://.godot/imported/vegetable_mission_loop_medium.png-4582bc7c74b466fa7d9f0c346005e0f5.ctex::
-::res://assets/textures/characters/robot/stresstest/arms/::1782787320
+::res://assets/textures/characters/robot/stresstest/arms/::1782787473
 left_arm.png::CompressedTexture2D::6275971802818027453::1782705557::1782787473::1::::<><><>0<>0<>9c23850162254794808370b2ce01e9b2<>res://.godot/imported/left_arm.png-5115b3c3db7086b3d6bfc3f2c73ce1f5.ctex::
 right_arm.png::CompressedTexture2D::4165819717471822985::1782705557::1782787472::1::::<><><>0<>0<>dd649151782676b92cf2e87214297635<>res://.godot/imported/right_arm.png-05da9a41977e03e14fe536c8e133ebdf.ctex::
-::res://assets/textures/characters/robot/stresstest/arms/hands/::1782787321
+::res://assets/textures/characters/robot/stresstest/arms/hands/::1782787473
 left_flexed_fingers.png::CompressedTexture2D::4010130224326129530::1782705557::1782787473::1::::<><><>0<>0<>db8b1411556a98732f3c01cac4b5d1bb<>res://.godot/imported/left_flexed_fingers.png-30f0801eeca696df9c0c57c66f1b2f98.ctex::
 left_open_fingers.png::CompressedTexture2D::5408430860267684553::1782705557::1782787473::1::::<><><>0<>0<>30e1f7414199f34341ab1927d0954370<>res://.godot/imported/left_open_fingers.png-3ce177f823ec2889ea3d549f4463c634.ctex::
 left_palm_up.png::CompressedTexture2D::3668969127401684509::1782705557::1782787473::1::::<><><>0<>0<>2ff15f05fef5dfc179a2dab165ba403e<>res://.godot/imported/left_palm_up.png-f1a1e57f98efdfadc22a60450084280e.ctex::
 right_flexed_fingers.png::CompressedTexture2D::2143225751779738239::1782705557::1782787473::1::::<><><>0<>0<>f74ea19c10c728c28266e7e94e315b06<>res://.godot/imported/right_flexed_fingers.png-78e04f16a30a00f3550309cedc618316.ctex::
 right_open_fingers.png::CompressedTexture2D::8996367587196263075::1782705557::1782787473::1::::<><><>0<>0<>3afaa237ecf6a9589cd8bd779368a334<>res://.godot/imported/right_open_fingers.png-5c7fdc553f90438b2990560ef7cb344a.ctex::
 right_palm_up.png::CompressedTexture2D::515058869747481508::1782705557::1782787473::1::::<><><>0<>0<>f68ce42d9220655fd0cb8d4f71cdbb38<>res://.godot/imported/right_palm_up.png-cf6c8bd8bf79ad1affbc37842d56664a.ctex::
-::res://assets/textures/characters/robot/stresstest/head/::1782787319
+::res://assets/textures/characters/robot/stresstest/head/::1782787472
 angry face.png::CompressedTexture2D::8564852015972085559::1782705557::1782787472::1::::<><><>0<>0<>fdb0c4bba76f3a98766f2ecdec491034<>res://.godot/imported/angry face.png-fc879121819961d0f1e2ea698f68c0ce.ctex::
 angry_face.png::CompressedTexture2D::9004397984401290106::1782705557::1782787472::1::::<><><>0<>0<>9e7a732f7aa003aa1f4b411705a9daa8<>res://.godot/imported/angry_face.png-d4a90cb0d08a4caa40317a91a304c265.ctex::
 hair_back.png::CompressedTexture2D::4478217323228477235::1782705557::1782787472::1::::<><><>0<>0<>feca3956c13187b01321740e190e3233<>res://.godot/imported/hair_back.png-1f7a66dde0e30f5af77447fe1ee77307.ctex::
@@ -192,7 +191,7 @@ screw_left_top.png::CompressedTexture2D::4760893199985277784::1782705557::178278
 screw_right_mid.png::CompressedTexture2D::1492566372851488814::1782705557::1782787472::1::::<><><>0<>0<>b3e8c092703e6ea1d779ba39cf83cac3<>res://.godot/imported/screw_right_mid.png-431a9d422f5050a3cf2317ca33c8df91.ctex::
 screw_right_top.png::CompressedTexture2D::3017306638968780342::1782705557::1782787472::1::::<><><>0<>0<>b7890134eef297fd33c30b8667380afd<>res://.godot/imported/screw_right_top.png-f163cca322cee5488794462fb69c2a5e.ctex::
 squint_eyes.png::CompressedTexture2D::7960813349572331319::1782705557::1782787472::1::::<><><>0<>0<>6accf045bfce58266ba910a7833adaa8<>res://.godot/imported/squint_eyes.png-920c95384eced409b312973bf7c1c4c0.ctex::
-::res://assets/textures/characters/robot/stresstest/legs/::1782787320
+::res://assets/textures/characters/robot/stresstest/legs/::1782787472
 left_leg.png::CompressedTexture2D::7499562256023188172::1782705557::1782787472::1::::<><><>0<>0<>25adee029b1db0947fa8fc6a97db2f9e<>res://.godot/imported/left_leg.png-dca2a2040d37c2b3552ff89f6e1b2adf.ctex::
 left_leg_slightly_out.png::CompressedTexture2D::1250144771647123411::1782705557::1782787472::1::::<><><>0<>0<>9f0bac36c23fcbd648833fef53fa0197<>res://.godot/imported/left_leg_slightly_out.png-bcc6dfbd44276ececaf7f398e03bf7a1.ctex::
 left_leg_up_shin.png::CompressedTexture2D::1618067712458810871::1782705557::1782787472::1::::<><><>0<>0<>1796c1ef763744ad02eee0e442935bf3<>res://.godot/imported/left_leg_up_shin.png-37b71aa7115689e55a2058d96b7eef80.ctex::
@@ -201,7 +200,7 @@ right_leg.png::CompressedTexture2D::8353205357392341188::1782705557::1782787472:
 right_leg_slightly_out.png::CompressedTexture2D::7769625808522709656::1782705557::1782787472::1::::<><><>0<>0<>b4675823e6b4c7b51f7f8cf13335d246<>res://.godot/imported/right_leg_slightly_out.png-250b3786bb5e41fd9bb590a9c3802a84.ctex::
 right_leg_up_shin.png::CompressedTexture2D::7064220091967454122::1782705557::1782787472::1::::<><><>0<>0<>2f04b831d6876da3858a31ccdac2526c<>res://.godot/imported/right_leg_up_shin.png-6813be8c2ea5b5009a3adda07ac9a2d6.ctex::
 right_leg_up_thigh.png::CompressedTexture2D::3918610552962940719::1782705557::1782787472::1::::<><><>0<>0<>73a3842d27f9e071daa7a2839087ce4e<>res://.godot/imported/right_leg_up_thigh.png-af5cb9eef1b2d798561c8dc427f0e571.ctex::
-::res://assets/textures/characters/robot/stresstest/torso/::1782787320
+::res://assets/textures/characters/robot/stresstest/torso/::1782787472
 big_coconuts.png::CompressedTexture2D::933736173929635563::1782705557::1782787472::1::::<><><>0<>0<>9af323b41ab7e6ee0dd8e5c4e463c609<>res://.godot/imported/big_coconuts.png-aaf444f7a32bc096b5bfdff8ec358d5c.ctex::
 chest.png::CompressedTexture2D::8425014457167243712::1782705557::1782787472::1::::<><><>0<>0<>35b897655c2bf41af29911ae59a44b69<>res://.godot/imported/chest.png-6076e50b740f2f7492233870017c2aaf.ctex::
 nipples.png::CompressedTexture2D::2572318372144934478::1782705557::1782787472::1::::<><><>0<>0<>a92a82180d7289b72a9c201fa30592f3<>res://.godot/imported/nipples.png-cd904f6cca32c2e17a9ac8d3d84f15d9.ctex::
@@ -211,7 +210,7 @@ torso_crunch.png::CompressedTexture2D::2335028589624599263::1782705557::17827874
 torso_neck_back.png::CompressedTexture2D::3109038544916071862::1782705557::1782787472::1::::<><><>0<>0<>50a7401384cdcee21de21479e4a977ac<>res://.godot/imported/torso_neck_back.png-595c2356c583e4f7bf8e50e122aadc07.ctex::
 torso_skin.png::CompressedTexture2D::3926162227445372150::1782705557::1782787472::1::::<><><>0<>0<>c1fc579fb37fdf75e546d1d953394a6c<>res://.godot/imported/torso_skin.png-37b3705ebb2a661ea70ceb72efc5871d.ctex::
 ::res://assets/textures/characters/robot/workshop/::1782705557
-::res://assets/textures/characters/robot/workshop/workshop robot head/::1782787319
+::res://assets/textures/characters/robot/workshop/workshop robot head/::1782787472
 forehead.png::CompressedTexture2D::3750778363534476411::1782705557::1782787472::1::::<><><>0<>0<>fb3ce232be251484d7886a6fd3176d03<>res://.godot/imported/forehead.png-c0e382299993df14290407d856b71856.ctex::
 forehead_outline.png::CompressedTexture2D::8176742280994457616::1782705557::1782787472::1::::<><><>0<>0<>2a616a1df7e24b4ca83e742584718421<>res://.godot/imported/forehead_outline.png-905cdab50c58975d2ce057f10e877e98.ctex::
 hair.png::CompressedTexture2D::575194025400570762::1782705557::1782787468::1::::<><><>0<>0<>fe4b7d4edb501a80e5699aa2754aabf1<>res://.godot/imported/hair.png-66527e97b344ba189412900de97ee90f.ctex::
@@ -241,7 +240,7 @@ right_eye_outline.png::CompressedTexture2D::6040560536683488413::1782705557::178
 right_side_panel.png::CompressedTexture2D::7878568022850685343::1782705557::1782787469::1::::<><><>0<>0<>fe7e563dd4ae0233c6aa06fe88f2e094<>res://.godot/imported/right_side_panel.png-1df554180411ed31a8d216dfe514ed7f.ctex::
 right_side_panel_outline.png::CompressedTexture2D::9115785709999887794::1782705557::1782787469::1::::<><><>0<>0<>ebfcee691385f8de0e84e1b353935794<>res://.godot/imported/right_side_panel_outline.png-dacc019ace43834dcb18a65638e506fb.ctex::
 ::res://assets/textures/characters/robot/workshop/workshop robot leg/::1782141431
-::res://assets/textures/characters/teachers/::1782787315
+::res://assets/textures/characters/teachers/::1782787469
 Gym2.png::CompressedTexture2D::2317761612591766961::1718417818::1782787469::1::::<><><>0<>0<>a49b7a82a3cc6e8c3d521adb7e498b0a<>res://.godot/imported/Gym2.png-1bda9818e84dca1cc69d769e78e4ca93.ctex::
 Gym.png::CompressedTexture2D::3100835781206783502::1718417818::1782787469::1::::<><><>0<>0<>e9b8568d8ee7aaa1ae97340ac1b91f1d<>res://.godot/imported/Gym.png-fc9b5b653390ed8f93d22377972ebdee.ctex::
 Health2.png::CompressedTexture2D::6830464503607345259::1778813530::1782787468::1::::<><><>0<>0<>305f968377a052f52042a824b3bafa21<>res://.godot/imported/Health2.png-3c5e652929fcc128bc4f1e6f67233f19.ctex::
@@ -264,12 +263,12 @@ Math2.png::CompressedTexture2D::8006610474616234884::1718491154::1782787468::1::
 Math.png::CompressedTexture2D::5781748074328679937::1718491147::1782787468::1::::<><><>0<>0<>c7479ecda83d7f7f83ea2a41d6cc50d9<>res://.godot/imported/Math.png-aa96fdcc797625f5c56f0e9ec5c6c034.ctex::
 Science2.png::CompressedTexture2D::125912650113251015::1723075010::1782787468::1::::<><><>0<>0<>cc3a82c240e4518a0096a12b3682a7bb<>res://.godot/imported/Science2.png-bc661411ddd2e874a162487f05ec49ae.ctex::
 Science.png::CompressedTexture2D::1285054733802356878::1723074892::1782787468::1::::<><><>0<>0<>0b1c856eac34498a3b62e4045795dcaf<>res://.godot/imported/Science.png-4ec50c8b273cea34e151333b18a7facf.ctex::
-::res://assets/textures/characters/uncle/::1782787315
+::res://assets/textures/characters/uncle/::1782787468
 blue_shirt_uncle1.png::CompressedTexture2D::4675153750494479706::1782705557::1782787468::1::::<><><>0<>0<>7b02b9c5a98b92eb99de52551fb83fdf<>res://.godot/imported/blue_shirt_uncle1.png-a606a6bdc0e8f08dc61999aa53ea1433.ctex::
 blue_shirt_uncle2.png::CompressedTexture2D::5527388309662957571::1782705557::1782787468::1::::<><><>0<>0<>9fdab489d07434ec43281c58917554cb<>res://.godot/imported/blue_shirt_uncle2.png-8bdafd976a3c4e1ab56eccb12a011cdc.ctex::
 hawaiian_uncle1.png::CompressedTexture2D::197595179381130183::1782705557::1782787468::1::::<><><>0<>0<>5cab6a5c23f764480740986ee021b8f7<>res://.godot/imported/hawaiian_uncle1.png-097c3064282d619f6a9cbfbe252e53c4.ctex::
 hawaiian_uncle2.png::CompressedTexture2D::5015565737273723541::1782705557::1782787468::1::::<><><>0<>0<>7128381d09743914cca874ba2fd2e19a<>res://.godot/imported/hawaiian_uncle2.png-cf33268af468d0de6d2129e1c23b4a6d.ctex::
-::res://assets/textures/icons/::1782787316
+::res://assets/textures/icons/::1782787469
 arc.png::CompressedTexture2D::5919516915562426399::1778899717::1782787469::1::::<><><>0<>0<>0285d4b1add2f60a90aa538fac90d6ed<>res://.godot/imported/arc.png-91e8e2f473dd75804f25cef648f0557e.ctex::
 arc_panel_1.png::CompressedTexture2D::323038522785866367::1778899700::1782787469::1::::<><><>0<>0<>ca3a0a1540921e8823ac90feddd38c2d<>res://.godot/imported/arc_panel_1.png-266eec1ceb8e911fd232ad71dd2b20df.ctex::
 arm.png::CompressedTexture2D::8007349931127588257::1782705557::1782787469::1::::<><><>0<>0<>bd9cf969a723d82a1bbf741cd0c7b838<>res://.godot/imported/arm.png-ef5ffa43b6df3d1da96487ee6ed1aa23.ctex::
@@ -324,7 +323,7 @@ welding_gun.png::CompressedTexture2D::3726127896532924172::1782705557::178278746
 work_panel_1.png::CompressedTexture2D::7408415208231148289::1778906703::1782787469::1::::<><><>0<>0<>39647c1efb09bdb93cbf0865479dc174<>res://.godot/imported/work_panel_1.png-70e6fa649ea12380a75816a7a18b4e43.ctex::
 work_shadow_panel_1.png::CompressedTexture2D::2443839974621707151::1778895135::1782787469::1::::<><><>0<>0<>356e2c411fa493e7658b2ef3c59792ea<>res://.godot/imported/work_shadow_panel_1.png-113febffe2e698750435f504aa75c93d.ctex::
 ::res://assets/textures/icons/workshop robot leg/::1779213517
-::res://assets/textures/icons/workshop robot leg/robot_leg_foot/::1782787315
+::res://assets/textures/icons/workshop robot leg/robot_leg_foot/::1782787468
 ankle_axel.png::CompressedTexture2D::3858676553166836822::1779153081::1782787468::1::::<><><>0<>0<>ee80fe6be1031c4940c28627acf93e89<>res://.godot/imported/ankle_axel.png-d5096a510a772b8d17f33674dd6e0351.ctex::
 ankle_cap.png::CompressedTexture2D::2171706587684440779::1779153089::1782787468::1::::<><><>0<>0<>6efa6bd6ee3e22fa23f92ce056c66714<>res://.godot/imported/ankle_cap.png-a6c8acade80db0e24c957feaa011e79a.ctex::
 heel.png::CompressedTexture2D::6385986933167682665::1779153082::1782787468::1::::<><><>0<>0<>57a676495cb3ae7c7f904a55d4346328<>res://.godot/imported/heel.png-1ee2f56831da152acecf2c5db638c665.ctex::
@@ -332,12 +331,12 @@ middle_foot.png::CompressedTexture2D::2085627974050776186::1779153083::178278746
 toes.png::CompressedTexture2D::7115245573473096917::1779153083::1782787468::1::::<><><>0<>0<>52c583a489bd1378198d1785f2f10f55<>res://.godot/imported/toes.png-6b253e882cb943fad92a93b2173b69fa.ctex::
 toes_border.png::CompressedTexture2D::7327821296620419968::1779153082::1782787468::1::::<><><>0<>0<>13c30f76008486835d106cfd238231f8<>res://.godot/imported/toes_border.png-4a80f1189c1f68f0e77c5ce6ec60f556.ctex::
 upper_foot.png::CompressedTexture2D::7205509827713686163::1779153083::1782787468::1::::<><><>0<>0<>45da65c601a5e6df3d5e8b639a7b9019<>res://.godot/imported/upper_foot.png-ddee3b42c49737f1807fe1aa6537e6eb.ctex::
-::res://assets/textures/icons/workshop robot leg/robot_leg_lower_legs/::1782787315
+::res://assets/textures/icons/workshop robot leg/robot_leg_lower_legs/::1782787468
 calf.png::CompressedTexture2D::8512815617710937069::1779316290::1782787468::1::::<><><>0<>0<>45c5a8e1c3961a6aabd321ac5b9e294e<>res://.godot/imported/calf.png-ebfb5ab0caf0a2fd3d6b03927df5b630.ctex::
 inner_gears.png::CompressedTexture2D::1320782139162878294::1779153084::1782787468::1::::<><><>0<>0<>a2b810a047d21f32e36fee4a7b9ac2a6<>res://.godot/imported/inner_gears.png-5793dcaba82c1d55f4c7f03bfa30fac1.ctex::
 lower_leg.png::CompressedTexture2D::4198565213322729865::1779316902::1782787468::1::::<><><>0<>0<>96581f4e415472c33592d24316c994d3<>res://.godot/imported/lower_leg.png-b05f51a9c3981c65dae56db59c1a2d52.ctex::
 shin.png::CompressedTexture2D::3093702822488388698::1779316542::1782787468::1::::<><><>0<>0<>41f3581652d2999a7a64854bcea48df7<>res://.godot/imported/shin.png-3e15aa4e975081ea351a0dbc992a8868.ctex::
-::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/::1782787316
+::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/::1782787469
 ankle_shadow.png::CompressedTexture2D::4499238527614701685::1779153080::1782787468::1::::<><><>0<>0<>c47c9b75e813b6c774f6c8dff727e66c<>res://.godot/imported/ankle_shadow.png-becc6f8b158ebf752f4fca099f1272a6.ctex::
 butt_shadow.png::CompressedTexture2D::8994808907614859503::1779216801::1782787468::1::::<><><>0<>0<>3b2372e547eccae0bd94ffb9f15c976e<>res://.godot/imported/butt_shadow.png-da3f69904a02d1d91ae5dffb6e4f5945.ctex::
 calf_shadow.png::CompressedTexture2D::5290561084084694454::1779315687::1782787468::1::::<><><>0<>0<>fe2654bbaf49e05eb2e39fdb41a0cf09<>res://.godot/imported/calf_shadow.png-275369ad5e9692a777af7c068c09d699.ctex::
@@ -353,7 +352,7 @@ side_thigh_shadow.png::CompressedTexture2D::7086334200676711721::1779153076::178
 toes_shadow.png::CompressedTexture2D::7383847887638741402::1779153079::1782787469::1::::<><><>0<>0<>c3502bb52fe7f2d61dbbecc94bd124cc<>res://.godot/imported/toes_shadow.png-a5e22799624a95ed78ed795da168d63a.ctex::
 upper_foot_shadow.png::CompressedTexture2D::9180517783711000977::1779153079::1782787469::1::::<><><>0<>0<>eaaa6a7526af29b23ddb91c4757106ba<>res://.godot/imported/upper_foot_shadow.png-0543980fb0c9702f2c695b915b156682.ctex::
 upper_thigh_shadow.png::CompressedTexture2D::6172965025686650277::1779153076::1782787469::1::::<><><>0<>0<>3b8916a5450b1e3776587ba803249ca0<>res://.godot/imported/upper_thigh_shadow.png-94484331a9af38ae79dab09566211bed.ctex::
-::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/::1782787316
+::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/::1782787469
 butt.png::CompressedTexture2D::347964297187662471::1779153089::1782787469::1::::<><><>0<>0<>9d45342a2f55680f30ead0cb7a302bb9<>res://.godot/imported/butt.png-3adf4f573bd16deb0ff9a03bbe919588.ctex::
 knee.png::CompressedTexture2D::4431593773247376682::1779153087::1782787469::1::::<><><>0<>0<>0e14f0a3a90cafb5f5c91b85f57b336e<>res://.godot/imported/knee.png-66f86304fd06b38d6643db60e2ce02ed.ctex::
 knee_joint.png::CompressedTexture2D::1077416360709825429::1779153088::1782787469::1::::<><><>0<>0<>6fa7c7c7f3ed04713e3c88ced2bf1209<>res://.godot/imported/knee_joint.png-66919576392fb5b5063c07c6da53bb66.ctex::
@@ -363,17 +362,19 @@ mid_thigh_gears.png::CompressedTexture2D::8961892925718283598::1779165620::17827
 side_thigh.png::CompressedTexture2D::5467656141484791413::1779153088::1782787469::1::::<><><>0<>0<>c13c2017cca103f12b7559a11f6dfdcc<>res://.godot/imported/side_thigh.png-1386c74aa08d1b08885d38f758e0e35d.ctex::
 upper_thigh.png::CompressedTexture2D::2177280809372928402::1779154783::1782787469::1::::<><><>0<>0<>9c9be5f81f59fd66641cc4fafbcb2ed7<>res://.godot/imported/upper_thigh.png-e553d4eef967bd630be16d94ed13f786.ctex::
 upper_thigh_gears.png::CompressedTexture2D::6469294185178968304::1779165343::1782787469::1::::<><><>0<>0<>71fbe92fc1d1130014c462ae2d6984bc<>res://.godot/imported/upper_thigh_gears.png-55405b84d383b94a69e108e37186f455.ctex::
-::res://autoload/::1782787313
+::res://autoload/::1782789783
 CursorTheme.gd::GDScript::1258399887702115692::1782705557::0::1::::<>Node<><>0<>0<><>::
 DayCycle.gd::GDScript::3858844134871978528::1782705557::0::1::::<>Node<><>0<>0<><>::
-Dialogue.gd::GDScript::1579250776617910140::1782786869::0::1::::<>Node<><>0<>0<><>::
+Dialogue.gd::GDScript::1579250776617910140::1782789783::0::1::::<>Node<><>0<>0<><>::
 GameState.gd::GDScript::5967163247929190065::1782779458::0::1::::<>Node<><>0<>0<><>::
 IntroTransition.gd::GDScript::2541754324674232779::1782705557::0::1::::<>Node<><>0<>0<><>::
 WindowManager.gd::GDScript::1625301791055686807::1782779458::0::1::::<>Node<><>0<>0<><>::
 ::res://builds/::1782621014
 ::res://data/::1778814803
-::res://data/dialogue/::1782705557
-README.md::TextFile::-1::1778814803::0::1::::<><><>0<>0<><>::
+::res://data/dialogue/::1782789783
+DialogueBundle.gd::GDScript::3675699589807389322::1782789783::0::1::::DialogueBundle<>Resource<><>0<>1<><>::
+dialogue_bundle.tres::Resource/DialogueBundle::-1::1782796170::0::1::::<><><>0<>0<><>::res://data/dialogue/DialogueBundle.gd
+README.md::TextFile::-1::1782789783::0::1::::<><><>0<>0<><>::
 ::res://resources/::1782705557
 LocationData.gd::GDScript::9192165682144954293::1782705557::0::1::::LocationData<>Resource<><>0<>0<><>::
 ::res://resources/locations/::1782779445
@@ -385,14 +386,14 @@ store.tres::Resource/LocationData::8493132179226426222::1778999947::0::1::::<><>
 stress_test.tres::Resource/LocationData::-1::1782705557::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
 work.tres::Resource/LocationData::2447899081758880348::1778896348::0::1::::<><><>0<>0<><>::uid://d370vjofljuj2::::res://resources/LocationData.gd<>uid://dw8o41rww4dht::::res://assets/textures/backgrounds/work.png
 workshop.tres::Resource/LocationData::-1::1782705557::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
-::res://scenes/::1782779445
+::res://scenes/::1782790980
 Background.tscn::PackedScene::1540975147824367689::1782705557::0::1::::<><><>0<>0<><>::uid://c004tumhf8ilm::::res://shaders/space_background.gdshader
-Main.gd::GDScript::2968061091571004146::1782779445::0::1::::<>Control<><>0<>0<><>::
+Main.gd::GDScript::2968061091571004146::1782790980::0::1::::<>Control<><>0<>0<><>::
 Main.tscn::PackedScene::6014830843503735391::1782705557::0::1::::<><><>0<>0<><>::uid://b8fuv3fb4gis8::::res://assets/textures/backgrounds/scene_placeholder.png<>res://scenes/Background.tscn<>res://scenes/Scanlines.tscn<>uid://cqwrabia7ynum::::res://scenes/Transition.tscn<>uid://bij0sdu6ci27g::::res://scenes/Main.gd
 Scanlines.tscn::PackedScene::4620079510714485324::1782705557::0::1::::<><><>0<>0<><>::uid://d3k11cw7sxoh6::::res://shaders/scanlines.gdshader
 Transition.gd::GDScript::6657196936549354663::1782705557::0::1::::<>TextureRect<><>0<>0<><>::
 Transition.tscn::PackedScene::5942311429986572456::1778799880::0::1::::<><><>0<>0<><>::res://scenes/Transition.gd<>uid://cexl7748vgoji::::res://assets/textures/backgrounds/load/FlowerLoad.png
-::res://scenes/locations/::1782787254
+::res://scenes/locations/::1782790353
 DraggableItem.gd::GDScript::4351373448739835074::1782705557::0::1::::DraggableItem<>TextureRect<><>0<>0<><>::
 DropSlot.gd::GDScript::1826873693449048210::1778948053::0::1::::DropSlot<>Control<><>0<>0<><>::
 EmergencyPowerButton.gd::GDScript::5484409632051545730::1782705557::0::1::::<>Control<><>0<>0<><>::
@@ -419,7 +420,7 @@ StoreItemData.gd::GDScript::8307718961699008384::1779036868::0::1::::StoreItemDa
 StressTest.gd::GDScript::2334747868029222209::1782705557::0::1::::<>LocationBase<><>0<>0<><>::
 StressTest.tscn::PackedScene::1414759186293280952::1782705557::0::1::::<><><>0<>0<><>::uid://8i77rppng4bl::::res://scenes/locations/StressTest.gd<>uid://bn0geh48q1hrs::::res://assets/textures/backgrounds/palceholder_stress_test_dark.png<>uid://dawhy3fb082em::::res://scenes/locations/StressTestRobot.tscn<>uid://cvbl2j3xth0hm::::res://scenes/locations/StressTestRobotShadow.gd<>uid://db72lm17w1lqc::::res://assets/textures/icons/pull_string.png<>uid://c27u86yek7jb4::::res://scenes/locations/PullCord.gd<>uid://b732s5hej26ta::::res://assets/textures/icons/rip_cord.png<>uid://bso4fhklvq0pq::::res://scenes/locations/StressTestZoomRegion.gd<>uid://73o0tn3fw5we::::res://scenes/locations/HeadScrewRepair.gd<>uid://b83hhlbg61pr1::::res://assets/textures/characters/robot/stresstest/head/screw_left_top.png<>uid://bi8uunber5wew::::res://assets/textures/characters/robot/stresstest/head/screw_right_top.png<>uid://c7aie2mvjnmvk::::res://assets/textures/characters/robot/stresstest/head/screw_left_mid.png<>uid://vjal5ydp4nni::::res://assets/textures/characters/robot/stresstest/head/screw_right_mid.png<>uid://0jfalncvuhbk::::res://assets/textures/icons/screwdriver_horizontal_screwing.png<>uid://ckexopyixr75o::::res://scenes/locations/EmergencyPowerButton.gd<>uid://cm0lmhrjqnsh8::::res://scenes/ui/GlowingLabel.gd<>uid://cfj8bhm2fbx1d::::res://scenes/ui/FixedWidthTimerLabel.gd<>uid://d1n1cjkrwg1df::::res://assets/textures/backgrounds/stress_test/shed_background.png<>uid://dcv3p6ggjfiud::::res://assets/textures/backgrounds/stress_test/side_wall/side_table.png<>uid://pnhke68c5vpp::::res://assets/textures/backgrounds/stress_test/side_wall/side_panel.png<>uid://bqpkyts2qeayq::::res://assets/textures/backgrounds/stress_test/side_wall/side_wall.png<>uid://drpakyidmfx5q::::res://assets/textures/backgrounds/stress_test/side_wall/generator.png<>uid://cbksyf0cnkef5::::res://assets/textures/backgrounds/stress_test/side_wall/generator_gauge.png<>uid://ckcqd8fsag5h8::::res://assets/textures/backgrounds/stress_test/side_wall/rip_cord_dock.png<>uid://catqpx06puklo::::res://assets/textures/backgrounds/stress_test/floor/floor.png<>uid://d4lqhjwr2jck0::::res://assets/textures/backgrounds/stress_test/floor/floor_wire_darkness.png<>uid://dvmaxf52u2iqy::::res://assets/textures/backgrounds/stress_test/floor/table.png<>uid://l7e7hn4etm0x::::res://assets/textures/backgrounds/stress_test/window/button.png<>uid://c1hihaqhdb2bh::::res://assets/textures/backgrounds/stress_test/window/button_pressed.png<>uid://cqk10nfe7odup::::res://assets/textures/backgrounds/stress_test/window/window.png<>uid://biyf4k4pg6tsc::::res://assets/textures/backgrounds/stress_test/window/window_light_on.png<>uid://bl2wesj1838yo::::res://assets/textures/backgrounds/stress_test/window/uncle_window.png<>uid://bwhwvms6kmiir::::res://assets/textures/backgrounds/stress_test/window/bulb_over_window.png<>uid://ijuiwks7mxh::::res://assets/textures/backgrounds/stress_test/window/light.png<>uid://buqh1w4htw3lo::::res://assets/textures/backgrounds/stress_test/window/bulb.png
 StressTestRobot.gd::GDScript::7595331302520845707::1782705557::0::1::::<>Control<><>0<>1<><>::
-StressTestRobot.tscn::PackedScene::7205147718129699320::1782786869::0::1::::<><><>0<>0<><>::uid://dghh85mu42tih::::res://scenes/locations/StressTestRobot.gd<>uid://bkkbn7wfvjui5::::res://assets/textures/characters/robot/stresstest/torso/torso_neck_back.png<>uid://b42jt5klebh4v::::res://assets/textures/characters/robot/stresstest/head/hair_back.png<>uid://cojpanr0mgd26::::res://scenes/locations/RobotHoverBox.gd<>uid://dixwup2p1omyi::::res://assets/textures/characters/robot/stresstest/legs/right_leg_slightly_out.png<>uid://r2tx4hhhkcv8::::res://assets/textures/characters/robot/stresstest/legs/left_leg_slightly_out.png<>uid://dramcpayssocy::::res://assets/textures/characters/robot/stresstest/legs/right_leg.png<>uid://de33xva2c1dsm::::res://assets/textures/characters/robot/stresstest/legs/left_leg.png<>uid://bv3g7cpd5tr7t::::res://assets/textures/characters/robot/stresstest/legs/right_leg_up_thigh.png<>uid://fpjo774ulgtr::::res://assets/textures/characters/robot/stresstest/torso/torso.png<>uid://dsbe00k78t3bg::::res://assets/textures/characters/robot/stresstest/torso/chest.png<>uid://c7v7w41qtcsis::::res://assets/textures/characters/robot/stresstest/legs/right_leg_up_shin.png<>uid://nkkq7dx3k1vj::::res://assets/textures/characters/robot/stresstest/torso/big_coconuts.png<>uid://bdbmnhqa4ihdi::::res://assets/textures/characters/robot/stresstest/legs/left_leg_up_thigh.png<>uid://bcwbycge67oxy::::res://assets/textures/characters/robot/stresstest/torso/nipples.png<>uid://xb2lrxbotlhf::::res://assets/textures/characters/robot/stresstest/legs/left_leg_up_shin.png<>uid://irx4u0huje1d::::res://assets/textures/characters/robot/stresstest/head/neck.png<>uid://8jdtyfjuk6hf::::res://assets/textures/characters/robot/stresstest/torso/torso_crunch.png<>uid://b6glamdviyp81::::res://assets/textures/characters/robot/stresstest/head/head.png<>uid://dlojoyj56dpwh::::res://assets/textures/characters/robot/stresstest/head/squint_eyes.png<>uid://chfvxf48t4uat::::res://assets/textures/characters/robot/stresstest/head/hair_front_normal.png<>uid://ckan8ex512aai::::res://assets/textures/characters/robot/stresstest/head/hair_front_bangs.png<>uid://b0l7pbc2mkiwn::::res://assets/textures/characters/robot/stresstest/arms/right_arm.png<>uid://cvoelrq0q5q4t::::res://assets/textures/characters/robot/stresstest/arms/left_arm.png<>uid://bsjjndvd04cwr::::res://assets/textures/characters/robot/stresstest/arms/hands/left_palm_up.png<>uid://hlq7dwdd8o7u::::res://assets/textures/characters/robot/stresstest/arms/hands/right_palm_up.png<>uid://cjb5cinqnstkj::::res://assets/textures/characters/robot/stresstest/arms/hands/left_open_fingers.png<>uid://d1f54h5u1n5xv::::res://assets/textures/characters/robot/stresstest/arms/hands/right_open_fingers.png<>uid://bxesi2kdev4ne::::res://assets/textures/characters/robot/stresstest/arms/hands/left_flexed_fingers.png<>uid://5sgu57censnv::::res://assets/textures/characters/robot/stresstest/arms/hands/right_flexed_fingers.png<>uid://dnrw61gxy34nv::::res://assets/textures/characters/robot/stresstest/boob_cover.png<>uid://cpksrgmqudgb6::::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png<>uid://belnxxgc3k8qa::::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png<>uid://c71qt80w3mb1h::::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/vegetable_mssion_intro.png<>uid://byojxnpwinxol::::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/vegetable_mission_loop_medium.png
+StressTestRobot.tscn::PackedScene::7205147718129699320::1782789783::0::1::::<><><>0<>0<><>::uid://dghh85mu42tih::::res://scenes/locations/StressTestRobot.gd<>uid://bkkbn7wfvjui5::::res://assets/textures/characters/robot/stresstest/torso/torso_neck_back.png<>uid://b42jt5klebh4v::::res://assets/textures/characters/robot/stresstest/head/hair_back.png<>uid://cojpanr0mgd26::::res://scenes/locations/RobotHoverBox.gd<>uid://dixwup2p1omyi::::res://assets/textures/characters/robot/stresstest/legs/right_leg_slightly_out.png<>uid://r2tx4hhhkcv8::::res://assets/textures/characters/robot/stresstest/legs/left_leg_slightly_out.png<>uid://dramcpayssocy::::res://assets/textures/characters/robot/stresstest/legs/right_leg.png<>uid://de33xva2c1dsm::::res://assets/textures/characters/robot/stresstest/legs/left_leg.png<>uid://bv3g7cpd5tr7t::::res://assets/textures/characters/robot/stresstest/legs/right_leg_up_thigh.png<>uid://fpjo774ulgtr::::res://assets/textures/characters/robot/stresstest/torso/torso.png<>uid://dsbe00k78t3bg::::res://assets/textures/characters/robot/stresstest/torso/chest.png<>uid://c7v7w41qtcsis::::res://assets/textures/characters/robot/stresstest/legs/right_leg_up_shin.png<>uid://nkkq7dx3k1vj::::res://assets/textures/characters/robot/stresstest/torso/big_coconuts.png<>uid://bdbmnhqa4ihdi::::res://assets/textures/characters/robot/stresstest/legs/left_leg_up_thigh.png<>uid://bcwbycge67oxy::::res://assets/textures/characters/robot/stresstest/torso/nipples.png<>uid://xb2lrxbotlhf::::res://assets/textures/characters/robot/stresstest/legs/left_leg_up_shin.png<>uid://irx4u0huje1d::::res://assets/textures/characters/robot/stresstest/head/neck.png<>uid://8jdtyfjuk6hf::::res://assets/textures/characters/robot/stresstest/torso/torso_crunch.png<>uid://b6glamdviyp81::::res://assets/textures/characters/robot/stresstest/head/head.png<>uid://dlojoyj56dpwh::::res://assets/textures/characters/robot/stresstest/head/squint_eyes.png<>uid://chfvxf48t4uat::::res://assets/textures/characters/robot/stresstest/head/hair_front_normal.png<>uid://ckan8ex512aai::::res://assets/textures/characters/robot/stresstest/head/hair_front_bangs.png<>uid://b0l7pbc2mkiwn::::res://assets/textures/characters/robot/stresstest/arms/right_arm.png<>uid://cvoelrq0q5q4t::::res://assets/textures/characters/robot/stresstest/arms/left_arm.png<>uid://bsjjndvd04cwr::::res://assets/textures/characters/robot/stresstest/arms/hands/left_palm_up.png<>uid://hlq7dwdd8o7u::::res://assets/textures/characters/robot/stresstest/arms/hands/right_palm_up.png<>uid://cjb5cinqnstkj::::res://assets/textures/characters/robot/stresstest/arms/hands/left_open_fingers.png<>uid://d1f54h5u1n5xv::::res://assets/textures/characters/robot/stresstest/arms/hands/right_open_fingers.png<>uid://bxesi2kdev4ne::::res://assets/textures/characters/robot/stresstest/arms/hands/left_flexed_fingers.png<>uid://5sgu57censnv::::res://assets/textures/characters/robot/stresstest/arms/hands/right_flexed_fingers.png<>uid://dnrw61gxy34nv::::res://assets/textures/characters/robot/stresstest/boob_cover.png<>uid://cpksrgmqudgb6::::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png<>uid://belnxxgc3k8qa::::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png<>uid://c71qt80w3mb1h::::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/vegetable_mssion_intro.png<>uid://byojxnpwinxol::::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/vegetable_mission_loop_medium.png
 StressTestRobotShadow.gd::GDScript::6249588081930189606::1782705557::0::1::::<>Control<><>0<>1<><>::
 StressTestZoomRegion.gd::GDScript::3680491263134278946::1782705557::0::1::::<>Control<><>0<>1<><>::
 StubLocation.gd::GDScript::1883750545589139112::1778816615::0::1::::<>LocationBase<><>0<>0<><>::
@@ -434,11 +435,11 @@ Workshop.tscn::PackedScene::6339475053120041331::1779156969::0::1::::<><><>0<>0<
 WorkshopAssemblySlot.gd::GDScript::5247172798284901962::1782705557::0::1::::WorkshopAssemblySlot<>Control<><>0<>1<><>::
 WorkshopBin.gd::GDScript::4213223401920978245::1779156969::0::1::::WorkshopBin<>Control<><>0<>0<><>::
 WorkshopLeg.gd::GDScript::4107796559844592086::1779211684::0::1::::WorkshopLeg<>Control<><>0<>1<><>::
-WorkshopMinigame.gd::GDScript::6440068121241064872::1782705557::0::1::::WorkshopMinigame<>Control<><>0<>0<><>::
+WorkshopMinigame.gd::GDScript::6440068121241064872::1782790353::0::1::::WorkshopMinigame<>Control<><>0<>0<><>::
 WorkshopMinigame.tscn::PackedScene::6892330474725246399::1782705557::0::1::::<><><>0<>0<><>::uid://cx0u8mdh6iy8w::::res://scenes/locations/WorkshopMinigame.gd<>uid://b1a6f581y8i2h::::res://scenes/locations/WorkshopBin.gd<>uid://cg01f011fwtyo::::res://scenes/locations/WorkshopAssemblySlot.gd<>uid://48i7jx7w0l7j::::res://scenes/locations/WorkshopPiece.gd<>uid://e7s6k3l2wj6f::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/butt.png<>uid://d1ffgn71w4akt::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/butt_shadow.png<>uid://6axq5liay715::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/upper_thigh.png<>uid://ct7h3j5r63ee4::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/upper_thigh_shadow.png<>uid://cyf1lhspj8ti3::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/upper_thigh_gears.png<>uid://d0xhcju1pang5::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/mid_thigh_gears.png<>uid://duw6t48vddya4::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/mid_thigh.png<>uid://dxjnabn7iqt4y::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/mid_thighs_gear_shadow.png<>uid://cj5tq6qfbfyq4::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/side_thigh.png<>uid://c2d8j682u0qle::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/knee_joint_axel.png<>uid://c77w5hvvuits0::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/side_thigh_shadow.png<>uid://b4exx4qxb7tos::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/knee.png<>uid://pl55i5pyadx2::::res://assets/textures/icons/workshop robot leg/robot_leg_thighs/knee_joint.png<>uid://u1pt063o4k3t::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/knee_joint_shadow.png<>uid://dn6cwfsnmqtgn::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/knee_shadow.png<>uid://dtjw3g5dx0uhx::::res://assets/textures/icons/workshop robot leg/robot_leg_lower_legs/calf.png<>uid://chm11d6f74wpy::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/calf_shadow.png<>uid://s22dayxi7cwc::::res://assets/textures/icons/workshop robot leg/robot_leg_lower_legs/inner_gears.png<>uid://b0220xr5d2xmn::::res://assets/textures/icons/workshop robot leg/robot_leg_lower_legs/lower_leg.png<>uid://c3ukkfs3yd8jc::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/lower_leg_shadow.png<>uid://bkcu3lrrxnca1::::res://assets/textures/icons/workshop robot leg/robot_leg_lower_legs/shin.png<>uid://drja8xt8lvdnu::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/shin_shadow.png<>uid://cw8ojigh7mjph::::res://assets/textures/icons/workshop robot leg/robot_leg_foot/heel.png<>uid://bu8f3r73y0e83::::res://assets/textures/icons/workshop robot leg/robot_leg_foot/ankle_axel.png<>uid://b5dp2igqgxdvh::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/ankle_shadow.png<>uid://pj0w56xjnjgq::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/heel_shadow.png<>uid://568xp477f7gx::::res://assets/textures/icons/workshop robot leg/robot_leg_foot/ankle_cap.png<>uid://dawnxun4jeq3l::::res://assets/textures/icons/workshop robot leg/robot_leg_foot/upper_foot.png<>uid://d32d10k2vswhl::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/upper_foot_shadow.png<>uid://4yj8ufc1ab35::::res://assets/textures/icons/workshop robot leg/robot_leg_foot/middle_foot.png<>uid://bcvr8ypogrhb6::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/middle_foot_shadow.png<>uid://c8mxb4vqh5ykb::::res://assets/textures/icons/workshop robot leg/robot_leg_foot/toes.png<>uid://ddg15pxcpgb1c::::res://assets/textures/icons/workshop robot leg/robot_leg_shadow/toes_shadow.png<>uid://dcnwe77f3gouq::::res://assets/textures/icons/workshop robot leg/robot_leg_foot/toes_border.png
 WorkshopPiece.gd::GDScript::2104144322458982365::1782705557::0::1::::WorkshopPiece<>Control<><>0<>1<><>::
 WorkshopSegment.gd::GDScript::1593770557666788435::1782705557::0::1::::WorkshopSegment<>Control<><>0<>1<><>::
-::res://scenes/ui/::1782779458
+::res://scenes/ui/::1782801122
 DialogueBox.gd::GDScript::4742499655677657949::1782705557::0::1::::DialogueBox<>PanelContainer<><>0<>0<><>::
 DialogueBox.tscn::PackedScene::4709524333928720857::1778989557::0::1::::<><><>0<>0<><>::uid://b8tkjntiint4p::::res://scenes/ui/DialogueBox.gd<>uid://bbw5x2gcox3g0::::res://assets/textures/icons/next_arrow.png
 FixedWidthTimerLabel.gd::GDScript::5144370819352709131::1782705557::0::1::::<>Label<><>0<>0<><>::
@@ -446,7 +447,7 @@ GlowingLabel.gd::GDScript::5667406645697333279::1782705557::0::1::::<>Label<><>0
 InventoryOverlay.gd::GDScript::5205940058892184556::1782705557::0::1::::InventoryOverlay<>CanvasLayer<><>0<>0<><>::
 InventoryOverlay.tscn::PackedScene::4244870723396428639::1778989416::0::1::::<><><>0<>0<><>::res://scenes/ui/InventoryOverlay.gd
 MainMenu.gd::GDScript::6657037037834520953::1782779458::0::1::::<>Control<><>0<>0<><>::
-MainMenu.tscn::PackedScene::3327599976747913572::1782705579::0::1::::<><><>0<>0<><>::uid://c13yosc3q66ph::::res://scenes/ui/MainMenu.gd<>uid://bqsgsryf6ir1i::::res://assets/textures/backgrounds/mainmenu_background.png<>uid://batdb2pyq3mp2::::res://assets/textures/characters/robot/main_menu_robot.png<>uid://b63abf6sio50s::::res://scenes/Scanlines.tscn<>uid://bt2ox7uqp6oy::::res://assets/textures/icons/portrait_hud.png<>uid://b7pmudi6171gn::::res://assets/textures/icons/solid_background.png<>uid://bks3tu4eurv04::::res://assets/textures/icons/title.png<>uid://cm0lmhrjqnsh8::::res://scenes/ui/GlowingLabel.gd<>uid://ic5aj4pu3bsr::::res://assets/textures/icons/portrait_hud_big.png
+MainMenu.tscn::PackedScene::3327599976747913572::1782801122::0::1::::<><><>0<>0<><>::uid://c13yosc3q66ph::::res://scenes/ui/MainMenu.gd<>uid://bqsgsryf6ir1i::::res://assets/textures/backgrounds/mainmenu_background.png<>uid://batdb2pyq3mp2::::res://assets/textures/characters/robot/main_menu_robot.png<>uid://b63abf6sio50s::::res://scenes/Scanlines.tscn<>uid://bt2ox7uqp6oy::::res://assets/textures/icons/portrait_hud.png<>uid://b7pmudi6171gn::::res://assets/textures/icons/solid_background.png<>uid://bks3tu4eurv04::::res://assets/textures/icons/title.png<>uid://cm0lmhrjqnsh8::::res://scenes/ui/GlowingLabel.gd<>uid://ic5aj4pu3bsr::::res://assets/textures/icons/portrait_hud_big.png
 MouseFollowTooltip.gd::GDScript::4576337786788282518::1782779445::0::1::::MouseFollowTooltip<>Control<><>0<>0<><>::
 UiSound.gd::GDScript::1711157295829157232::1782705557::0::1::::<>RefCounted<><>0<>0<><>::
 ::res://shaders/::1782538959
