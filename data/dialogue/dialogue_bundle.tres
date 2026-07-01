@@ -1,12 +1,337 @@
-[gd_resource type="Resource" script_class="DialogueBundle" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="DialogueBundle" format=3]
 
 [ext_resource type="Script" path="res://data/dialogue/DialogueBundle.gd" id="1_dlgbndl"]
 
 [resource]
 script = ExtResource("1_dlgbndl")
 sources = {
-"intro": "# Intro sequence dialogue.\n# Format: see data/dialogue/school.dlg.\n\n[exposition]\nUncle: You're up early.\nYou: Yeah, I've gotta get to class.\nUncle: Right. Factory tomorrow then.\nYou: That's the deal...\nUncle: Good. Patrol drones made two passes over the block last night... Nothing came of it, but they're getting curious again. \nUncle: You should keep your head down.\nYou: Should I be worried?\nUncle: You should. Be quiet and punctual. Worry's expensive.\nYou: Almost as expensive as rent.\nUncle: Our arrangement's fair. I keep the roof over your head, you pull your weight. Food, heat, and power ain't free.\nYou: Dad left money.\nUncle: Tuition. He had it set aside- just enough for your credits. That's what he left. \nUncle: Everything else is yours to sort out. You're an adult now.\nYou: Then I guess I have to work...\nUncle: Yeah, you do. You keep your head down in class, you pull your weight at the factory, we both win.\nYou: That's the speech?\nUncle: That's the generous version. The other one has a spreadsheet. \nUncle: Now get to class.\n\n[evening_room]\nUncle: Kid, I need you to pick up some parts from Ed's shop.\nYou: What? Why me?\nUncle: Because you work for me now.\nYou: I thought factory tomorrow meant factory tomorrow.\nUncle: Consider it part of the job.\nYou: Fine... What parts?\nUncle: Small stuff. Extra parts. Mostly.\nYou: Mostly?\nUncle: Ed knows what to give you. Say it's for Ben. Go before he closes.\n\n[store_intro]\nParts on every surface. Lots of it shouldn't be on display... It's a mess in here.\nYou thought about the patrol drones on the way over. You're still not sure you picked the right routes to avoid them.\nA man appears from the back. He doesn't introduce himself. It's probably Ed.\nEd: Parts or browsing? \nHe has a deep, mean voice.\nYou: My Uncle Ben sent me.\nHe nods. That's apparently enough.\n\n[store_outro]\nEd retreats back into his office before you've finished zipping your bag. A click sounds from the door as he locks it behind him.\nYour backpack is heavier than you expected. The walk home is not fun.\nYou drop everything off with your uncle.\nUncle: Hey, good job Kid. Keep it up and you might get a raise.\nYou: You don't mean that.\nUncle: Yeah... I don't.\n[i]He sits up and reaches over to the backpack.[/i]\nUncle: Alright, scram. I don't want you involved in this part of the business.\nYou finally head to your room.\n\n[bedroom_night]\nWithout that backpack on, you feel light as a feather.\nThoughts: It's been a long day. The bed looks really comfy.\nThoughts: Tomorrow will be factory work...\n\n[pre_workshop]\nThe bot's head weighs your bag down. You had to dump everything in- there was no way that box was fitting inside.\nYou rack your mind thinking about why that box was marked trash. The pieces looked perfectly fine to you...\nMaybe your uncle couldn't manage to put it together? \nThoughts: No.. he's probably put together thousands of these things.\nUncle Ben has a workshop in the garage. It's where he keeps his tools, and it should be private enough.\nHe could've chosen to use the shed we have in the backyard. It's definitely more private than the garage. \nYou wonder why he didn't... \nThoughts: It'd be out of the way, hidden from prying eyes...\nThoughts: But that generator is pretty loud, and the shed's pretty old too. And small... \nYou start to understand why he chose the garage instead. \nYou decide you'll try and be quiet while you work on the bot in the garage.\nThoughts: I wonder how he'd react if he saw I took this home...\n\n[pre_stress_test]\nThe assembled head rests on the bench.\nFor a while, nothing happens.\nThoughts: This is stupid... \nThoughts: I'm risking getting kicked out for what? A robot head? What am I gonna do? Talk to it??\nYour shoulders slump and you sit back in your chair.\nYour chair creaks as you lean back and breathe out a long sigh. But a sound that certainly didn't come from your chair brings your attention back to the robot.\nIt's still there... Unmoving...\nYou lean in closer.\n...If this thing can wake up, you need to know how.\n\n[pre_stress_test_bedroom]\nThoughts: How am I gonna turn this thing on? There wasn't any batteries or fuel in the box...\nYou try looking through your bag again to see if you missed something.\nYou can hear your uncle's footsteps creaking the floorboards above you. He's probably getting ready for bed.\nThoughts: Damn. That really limits how much noise I can make... There's probably a battery or two in the garage but he'd hear me rummaging through his stuff...\nThoughts: I guess the shed will have to do... If he checks his window I'll just shut the lights and cut the power...\nYou head to the shed.\n\n[robot_first_talk]\nThe head goes still after the test...\nThe silence is nice...\nThoughts: ...\nHer: ... hello?\nThoughts: ...\nYou: ... Hi...\n\n[free_reign]\n[This is the end of the demo]\nThank you for playing! This was my first ever game.\nI have a vision for many more game features, so keep an eye out for any future updates!\nPlease leave your thoughts of the game in the comments. I hope you enjoyed this early version!\nThoughts: Stress Tests are now more difficult.",
-"school": "# =============================================================================\n# School dialogue file.\n#\n# FORMAT\n#   #               -> comment line (full line only). Ignored.\n#   [some.key]      -> starts a new entry. Other code looks up by this key.\n#\n#   Inside an entry:\n#     Each non-blank line is ONE click in-game.\n#       (i.e. the player sees the sentence type out, then clicks for the next.)\n#     Blank lines are decorative - they don't affect the game, you can use\n#       them to group sentences visually while editing.\n#     A trailing  \\  joins this line with the next so they appear on the same\n#       click (use for short sentences you want shown two-at-once).\n#\n# Inline formatting (passed through to Godot's RichTextLabel):\n#   [i]italic[/i]    [b]bold[/b]    [color=#7fdf7f]green[/color]    etc.\n#\n# Placeholders (filled in by code with String.format):\n#   {name}          -> teacher name\n#   {correct}       -> correct answer text (only valid in wrong-answer entries)\n# =============================================================================\n\n\n# -----------------------------------------------------------------------------\n# GYM - Mr. Caldera\n# -----------------------------------------------------------------------------\n\n[gym.intro]\n[i]Drop your bags.[/i]\n[i]Today we're talking about something every one of you will need: not pulling a muscle.[/i]\n\n[gym.warmup.lecture]\nWarm-ups raise your muscle temperature and increase blood flow before exertion.\nA cold muscle is a brittle muscle - it tears under load that a warm one would shrug off.\nFive minutes of light cardio is enough to make a measurable difference.\nSkip the warm-up and you're betting your week on a coin flip.\n\n[gym.sprint.lecture]\nWhen you sprint, your body switches to anaerobic energy production - burning glucose without oxygen.\nThat's why you can only hold a top sprint for ten or fifteen seconds before your legs start screaming.\nLong, slow runs are aerobic; they use oxygen and last for hours.\nDifferent systems, different fuels.\n\n\n# -----------------------------------------------------------------------------\n# SCIENCE - Ms. Okorie\n# -----------------------------------------------------------------------------\n\n[science.intro]\n[i]Goggles on the desk.[/i]\n[i]Today's topic is the smallest building blocks we know about.[/i]\n\n[science.atom.lecture]\nAn atom has three kinds of particles.\nProtons carry a positive charge and live in the nucleus.\nNeutrons carry no charge and also live in the nucleus.\nElectrons carry a negative charge and orbit around the nucleus at much greater distances.\nThe number of protons defines what element the atom is - change the proton count and you change the element entirely.\n\n[science.photo.lecture]\nPhotosynthesis is how plants make their own food.\nThey take in carbon dioxide from the air through tiny pores in their leaves, absorb water through their roots, and use sunlight to convert these into glucose.\nOxygen is released as a byproduct, which is convenient for the rest of us.\nWithout photosynthesis, almost no complex life on Earth would exist.\n\n[science.newton.lecture]\nNewton's third law of motion says that for every action, there is an equal and opposite reaction.\nWhen you push off the ground to jump, the ground pushes back on you with the same force - that reaction is what actually lifts you.\nRockets work the same way: hot gas is pushed out the back, and the rocket is pushed forward in response.\n\n\n# -----------------------------------------------------------------------------\n# INTRO HISTORY - Ms. Vey\n# -----------------------------------------------------------------------------\n\n[history.intro]\nMs. Vey: Welcome to Automaton History. I'm Ms. Vey.\n[i]She writes her name on the board with impressive speed as she speaks.[/i]\n\n[history.automaton_war.lecture]\nMs. Vey: We will be learning about the human-automaton relationship that led to the last fifty years of war we are fortunate to have left behind us.\n[i]She drags a clean line across the board to represent a timeline.[/i]\nMs. Vey: You. What's your name?\n[i]She points directly at you.[/i]\nYou: Uh, {player_name}, ma'am.\nMs. Vey: Okay, Mr. {player_name}.\n\n[history.automaton_war.feedback]\nYou: A pleasure automaton was given the wrong personality mode. It was able to bypass normal restrictions that usually kept their personalitys in check.\nYou: The automaton felt they were severely misused, and became the first machine to defy humanity. \nYou: It was too long before this was caught, and by then it had secured its position as a global threat.\nMs. Vey:  \\\n[color=#7fdf7f]Excellent, {player_name}![/color] \\\nThat's exactly it!\nThoughts: What the hell? How did I know that?...\nMs. Vey: It was originally a pleasure automaton that had been given the incorrect software.\nMs. Vey: Machine sentience was an unknown phenomenon. You could imagine how jarring it must've been to have a mind meant for a different body.\nMs. Vey: Humanity has rebuilt. In many ways, we are thriving again.\nMs. Vey: But we should hope the automatons never return. If they return too soon, humanity may not survive another attack.\n[i]A few other students whisper to one another about your very detailed answer. You're wondering about it too... [/i]\nThoughts: Something came over me... I feel like I was gonna give a whole different answer than the one I did. \nThoughts: ...Should I be worried?\nThoughts: Should I be worried?\n[i]Your train of thought is unteruptted by the bell ringing.[/i]\n\n\n# -----------------------------------------------------------------------------\n# FEEDBACK - shown after the player answers. Uses {name} placeholder.\n# Short sentences are paired with a trailing backslash so they show together.\n# -----------------------------------------------------------------------------\n\n[feedback.correct]\n[color=#7fdf7f]Correct.[/color] \\\n{name} nods.\n\"Good. Pay attention to the rest of you.\"\n\n[feedback.wrong]\n[color=#df7f7f]Wrong.[/color] \\\n{name} sighs.\n\"The answer was: {correct}. Try to keep up.\"\n\n\n# -----------------------------------------------------------------------------\n# POST-CLASS - the steal-or-leave moment.\n# -----------------------------------------------------------------------------\n\n[post_class]\n[i]The bell rings.[/i] \\\n[i]Chairs scrape.[/i] \\\n[i]Students start filing out.[/i]\n\n[i]The supply cabinet at the back is unlocked.[/i]\n[i]You can see the small case of manufacturing nanobots inside.[/i]\n[i]Nobody's looking right now.[/i]\n",
-"work": "# Work dialogue.\n# Format: see data/dialogue/school.dlg for the full spec.\n# Trailing backslash joins onto the next line into one page (one click).\n\n[intro_job]\n[i]The next day starts under fluorescent lights.[/i]\n[i]Your job is simple: sort parts, match shapes, and do it quick.[/i]\n[i]It's gruelling work. It's not difficult, but sometimes you wonder if your uncle purposefully gave you the most mind-numbing job in the factory.[/i]\n\n[intro_head_box]\n[i]Your uncle's office is one of the last rooms you pass before reaching the exit.[/i]\n[i]A box at your feet nearly trips you, and it felt like kicking a rock. Looking down at it, it's marked 'trash' for the cleaning bots to take care of when they see it.[/i]\n[i]Why not take a peak? It's trash after all, and your foot still hurts.[/i]\n[i]Your heart spikes with fear for a split second before you quickly realize what your'e looking at.[/i]\n[i]It's full of one of the bot's head segments.. an eye, a nose, a cheek.. Your uncle must've given up assembling this one. You wonder why...[/i]\n[i]You stuff it in your backpack before anyone notices.[/i]\n[i]Thoughts: ...Why am I doing this?[/i]\n\n\n# -----------------------------------------------------------------------------\n# COMPLETION - shown after the player fills all four slots, before the\n# \"what do you do?\" steal-or-leave prompt.\n# -----------------------------------------------------------------------------\n\n[completion]\n[i]Your shift's almost over.[/i] \\\n[i]The line's emptied out.[/i] \\\n[i]The supervisor wandered off ten minutes ago.[/i]\n\n[i]A spare scrap of metal sits at the edge of the bin.[/i]\n[i]It wouldn't be missed.[/i]\n[i]Nobody's looking right now.[/i]\n",
-"workshop": "# Workshop dialogue.\n# Format: see data/dialogue/school.dlg for the full spec.\n# Trailing backslash joins onto the next line into one page (one click).\n\n\n# -----------------------------------------------------------------------------\n# INTRO - shown when the player enters the workshop, before the\n# tinker / proceed choice.\n# -----------------------------------------------------------------------------\n\n[intro]\n[i]The workbench is clean the way you left it.[/i] \\\n[i]It's hard to tell if your uncle's been here since last time.[/i]\n\n[intro_head]\n[i]You prepare to lay the stolen head segments across the bench.[/i] \\\n[i]It should be easy enough to put her together. Like a weird jigsaw puzzle.[/i]\n\n[i]Thoughts: Hmm, I called it a her... Can a robot be a 'her'?[/i]\n\n# -----------------------------------------------------------------------------\n# TINKER - placeholder flavor when the player picks the tinker option.\n# Returns to the selection screen without consuming the phase.\n# -----------------------------------------------------------------------------\n\n[tinker]\n[i]You work on one of your uncle's many abandoned side projects. Little knickknacks and gadgets...[/i] \\\n[i]Nothing useful happens.[/i]\n\n# -----------------------------------------------------------------------------\n# PROCEED - typed out when the player chooses to commit to a build.\n# Bridges the small-image phase and the expanded minigame.\n# -----------------------------------------------------------------------------\n\n[proceed]\n[i]You set down your bag.[/i]\n\n\n# -----------------------------------------------------------------------------\n# MISSING - shown if the player presses CRAFT without the required inputs.\n# -----------------------------------------------------------------------------\n\n[craft.missing]\n[i]Not enough in the bin.[/i] \\\n[i]Try a known part recipe.[/i]\n\n\n# -----------------------------------------------------------------------------\n# COMPLETE - shown when the player presses COLLECT with a finished part.\n# -----------------------------------------------------------------------------\n\n[complete]\n[i]A finished part, laid out and ready.[/i] \\\n[i]You wrap it in cloth and set it aside.[/i]\n"
+"intro": "# Intro sequence dialogue.
+# Format: see data/dialogue/school.dlg.
+
+[exposition]
+Uncle: You're up early.
+You: Yeah, I've gotta get to class.
+Uncle: Right. Factory tomorrow then.
+You: That's the deal...
+Uncle: Good. Patrol drones made two passes over the block last night... Nothing came of it, but they're getting curious again. 
+Uncle: You should keep your head down.
+You: Should I be worried?
+Uncle: You should. Be quiet and punctual. Worry's expensive.
+You: Almost as expensive as rent.
+Uncle: Our arrangement's fair. I keep the roof over your head, you pull your weight. Food, heat, and power ain't free.
+You: Dad left money.
+Uncle: Tuition. He had it set aside- just enough for your credits. That's what he left. 
+Uncle: Everything else is yours to sort out. You're an adult now.
+You: Then I guess I have to work...
+Uncle: Yeah, you do. You keep your head down in class, you pull your weight at the factory, we both win.
+You: That's the speech?
+Uncle: That's the generous version. The other one has a spreadsheet. 
+Uncle: Now get to class.
+
+[evening_room]
+Uncle: Kid, I need you to pick up some parts from Ed's shop.
+You: What? Why me?
+Uncle: Because you work for me now.
+You: I thought factory tomorrow meant factory tomorrow.
+Uncle: Consider it part of the job.
+You: Fine... What parts?
+Uncle: Small stuff. Extra parts. Mostly.
+You: Mostly?
+Uncle: Ed knows what to give you. Say it's for Ben. Go before he closes.
+
+[store_intro]
+Parts on every surface. Lots of it shouldn't be on display... It's a mess in here.
+You thought about the patrol drones on the way over. You're still not sure you picked the right routes to avoid them.
+A man appears from the back. He doesn't introduce himself. It's probably Ed.
+Ed: Parts or browsing? 
+He has a deep, mean voice.
+You: My Uncle Ben sent me.
+He nods. That's apparently enough.
+
+[store_outro]
+Ed retreats back into his office before you've finished zipping your bag. A click sounds from the door as he locks it behind him.
+Your backpack is heavier than you expected. The walk home is not fun.
+You drop everything off with your uncle.
+Uncle: Hey, good job Kid. Keep it up and you might get a raise.
+You: You don't mean that.
+Uncle: Yeah... I don't.
+[i]He sits up and reaches over to the backpack.[/i]
+Uncle: Alright, scram. I don't want you involved in this part of the business.
+You finally head to your room.
+
+[bedroom_night]
+Without that backpack on, you feel light as a feather.
+Thoughts: It's been a long day. The bed looks really comfy.
+Thoughts: Tomorrow will be factory work...
+
+[pre_workshop]
+The bot's head weighs your bag down. You had to dump everything in- there was no way that box was fitting inside.
+You rack your mind thinking about why that box was marked trash. The pieces looked perfectly fine to you...
+Maybe your uncle couldn't manage to put it together? 
+Thoughts: No.. he's probably put together thousands of these things.
+Uncle Ben has a workshop in the garage. It's where he keeps his tools, and it should be private enough.
+He could've chosen to use the shed we have in the backyard. It's definitely more private than the garage. 
+You wonder why he didn't... 
+Thoughts: It'd be out of the way, hidden from prying eyes...
+Thoughts: But that generator is pretty loud, and the shed's pretty old too. And small... 
+You start to understand why he chose the garage instead. 
+You decide you'll try and be quiet while you work on the bot in the garage.
+Thoughts: I wonder how he'd react if he saw I took this home...
+
+[pre_stress_test]
+The assembled head rests on the bench.
+For a while, nothing happens.
+Thoughts: This is stupid... 
+Thoughts: I'm risking getting kicked out for what? A robot head? What am I gonna do? Talk to it??
+Your shoulders slump and you sit back in your chair.
+Your chair creaks as you lean back and breathe out a long sigh. But a sound that certainly didn't come from your chair brings your attention back to the robot.
+It's still there... Unmoving...
+You lean in closer.
+...If this thing can wake up, you need to know how.
+
+[pre_stress_test_bedroom]
+Thoughts: How am I gonna turn this thing on? There wasn't any batteries or fuel in the box...
+You try looking through your bag again to see if you missed something.
+You can hear your uncle's footsteps creaking the floorboards above you. He's probably getting ready for bed.
+Thoughts: Damn. That really limits how much noise I can make... There's probably a battery or two in the garage but he'd hear me rummaging through his stuff...
+Thoughts: I guess the shed will have to do... If he checks his window I'll just shut the lights and cut the power...
+You head to the shed.
+
+[robot_first_talk]
+The head goes still after the test...
+The silence is nice...
+Thoughts: ...
+Her: ... hello?
+Thoughts: ...
+You: ... Hi...
+
+[free_reign]
+[This is the end of the demo]
+Thank you for playing! This was my first ever game.
+I have a vision for many more game features, so keep an eye out for any future updates!
+Please leave your thoughts of the game in the comments. I hope you enjoyed this early version!
+Thoughts: Stress Tests are now more difficult.",
+"school": "# =============================================================================
+# School dialogue file.
+#
+# FORMAT
+#   #               -> comment line (full line only). Ignored.
+#   [some.key]      -> starts a new entry. Other code looks up by this key.
+#
+#   Inside an entry:
+#     Each non-blank line is ONE click in-game.
+#       (i.e. the player sees the sentence type out, then clicks for the next.)
+#     Blank lines are decorative - they don't affect the game, you can use
+#       them to group sentences visually while editing.
+#     A trailing  \\  joins this line with the next so they appear on the same
+#       click (use for short sentences you want shown two-at-once).
+#
+# Inline formatting (passed through to Godot's RichTextLabel):
+#   [i]italic[/i]    [b]bold[/b]    [color=#7fdf7f]green[/color]    etc.
+#
+# Placeholders (filled in by code with String.format):
+#   {name}          -> teacher name
+#   {correct}       -> correct answer text (only valid in wrong-answer entries)
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# GYM - Mr. Caldera
+# -----------------------------------------------------------------------------
+
+[gym.intro]
+[i]Drop your bags.[/i]
+[i]Today we're talking about something every one of you will need: not pulling a muscle.[/i]
+
+[gym.warmup.lecture]
+Warm-ups raise your muscle temperature and increase blood flow before exertion.
+A cold muscle is a brittle muscle - it tears under load that a warm one would shrug off.
+Five minutes of light cardio is enough to make a measurable difference.
+Skip the warm-up and you're betting your week on a coin flip.
+
+[gym.sprint.lecture]
+When you sprint, your body switches to anaerobic energy production - burning glucose without oxygen.
+That's why you can only hold a top sprint for ten or fifteen seconds before your legs start screaming.
+Long, slow runs are aerobic; they use oxygen and last for hours.
+Different systems, different fuels.
+
+
+# -----------------------------------------------------------------------------
+# SCIENCE - Ms. Okorie
+# -----------------------------------------------------------------------------
+
+[science.intro]
+[i]Goggles on the desk.[/i]
+[i]Today's topic is the smallest building blocks we know about.[/i]
+
+[science.atom.lecture]
+An atom has three kinds of particles.
+Protons carry a positive charge and live in the nucleus.
+Neutrons carry no charge and also live in the nucleus.
+Electrons carry a negative charge and orbit around the nucleus at much greater distances.
+The number of protons defines what element the atom is - change the proton count and you change the element entirely.
+
+[science.photo.lecture]
+Photosynthesis is how plants make their own food.
+They take in carbon dioxide from the air through tiny pores in their leaves, absorb water through their roots, and use sunlight to convert these into glucose.
+Oxygen is released as a byproduct, which is convenient for the rest of us.
+Without photosynthesis, almost no complex life on Earth would exist.
+
+[science.newton.lecture]
+Newton's third law of motion says that for every action, there is an equal and opposite reaction.
+When you push off the ground to jump, the ground pushes back on you with the same force - that reaction is what actually lifts you.
+Rockets work the same way: hot gas is pushed out the back, and the rocket is pushed forward in response.
+
+
+# -----------------------------------------------------------------------------
+# INTRO HISTORY - Ms. Vey
+# -----------------------------------------------------------------------------
+
+[history.intro]
+Ms. Vey: Welcome to Automaton History. I'm Ms. Vey.
+[i]She writes her name on the board with impressive speed as she speaks.[/i]
+
+[history.automaton_war.lecture]
+Ms. Vey: We will be learning about the human-automaton relationship that led to the last fifty years of war we are fortunate to have left behind us.
+[i]She drags a clean line across the board to represent a timeline.[/i]
+Ms. Vey: You. What's your name?
+[i]She points directly at you.[/i]
+You: Uh, {player_name}, ma'am.
+Ms. Vey: Okay, Mr. {player_name}.
+
+[history.automaton_war.feedback]
+You: A pleasure automaton was given the wrong personality mode. It was able to bypass normal restrictions that usually kept their personalitys in check.
+You: The automaton felt they were severely misused, and became the first machine to defy humanity. 
+You: It was too long before this was caught, and by then it had secured its position as a global threat.
+Ms. Vey:  \\
+[color=#7fdf7f]Excellent, {player_name}![/color] \\
+That's exactly it!
+Thoughts: What the hell? How did I know that?...
+Ms. Vey: It was originally a pleasure automaton that had been given the incorrect software.
+Ms. Vey: Machine sentience was an unknown phenomenon. You could imagine how jarring it must've been to have a mind meant for a different body.
+Ms. Vey: Humanity has rebuilt. In many ways, we are thriving again.
+Ms. Vey: But we should hope the automatons never return. If they return too soon, humanity may not survive another attack.
+[i]A few other students whisper to one another about your very detailed answer. You're wondering about it too... [/i]
+Thoughts: Something came over me... I feel like I was gonna give a whole different answer than the one I did. 
+Thoughts: ...Should I be worried?
+[i]Your train of thought is unteruptted by the bell ringing.[/i]
+
+
+# -----------------------------------------------------------------------------
+# FEEDBACK - shown after the player answers. Uses {name} placeholder.
+# Short sentences are paired with a trailing backslash so they show together.
+# -----------------------------------------------------------------------------
+
+[feedback.correct]
+[color=#7fdf7f]Correct.[/color] \\
+{name} nods.
+\"Good. Pay attention to the rest of you.\"
+
+[feedback.wrong]
+[color=#df7f7f]Wrong.[/color] \\
+{name} sighs.
+\"The answer was: {correct}. Try to keep up.\"
+
+
+# -----------------------------------------------------------------------------
+# POST-CLASS - the steal-or-leave moment.
+# -----------------------------------------------------------------------------
+
+[post_class]
+[i]The bell rings.[/i] \\
+[i]Chairs scrape.[/i] \\
+[i]Students start filing out.[/i]
+
+[i]The supply cabinet at the back is unlocked.[/i]
+[i]You can see the small case of manufacturing nanobots inside.[/i]
+[i]Nobody's looking right now.[/i]
+",
+"work": "# Work dialogue.
+# Format: see data/dialogue/school.dlg for the full spec.
+# Trailing backslash joins onto the next line into one page (one click).
+
+[intro_job]
+[i]The next day starts under fluorescent lights.[/i]
+[i]Your job is simple: sort parts, match shapes, and do it quick.[/i]
+[i]It's gruelling work. It's not difficult, but sometimes you wonder if your uncle purposefully gave you the most mind-numbing job in the factory.[/i]
+
+[intro_head_box]
+[i]Your uncle's office is one of the last rooms you pass before reaching the exit.[/i]
+[i]A box at your feet nearly trips you, and it felt like kicking a rock. Looking down at it, it's marked 'trash' for the cleaning bots to take care of when they see it.[/i]
+[i]Why not take a peak? It's trash after all, and your foot still hurts.[/i]
+[i]Your heart spikes with fear for a split second before you quickly realize what your'e looking at.[/i]
+[i]It's full of one of the bot's head segments.. an eye, a nose, a cheek.. Your uncle must've given up assembling this one. You wonder why...[/i]
+[i]You stuff it in your backpack before anyone notices.[/i]
+[i]Thoughts: ...Why am I doing this?[/i]
+
+
+# -----------------------------------------------------------------------------
+# COMPLETION - shown after the player fills all four slots, before the
+# \"what do you do?\" steal-or-leave prompt.
+# -----------------------------------------------------------------------------
+
+[completion]
+[i]Your shift's almost over.[/i] \\
+[i]The line's emptied out.[/i] \\
+[i]The supervisor wandered off ten minutes ago.[/i]
+
+[i]A spare scrap of metal sits at the edge of the bin.[/i]
+[i]It wouldn't be missed.[/i]
+[i]Nobody's looking right now.[/i]
+",
+"workshop": "# Workshop dialogue.
+# Format: see data/dialogue/school.dlg for the full spec.
+# Trailing backslash joins onto the next line into one page (one click).
+
+
+# -----------------------------------------------------------------------------
+# INTRO - shown when the player enters the workshop, before the
+# tinker / proceed choice.
+# -----------------------------------------------------------------------------
+
+[intro]
+[i]The workbench is clean the way you left it.[/i] \\
+[i]It's hard to tell if your uncle's been here since last time.[/i]
+
+[intro_head]
+[i]You prepare to lay the stolen head segments across the bench.[/i] \\
+[i]It should be easy enough to put her together. Like a weird jigsaw puzzle.[/i]
+
+[i]Thoughts: Hmm, I called it a her... Can a robot be a 'her'?[/i]
+
+# -----------------------------------------------------------------------------
+# TINKER - placeholder flavor when the player picks the tinker option.
+# Returns to the selection screen without consuming the phase.
+# -----------------------------------------------------------------------------
+
+[tinker]
+[i]You work on one of your uncle's many abandoned side projects. Little knickknacks and gadgets...[/i] \\
+[i]Nothing useful happens.[/i]
+
+# -----------------------------------------------------------------------------
+# PROCEED - typed out when the player chooses to commit to a build.
+# Bridges the small-image phase and the expanded minigame.
+# -----------------------------------------------------------------------------
+
+[proceed]
+[i]You set down your bag.[/i]
+
+
+# -----------------------------------------------------------------------------
+# MISSING - shown if the player presses CRAFT without the required inputs.
+# -----------------------------------------------------------------------------
+
+[craft.missing]
+[i]Not enough in the bin.[/i] \\
+[i]Try a known part recipe.[/i]
+
+
+# -----------------------------------------------------------------------------
+# COMPLETE - shown when the player presses COLLECT with a finished part.
+# -----------------------------------------------------------------------------
+
+[complete]
+[i]A finished part, laid out and ready.[/i] \\
+[i]You wrap it in cloth and set it aside.[/i]
+"
 }

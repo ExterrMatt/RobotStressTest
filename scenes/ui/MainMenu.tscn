@@ -97,7 +97,7 @@ theme_override_colors/font_color = Color(1, 0.64, 0.26, 1)
 theme_override_font_sizes/font_size = 24
 text = "•  MOTOR CONTROL- INITIALIZING"
 script = ExtResource("6_glowing_label")
-glow_color = Color(1, 0.24, 0, 1)
+glow_color = Color(1, 0.23921569, 0, 1)
 glow_radius_px = 34.0
 glow_strength = 1.7
 

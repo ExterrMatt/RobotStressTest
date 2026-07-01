@@ -14,7 +14,7 @@ res://scenes/locations/School.tscn::1a7b32a05d04c2a7e1fab0b10f0d500b::1782705557
 res://scenes/locations/Sleep.tscn::0f71e93d0065d4639bd0db3491efb2e1::1782705557::res://.godot/exported/133200997/export-355717890f2d79456996c60748d82a9d-Sleep.scn
 res://scenes/locations/Store.tscn::3ffae5da29b4c2605e81fd910a3b9a5e::1782705557::res://.godot/exported/133200997/export-5926e1bdf6bcc3d13254bc86529b3b64-Store.scn
 res://scenes/locations/StressTest.tscn::96c0617f0de276a700b49b70cdcad2fb::1782705557::res://.godot/exported/133200997/export-3ec4be709466030d6bb4cb3a628c63c8-StressTest.scn
-res://scenes/locations/StressTestRobot.tscn::2a229ff3d5668696055daf148c64a630::1782786869::res://.godot/exported/133200997/export-a2c3208e6d1fd2789e009f640a7ff8e7-StressTestRobot.scn
+res://scenes/locations/StressTestRobot.tscn::2a229ff3d5668696055daf148c64a630::1782789783::res://.godot/exported/133200997/export-a2c3208e6d1fd2789e009f640a7ff8e7-StressTestRobot.scn
 res://scenes/locations/StubLocation.tscn::8c9e90e580eec722cf20922ca9b18641::1778811889::res://.godot/exported/133200997/export-4ff366e49ec2c25ca88051c6d008c847-StubLocation.scn
 res://scenes/locations/Work.tscn::8f1bed0f7291544bdadc5c4c4a20aec1::1778952915::res://.godot/exported/133200997/export-da373158757570648029ee24205a79f2-Work.scn
 res://scenes/locations/WorkInventory.tscn::fc499b7f070af08262da9ec51dc184d8::1782705557::res://.godot/exported/133200997/export-5909a023e297a8ae7813b582469c9bb4-WorkInventory.scn
@@ -23,10 +23,10 @@ res://scenes/locations/Workshop.tscn::a55a8b062b97c82f74dfe621a248cf9f::17791569
 res://scenes/locations/WorkshopMinigame.tscn::cfe3cc3d974559586e15e0d6dff8ee14::1782705557::res://.godot/exported/133200997/export-170fd747217ca22a5984057fa4e29681-WorkshopMinigame.scn
 res://scenes/ui/DialogueBox.tscn::90d2e3d68c5815e11b790cddeb938070::1778989557::res://.godot/exported/133200997/export-408fe0e8827d2e3117f7a3499e6fad6e-DialogueBox.scn
 res://scenes/ui/InventoryOverlay.tscn::8388c9596b32cd396ba61f77469ffcc5::1778989416::res://.godot/exported/133200997/export-f74fc40b0e8e3f6155d6eb729b73b09c-InventoryOverlay.scn
-res://scenes/ui/MainMenu.tscn::31978d1a58f1625dd79617b77e70586d::1782705579::res://.godot/exported/133200997/export-99174fb0fd2492fee0dd7d5ca3b0e3c8-MainMenu.scn
+res://scenes/ui/MainMenu.tscn::b1d9be60defe17059fcb2d5de73e46b5::1782799146::res://.godot/exported/133200997/export-99174fb0fd2492fee0dd7d5ca3b0e3c8-MainMenu.scn
 res://scenes/Background.tscn::783c90fb094a8396d2b121928cb048df::1782705557::res://.godot/exported/133200997/export-4913db11209a89d2c1e21ad0ff2e6654-Background.scn
 res://scenes/Main.tscn::b1bda886ce958f505cae626e76605cb9::1782705557::res://.godot/exported/133200997/export-4a24720ee5e787dbe30abc634fa3679d-Main.scn
 res://scenes/Scanlines.tscn::e05b8daa79eff2b9837b0d30e8144af6::1782705557::res://.godot/exported/133200997/export-c74a5f100dcbc63778a9dbc4633d3faf-Scanlines.scn
 res://scenes/Transition.tscn::56b3e626957a56a2435a035c5bdbed56::1778799880::res://.godot/exported/133200997/export-18b2bc422cb0cbf241f5858a8afffc2e-Transition.scn
 res://themes/main_theme.tres::29eee11777cdc03dd546d0060d316e16::1782785886::res://.godot/exported/133200997/export-e3e532b65590fab841dde880f48f87ef-main_theme.res
-res://data/dialogue/dialogue_bundle.tres::c02d55679589ce797209ceaa35a96f97::1782789136::res://.godot/exported/133200997/export-03dfa975fa605647f861effdd0181d1c-dialogue_bundle.res
+res://data/dialogue/dialogue_bundle.tres::20774485aded4fd018e82e0f1678fad9::1782796170::res://.godot/exported/133200997/export-03dfa975fa605647f861effdd0181d1c-dialogue_bundle.res
