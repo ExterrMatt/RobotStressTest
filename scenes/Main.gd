@@ -97,6 +97,13 @@ const LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 118.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_FONT_SIZE: int = 32
+## Gold accent shared with the picture-frame rivets / button focus border.
+## Applied to the stat *values* (money, suspicion, anger) in the outer HUD
+## panels so they read like the inner HUD bar's accented values.
+const LARGE_SCENE_HUD_STAT_ACCENT: Color = Color(0.788, 0.663, 0.416)
+## The gold used for the relocated scene END button's border.
+const SCENE_END_BUTTON_BORDER_COLOR: Color = Color(0.788, 0.663, 0.416)
+const SCENE_END_BUTTON_MIN_SIZE: Vector2 = Vector2(88.0, 52.0)
 const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
 
 @export_category("Debug")
@@ -193,6 +200,9 @@ var _large_scene_suspicion_label: Label = null
 var _large_scene_anger_label: Label = null
 var _large_scene_work_timer_divider: PanelContainer = null
 var _large_scene_work_timer_label: Label = null
+## A location's END/leave button, relocated out of the (clipped, scaled)
+## scene image into screen space at the viewport's bottom-right corner.
+var _scene_end_button: Button = null
 var _work_hud_active: bool = false
 var _large_scene_timer_running: bool = false
 var _work_hud_elapsed_seconds: float = 0.0
@@ -923,6 +933,7 @@ func _create_large_scene_hud() -> void:
 	left_box.add_child(_large_scene_phase_label)
 	left_box.add_child(_make_large_scene_hud_divider())
 	_large_scene_money_label = _make_large_scene_hud_label("$0", &"HUDStat")
+	_large_scene_money_label.add_theme_color_override("font_color", LARGE_SCENE_HUD_STAT_ACCENT)
 	left_box.add_child(_large_scene_money_label)
 
 	_large_scene_right_panel = _make_large_scene_hud_panel("LargeSceneRightHUD", false)
@@ -931,9 +942,11 @@ func _create_large_scene_hud() -> void:
 	var right_box := _make_large_scene_hud_vbox(_large_scene_right_panel)
 	_large_scene_suspicion_label = _make_large_scene_hud_label("SUS 0", &"HUDStat")
 	_large_scene_suspicion_label.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
+	_large_scene_suspicion_label.add_theme_color_override("font_color", LARGE_SCENE_HUD_STAT_ACCENT)
 	right_box.add_child(_large_scene_suspicion_label)
 	right_box.add_child(_make_large_scene_hud_divider())
 	_large_scene_anger_label = _make_large_scene_hud_label("ANGER 0", &"HUDStat")
+	_large_scene_anger_label.add_theme_color_override("font_color", LARGE_SCENE_HUD_STAT_ACCENT)
 	right_box.add_child(_large_scene_anger_label)
 	_large_scene_work_timer_divider = _make_large_scene_hud_divider()
 	right_box.add_child(_large_scene_work_timer_divider)
@@ -949,6 +962,15 @@ func _make_large_scene_hud_panel(node_name: String, left_anchor: bool) -> PanelC
 	panel.name = node_name
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.theme_type_variation = &"HUDPanel"
+	# The outer container's border should match the spacer/divider color.
+	# Derive both from the theme so they stay locked together even if the
+	# palette shifts: duplicate the HUDPanel style and force its border to
+	# the PanelDivider (spacer) fill color.
+	var base_style := get_theme_stylebox("panel", &"HUDPanel") as StyleBoxFlat
+	if base_style != null:
+		var style := base_style.duplicate() as StyleBoxFlat
+		style.border_color = _spacer_color()
+		panel.add_theme_stylebox_override("panel", style)
 	if left_anchor:
 		panel.anchor_left = 0.0
 		panel.anchor_right = 0.0
@@ -993,6 +1015,15 @@ func _make_large_scene_hud_divider() -> PanelContainer:
 	return divider
 
 
+## The spacer/divider color used inside the HUD panels (PanelDivider fill).
+## The outer container borders match this so the two never diverge.
+func _spacer_color() -> Color:
+	var divider_style := get_theme_stylebox("panel", &"PanelDivider") as StyleBoxFlat
+	if divider_style != null:
+		return divider_style.bg_color
+	return Color(0.227, 0.251, 0.408)
+
+
 func _update_large_scene_hud_visibility() -> void:
 	if hud_bar == null:
 		return
@@ -1034,6 +1065,8 @@ func _position_large_scene_hud_panels() -> void:
 		if _large_scene_timer_section_visible() \
 		else LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
 	_large_scene_right_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + right_height
+
+	_position_scene_end_button()
 
 
 func _large_scene_hud_outer_gap(side_space: float) -> float:
@@ -2443,10 +2476,93 @@ func hide_scene_overlay() -> void:
 	if _scene_overlay and is_instance_valid(_scene_overlay):
 		_scene_overlay.queue_free()
 	_scene_overlay = null
+	# A scene overlay may have relocated its END button into screen space;
+	# tear it down alongside the overlay so it never outlives the location.
+	clear_scene_end_button()
 	# Restore SceneImage's filter if an interactive overlay flipped it.
 	if _prev_scene_image_mouse_filter != -1:
 		scene_image.mouse_filter = _prev_scene_image_mouse_filter
 		_prev_scene_image_mouse_filter = -1
+
+
+## Relocate a location's END/leave button out of the (clipped, scaled) scene
+## image and into screen space, pinned to the viewport's bottom-right corner
+## with the same corner spacing as the top-right HUD panel and a gold border.
+## The button node is reparented, so its existing signal wiring stays intact.
+func mount_scene_end_button(button: Button) -> void:
+	if button == null:
+		return
+	clear_scene_end_button()
+
+	var host: Control = _large_scene_hud_layer if _large_scene_hud_layer != null else self
+	var prev_parent := button.get_parent()
+	if prev_parent != null:
+		prev_parent.remove_child(button)
+	host.add_child(button)
+
+	button.scale = Vector2.ONE
+	button.z_index = 60
+	button.custom_minimum_size = SCENE_END_BUTTON_MIN_SIZE
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_size_override("font_size", 24)
+	# Pin to the viewport's bottom-right, growing up/left from the corner.
+	button.anchor_left = 1.0
+	button.anchor_top = 1.0
+	button.anchor_right = 1.0
+	button.anchor_bottom = 1.0
+	button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	button.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_apply_scene_end_button_style(button)
+
+	_scene_end_button = button
+	_position_scene_end_button()
+	call_deferred("_position_scene_end_button")
+
+
+func clear_scene_end_button() -> void:
+	if _scene_end_button != null and is_instance_valid(_scene_end_button):
+		_scene_end_button.queue_free()
+	_scene_end_button = null
+
+
+## Mirror the top-right HUD panel's corner spacing, but off the bottom-right
+## corner: same horizontal gap from the right edge, same vertical margin up
+## from the bottom edge.
+func _position_scene_end_button() -> void:
+	if _scene_end_button == null or not is_instance_valid(_scene_end_button):
+		return
+	var viewport_width := get_viewport_rect().size.x
+	var image_rect := _current_scene_image_global_rect()
+	var right_space := maxf(0.0, viewport_width - image_rect.end.x)
+	var right_outer_gap := _large_scene_hud_outer_gap(right_space)
+	var min_size := _scene_end_button.get_combined_minimum_size()
+	var w := maxf(SCENE_END_BUTTON_MIN_SIZE.x, min_size.x)
+	var h := maxf(SCENE_END_BUTTON_MIN_SIZE.y, min_size.y)
+	_scene_end_button.offset_right = -right_outer_gap
+	_scene_end_button.offset_left = -right_outer_gap - w
+	_scene_end_button.offset_bottom = -LARGE_SCENE_HUD_MARGIN.y
+	_scene_end_button.offset_top = -LARGE_SCENE_HUD_MARGIN.y - h
+
+
+func _apply_scene_end_button_style(button: Button) -> void:
+	button.add_theme_stylebox_override("normal", _scene_end_button_style(false))
+	button.add_theme_stylebox_override("hover", _scene_end_button_style(true))
+	button.add_theme_stylebox_override("pressed", _scene_end_button_style(true))
+	button.add_theme_stylebox_override("focus", _scene_end_button_style(true))
+	button.add_theme_stylebox_override("disabled", _scene_end_button_style(false))
+
+
+func _scene_end_button_style(active: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.118, 0.141, 0.235, 0.85) if active else Color(0.059, 0.071, 0.118, 0.85)
+	style.set_border_width_all(3)
+	style.border_color = SCENE_END_BUTTON_BORDER_COLOR
+	style.content_margin_left = 14.0
+	style.content_margin_right = 14.0
+	style.content_margin_top = 8.0
+	style.content_margin_bottom = 8.0
+	return style
 		
 func show_inventory_overlay(node: Control) -> void:
 	if node == null:

@@ -260,6 +260,13 @@ func _on_pan_complete() -> void:
 	_configure_minigame_end_button()
 	if main and main.has_method("show_scene_overlay"):
 		main.show_scene_overlay(_minigame, true)
+	# Lift the END button out of the clipped, scaled scene image and pin it to
+	# the screen's bottom-right corner (gold border). Reparenting keeps the
+	# button's existing signal wiring and the minigame's hit-test intact.
+	if main and main.has_method("mount_scene_end_button"):
+		var relocated_end := _minigame.get_node_or_null("EndButton") as Button
+		if relocated_end != null:
+			main.mount_scene_end_button(relocated_end)
 
 
 func _hide_end_button() -> void:
