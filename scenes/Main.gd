@@ -87,17 +87,25 @@ const EXACT_FRAME_LOCATION_IDS: Array[StringName] = []
 ## corner pills over the image instead of the top HUD bar. Larger scenes
 ## (500x400+) keep the framed presentation. The full-bleed image size below is
 ## sized so that image width + frame chrome == the UI content width (1152px),
-## so nothing overflows even though the chrome is invisible.
-## Width 1274 + 6px chrome == the 1280 viewport width, and height 354 + 6 ==
-## 360 (the top half), so a standard scene fills the whole top-left/top-right
-## corner exactly like the reference once the UI margins are dropped to 0.
-const STANDARD_FULLBLEED_FRAME_SIZE: Vector2 = Vector2(1274, 354)
+## so nothing overflows. The image is shown contain/fit (no crop) inside an
+## ornate gold double-border matching the dialogue box, so the frame size is
+## kept at the source 4:1 aspect: 1224x306. With 16px of gold-frame chrome the
+## outer frame is 1240 wide == the content width under 20px side margins, so a
+## standard scene sits near-screen-wide and top-anchored with all four borders
+## visible, and the image fills it exactly (no letterbox, no over-extension).
+const STANDARD_FULLBLEED_FRAME_SIZE: Vector2 = Vector2(1224, 306)
 
-## UI content margins for the two presentations. Full-bleed drops the side and
-## top margins so the enlarged image reaches the viewport edges; the framed
-## presentation keeps the original inset.
+## UI content margins for the two presentations. The gold-framed top presentation
+## uses a slim inset so the picture reads near-screen-wide with its borders
+## visible and slotted to the top; the large framed presentation keeps the
+## original inset.
 const FRAMED_UI_MARGINS: Vector4 = Vector4(64, 24, 64, 24)
-const FULLBLEED_UI_MARGINS: Vector4 = Vector4(0, 0, 0, 24)
+const FULLBLEED_UI_MARGINS: Vector4 = Vector4(20, 16, 20, 24)
+
+## Ornate gold picture-frame colors, matching the dialogue box's double border.
+const PICTURE_FRAME_BG: Color = Color(0.063, 0.075, 0.133, 1.0)
+const PICTURE_FRAME_OUTER_GOLD: Color = Color(0.725, 0.604, 0.306, 1.0)
+const PICTURE_FRAME_INNER_GOLD: Color = Color(0.91, 0.784, 0.471, 1.0)
 const CHOICE_FONT_SIZE: int = 40
 const CHOICE_SELECTED_TEXT: Color = Color(0.984, 0.953, 0.875)
 const CHOICE_UNSELECTED_TEXT: Color = Color(0.478, 0.447, 0.353)
@@ -1204,28 +1212,57 @@ func _apply_presentation_layout(fullbleed: bool) -> void:
 			Control.SIZE_SHRINK_BEGIN if fullbleed else Control.SIZE_EXPAND_FILL
 
 
-## Hide/show the ornate rivet picture-frame chrome. In full-bleed mode the
-## three frame panels get an empty stylebox (no border, no padding) and the
-## corner rivets are hidden, so the scene image reads as an edge-to-edge
-## picture. Removing the overrides reverts to the theme's framed look.
-func _set_fullbleed_chrome(hidden: bool) -> void:
+## Swap the picture-frame chrome between the ornate gold double-border (used for
+## standard 500x125 scenes, matching the dialogue box) and the default rivet
+## frame (large 500x400+ scenes). In gold mode the three frame panels are
+## restyled — outer gold border over navy, inner bright-gold hairline, empty
+## middle — the rivets are hidden, and the cached chrome size is recomputed so
+## the frame sizes to the new borders. Reverting drops the overrides back to the
+## theme's rivet frame.
+func _set_fullbleed_chrome(gold_frame: bool) -> void:
 	# While a fullscreen transition owns the frame chrome (it hides then
 	# restores its own backups), stay out of its way. _apply_scene_presentation_mode
 	# is re-run when that transition cleans up, so the final state is correct.
 	if _source_frame_chrome_hidden:
 		return
-	for panel in _source_frame_panel_nodes():
-		if panel == null:
-			continue
-		if hidden:
-			panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-		else:
-			panel.remove_theme_stylebox_override("panel")
+	var panels := _source_frame_panel_nodes()
+	if gold_frame:
+		if panels.size() >= 1 and panels[0] != null:
+			panels[0].add_theme_stylebox_override("panel", _picture_frame_outer_style())
+		if panels.size() >= 2 and panels[1] != null:
+			panels[1].add_theme_stylebox_override("panel", _picture_frame_inner_style())
+		if panels.size() >= 3 and panels[2] != null:
+			panels[2].add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	else:
+		for panel in panels:
+			if panel != null:
+				panel.remove_theme_stylebox_override("panel")
 	if frame_outer != null:
 		for child in frame_outer.get_children():
 			var item := child as CanvasItem
 			if item != null and String(item.name).begins_with("Rivet"):
-				item.visible = not hidden
+				item.visible = not gold_frame
+	# The gold and rivet frames have different border/padding, so the cached
+	# chrome size must follow the active style for the frame to size correctly.
+	_frame_chrome_size = _compute_frame_chrome_size()
+
+
+func _picture_frame_outer_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = PICTURE_FRAME_BG
+	style.set_border_width_all(3)
+	style.border_color = PICTURE_FRAME_OUTER_GOLD
+	style.set_content_margin_all(8)
+	return style
+
+
+func _picture_frame_inner_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.draw_center = false
+	style.set_border_width_all(1)
+	style.border_color = PICTURE_FRAME_INNER_GOLD
+	style.set_content_margin_all(0)
+	return style
 
 
 func set_work_hud_timer_active(active: bool) -> void:
@@ -2239,8 +2276,11 @@ func _cleanup_expanding_fullscreen_transition() -> void:
 	_expanding_transition_layer = null
 	_expanding_transition_rect = Rect2()
 	_set_source_frame_chrome_hidden(false)
-	# Re-assert full-bleed vs framed chrome now that the transition released it.
+	# Re-assert gold vs rivet chrome now that the transition released it, then
+	# force the frame to re-size next frame so the outer width matches the
+	# freshly-restored chrome (the two frames have different border padding).
 	_apply_scene_presentation_mode()
+	_scene_image_texture_seen = null
 
 
 func _expanding_scene_border_style() -> StyleBoxFlat:
