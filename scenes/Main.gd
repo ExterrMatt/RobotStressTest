@@ -1019,12 +1019,13 @@ func _make_bedroom_pill_label(pill: PanelContainer) -> RichTextLabel:
 func _position_bedroom_pills() -> void:
 	if _bedroom_left_pill == null or _bedroom_right_pill == null:
 		return
+	# Slot the pills flush into the image's top corners, mirroring the way the
+	# teacher tag sits in the bottom-left corner.
 	var image_rect := _current_scene_image_global_rect()
-	var inset := Vector2(36.0, 28.0)
-	_bedroom_left_pill.position = image_rect.position + inset
+	_bedroom_left_pill.position = image_rect.position
 	_bedroom_right_pill.position = Vector2(
-		image_rect.end.x - _bedroom_right_pill.size.x - inset.x,
-		image_rect.position.y + inset.y
+		image_rect.end.x - _bedroom_right_pill.size.x,
+		image_rect.position.y
 	)
 
 

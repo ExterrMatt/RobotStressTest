@@ -240,7 +240,7 @@ offset_right = 40.0
 grow_vertical = 0
 pivot_offset = Vector2(0, 40)
 mouse_filter = 2
-theme_type_variation = &"HUDPanel"
+theme_type_variation = &"OrnateTag"
 
 [node name="TagMargin" type="MarginContainer" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage/TeacherTag" unique_id=903750862]
 layout_mode = 2

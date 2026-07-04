@@ -138,11 +138,19 @@ content_margin_left = 16.0
 content_margin_top = 6.0
 content_margin_right = 16.0
 content_margin_bottom = 6.0
-bg_color = Color(0.016, 0.016, 0.027, 0.85)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+bg_color = Color(0.016, 0.016, 0.027, 0.75)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.353, 0.29, 0.149, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_ornate_tag"]
+bg_color = Color(0.016, 0.016, 0.027, 0.75)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
 border_color = Color(0.353, 0.29, 0.149, 1)
 
 [resource]
@@ -181,6 +189,8 @@ OrnateFrameInnerCompact/base_type = &"PanelContainer"
 OrnateFrameInnerCompact/styles/panel = SubResource("sb_ornate_inner_compact")
 OrnatePill/base_type = &"PanelContainer"
 OrnatePill/styles/panel = SubResource("sb_ornate_pill")
+OrnateTag/base_type = &"PanelContainer"
+OrnateTag/styles/panel = SubResource("sb_ornate_tag")
 Narration/base_type = &"Label"
 Narration/colors/font_color = Color(0.953, 0.925, 0.847, 1)
 Narration/font_sizes/font_size = 40
