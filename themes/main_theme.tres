@@ -210,6 +210,66 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.353, 0.29, 0.149, 1)
 
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_normal"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.059, 0.071, 0.118, 0.85)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.725, 0.604, 0.306, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_hover"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.118, 0.141, 0.235, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.788, 0.663, 0.416, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_pressed"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 4.0
+bg_color = Color(0.118, 0.141, 0.235, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.788, 0.663, 0.416, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_focus"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.91, 0.784, 0.471, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_disabled"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.059, 0.071, 0.118, 0.6)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.502, 0.42, 0.243, 1)
+
 [resource]
 default_font = ExtResource("1_rjgu6")
 default_font_size = 24
@@ -224,6 +284,12 @@ Button/styles/focus = SubResource("sb_btn_focus")
 Button/styles/hover = SubResource("sb_btn_hover")
 Button/styles/normal = SubResource("sb_btn_normal")
 Button/styles/pressed = SubResource("sb_btn_pressed")
+GoldHudButton/base_type = &"Button"
+GoldHudButton/styles/normal = SubResource("sb_gold_btn_normal")
+GoldHudButton/styles/hover = SubResource("sb_gold_btn_hover")
+GoldHudButton/styles/pressed = SubResource("sb_gold_btn_pressed")
+GoldHudButton/styles/focus = SubResource("sb_gold_btn_focus")
+GoldHudButton/styles/disabled = SubResource("sb_gold_btn_disabled")
 ChoiceButton/base_type = &"Button"
 ChoiceButton/styles/disabled = SubResource("sb_choice_normal")
 ChoiceButton/styles/focus = SubResource("sb_choice_focus")

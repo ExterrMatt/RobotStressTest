@@ -140,6 +140,9 @@ const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
 ## matches the stat spacers, and the same colour-coded stat values.
 const LARGE_SCENE_HUD_BORDER_COLOR: Color = Color(0.725, 0.604, 0.306)
 const LARGE_SCENE_HUD_PANEL_BG: Color = Color(0.059, 0.071, 0.118, 0.75)
+## Stat-name colour on the corner panels (matches the DAY/EVENING rows). Only
+## the numeric value is tinted with the money/suspicion/anger accent colours.
+const LARGE_SCENE_HUD_NAME_COLOR: Color = Color(0.784, 0.8, 0.878)
 
 @export_category("Debug")
 @export var debug_hotkeys_enabled: bool = true
@@ -234,8 +237,8 @@ var _large_scene_right_panel: PanelContainer = null
 var _large_scene_day_label: Label = null
 var _large_scene_phase_label: Label = null
 var _large_scene_money_label: Label = null
-var _large_scene_suspicion_label: Label = null
-var _large_scene_anger_label: Label = null
+var _large_scene_suspicion_label: RichTextLabel = null
+var _large_scene_anger_label: RichTextLabel = null
 var _large_scene_work_timer_divider: PanelContainer = null
 var _large_scene_work_timer_label: Label = null
 ## Bottom-right END/action button that floats in the margin outside the picture
@@ -966,11 +969,13 @@ func _refresh_hud() -> void:
 	if _large_scene_money_label != null:
 		_large_scene_money_label.text = "$%d" % GameState.money
 	if _large_scene_suspicion_label != null:
-		_large_scene_suspicion_label.text = "SUS %d" % GameState.suspicion
-		var suspicion_font_size := LARGE_SCENE_HUD_FONT_SIZE
-		_large_scene_suspicion_label.add_theme_font_size_override("font_size", suspicion_font_size)
+		_large_scene_suspicion_label.text = "SUS [color=%s]%d[/color]" % [
+			PILL_SUS_BBCODE_COLOR, GameState.suspicion
+		]
 	if _large_scene_anger_label != null:
-		_large_scene_anger_label.text = "ANGER %d" % GameState.anger
+		_large_scene_anger_label.text = "ANGER [color=%s]%d[/color]" % [
+			PILL_ANGER_BBCODE_COLOR, GameState.anger
+		]
 	if _large_scene_work_timer_label != null:
 		_large_scene_work_timer_label.text = _format_work_hud_elapsed_time()
 	_refresh_bedroom_pills()
@@ -1105,14 +1110,11 @@ func _create_large_scene_hud() -> void:
 	_large_scene_hud_layer.add_child(_large_scene_right_panel)
 
 	var right_box := _make_large_scene_hud_vbox(_large_scene_right_panel)
-	_large_scene_suspicion_label = _make_large_scene_hud_label("SUS 0", &"HUDStat")
-	_large_scene_suspicion_label.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
-	# Match the suspicion/anger colours used on the floating pill (inner HUD).
-	_large_scene_suspicion_label.add_theme_color_override("font_color", Color(PILL_SUS_BBCODE_COLOR))
+	# Name in white, value tinted — same split the floating pill uses.
+	_large_scene_suspicion_label = _make_large_scene_hud_rich_label()
 	right_box.add_child(_large_scene_suspicion_label)
 	right_box.add_child(_make_large_scene_hud_divider())
-	_large_scene_anger_label = _make_large_scene_hud_label("ANGER 0", &"HUDStat")
-	_large_scene_anger_label.add_theme_color_override("font_color", Color(PILL_ANGER_BBCODE_COLOR))
+	_large_scene_anger_label = _make_large_scene_hud_rich_label()
 	right_box.add_child(_large_scene_anger_label)
 	_large_scene_work_timer_divider = _make_large_scene_hud_divider()
 	right_box.add_child(_large_scene_work_timer_divider)
@@ -1178,6 +1180,20 @@ func _make_large_scene_hud_divider() -> PanelContainer:
 	return divider
 
 
+## A stat row that keeps the name in the neutral panel colour while tinting
+## only the numeric value (set via BBCode in _refresh_hud), matching the pills.
+func _make_large_scene_hud_rich_label() -> RichTextLabel:
+	var label := RichTextLabel.new()
+	label.bbcode_enabled = true
+	label.fit_content = true
+	label.scroll_active = false
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_color_override("default_color", LARGE_SCENE_HUD_NAME_COLOR)
+	label.add_theme_font_size_override("normal_font_size", LARGE_SCENE_HUD_FONT_SIZE)
+	return label
+
+
 ## Panel background matching the default HUD panel, but with a gold border in
 ## place of the blue one so the vertical corner panels read as gilded frames.
 func _make_large_scene_hud_panel_style() -> StyleBoxFlat:
@@ -1209,28 +1225,10 @@ func _make_large_scene_end_button() -> Button:
 	# Grow up/left from the bottom-right anchor so the button sizes to its text.
 	btn.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	btn.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	# Shared gold-bordered look so the in-frame CRAFT/COLLECT buttons match it.
+	btn.theme_type_variation = &"GoldHudButton"
 	btn.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
-	btn.add_theme_stylebox_override("normal", _make_large_scene_end_button_style(false))
-	btn.add_theme_stylebox_override("hover", _make_large_scene_end_button_style(true))
-	btn.add_theme_stylebox_override("pressed", _make_large_scene_end_button_style(true))
-	btn.add_theme_stylebox_override("focus", _make_large_scene_end_button_style(false))
-	btn.add_theme_stylebox_override("disabled", _make_large_scene_end_button_style(false))
 	return btn
-
-
-func _make_large_scene_end_button_style(active: bool) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.content_margin_left = 22.0
-	style.content_margin_right = 22.0
-	style.content_margin_top = 8.0
-	style.content_margin_bottom = 8.0
-	style.bg_color = Color(0.118, 0.141, 0.235, 0.92) if active else LARGE_SCENE_HUD_PANEL_BG
-	style.border_width_left = 3
-	style.border_width_top = 3
-	style.border_width_right = 3
-	style.border_width_bottom = 3
-	style.border_color = LARGE_SCENE_HUD_BORDER_COLOR
-	return style
 
 
 ## Mount a bottom-right margin action button (e.g. the Workshop "END"). Safe to
@@ -1270,6 +1268,13 @@ func _update_large_scene_hud_visibility() -> void:
 		_refresh_hud()
 	if _large_scene_hud_layer != null:
 		_large_scene_hud_layer.visible = use_large_hud
+	# A large framed scene owns the presentation even if we arrived from a
+	# full-bleed intro (e.g. the Workshop pan): the corner panels are the HUD,
+	# so the floating pills are hidden and the picture frame is centred
+	# vertically instead of left pinned to the top with full-bleed margins.
+	if _bedroom_pill_layer != null:
+		_bedroom_pill_layer.visible = _fullbleed_active and not use_large_hud
+	_apply_large_scene_frame_centering(use_large_hud)
 	_set_work_hud_timer_visible(use_large_hud and _large_scene_timer_section_visible())
 	if use_large_hud:
 		var parent_container := hud_bar.get_parent() as Container
@@ -1277,6 +1282,22 @@ func _update_large_scene_hud_visibility() -> void:
 			parent_container.queue_sort()
 		_position_large_scene_hud_panels()
 		call_deferred("_position_large_scene_hud_panels")
+
+
+## While a large-scene HUD is active, centre the picture frame vertically with
+## symmetric top/bottom margins (overriding a stale full-bleed top-pin). When it
+## deactivates, restore whatever the current presentation mode dictates.
+func _apply_large_scene_frame_centering(use_large_hud: bool) -> void:
+	if frame_wrap == null:
+		return
+	if use_large_hud:
+		frame_wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		if ui_margin != null:
+			var v := int(FULLBLEED_UI_MARGINS.w)
+			ui_margin.add_theme_constant_override("margin_top", v)
+			ui_margin.add_theme_constant_override("margin_bottom", v)
+	else:
+		_apply_presentation_layout(_fullbleed_active)
 
 
 func _position_large_scene_hud_panels() -> void:
