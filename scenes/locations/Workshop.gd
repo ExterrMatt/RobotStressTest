@@ -315,6 +315,7 @@ func _on_dialogue_finished() -> void:
 			pass
 func _build_choice_button(label: String) -> Button:
 	var btn := Button.new()
+	btn.theme_type_variation = &"ChoiceButton"
 	btn.text = label
 	btn.custom_minimum_size = Vector2(0, CHOICE_BUTTON_HEIGHT)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL

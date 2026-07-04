@@ -525,6 +525,7 @@ func _accumulate_reward(reward: Dictionary) -> void:
 
 func _build_choice_button(label: String) -> Button:
 	var btn := Button.new()
+	btn.theme_type_variation = &"ChoiceButton"
 	btn.text = label
 	# Fixed height. SIZE_FILL (no SIZE_EXPAND) horizontally so the three
 	# buttons share the row evenly; vertical shrink so the button stays

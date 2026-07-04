@@ -3,6 +3,51 @@
 [ext_resource type="FontFile" uid="uid://dpchwlkoauw33" path="res://assets/fonts/Jersey10-Regular.ttf" id="1_rjgu6"]
 
 [sub_resource type="StyleBoxFlat" id="sb_btn_normal"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 14.0
+bg_color = Color(0.078, 0.094, 0.157, 0.85)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 9
+border_color = Color(0.227, 0.251, 0.408, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_focus"]
+bg_color = Color(0, 0, 0, 0)
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.663, 0.416, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_hover"]
+content_margin_left = 12.0
+content_margin_top = 14.0
+content_margin_right = 12.0
+content_margin_bottom = 14.0
+bg_color = Color(0.157, 0.188, 0.314, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 9
+border_color = Color(0.353, 0.392, 0.627, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_btn_pressed"]
+content_margin_left = 12.0
+content_margin_top = 18.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.157, 0.188, 0.314, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 5
+border_color = Color(0.353, 0.392, 0.627, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_choice_normal"]
 content_margin_left = 16.0
 content_margin_top = 12.0
 content_margin_right = 16.0
@@ -17,7 +62,7 @@ shadow_color = Color(0, 0, 0, 0.5)
 shadow_size = 8
 shadow_offset = Vector2(0, 4)
 
-[sub_resource type="StyleBoxFlat" id="sb_btn_focus"]
+[sub_resource type="StyleBoxFlat" id="sb_choice_focus"]
 content_margin_left = 16.0
 content_margin_top = 12.0
 content_margin_right = 16.0
@@ -29,7 +74,7 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.91, 0.784, 0.471, 1)
 
-[sub_resource type="StyleBoxFlat" id="sb_btn_hover"]
+[sub_resource type="StyleBoxFlat" id="sb_choice_hover"]
 content_margin_left = 16.0
 content_margin_top = 12.0
 content_margin_right = 16.0
@@ -44,7 +89,7 @@ shadow_color = Color(0, 0, 0, 0.5)
 shadow_size = 10
 shadow_offset = Vector2(0, 5)
 
-[sub_resource type="StyleBoxFlat" id="sb_btn_pressed"]
+[sub_resource type="StyleBoxFlat" id="sb_choice_pressed"]
 content_margin_left = 16.0
 content_margin_top = 14.0
 content_margin_right = 16.0
@@ -179,6 +224,12 @@ Button/styles/focus = SubResource("sb_btn_focus")
 Button/styles/hover = SubResource("sb_btn_hover")
 Button/styles/normal = SubResource("sb_btn_normal")
 Button/styles/pressed = SubResource("sb_btn_pressed")
+ChoiceButton/base_type = &"Button"
+ChoiceButton/styles/disabled = SubResource("sb_choice_normal")
+ChoiceButton/styles/focus = SubResource("sb_choice_focus")
+ChoiceButton/styles/hover = SubResource("sb_choice_hover")
+ChoiceButton/styles/normal = SubResource("sb_choice_normal")
+ChoiceButton/styles/pressed = SubResource("sb_choice_pressed")
 FrameInsetDark/base_type = &"PanelContainer"
 FrameInsetDark/styles/panel = SubResource("sb_frame_inset_dark")
 FrameInsetMid/base_type = &"PanelContainer"
