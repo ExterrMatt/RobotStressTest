@@ -89,11 +89,12 @@ const EXACT_FRAME_LOCATION_IDS: Array[StringName] = []
 ## sized so that image width + frame chrome == the UI content width (1152px),
 ## so nothing overflows. The image is shown contain/fit (no crop) inside an
 ## ornate gold double-border matching the dialogue box, so the frame size is
-## kept at the source 4:1 aspect: 1224x306. With 16px of gold-frame chrome the
-## outer frame is 1240 wide == the content width under 20px side margins, so a
-## standard scene sits near-screen-wide and top-anchored with all four borders
-## visible, and the image fills it exactly (no letterbox, no over-extension).
-const STANDARD_FULLBLEED_FRAME_SIZE: Vector2 = Vector2(1224, 306)
+## kept at the source 4:1 aspect: 1220x305. With 20px of gold-frame chrome (8px
+## outer + 2px inner-hairline inset, per side) the outer frame is 1240 wide ==
+## the content width under 20px side margins, so a standard scene sits near-
+## screen-wide and top-anchored with all four borders (incl. the thin inner
+## hairline) visible, and the image fills it exactly (no letterbox).
+const STANDARD_FULLBLEED_FRAME_SIZE: Vector2 = Vector2(1220, 305)
 
 ## UI content margins for the two presentations. The gold-framed top presentation
 ## uses a slim inset so the picture reads near-screen-wide with its borders
@@ -1262,7 +1263,9 @@ func _picture_frame_inner_style() -> StyleBoxFlat:
 	style.draw_center = false
 	style.set_border_width_all(1)
 	style.border_color = PICTURE_FRAME_INNER_GOLD
-	style.set_content_margin_all(0)
+	# A small inset so the image sits just inside this 1px hairline instead of
+	# painting over it — this is the thin inner border the dialogue box has.
+	style.set_content_margin_all(2)
 	return style
 
 
