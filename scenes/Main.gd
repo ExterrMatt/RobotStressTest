@@ -240,8 +240,11 @@ var _fullbleed_active: bool = false
 var _bedroom_pill_layer: Control = null
 var _bedroom_left_pill: PanelContainer = null
 var _bedroom_right_pill: PanelContainer = null
-var _bedroom_left_pill_label: RichTextLabel = null
-var _bedroom_right_pill_label: RichTextLabel = null
+var _bedroom_day_label: RichTextLabel = null
+var _bedroom_phase_label: RichTextLabel = null
+var _bedroom_money_label: RichTextLabel = null
+var _bedroom_suspicion_label: RichTextLabel = null
+var _bedroom_anger_label: RichTextLabel = null
 ## Day-planner choice entries: each is {"button": Button, "loc": LocationData|null}.
 var _choice_entries: Array = []
 var _selected_choice_index: int = -1
@@ -966,18 +969,28 @@ func _refresh_hud() -> void:
 
 func _refresh_bedroom_pills() -> void:
 	var phase_name := DayCycle.phase_name(GameState.phase).to_upper()
-	if _bedroom_left_pill_label != null:
-		_bedroom_left_pill_label.text = "DAY %02d · %s · [color=%s]$%d[/color]" % [
-			GameState.day, phase_name, PILL_MONEY_BBCODE_COLOR, GameState.money
+	if _bedroom_day_label != null:
+		_bedroom_day_label.text = "DAY %02d" % GameState.day
+	if _bedroom_phase_label != null:
+		_bedroom_phase_label.text = phase_name
+	if _bedroom_money_label != null:
+		_bedroom_money_label.text = "[color=%s]$%d[/color]" % [PILL_MONEY_BBCODE_COLOR, GameState.money]
+	# Spelled out on the full-bleed pills; the abbreviation "SUS" is reserved
+	# for the large-scene vertical HUD.
+	if _bedroom_suspicion_label != null:
+		_bedroom_suspicion_label.text = "SUSPICION [color=%s]%d[/color]" % [
+			PILL_SUS_BBCODE_COLOR, GameState.suspicion
 		]
-	if _bedroom_right_pill_label != null:
-		_bedroom_right_pill_label.text = "SUS [color=%s]%d[/color]   ANG [color=%s]%d[/color]" % [
-			PILL_SUS_BBCODE_COLOR, GameState.suspicion, PILL_ANGER_BBCODE_COLOR, GameState.anger
+	if _bedroom_anger_label != null:
+		_bedroom_anger_label.text = "ANGER [color=%s]%d[/color]" % [
+			PILL_ANGER_BBCODE_COLOR, GameState.anger
 		]
 
 
 ## Two floating corner pills over the full-bleed scene image, mirroring the
-## refurbished day-planner reference. Built once, shown only in full-bleed mode.
+## refurbished day-planner reference. Each pill is an HBox of text segments
+## separated by gold spacers (the same PanelDivider used in the teacher tag).
+## Built once, shown only in full-bleed mode.
 func _create_bedroom_pills() -> void:
 	_bedroom_pill_layer = Control.new()
 	_bedroom_pill_layer.name = "BedroomPillLayer"
@@ -987,11 +1000,19 @@ func _create_bedroom_pills() -> void:
 	add_child(_bedroom_pill_layer)
 
 	_bedroom_left_pill = _make_bedroom_pill()
-	_bedroom_left_pill_label = _make_bedroom_pill_label(_bedroom_left_pill)
+	var left_box := _make_bedroom_pill_box(_bedroom_left_pill)
+	_bedroom_day_label = _add_pill_segment(left_box)
+	_add_pill_divider(left_box)
+	_bedroom_phase_label = _add_pill_segment(left_box)
+	_add_pill_divider(left_box)
+	_bedroom_money_label = _add_pill_segment(left_box)
 	_bedroom_pill_layer.add_child(_bedroom_left_pill)
 
 	_bedroom_right_pill = _make_bedroom_pill()
-	_bedroom_right_pill_label = _make_bedroom_pill_label(_bedroom_right_pill)
+	var right_box := _make_bedroom_pill_box(_bedroom_right_pill)
+	_bedroom_suspicion_label = _add_pill_segment(right_box)
+	_add_pill_divider(right_box)
+	_bedroom_anger_label = _add_pill_segment(right_box)
 	_bedroom_pill_layer.add_child(_bedroom_right_pill)
 
 	_refresh_bedroom_pills()
@@ -1004,17 +1025,35 @@ func _make_bedroom_pill() -> PanelContainer:
 	return pill
 
 
-func _make_bedroom_pill_label(pill: PanelContainer) -> RichTextLabel:
+func _make_bedroom_pill_box(pill: PanelContainer) -> HBoxContainer:
+	var box := HBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_theme_constant_override("separation", 12)
+	pill.add_child(box)
+	return box
+
+
+func _add_pill_segment(box: HBoxContainer) -> RichTextLabel:
 	var label := RichTextLabel.new()
 	label.bbcode_enabled = true
 	label.fit_content = true
 	label.scroll_active = false
 	label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	label.theme_type_variation = &"PillText"
 	label.add_theme_font_size_override("normal_font_size", 30)
-	pill.add_child(label)
+	box.add_child(label)
 	return label
+
+
+func _add_pill_divider(box: HBoxContainer) -> void:
+	var divider := PanelContainer.new()
+	divider.theme_type_variation = &"PanelDivider"
+	divider.custom_minimum_size = Vector2(3, 22)
+	divider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(divider)
 
 
 func _position_bedroom_pills() -> void:
@@ -1255,6 +1294,9 @@ func _picture_frame_outer_style() -> StyleBoxFlat:
 	style.set_border_width_all(3)
 	style.border_color = PICTURE_FRAME_OUTER_GOLD
 	style.set_content_margin_all(8)
+	style.shadow_color = Color(0, 0, 0, 0.55)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0, 8)
 	return style
 
 
@@ -1489,16 +1531,19 @@ func _apply_choice_button_style(btn: Button, selected: bool) -> void:
 	box.content_margin_right = 26.0
 	box.content_margin_top = 14.0
 	box.content_margin_bottom = 14.0
-	box.set_border_width_all(2)
+	box.set_border_width_all(3)
 	if selected:
 		box.draw_center = true
 		box.bg_color = CHOICE_SELECTED_BG
 		box.border_color = CHOICE_SELECTED_BORDER
 		box.shadow_color = CHOICE_GLOW
-		box.shadow_size = 10
+		box.shadow_size = 12
 	else:
 		box.draw_center = false
 		box.border_color = CHOICE_UNSELECTED_BORDER
+		box.shadow_color = Color(0, 0, 0, 0.5)
+		box.shadow_size = 8
+		box.shadow_offset = Vector2(0, 4)
 	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
 		btn.add_theme_stylebox_override(state, box)
 	var text_col := CHOICE_SELECTED_TEXT if selected else CHOICE_UNSELECTED_TEXT

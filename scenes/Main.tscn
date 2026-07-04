@@ -269,6 +269,7 @@ theme_type_variation = &"PanelDivider"
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
+theme_override_colors/font_color = Color(0.91, 0.784, 0.471, 1)
 text = "SUBJECT"
 
 [node name="Transition" parent="UI/VBox/FrameWrap/FrameOuter/FrameInsetDark/FrameInsetMid/SceneImage" unique_id=1926002557 instance=ExtResource("scene_transition")]
