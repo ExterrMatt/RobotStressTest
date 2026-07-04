@@ -135,6 +135,11 @@ const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 118.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_FONT_SIZE: int = 32
 const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
+## The vertical corner panels (the "outer" HUD) are restyled to read as a set
+## with the floating pills (the "inner" HUD over the image): a gold border that
+## matches the stat spacers, and the same colour-coded stat values.
+const LARGE_SCENE_HUD_BORDER_COLOR: Color = Color(0.725, 0.604, 0.306)
+const LARGE_SCENE_HUD_PANEL_BG: Color = Color(0.059, 0.071, 0.118, 0.75)
 
 @export_category("Debug")
 @export var debug_hotkeys_enabled: bool = true
@@ -233,6 +238,10 @@ var _large_scene_suspicion_label: Label = null
 var _large_scene_anger_label: Label = null
 var _large_scene_work_timer_divider: PanelContainer = null
 var _large_scene_work_timer_label: Label = null
+## Bottom-right END/action button that floats in the margin outside the picture
+## frame (mirroring the right corner panel, but slotted to the bottom-right
+## corner). Locations mount it via show_large_scene_end_button().
+var _large_scene_end_button: Button = null
 var _work_hud_active: bool = false
 var _large_scene_timer_running: bool = false
 var _work_hud_elapsed_seconds: float = 0.0
@@ -1088,6 +1097,8 @@ func _create_large_scene_hud() -> void:
 	left_box.add_child(_large_scene_phase_label)
 	left_box.add_child(_make_large_scene_hud_divider())
 	_large_scene_money_label = _make_large_scene_hud_label("$0", &"HUDStat")
+	# Match the money colour used on the floating pill (the inner HUD).
+	_large_scene_money_label.add_theme_color_override("font_color", Color(PILL_MONEY_BBCODE_COLOR))
 	left_box.add_child(_large_scene_money_label)
 
 	_large_scene_right_panel = _make_large_scene_hud_panel("LargeSceneRightHUD", false)
@@ -1096,15 +1107,21 @@ func _create_large_scene_hud() -> void:
 	var right_box := _make_large_scene_hud_vbox(_large_scene_right_panel)
 	_large_scene_suspicion_label = _make_large_scene_hud_label("SUS 0", &"HUDStat")
 	_large_scene_suspicion_label.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
+	# Match the suspicion/anger colours used on the floating pill (inner HUD).
+	_large_scene_suspicion_label.add_theme_color_override("font_color", Color(PILL_SUS_BBCODE_COLOR))
 	right_box.add_child(_large_scene_suspicion_label)
 	right_box.add_child(_make_large_scene_hud_divider())
 	_large_scene_anger_label = _make_large_scene_hud_label("ANGER 0", &"HUDStat")
+	_large_scene_anger_label.add_theme_color_override("font_color", Color(PILL_ANGER_BBCODE_COLOR))
 	right_box.add_child(_large_scene_anger_label)
 	_large_scene_work_timer_divider = _make_large_scene_hud_divider()
 	right_box.add_child(_large_scene_work_timer_divider)
 	_large_scene_work_timer_label = _make_large_scene_hud_label("00:00:00", &"HUDStat")
 	right_box.add_child(_large_scene_work_timer_label)
 	_set_work_hud_timer_visible(false)
+
+	_large_scene_end_button = _make_large_scene_end_button()
+	_large_scene_hud_layer.add_child(_large_scene_end_button)
 
 	_refresh_hud()
 
@@ -1114,6 +1131,9 @@ func _make_large_scene_hud_panel(node_name: String, left_anchor: bool) -> PanelC
 	panel.name = node_name
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.theme_type_variation = &"HUDPanel"
+	# Swap the default blue HUD border for a gold one that matches the stat
+	# spacers inside the panel (and the framed pills of the inner HUD).
+	panel.add_theme_stylebox_override("panel", _make_large_scene_hud_panel_style())
 	if left_anchor:
 		panel.anchor_left = 0.0
 		panel.anchor_right = 0.0
@@ -1156,6 +1176,85 @@ func _make_large_scene_hud_divider() -> PanelContainer:
 	divider.custom_minimum_size = Vector2(104.0, 3.0)
 	divider.theme_type_variation = &"PanelDivider"
 	return divider
+
+
+## Panel background matching the default HUD panel, but with a gold border in
+## place of the blue one so the vertical corner panels read as gilded frames.
+func _make_large_scene_hud_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = LARGE_SCENE_HUD_PANEL_BG
+	style.border_width_left = 3
+	style.border_width_top = 3
+	style.border_width_right = 3
+	style.border_width_bottom = 3
+	style.border_color = LARGE_SCENE_HUD_BORDER_COLOR
+	return style
+
+
+## A gold-bordered button styled to sit in the frame margin next to the corner
+## panels. Hidden until a location mounts an action via
+## show_large_scene_end_button().
+func _make_large_scene_end_button() -> Button:
+	var btn := Button.new()
+	btn.name = "LargeSceneEndButton"
+	btn.text = "END"
+	btn.visible = false
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	btn.anchor_left = 1.0
+	btn.anchor_top = 1.0
+	btn.anchor_right = 1.0
+	btn.anchor_bottom = 1.0
+	# Grow up/left from the bottom-right anchor so the button sizes to its text.
+	btn.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	btn.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	btn.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
+	btn.add_theme_stylebox_override("normal", _make_large_scene_end_button_style(false))
+	btn.add_theme_stylebox_override("hover", _make_large_scene_end_button_style(true))
+	btn.add_theme_stylebox_override("pressed", _make_large_scene_end_button_style(true))
+	btn.add_theme_stylebox_override("focus", _make_large_scene_end_button_style(false))
+	btn.add_theme_stylebox_override("disabled", _make_large_scene_end_button_style(false))
+	return btn
+
+
+func _make_large_scene_end_button_style(active: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.content_margin_left = 22.0
+	style.content_margin_right = 22.0
+	style.content_margin_top = 8.0
+	style.content_margin_bottom = 8.0
+	style.bg_color = Color(0.118, 0.141, 0.235, 0.92) if active else LARGE_SCENE_HUD_PANEL_BG
+	style.border_width_left = 3
+	style.border_width_top = 3
+	style.border_width_right = 3
+	style.border_width_bottom = 3
+	style.border_color = LARGE_SCENE_HUD_BORDER_COLOR
+	return style
+
+
+## Mount a bottom-right margin action button (e.g. the Workshop "END"). Safe to
+## call only once the large-scene HUD exists; no-ops otherwise so callers don't
+## need to know the presentation mode.
+func show_large_scene_end_button(label: String, on_pressed: Callable) -> void:
+	if _large_scene_end_button == null:
+		return
+	for conn in _large_scene_end_button.pressed.get_connections():
+		_large_scene_end_button.pressed.disconnect(conn["callable"])
+	_large_scene_end_button.text = label
+	if on_pressed.is_valid():
+		_large_scene_end_button.pressed.connect(on_pressed)
+	_large_scene_end_button.disabled = false
+	_large_scene_end_button.visible = true
+	_position_large_scene_hud_panels()
+
+
+func hide_large_scene_end_button() -> void:
+	if _large_scene_end_button == null:
+		return
+	for conn in _large_scene_end_button.pressed.get_connections():
+		_large_scene_end_button.pressed.disconnect(conn["callable"])
+	_large_scene_end_button.visible = false
 
 
 func _update_large_scene_hud_visibility() -> void:
@@ -1202,6 +1301,14 @@ func _position_large_scene_hud_panels() -> void:
 		if _large_scene_timer_section_visible() \
 		else LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
 	_large_scene_right_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + right_height
+
+	# Slot the margin END button into the bottom-right corner, mirroring the
+	# right panel's gap from the right edge but measured from the bottom.
+	if _large_scene_end_button != null:
+		_large_scene_end_button.offset_right = -right_outer_gap
+		_large_scene_end_button.offset_bottom = -LARGE_SCENE_HUD_MARGIN.y
+		_large_scene_end_button.offset_left = -right_outer_gap
+		_large_scene_end_button.offset_top = -LARGE_SCENE_HUD_MARGIN.y
 
 
 func _large_scene_hud_outer_gap(side_space: float) -> float:
@@ -1462,6 +1569,7 @@ func _prepare_selection_screen_layout_for_shrink() -> void:
 	scene_image.texture = PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 	hide_teacher_portrait()
 	hide_corner_button()
+	hide_large_scene_end_button()
 	hide_scene_overlay()
 	hide_inventory_overlay()
 	_apply_scene_presentation_mode()
@@ -1878,6 +1986,7 @@ func _panel_style_minimum_size(panel: PanelContainer) -> Vector2:
 func _clear_current_location() -> void:
 	hide_scene_overlay()
 	hide_inventory_overlay()
+	hide_large_scene_end_button()
 	if _current_location_node and is_instance_valid(_current_location_node):
 		_current_location_node.queue_free()
 		_current_location_node = null

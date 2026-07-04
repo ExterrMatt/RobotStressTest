@@ -266,17 +266,28 @@ func _hide_end_button() -> void:
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("hide_corner_button"):
 		main.hide_corner_button()
+	if main != null and main.has_method("hide_large_scene_end_button"):
+		main.hide_large_scene_end_button()
 
 
 func _configure_minigame_end_button() -> void:
 	if _minigame == null:
 		return
+	# The in-scene END button is retired: it would be clipped inside the picture
+	# frame. Keep it hidden and mount the action on Main's margin END button,
+	# which floats in the bottom-right corner outside the frame instead.
 	var end_button := _minigame.get_node_or_null("EndButton") as Button
-	if end_button == null:
-		return
+	if end_button != null:
+		end_button.visible = false
+		end_button.disabled = true
 	var available := not _intro_workshop
-	end_button.visible = available
-	end_button.disabled = not available
+	var main: Node = get_tree().current_scene
+	if main == null:
+		return
+	if available and main.has_method("show_large_scene_end_button"):
+		main.show_large_scene_end_button("END", _on_end_button_pressed)
+	elif main.has_method("hide_large_scene_end_button"):
+		main.hide_large_scene_end_button()
 
 
 func _on_end_button_pressed() -> void:
