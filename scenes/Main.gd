@@ -88,7 +88,16 @@ const EXACT_FRAME_LOCATION_IDS: Array[StringName] = []
 ## (500x400+) keep the framed presentation. The full-bleed image size below is
 ## sized so that image width + frame chrome == the UI content width (1152px),
 ## so nothing overflows even though the chrome is invisible.
-const STANDARD_FULLBLEED_FRAME_SIZE: Vector2 = Vector2(1128, 330)
+## Width 1274 + 6px chrome == the 1280 viewport width, and height 354 + 6 ==
+## 360 (the top half), so a standard scene fills the whole top-left/top-right
+## corner exactly like the reference once the UI margins are dropped to 0.
+const STANDARD_FULLBLEED_FRAME_SIZE: Vector2 = Vector2(1274, 354)
+
+## UI content margins for the two presentations. Full-bleed drops the side and
+## top margins so the enlarged image reaches the viewport edges; the framed
+## presentation keeps the original inset.
+const FRAMED_UI_MARGINS: Vector4 = Vector4(64, 24, 64, 24)
+const FULLBLEED_UI_MARGINS: Vector4 = Vector4(0, 0, 0, 24)
 const CHOICE_FONT_SIZE: int = 40
 const CHOICE_SELECTED_TEXT: Color = Color(0.984, 0.953, 0.875)
 const CHOICE_UNSELECTED_TEXT: Color = Color(0.478, 0.447, 0.353)
@@ -122,6 +131,7 @@ const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
 @export var debug_hotkeys_enabled: bool = true
 
 # HUD labels
+@onready var ui_margin: MarginContainer = $UI
 @onready var hud_bar: PanelContainer = %HUDBar
 @onready var day_label: Label = %DayLabel
 @onready var phase_label: Label = %PhaseLabel
@@ -1002,7 +1012,7 @@ func _position_bedroom_pills() -> void:
 	if _bedroom_left_pill == null or _bedroom_right_pill == null:
 		return
 	var image_rect := _current_scene_image_global_rect()
-	var inset := Vector2(24.0, 20.0)
+	var inset := Vector2(36.0, 28.0)
 	_bedroom_left_pill.position = image_rect.position + inset
 	_bedroom_right_pill.position = Vector2(
 		image_rect.end.x - _bedroom_right_pill.size.x - inset.x,
@@ -1166,6 +1176,7 @@ func _apply_scene_presentation_mode() -> void:
 	var is_standard := texture != null \
 		and _is_standard_scene_texture_size(_texture_display_source_size(texture))
 	_fullbleed_active = is_standard
+	_apply_presentation_layout(is_standard)
 	_set_fullbleed_chrome(is_standard)
 	if is_standard and _bedroom_pill_layer == null:
 		_create_bedroom_pills()
@@ -1175,6 +1186,22 @@ func _apply_scene_presentation_mode() -> void:
 	if is_standard:
 		_refresh_bedroom_pills()
 		_position_bedroom_pills()
+
+
+## Drop the UI margins and top-pin the picture frame in full-bleed mode so the
+## enlarged image reaches the viewport corners; restore the framed inset (and
+## the frame's vertical centering) otherwise. The choice box stays centered
+## either way, so widening the content area doesn't move it.
+func _apply_presentation_layout(fullbleed: bool) -> void:
+	var margins := FULLBLEED_UI_MARGINS if fullbleed else FRAMED_UI_MARGINS
+	if ui_margin != null:
+		ui_margin.add_theme_constant_override("margin_left", int(margins.x))
+		ui_margin.add_theme_constant_override("margin_top", int(margins.y))
+		ui_margin.add_theme_constant_override("margin_right", int(margins.z))
+		ui_margin.add_theme_constant_override("margin_bottom", int(margins.w))
+	if frame_wrap != null:
+		frame_wrap.size_flags_vertical = \
+			Control.SIZE_SHRINK_BEGIN if fullbleed else Control.SIZE_EXPAND_FILL
 
 
 ## Hide/show the ornate rivet picture-frame chrome. In full-bleed mode the
