@@ -7,19 +7,25 @@
 custom_minimum_size = Vector2(0, 80)
 size_flags_horizontal = 3
 mouse_default_cursor_shape = 2
-theme_type_variation = &"HUDPanel"
+theme_type_variation = &"OrnateFrameOuter"
 script = ExtResource("1")
 font_size = 36
 box_height = 120
 
-[node name="Margin" type="MarginContainer" parent="." unique_id=541903650]
+[node name="InnerFrame" type="PanelContainer" parent="." unique_id=541903651]
 layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 14
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 14
+mouse_filter = 2
+theme_type_variation = &"OrnateFrameInnerCompact"
 
-[node name="Label" type="RichTextLabel" parent="Margin" unique_id=1532776433]
+[node name="Margin" type="MarginContainer" parent="InnerFrame" unique_id=541903650]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 2
+theme_override_constants/margin_bottom = 2
+
+[node name="Label" type="RichTextLabel" parent="InnerFrame/Margin" unique_id=1532776433]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
@@ -29,24 +35,25 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 
-[node name="AdvanceArrow" type="Control" parent="." unique_id=1735896210]
+[node name="AdvanceArrow" type="Control" parent="InnerFrame" unique_id=1735896210]
 custom_minimum_size = Vector2(24, 18)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="ArrowLabel" type="Label" parent="AdvanceArrow" unique_id=1408046427]
+[node name="ArrowLabel" type="Label" parent="InnerFrame/AdvanceArrow" unique_id=1408046427]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_color = Color(0.91, 0.784, 0.471, 1)
 theme_override_font_sizes/font_size = 28
 text = "> "
 horizontal_alignment = 2
 vertical_alignment = 2
 
-[node name="ArrowTexture" type="TextureRect" parent="AdvanceArrow" unique_id=1152450328]
+[node name="ArrowTexture" type="TextureRect" parent="InnerFrame/AdvanceArrow" unique_id=1152450328]
 visible = false
 layout_mode = 1
 anchors_preset = 15

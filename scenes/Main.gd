@@ -82,6 +82,25 @@ const STANDARD_SCENE_TEXTURE_SIZE: Vector2 = Vector2(500, 125)
 const STANDARD_SCENE_TEXTURE_SCALE: float = 2.25
 const EXACT_FRAME_LOCATION_IDS: Array[StringName] = []
 
+## "Refurbished look": standard 500x125 scenes render the picture full-bleed
+## (rivet chrome hidden, image enlarged) with the HUD shown as two floating
+## corner pills over the image instead of the top HUD bar. Larger scenes
+## (500x400+) keep the framed presentation. The full-bleed image size below is
+## sized so that image width + frame chrome == the UI content width (1152px),
+## so nothing overflows even though the chrome is invisible.
+const STANDARD_FULLBLEED_FRAME_SIZE: Vector2 = Vector2(1128, 330)
+const CHOICE_FONT_SIZE: int = 40
+const CHOICE_SELECTED_TEXT: Color = Color(0.984, 0.953, 0.875)
+const CHOICE_UNSELECTED_TEXT: Color = Color(0.478, 0.447, 0.353)
+const CHOICE_SELECTED_BORDER: Color = Color(0.91, 0.784, 0.471)
+const CHOICE_UNSELECTED_BORDER: Color = Color(0.2, 0.188, 0.165)
+const CHOICE_SELECTED_BG: Color = Color(0.126, 0.11, 0.204, 1.0)
+const CHOICE_GLOW: Color = Color(0.91, 0.784, 0.471, 0.28)
+const STAT_CLAUSE_BBCODE_COLOR: String = "e8c878"
+const PILL_MONEY_BBCODE_COLOR: String = "e8c878"
+const PILL_SUS_BBCODE_COLOR: String = "e8c878"
+const PILL_ANGER_BBCODE_COLOR: String = "e0906a"
+
 ## Duration and easing for both the scale animation (frame resize between
 ## locations) and the slide animation (layout shifts inside a location).
 ## TRANS_QUAD + EASE_IN_OUT gives the "soft start, soft stop" feel.
@@ -135,7 +154,9 @@ const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
 
 # Selection screen / location host
 @onready var selection_screen: VBoxContainer = %SelectionScreen
-@onready var location_grid: GridContainer = %LocationGrid
+@onready var location_grid: HBoxContainer = %LocationGrid
+@onready var narration_label: Label = %NarrationLabel
+@onready var consequence_label: RichTextLabel = %ConsequenceLabel
 @onready var location_host: Control = %LocationHost
 
 # Log overlay
@@ -196,6 +217,15 @@ var _large_scene_work_timer_label: Label = null
 var _work_hud_active: bool = false
 var _large_scene_timer_running: bool = false
 var _work_hud_elapsed_seconds: float = 0.0
+var _fullbleed_active: bool = false
+var _bedroom_pill_layer: Control = null
+var _bedroom_left_pill: PanelContainer = null
+var _bedroom_right_pill: PanelContainer = null
+var _bedroom_left_pill_label: RichTextLabel = null
+var _bedroom_right_pill_label: RichTextLabel = null
+## Day-planner choice entries: each is {"button": Button, "loc": LocationData|null}.
+var _choice_entries: Array = []
+var _selected_choice_index: int = -1
 var _frame_resize_progress: float = 1.0:
 	set(value):
 		_frame_resize_progress = clampf(value, 0.0, 1.0)
@@ -288,6 +318,7 @@ func _ready() -> void:
 	_apply_brightness(GameState.brightness_value)
 	_apply_scanlines_enabled(GameState.scanlines_enabled)
 	_update_large_scene_hud_visibility()
+	_apply_scene_presentation_mode()
 	_refresh_hud()
 	var intro_autoload: Node = get_node_or_null("/root/IntroTransition")
 	var debug_jump := {}
@@ -328,6 +359,8 @@ func _process(_delta: float) -> void:
 	_sync_scene_image_frame_to_texture()
 	if _large_scene_hud_layer != null and _large_scene_hud_layer.visible:
 		_position_large_scene_hud_panels()
+	if _fullbleed_active and _bedroom_pill_layer != null and _bedroom_pill_layer.visible:
+		_position_bedroom_pills()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -338,6 +371,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return
 	var key_event: InputEventKey = event
+
+	# Day-planner keyboard navigation: arrows move the highlight between the
+	# ornate choices, Enter confirms. Only while the choice box is on screen.
+	if selection_screen.visible and not _is_any_transition_playing():
+		if _handle_selection_key(key_event.keycode):
+			get_viewport().set_input_as_handled()
+			return
 
 	if key_event.keycode == KEY_ESCAPE:
 		_toggle_runtime_settings_overlay()
@@ -902,6 +942,72 @@ func _refresh_hud() -> void:
 		_large_scene_anger_label.text = "ANGER %d" % GameState.anger
 	if _large_scene_work_timer_label != null:
 		_large_scene_work_timer_label.text = _format_work_hud_elapsed_time()
+	_refresh_bedroom_pills()
+
+
+func _refresh_bedroom_pills() -> void:
+	var phase_name := DayCycle.phase_name(GameState.phase).to_upper()
+	if _bedroom_left_pill_label != null:
+		_bedroom_left_pill_label.text = "DAY %02d · %s · [color=%s]$%d[/color]" % [
+			GameState.day, phase_name, PILL_MONEY_BBCODE_COLOR, GameState.money
+		]
+	if _bedroom_right_pill_label != null:
+		_bedroom_right_pill_label.text = "SUS [color=%s]%d[/color]   ANG [color=%s]%d[/color]" % [
+			PILL_SUS_BBCODE_COLOR, GameState.suspicion, PILL_ANGER_BBCODE_COLOR, GameState.anger
+		]
+
+
+## Two floating corner pills over the full-bleed scene image, mirroring the
+## refurbished day-planner reference. Built once, shown only in full-bleed mode.
+func _create_bedroom_pills() -> void:
+	_bedroom_pill_layer = Control.new()
+	_bedroom_pill_layer.name = "BedroomPillLayer"
+	_bedroom_pill_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bedroom_pill_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_bedroom_pill_layer.z_index = 60
+	add_child(_bedroom_pill_layer)
+
+	_bedroom_left_pill = _make_bedroom_pill()
+	_bedroom_left_pill_label = _make_bedroom_pill_label(_bedroom_left_pill)
+	_bedroom_pill_layer.add_child(_bedroom_left_pill)
+
+	_bedroom_right_pill = _make_bedroom_pill()
+	_bedroom_right_pill_label = _make_bedroom_pill_label(_bedroom_right_pill)
+	_bedroom_pill_layer.add_child(_bedroom_right_pill)
+
+	_refresh_bedroom_pills()
+
+
+func _make_bedroom_pill() -> PanelContainer:
+	var pill := PanelContainer.new()
+	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pill.theme_type_variation = &"OrnatePill"
+	return pill
+
+
+func _make_bedroom_pill_label(pill: PanelContainer) -> RichTextLabel:
+	var label := RichTextLabel.new()
+	label.bbcode_enabled = true
+	label.fit_content = true
+	label.scroll_active = false
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.theme_type_variation = &"PillText"
+	label.add_theme_font_size_override("normal_font_size", 30)
+	pill.add_child(label)
+	return label
+
+
+func _position_bedroom_pills() -> void:
+	if _bedroom_left_pill == null or _bedroom_right_pill == null:
+		return
+	var image_rect := _current_scene_image_global_rect()
+	var inset := Vector2(24.0, 20.0)
+	_bedroom_left_pill.position = image_rect.position + inset
+	_bedroom_right_pill.position = Vector2(
+		image_rect.end.x - _bedroom_right_pill.size.x - inset.x,
+		image_rect.position.y + inset.y
+	)
 
 
 func _create_large_scene_hud() -> void:
@@ -997,7 +1103,10 @@ func _update_large_scene_hud_visibility() -> void:
 	if hud_bar == null:
 		return
 	var use_large_hud := _target_or_current_frame_size().y > LARGE_SCENE_HUD_FRAME_HEIGHT_THRESHOLD
-	hud_bar.visible = not use_large_hud
+	# The top HUD bar is retired for the two refurbished presentations: large
+	# framed scenes use the vertical corner panels, standard full-bleed scenes
+	# use the floating pills. It only ever shows as a defensive fallback.
+	hud_bar.visible = not use_large_hud and not _fullbleed_active
 	if use_large_hud and _large_scene_hud_layer == null:
 		_create_large_scene_hud()
 		_refresh_hud()
@@ -1039,6 +1148,57 @@ func _position_large_scene_hud_panels() -> void:
 func _large_scene_hud_outer_gap(side_space: float) -> float:
 	var available_gap := maxf(0.0, side_space - LARGE_SCENE_HUD_PANEL_WIDTH)
 	return minf(LARGE_SCENE_HUD_MARGIN.x * 0.5, available_gap * 0.5)
+
+
+# --- scene presentation mode (full-bleed vs framed) ---
+#
+# The current scene image texture decides the presentation:
+#   * standard 500x125 art -> full-bleed (rivet chrome hidden, image enlarged,
+#     corner pills instead of the HUD bar). This is the refurbished bedroom /
+#     day-planner look, applied consistently to every 500x125 scene.
+#   * anything else (500x400+ overrides) -> the existing framed presentation.
+# Called from _ready and from every code path that swaps scene_image.texture.
+
+func _apply_scene_presentation_mode() -> void:
+	if scene_image == null:
+		return
+	var texture := scene_image.texture
+	var is_standard := texture != null \
+		and _is_standard_scene_texture_size(_texture_display_source_size(texture))
+	_fullbleed_active = is_standard
+	_set_fullbleed_chrome(is_standard)
+	if is_standard and _bedroom_pill_layer == null:
+		_create_bedroom_pills()
+	if _bedroom_pill_layer != null:
+		_bedroom_pill_layer.visible = is_standard
+	_update_large_scene_hud_visibility()
+	if is_standard:
+		_refresh_bedroom_pills()
+		_position_bedroom_pills()
+
+
+## Hide/show the ornate rivet picture-frame chrome. In full-bleed mode the
+## three frame panels get an empty stylebox (no border, no padding) and the
+## corner rivets are hidden, so the scene image reads as an edge-to-edge
+## picture. Removing the overrides reverts to the theme's framed look.
+func _set_fullbleed_chrome(hidden: bool) -> void:
+	# While a fullscreen transition owns the frame chrome (it hides then
+	# restores its own backups), stay out of its way. _apply_scene_presentation_mode
+	# is re-run when that transition cleans up, so the final state is correct.
+	if _source_frame_chrome_hidden:
+		return
+	for panel in _source_frame_panel_nodes():
+		if panel == null:
+			continue
+		if hidden:
+			panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		else:
+			panel.remove_theme_stylebox_override("panel")
+	if frame_outer != null:
+		for child in frame_outer.get_children():
+			var item := child as CanvasItem
+			if item != null and String(item.name).begins_with("Rivet"):
+				item.visible = not hidden
 
 
 func set_work_hud_timer_active(active: bool) -> void:
@@ -1128,14 +1288,18 @@ func _show_selection_screen() -> void:
 	# at the midpoint - so the rebuild is invisible until then anyway.
 	for child in location_grid.get_children():
 		child.queue_free()
+	_choice_entries.clear()
+	_selected_choice_index = -1
 
 	for loc in _locations:
 		if not loc.available_in_phase(GameState.phase):
 			continue
-		var btn := _build_location_button(loc)
-		location_grid.add_child(btn)
+		_add_choice_entry(_build_choice_button(loc), loc)
 	for label in _disabled_bedroom_options_for_phase(GameState.phase):
-		location_grid.add_child(_build_disabled_location_button(label))
+		_add_choice_entry(_build_disabled_bedroom_button(label), null)
+
+	narration_label.text = _selection_narration_text()
+	_init_choice_highlight()
 
 	# First load: no transition (nothing to wipe from).
 	if not _has_shown_initial:
@@ -1175,6 +1339,8 @@ func _apply_selection_screen_swap(animate_slide: bool = true) -> void:
 	else:
 		swap_visuals.call()
 
+	_apply_scene_presentation_mode()
+
 	# Selection screen always uses the default frame size. Animate back to
 	# it in case we were just inside a location with a larger frame.
 	_animate_frame_to(DEFAULT_FRAME_SIZE, _default_frame_outer_width)
@@ -1188,6 +1354,7 @@ func _prepare_selection_screen_layout_for_shrink() -> void:
 	hide_corner_button()
 	hide_scene_overlay()
 	hide_inventory_overlay()
+	_apply_scene_presentation_mode()
 	_queue_frame_layout()
 
 
@@ -1197,12 +1364,32 @@ func _restore_fullscreen_layout_for_shrink() -> void:
 	_queue_frame_layout()
 
 
-func _build_location_button(loc: LocationData) -> Button:
+func _selection_narration_text() -> String:
+	match GameState.phase:
+		DayCycle.Phase.EVENING:
+			return "Evening settles in. Where will you go?"
+		DayCycle.Phase.NIGHT:
+			return "Night falls. Where will you go?"
+		_:
+			return "A new day begins. Where will you go?"
+
+
+func _add_choice_entry(btn: Button, loc: LocationData) -> void:
+	var index := _choice_entries.size()
+	_choice_entries.append({"button": btn, "loc": loc})
+	btn.mouse_entered.connect(_highlight_choice.bind(index))
+	if loc != null and not btn.disabled:
+		btn.pressed.connect(_on_location_picked.bind(loc))
+	location_grid.add_child(btn)
+
+
+func _build_choice_button(loc: LocationData) -> Button:
 	var btn := Button.new()
 	btn.text = loc.display_name.to_upper()
-	btn.custom_minimum_size = Vector2(0, 80)
-	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.add_theme_font_size_override("font_size", 58)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn.add_theme_font_size_override("font_size", CHOICE_FONT_SIZE)
 	if loc.icon:
 		btn.icon = loc.icon
 		btn.expand_icon = true
@@ -1210,19 +1397,127 @@ func _build_location_button(loc: LocationData) -> Button:
 	if not loc.description.strip_edges().is_empty():
 		btn.mouse_entered.connect(_show_mouse_tooltip.bind(loc.description))
 		btn.mouse_exited.connect(_hide_mouse_tooltip)
-	if not btn.disabled:
-		btn.pressed.connect(_on_location_picked.bind(loc))
+	_apply_choice_button_style(btn, false)
 	return btn
 
 
-func _build_disabled_location_button(label: String) -> Button:
+func _build_disabled_bedroom_button(label: String) -> Button:
 	var btn := Button.new()
 	btn.text = label.to_upper()
-	btn.custom_minimum_size = Vector2(0, 80)
-	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn.add_theme_font_size_override("font_size", 58)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn.add_theme_font_size_override("font_size", CHOICE_FONT_SIZE)
 	btn.disabled = true
+	_apply_choice_button_style(btn, false)
 	return btn
+
+
+## Paint a choice button in its selected (bright gold frame + navy fill + glow)
+## or unselected (dim outline, no fill) state. The same padding is used for
+## both so highlighting never reflows the row.
+func _apply_choice_button_style(btn: Button, selected: bool) -> void:
+	var box := StyleBoxFlat.new()
+	box.content_margin_left = 26.0
+	box.content_margin_right = 26.0
+	box.content_margin_top = 14.0
+	box.content_margin_bottom = 14.0
+	box.set_border_width_all(2)
+	if selected:
+		box.draw_center = true
+		box.bg_color = CHOICE_SELECTED_BG
+		box.border_color = CHOICE_SELECTED_BORDER
+		box.shadow_color = CHOICE_GLOW
+		box.shadow_size = 10
+	else:
+		box.draw_center = false
+		box.border_color = CHOICE_UNSELECTED_BORDER
+	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+		btn.add_theme_stylebox_override(state, box)
+	var text_col := CHOICE_SELECTED_TEXT if selected else CHOICE_UNSELECTED_TEXT
+	for color_slot in ["font_color", "font_hover_color", "font_pressed_color",
+			"font_focus_color", "font_hover_pressed_color", "font_disabled_color"]:
+		btn.add_theme_color_override(color_slot, text_col)
+
+
+func _init_choice_highlight() -> void:
+	if _choice_entries.is_empty():
+		consequence_label.text = ""
+		return
+	var start := 0
+	for i in _choice_entries.size():
+		if not (_choice_entries[i]["button"] as Button).disabled:
+			start = i
+			break
+	_highlight_choice(start)
+
+
+func _highlight_choice(index: int) -> void:
+	if index < 0 or index >= _choice_entries.size():
+		return
+	_selected_choice_index = index
+	for i in _choice_entries.size():
+		_apply_choice_button_style(_choice_entries[i]["button"], i == index)
+	_update_consequence_line()
+
+
+func _update_consequence_line() -> void:
+	if consequence_label == null:
+		return
+	if _selected_choice_index < 0 or _selected_choice_index >= _choice_entries.size():
+		consequence_label.text = ""
+		return
+	var loc: LocationData = _choice_entries[_selected_choice_index]["loc"]
+	if loc == null:
+		consequence_label.text = "[center]—[/center]"
+		return
+	var body := loc.consequence_text.strip_edges()
+	if body.is_empty():
+		body = loc.description.strip_edges()
+	var clause := loc.stat_clause.strip_edges()
+	var text := body
+	if not clause.is_empty():
+		if not text.is_empty():
+			text += "  "
+		text += "[color=%s]%s[/color]" % [STAT_CLAUSE_BBCODE_COLOR, clause]
+	consequence_label.text = "[center]%s[/center]" % text
+
+
+func _move_choice_highlight(step: int) -> void:
+	if _choice_entries.is_empty():
+		return
+	var count := _choice_entries.size()
+	var idx := _selected_choice_index
+	if idx < 0:
+		idx = 0 if step >= 0 else count - 1
+	else:
+		idx = (idx + step + count) % count
+	_highlight_choice(idx)
+
+
+func _confirm_selected_choice() -> void:
+	if _selected_choice_index < 0 or _selected_choice_index >= _choice_entries.size():
+		return
+	var entry: Dictionary = _choice_entries[_selected_choice_index]
+	var btn: Button = entry["button"]
+	var loc: LocationData = entry["loc"]
+	if loc != null and not btn.disabled:
+		_on_location_picked(loc)
+	else:
+		UI_SOUND.play_inaccessible_button(self)
+
+
+func _handle_selection_key(keycode: int) -> bool:
+	match keycode:
+		KEY_LEFT, KEY_UP:
+			_move_choice_highlight(-1)
+			return true
+		KEY_RIGHT, KEY_DOWN:
+			_move_choice_highlight(1)
+			return true
+		KEY_ENTER, KEY_KP_ENTER:
+			_confirm_selected_choice()
+			return true
+	return false
 
 
 func _play_disabled_location_button_sound_from_event(event: InputEvent) -> bool:
@@ -1350,6 +1645,8 @@ func _apply_location_pick_swap(
 	else:
 		swap_visuals.call()
 
+	_apply_scene_presentation_mode()
+
 	# Resize the frame to this location's preferred size (or default if
 	# the resource doesn't declare one). Eases in/out over ANIM_DURATION.
 	var target: Vector2 = _location_frame_size(loc)
@@ -1390,6 +1687,8 @@ func _sync_scene_image_frame_to_texture() -> void:
 	if scene_image == null or frame_outer == null or scene_image.texture == _scene_image_texture_seen:
 		return
 	_scene_image_texture_seen = scene_image.texture
+	# A texture swap can flip the presentation mode (standard <-> larger art).
+	_apply_scene_presentation_mode()
 	var size_target: Vector2 = _frame_size_target if _is_frame_resize_playing() else scene_image.custom_minimum_size
 	var normalized_size := _normalized_frame_size_for_texture(size_target, scene_image.texture)
 	var outer_target := maxf(
@@ -1410,7 +1709,9 @@ func _normalized_frame_size_for_texture(requested_size: Vector2, texture: Textur
 	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
 		return size_value
 	if _is_standard_scene_texture_size(texture_size):
-		return texture_size * STANDARD_SCENE_TEXTURE_SCALE
+		# Standard 500x125 art renders full-bleed (chrome hidden). The enlarged
+		# size is what gives the refurbished day-planner its big top image.
+		return STANDARD_FULLBLEED_FRAME_SIZE
 
 	var texture_aspect := texture_size.x / texture_size.y
 	var size_aspect := size_value.x / size_value.y if size_value.y > 0.0 else texture_aspect
@@ -1911,6 +2212,8 @@ func _cleanup_expanding_fullscreen_transition() -> void:
 	_expanding_transition_layer = null
 	_expanding_transition_rect = Rect2()
 	_set_source_frame_chrome_hidden(false)
+	# Re-assert full-bleed vs framed chrome now that the transition released it.
+	_apply_scene_presentation_mode()
 
 
 func _expanding_scene_border_style() -> StyleBoxFlat:

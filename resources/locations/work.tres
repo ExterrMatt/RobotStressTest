@@ -13,3 +13,5 @@ scene_path = "res://scenes/locations/Work.tscn"
 preview_texture = ExtResource("2")
 frame_size = Vector2(800, 640)
 frame_outer_width = 800.0
+consequence_text = "Clock in and earn your keep."
+stat_clause = "Money ↑"

@@ -94,6 +94,57 @@ border_color = Color(0.227, 0.251, 0.408, 1)
 [sub_resource type="StyleBoxFlat" id="sb_divider"]
 bg_color = Color(0.227, 0.251, 0.408, 1)
 
+[sub_resource type="StyleBoxFlat" id="sb_ornate_outer"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.063, 0.075, 0.133, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.725, 0.604, 0.306, 1)
+shadow_color = Color(0, 0, 0, 0.72)
+shadow_size = 12
+shadow_offset = Vector2(0, 10)
+
+[sub_resource type="StyleBoxFlat" id="sb_ornate_inner"]
+content_margin_left = 40.0
+content_margin_top = 30.0
+content_margin_right = 40.0
+content_margin_bottom = 26.0
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.91, 0.784, 0.471, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_ornate_inner_compact"]
+content_margin_left = 22.0
+content_margin_top = 8.0
+content_margin_right = 22.0
+content_margin_bottom = 8.0
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.91, 0.784, 0.471, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_ornate_pill"]
+content_margin_left = 16.0
+content_margin_top = 6.0
+content_margin_right = 16.0
+content_margin_bottom = 6.0
+bg_color = Color(0.016, 0.016, 0.027, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.353, 0.29, 0.149, 1)
+
 [resource]
 default_font = ExtResource("1_rjgu6")
 default_font_size = 24
@@ -122,6 +173,23 @@ HUDPanel/styles/panel = SubResource("sb_hud_panel")
 HUDStat/base_type = &"Label"
 HUDStat/colors/font_color = Color(0.784, 0.8, 0.878, 1)
 HUDStat/font_sizes/font_size = 24
+OrnateFrameOuter/base_type = &"PanelContainer"
+OrnateFrameOuter/styles/panel = SubResource("sb_ornate_outer")
+OrnateFrameInner/base_type = &"PanelContainer"
+OrnateFrameInner/styles/panel = SubResource("sb_ornate_inner")
+OrnateFrameInnerCompact/base_type = &"PanelContainer"
+OrnateFrameInnerCompact/styles/panel = SubResource("sb_ornate_inner_compact")
+OrnatePill/base_type = &"PanelContainer"
+OrnatePill/styles/panel = SubResource("sb_ornate_pill")
+Narration/base_type = &"Label"
+Narration/colors/font_color = Color(0.953, 0.925, 0.847, 1)
+Narration/font_sizes/font_size = 40
+Consequence/base_type = &"Label"
+Consequence/colors/font_color = Color(0.702, 0.663, 0.533, 1)
+Consequence/font_sizes/font_size = 30
+PillText/base_type = &"Label"
+PillText/colors/font_color = Color(0.941, 0.894, 0.753, 1)
+PillText/font_sizes/font_size = 30
 Label/colors/font_color = Color(0.784, 0.8, 0.878, 1)
 Label/font_sizes/font_size = 22
 PanelDivider/base_type = &"PanelContainer"

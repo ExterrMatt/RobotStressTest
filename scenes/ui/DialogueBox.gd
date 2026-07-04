@@ -115,10 +115,10 @@ var _next_line_separation: int = LINE_SEPARATION_NO_OVERRIDE
 var _active_line_separation: int = LINE_SEPARATION_NO_OVERRIDE
 
 # Node refs (resolved in _ready).
-@onready var _rich_label: RichTextLabel = $Margin/Label
-@onready var _arrow: Control = $AdvanceArrow
-@onready var _arrow_label: Label = $AdvanceArrow/ArrowLabel
-@onready var _arrow_tex: TextureRect = $AdvanceArrow/ArrowTexture
+@onready var _rich_label: RichTextLabel = $InnerFrame/Margin/Label
+@onready var _arrow: Control = $InnerFrame/AdvanceArrow
+@onready var _arrow_label: Label = $InnerFrame/AdvanceArrow/ArrowLabel
+@onready var _arrow_tex: TextureRect = $InnerFrame/AdvanceArrow/ArrowTexture
 
 
 func _ready() -> void:
@@ -222,8 +222,9 @@ func _pick_largest_fitting_size(pages: Array, candidates: Array, max_rows: int) 
 	var avail: float = _rich_label.size.x
 	if avail <= 0.0:
 		# Layout hasn't happened yet (called from _ready or before a frame).
-		# Estimate: panel width minus the Margin's left+right (18+18 in the .tscn).
-		avail = max(1.0, size.x - 36.0)
+		# Estimate: panel width minus the ornate inner frame padding (26+26)
+		# plus the Margin's left+right (2+2) in the .tscn.
+		avail = max(1.0, size.x - 56.0)
 
 	for s_var in candidates:
 		var s: int = int(s_var)

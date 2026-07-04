@@ -42,6 +42,17 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.353, 0.392, 0.627, 1)
 
+[sub_resource type="Gradient" id="grad_divider"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.353, 0.29, 0.149, 0, 0.353, 0.29, 0.149, 1, 0.353, 0.29, 0.149, 0)
+
+[sub_resource type="GradientTexture2D" id="tex_divider"]
+gradient = SubResource("grad_divider")
+width = 256
+height = 1
+fill_from = Vector2(0, 0)
+fill_to = Vector2(1, 0)
+
 [node name="Main" type="Control" unique_id=519059982]
 layout_mode = 3
 anchors_preset = 15
@@ -347,21 +358,69 @@ text = "BUTTON"
 [node name="SelectionScreen" type="VBoxContainer" parent="UI/VBox" unique_id=768997018]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 20
+size_flags_vertical = 3
 
-[node name="PromptLabel" type="Label" parent="UI/VBox/SelectionScreen" unique_id=897881135]
+[node name="ChoiceBoxCenter" type="CenterContainer" parent="UI/VBox/SelectionScreen" unique_id=700000001]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="OrnateOuter" type="PanelContainer" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter" unique_id=700000002]
+custom_minimum_size = Vector2(1040, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"OrnateFrameOuter"
+
+[node name="OrnateInner" type="PanelContainer" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter" unique_id=700000003]
+layout_mode = 2
+theme_type_variation = &"OrnateFrameInner"
+
+[node name="Content" type="VBoxContainer" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner" unique_id=700000004]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="NarrationLabel" type="Label" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner/Content" unique_id=897881135]
 unique_name_in_owner = true
 layout_mode = 2
-theme_type_variation = &"Prompt"
-text = "WHERE WILL YOU GO?"
+theme_type_variation = &"Narration"
+text = "A new day begins. Where will you go?"
 horizontal_alignment = 1
 
-[node name="LocationGrid" type="GridContainer" parent="UI/VBox/SelectionScreen" unique_id=692500410]
+[node name="DivTop" type="Control" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner/Content" unique_id=700000005]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="Divider" type="TextureRect" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner/Content" unique_id=700000006]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+texture = SubResource("tex_divider")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="DivBot" type="Control" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner/Content" unique_id=700000007]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="LocationGrid" type="HBoxContainer" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner/Content" unique_id=692500410]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 18
-theme_override_constants/v_separation = 18
-columns = 3
+theme_override_constants/separation = 26
+alignment = 1
+
+[node name="ConseqTop" type="Control" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner/Content" unique_id=700000008]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="ConsequenceLabel" type="RichTextLabel" parent="UI/VBox/SelectionScreen/ChoiceBoxCenter/OrnateOuter/OrnateInner/Content" unique_id=700000009]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.702, 0.663, 0.533, 1)
+theme_override_font_sizes/normal_font_size = 30
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
 
 [node name="LocationHost" type="Control" parent="UI/VBox" unique_id=482344626]
 unique_name_in_owner = true

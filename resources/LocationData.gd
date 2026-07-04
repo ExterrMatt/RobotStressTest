@@ -57,6 +57,15 @@ class_name LocationData
 ## (Reserved for things like checking inventory; nothing uses it yet.)
 @export var free_action: bool = false
 
+## Day-planner flavor line shown under the choice row when this location is
+## highlighted (e.g. "Blend in with the other kids."). Falls back to
+## `description` when left empty.
+@export_multiline var consequence_text: String = ""
+
+## Short colored stat clause appended to the consequence line (e.g.
+## "Suspicion ↓"). Rendered in the accent gold. Optional.
+@export var stat_clause: String = ""
+
 
 func available_in_phase(phase: int) -> bool:
 	return phase in allowed_phases
