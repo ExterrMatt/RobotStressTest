@@ -375,13 +375,10 @@ func _enter_post_class_prompt() -> void:
 	_hide_choice_grid()
 	var prompt_text: String = "What do you do?"
 	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt_text]
-	dialogue_box.play_pages_autosized(
-		[[gold_prompt]],
-		[48, 36, 24, 16],
-		2,
-		QUESTION_DIALOGUE_LINE_HEIGHT_FACTOR,
-		QUESTION_DIALOGUE_LINE_SEPARATION
-	)
+	# Match the Workshop's "What do you do?" prompt: no line-height/separation
+	# overrides (which shift the single line off-centre), and the font ladder
+	# bumped by 6 from the base [48, 36, 24, 16].
+	dialogue_box.play_pages_autosized([[gold_prompt]], [54, 42, 30, 22], 2)
 	_auto_advance_post_class_prompt(prompt_text)
 
 
@@ -399,6 +396,10 @@ func _show_post_class_choices() -> void:
 	_animate_layout_change(func():
 		_clear_choice_buttons()
 		choice_grid.visible = true
+		# Two choices: use two columns so the buttons stretch the full
+		# dialogue width (the grid otherwise keeps its 3-column question
+		# layout, leaving the pair filling only two-thirds).
+		choice_grid.columns = 2
 
 		var leave_btn := _build_choice_button("LEAVE QUIETLY")
 		leave_btn.pressed.connect(_on_leave_pressed)

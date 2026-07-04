@@ -337,7 +337,8 @@ func _enter_completion_prompt() -> void:
 	_set_node_visible(dialogue_box, true)
 	var prompt_text: String = "What do you do?"
 	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt_text]
-	dialogue_box.play_pages_autosized([[gold_prompt]], [48, 36, 24, 16], 2)
+	# Font ladder bumped by 6 from the base [48, 36, 24, 16].
+	dialogue_box.play_pages_autosized([[gold_prompt]], [54, 42, 30, 22], 2)
 	_auto_advance_completion_prompt(prompt_text)
 
 
