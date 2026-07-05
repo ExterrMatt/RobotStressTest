@@ -779,6 +779,7 @@ func _start_new_game() -> void:
 func _start_endless() -> void:
 	if get_node_or_null("/root/GameState") != null:
 		GameState.reset_for_new_game()
+		GameState.endless_mode = true
 		GameState.complete_intro()
 	if get_node_or_null("/root/DayCycle") != null and DayCycle.has_method("reset_for_new_game"):
 		DayCycle.reset_for_new_game()

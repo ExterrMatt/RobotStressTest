@@ -62,20 +62,26 @@ func _ensure_entry_input_blocker() -> void:
 
 
 ## Convenience: build a result dict and emit. Subclasses call this when done.
+## `extra` merges additional keys into the result (e.g. suspicion_floor_raise)
+## for the handful of results that need effects beyond the standard deltas.
 func finish(
 	money_delta: int = 0,
 	suspicion_delta: int = 0,
 	anger_delta: int = 0,
 	ingredients: Dictionary = {},
 	skip_advance: bool = false,
+	extra: Dictionary = {},
 ) -> void:
 	if _finished_emitted:
 		return
 	_finished_emitted = true
-	finished.emit({
+	var result: Dictionary = {
 		"money_delta": money_delta,
 		"suspicion_delta": suspicion_delta,
 		"anger_delta": anger_delta,
 		"ingredients": ingredients,
 		"skip_advance": skip_advance,
-	})
+	}
+	for key in extra:
+		result[key] = extra[key]
+	finished.emit(result)

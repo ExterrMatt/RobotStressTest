@@ -418,6 +418,8 @@ func _on_leave_pressed() -> void:
 
 func _on_steal_pressed() -> void:
 	_accumulate_reward(REWARD_STEAL)
+	# Flag the theft so a following patrol-drone inspection can catch it.
+	GameState.stole_last_activity = true
 	_finish_school()
 
 

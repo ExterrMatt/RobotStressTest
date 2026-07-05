@@ -426,6 +426,8 @@ func _finish_work(stole: bool) -> void:
 		money += int(REWARD_STEAL.get("money", 0))
 		suspicion += int(REWARD_STEAL.get("suspicion", 0))
 		_merge_ingredients(ingredients, REWARD_STEAL.get("ingredients", {}))
+		# Flag the theft so a following patrol-drone inspection can catch it.
+		GameState.stole_last_activity = true
 
 	finish(money, suspicion, 0, ingredients, false)
 

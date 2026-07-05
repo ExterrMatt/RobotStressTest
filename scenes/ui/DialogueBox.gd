@@ -41,6 +41,7 @@ const SPEAKER_COLORS: Dictionary = {
 	"Robot": "#b7d6d8",
 	"You": "#e4b22d",
 	"Ed": "#6b5f2a",
+	"Drone": "#d8443a",
 }
 
 # ---- TUNABLES (visible in the editor) -----------------------------------
