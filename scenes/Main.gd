@@ -1354,7 +1354,10 @@ func _apply_scene_presentation_mode() -> void:
 		and _is_standard_scene_texture_size(_texture_display_source_size(texture))
 	_fullbleed_active = is_standard
 	_apply_presentation_layout(is_standard)
-	_set_fullbleed_chrome(is_standard)
+	# Every scene wears the ornate gold double-border (matching the dialogue
+	# box), not just the standard full-bleed ones. Large framed scenes (Store,
+	# Work, ...) previously fell back to the plain rivet frame.
+	_set_fullbleed_chrome(true)
 	if is_standard and _bedroom_pill_layer == null:
 		_create_bedroom_pills()
 	if _bedroom_pill_layer != null:
@@ -1381,13 +1384,12 @@ func _apply_presentation_layout(fullbleed: bool) -> void:
 			Control.SIZE_SHRINK_BEGIN if fullbleed else Control.SIZE_EXPAND_FILL
 
 
-## Swap the picture-frame chrome between the ornate gold double-border (used for
-## standard 500x125 scenes, matching the dialogue box) and the default rivet
-## frame (large 500x400+ scenes). In gold mode the three frame panels are
-## restyled — outer gold border over navy, inner bright-gold hairline, empty
-## middle — the rivets are hidden, and the cached chrome size is recomputed so
-## the frame sizes to the new borders. Reverting drops the overrides back to the
-## theme's rivet frame.
+## Swap the picture-frame chrome between the ornate gold double-border (matching
+## the dialogue box) and the default rivet frame. Every scene now uses the gold
+## frame — the rivet path is kept only for the transition backup/restore. In
+## gold mode the three frame panels are restyled — outer gold border over navy,
+## inner bright-gold hairline, empty middle — the rivets are hidden, and the
+## cached chrome size is recomputed so the frame sizes to the new borders.
 func _set_fullbleed_chrome(gold_frame: bool) -> void:
 	# While a fullscreen transition owns the frame chrome (it hides then
 	# restores its own backups), stay out of its way. _apply_scene_presentation_mode
