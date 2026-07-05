@@ -33,6 +33,12 @@ const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
 const ARREST_THRESHOLD: int = 100  # tweak later; suspicion at/above this triggers arrest event
 const DEFAULT_PLAYER_NAME: String = "Noah"
+
+## Rent your uncle collects every two weeks. Charged in the morning of every
+## RENT_INTERVAL_DAYS-th day (day 14, 28, ...). Money can't go below 0, so a
+## broke player simply loses whatever they have.
+const RENT_AMOUNT: int = 2000
+const RENT_INTERVAL_DAYS: int = 14
 const LEGACY_TOOL_ID_MAP: Dictionary = {
 	"electric_prod": "taser",
 }
@@ -61,6 +67,15 @@ var player_name: String = ""
 var intro_active: bool = true
 var intro_completed: bool = false
 var intro_step: String = "exposition"
+
+## Last day on which rent was collected, so the biweekly charge only fires
+## once per due day even if the morning screen is rebuilt.
+var last_rent_day: int = 0
+
+## Set by DayCycle when a completed stress test scores 20% or lower AND the
+## player has animated part of the robot. Consumed by Main the next morning to
+## play the robot's "did something suspicious happen?" dialogue.
+var pending_suspicious_dialogue: bool = false
 
 var money: int:
 	get: return _money
@@ -115,6 +130,24 @@ var window_mode: int:
 
 var _suspicion: int = 0
 var _anger: int = 0
+
+## Permanent minimum for suspicion. Normally 0. Raised (never lowered here) by
+## events like being caught by a patrol drone, so a documented crime leaves a
+## floor of suspicion the player can never scrub away by normal means.
+var _suspicion_floor: int = 0
+
+## Endless mode skips the story/intro and, per design, all the scripted random
+## events (rent, robot suspicion, drone inspections). Set by the main menu.
+var endless_mode: bool = false
+
+## True when the player stole during their most recent school/work session.
+## Reset when they enter school/work, set when they take the steal option.
+## Read by the drone-inspection encounter to decide whether they get caught.
+var stole_last_activity: bool = false
+
+## Set when a school/work session completes (outside the intro). Consumed on the
+## following evening screen, where the drone inspection may randomly fire.
+var pending_drone_inspection: bool = false
 
 # --- robot config ---
 const ROBOT_PART_IDS: Array[String] = ["leg", "arm", "torso", "head", "hand"]
@@ -180,9 +213,15 @@ func reset_for_new_game() -> void:
 	_phase = 0
 	_money = 0
 	_suspicion = 0
+	_suspicion_floor = 0
 	_anger = 0
 	player_name = ""
 	equipped_limbs = 0
+	endless_mode = false
+	stole_last_activity = false
+	pending_drone_inspection = false
+	last_rent_day = 0
+	pending_suspicious_dialogue = false
 
 	for id in robot_parts.keys():
 		robot_parts[id] = 0
@@ -221,7 +260,7 @@ func spend_money(cost: int) -> bool:
 var suspicion: int:
 	get: return _suspicion
 	set(value):
-		var clamped: int = clampi(value, 0, MAX_SUSPICION)
+		var clamped: int = clampi(value, _suspicion_floor, MAX_SUSPICION)
 		if clamped == _suspicion:
 			return
 		_suspicion = clamped
@@ -232,6 +271,22 @@ var suspicion: int:
 
 func add_suspicion(delta: int) -> void:
 	suspicion = _suspicion + delta
+
+
+## Current permanent suspicion floor (read-only for callers/UI).
+var suspicion_floor: int:
+	get: return _suspicion_floor
+
+
+## Permanently raise the suspicion floor. The floor can never be lowered by
+## normal play, so points locked below it are unrecoverable. Current suspicion
+## is pulled up to the new floor if it was sitting below it.
+func raise_suspicion_floor(amount: int) -> void:
+	if amount <= 0:
+		return
+	_suspicion_floor = clampi(_suspicion_floor + amount, 0, MAX_SUSPICION)
+	if _suspicion < _suspicion_floor:
+		suspicion = _suspicion_floor
 
 
 # --- anger ---
@@ -291,6 +346,16 @@ func get_robot_part_count(id: String) -> int:
 
 func has_robot_part(id: String, amount: int = 1) -> bool:
 	return get_robot_part_count(id) >= amount
+
+
+## True once the player has built (animated) at least one part of the robot.
+## Used to gate the robot's suspicious-morning dialogue: the robot can only
+## question a bad night if it has been brought to life at all.
+func has_animated_robot_part() -> bool:
+	for id in ROBOT_PART_IDS:
+		if get_robot_part_count(id) > 0:
+			return true
+	return false
 
 
 func set_all_robot_parts(amount: int) -> void:
@@ -424,7 +489,11 @@ func to_dict() -> Dictionary:
 		"phase": _phase,
 		"money": _money,
 		"suspicion": _suspicion,
+		"suspicion_floor": _suspicion_floor,
 		"anger": _anger,
+		"endless_mode": endless_mode,
+		"stole_last_activity": stole_last_activity,
+		"pending_drone_inspection": pending_drone_inspection,
 		"equipped_limbs": equipped_limbs,
 		"robot_parts": robot_parts.duplicate(),
 		"ingredients": ingredients.duplicate(),
@@ -432,6 +501,8 @@ func to_dict() -> Dictionary:
 		"owned_tools": owned_tools.duplicate(),
 		"purchased_today": purchased_today.duplicate(),
 		"player_name": player_name,
+		"last_rent_day": last_rent_day,
+		"pending_suspicious_dialogue": pending_suspicious_dialogue,
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
 		"intro_step": intro_step,
@@ -444,8 +515,12 @@ func from_dict(data: Dictionary) -> void:
 	_day = data.get("day", 1)
 	_phase = data.get("phase", 0)  # 0 = MORNING
 	_money = data.get("money", 0)
-	_suspicion = data.get("suspicion", 0)
+	_suspicion_floor = clampi(int(data.get("suspicion_floor", 0)), 0, MAX_SUSPICION)
+	_suspicion = clampi(int(data.get("suspicion", 0)), _suspicion_floor, MAX_SUSPICION)
 	_anger = data.get("anger", 0)
+	endless_mode = bool(data.get("endless_mode", false))
+	stole_last_activity = bool(data.get("stole_last_activity", false))
+	pending_drone_inspection = bool(data.get("pending_drone_inspection", false))
 	equipped_limbs = data.get("equipped_limbs", 0)
 	var loaded_parts: Dictionary = data.get("robot_parts", {}).duplicate()
 	for id in ROBOT_PART_IDS:
@@ -465,6 +540,8 @@ func from_dict(data: Dictionary) -> void:
 		unlock_tool("sneaky_shoes")
 	purchased_today.assign(data.get("purchased_today", []))
 	set_player_name(String(data.get("player_name", DEFAULT_PLAYER_NAME)))
+	last_rent_day = int(data.get("last_rent_day", 0))
+	pending_suspicious_dialogue = bool(data.get("pending_suspicious_dialogue", false))
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))

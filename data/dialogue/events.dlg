@@ -1,0 +1,53 @@
+# Recurring event dialogue (outside the intro sequence).
+# Format: see data/dialogue/school.dlg.
+
+# Uncle's biweekly rent collection. Played in the morning of every second
+# week. The $2000 charge is applied by Main when this dialogue ends.
+[uncle_rent]
+Uncle: Morning. You know what day it is.
+You: ...Rent.
+Uncle: Rent. Two grand. Roof, heat, power - none of it's free, and it's been two weeks.
+You: I know, I know.
+Uncle: Then hand it over. I'd rather not have the spreadsheet conversation again.
+You: Here. Two thousand.
+Uncle: Good. See? Painless. Do it on time and we stay friends.
+Uncle: Now go on. Whatever you're up to down there, keep it quiet.
+
+# Robot's morning suspicion after a badly-scored night. Only reachable once the
+# player has animated part of the robot AND scored 20% or less overnight.
+[robot_suspicious]
+Her: ...You're back.
+Her: Last night felt... wrong. Uneven. Like something kept slipping.
+You: It was a rough test. That's all.
+Her: No. It was more than rough.
+Her: The power kept surging, the panels kept working loose... Did something happen out there?
+You: ...Why do you ask?
+Her: Because it felt like someone almost found us.
+Her: If something suspicious happened last night, I'd rather you told me.
+Thoughts: She's more aware than I thought...
+You: ...It was nothing. Get some rest.
+
+# Patrol-drone random inspection after a school/work session where the player
+# did NOT steal. Routine, no consequences.
+[drone_clean]
+A patrol drone drops out of the dark and hovers at eye level. A pale scanning beam sweeps you head to toe.
+Drone: HOLD. RANDOM COMPLIANCE INSPECTION IN PROGRESS.
+You freeze and keep your hands where it can see them.
+Drone: SCAN COMPLETE. NO CONTRABAND DETECTED. NO OUTSTANDING FLAGS.
+Drone: CITIZEN COMPLIANCE: SATISFACTORY. RESUME YOUR EVENING.
+The drone pivots and drifts back into the dark as fast as it came.
+Thoughts: ...That was close enough.
+
+# Patrol-drone random inspection after a session where the player DID steal.
+# Documents the crime: permanent +5 suspicion floor plus +20 suspicion overall,
+# applied by Main when this dialogue ends.
+[drone_caught]
+A patrol drone drops out of the dark and hovers at eye level. A pale scanning beam sweeps you head to toe.
+Drone: HOLD. RANDOM COMPLIANCE INSPECTION IN PROGRESS.
+The beam stops on your bag. It turns red.
+Drone: CONTRABAND DETECTED. UNAUTHORIZED ACQUISITION LOGGED AGAINST YOUR CITIZEN RECORD.
+Drone: THIS INFRACTION HAS BEEN DOCUMENTED WITH THE DEPARTMENT OF CIVIL COMPLIANCE, DIVISION OF BEHAVIORAL OVERSIGHT.
+Drone: YOU ARE NOW DESIGNATED A PERSON OF INTEREST. YOUR MOVEMENTS WILL BE MONITORED WITH INCREASED FREQUENCY.
+Drone: A FLAGGED RECORD CANNOT BE CLEARED. IT CAN ONLY BE MANAGED. DO NOT REOFFEND.
+The drone holds its red light on you a moment longer, then withdraws into the dark.
+Thoughts: They'll be watching me closely now. That part doesn't wash off.

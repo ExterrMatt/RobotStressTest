@@ -51,6 +51,23 @@ const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
 const INTRO_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/IntroDialogue.tscn"
 const INTRO_DIALOGUE_LOCATION_ID: StringName = &"intro_dialogue"
+const EVENT_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/EventDialogue.tscn"
+const EVENT_DIALOGUE_LOCATION_ID: StringName = &"event_dialogue"
+const MORNING_EVENT_PREVIEW_PATH: String = "res://assets/textures/backgrounds/bedroom_morning.png"
+const ROBOT_EVENT_PREVIEW_PATH: String = "res://assets/textures/backgrounds/robot_eyes_open.png"
+## Placeholder background for the patrol-drone encounter until dedicated art exists.
+const DRONE_EVENT_PREVIEW_PATH: String = "res://assets/textures/backgrounds/scene_placeholder.png"
+
+## Chance (0-1) that a patrol drone inspects the player after a school/work
+## session. It's a random spot-check, so most sessions pass without one.
+const DRONE_INSPECTION_CHANCE: float = 0.35
+## Total suspicion applied when the drone catches a theft, and the permanent
+## floor raise locked in on top of it. The floor points can never be scrubbed;
+## the rest (DRONE_CAUGHT_SUSPICION - raise) decay through normal play.
+const DRONE_CAUGHT_SUSPICION: int = 20
+const DRONE_CAUGHT_SUSPICION_FLOOR_RAISE: int = 5
+## Locations after which a drone inspection can occur.
+const DRONE_INSPECTION_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
 const INTRO_STEPS: Array[Dictionary] = [
 	{"step": "exposition", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
 	{"step": "school_first", "kind": "location", "phase": 0, "location_id": &"school"},
@@ -315,6 +332,11 @@ var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
 var _intro_sequence_enabled: bool = false
 var _suppress_phase_selection_refresh: bool = false
+
+## Config for the morning event dialogue currently being opened. Consumed in
+## _apply_location_pick_swap to stamp metadata onto the EventDialogue instance
+## before it enters the tree. Empty when no event is in flight.
+var _pending_event_config: Dictionary = {}
 
 func _ready() -> void:
 	_create_mouse_tooltip()
@@ -1522,6 +1544,12 @@ func _apply_scanlines_enabled(enabled: bool) -> void:
 #   so the frame's already at its new size as the wipe lifts.
 
 func _show_selection_screen() -> void:
+	# A pending scripted event (rent, robot suspicion, drone inspection) plays
+	# over the bedroom before the day-planner appears. It opens the event
+	# dialogue and returns here itself once dismissed, by which point the event
+	# is consumed, so the planner shows on the next pass.
+	if _maybe_trigger_scheduled_event():
+		return
 	_load_locations()
 	# Rebuild the button grid NOW. The grid sits below the picture frame
 	# and isn't visible until the location host is hidden, which happens
@@ -1555,6 +1583,118 @@ func _show_selection_screen() -> void:
 		)
 	else:
 		_play_transition_then(_apply_selection_screen_swap.bind(true))
+
+
+## If a scripted event is due for the current phase, open its dialogue and
+## return true so the caller skips showing the day-planner this pass. Each
+## event consumes its trigger here, so re-entering _show_selection_screen after
+## it finishes falls through to the planner (or the next queued event).
+func _maybe_trigger_scheduled_event() -> bool:
+	if not _scheduled_events_allowed():
+		return false
+	match GameState.phase:
+		DayCycle.Phase.MORNING:
+			return _maybe_trigger_morning_event()
+		DayCycle.Phase.EVENING:
+			return _maybe_trigger_evening_event()
+	return false
+
+
+## Scripted random events are a story-mode feature that only begins once the
+## player has free reign (the intro is fully completed). They never fire in
+## endless mode, during the intro sequence, or mid-transition.
+func _scheduled_events_allowed() -> bool:
+	if GameState.endless_mode:
+		return false
+	if _intro_sequence_enabled:
+		return false
+	if not GameState.intro_completed:
+		return false
+	if not _has_shown_initial:
+		return false
+	if _is_any_transition_playing():
+		return false
+	return true
+
+
+## Morning: rent is charged first (a hard obligation); a low-score night's
+## robot suspicion follows.
+func _maybe_trigger_morning_event() -> bool:
+	if _should_charge_rent():
+		GameState.last_rent_day = GameState.day
+		_open_event_dialogue("uncle_rent", "uncle", {"money_delta": -GameState.RENT_AMOUNT})
+		return true
+	if GameState.pending_suspicious_dialogue:
+		GameState.pending_suspicious_dialogue = false
+		_open_event_dialogue("robot_suspicious", "robot", {})
+		return true
+	return false
+
+
+## Evening: after a school/work session, a patrol drone may randomly inspect the
+## player. If they stole that session, the drone documents the crime - a
+## permanent +5 suspicion floor on top of +20 suspicion overall.
+func _maybe_trigger_evening_event() -> bool:
+	if not GameState.pending_drone_inspection:
+		return false
+	# Consume the one-shot check regardless of the random roll's outcome.
+	GameState.pending_drone_inspection = false
+	if randf() > DRONE_INSPECTION_CHANCE:
+		return false
+	if GameState.stole_last_activity:
+		GameState.stole_last_activity = false
+		_open_event_dialogue("drone_caught", "drone", {
+			"suspicion_delta": DRONE_CAUGHT_SUSPICION,
+			"suspicion_floor_raise": DRONE_CAUGHT_SUSPICION_FLOOR_RAISE,
+		})
+	else:
+		_open_event_dialogue("drone_clean", "drone", {})
+	return true
+
+
+func _should_charge_rent() -> bool:
+	if GameState.day <= 0:
+		return false
+	if GameState.day % GameState.RENT_INTERVAL_DAYS != 0:
+		return false
+	return GameState.last_rent_day != GameState.day
+
+
+## Open the shared EventDialogue scene for a scripted event. `effects` may carry
+## money_delta / suspicion_delta / anger_delta / suspicion_floor_raise, applied
+## when the dialogue ends. The instance is configured via metadata stamped in
+## _apply_location_pick_swap, just before it enters the tree.
+func _open_event_dialogue(event_key: String, portrait: String, effects: Dictionary) -> void:
+	if not ResourceLoader.exists(EVENT_DIALOGUE_SCENE_PATH):
+		push_error("Main: could not load %s" % EVENT_DIALOGUE_SCENE_PATH)
+		return
+	_pending_event_config = {
+		"event_key": event_key,
+		"event_portrait": portrait,
+		"event_money_delta": int(effects.get("money_delta", 0)),
+		"event_anger_delta": int(effects.get("anger_delta", 0)),
+		"event_suspicion_delta": int(effects.get("suspicion_delta", 0)),
+		"event_suspicion_floor_raise": int(effects.get("suspicion_floor_raise", 0)),
+	}
+	var loc := LocationData.new()
+	loc.id = EVENT_DIALOGUE_LOCATION_ID
+	loc.display_name = "Event"
+	loc.scene_path = EVENT_DIALOGUE_SCENE_PATH
+	loc.preview_texture = _event_preview_texture(portrait)
+	_on_location_picked(loc)
+
+
+func _event_preview_texture(portrait: String) -> Texture2D:
+	var path := MORNING_EVENT_PREVIEW_PATH
+	if portrait == "drone":
+		path = DRONE_EVENT_PREVIEW_PATH
+	elif portrait == "robot":
+		path = ROBOT_EVENT_PREVIEW_PATH
+	if ResourceLoader.exists(path):
+		var tex := load(path) as Texture2D
+		if tex != null:
+			return tex
+	return PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 
 
 ## Runs at the wipe midpoint when returning to the selection screen.
@@ -1866,6 +2006,14 @@ func _apply_location_pick_swap(
 		_current_location_node.set_meta("intro_sequence_location", true)
 		_current_location_node.set_meta("intro_step", GameState.intro_step)
 		_current_location_node.set_meta("intro_location_id", String(loc.id))
+	if loc.id == EVENT_DIALOGUE_LOCATION_ID and not _pending_event_config.is_empty():
+		for meta_key in _pending_event_config:
+			_current_location_node.set_meta(meta_key, _pending_event_config[meta_key])
+		_pending_event_config = {}
+	# Entering a fresh school/work session clears any theft flag from a prior
+	# one, so only stealing THIS session can be caught by a later drone.
+	if loc.id in DRONE_INSPECTION_LOCATION_IDS:
+		GameState.stole_last_activity = false
 	_current_location_fullscreen = loc.fullscreen_scene
 	_current_location_id = loc.id
 	location_host.add_child(_current_location_node)
@@ -2663,6 +2811,13 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 	result = _apply_skipped_stress_test_penalty(result)
 	_apply_result(result)
 
+	# A completed school/work session (story mode) arms a possible patrol-drone
+	# inspection on the evening screen that follows.
+	if not result.get("skip_advance", false) \
+			and not GameState.endless_mode \
+			and _current_location_id in DRONE_INSPECTION_LOCATION_IDS:
+		GameState.pending_drone_inspection = true
+
 	if result.get("skip_advance", false):
 		_show_selection_screen()
 	else:
@@ -2689,11 +2844,15 @@ func _should_apply_skipped_stress_test_penalty(result: Dictionary) -> bool:
 func _apply_result(result: Dictionary) -> void:
 	var money_delta: int = result.get("money_delta", 0)
 	var suspicion_delta: int = result.get("suspicion_delta", 0)
+	var suspicion_floor_raise: int = result.get("suspicion_floor_raise", 0)
 	var anger_delta: int = result.get("anger_delta", 0)
 	var ingredients: Dictionary = result.get("ingredients", {})
 
 	if money_delta != 0:    GameState.add_money(money_delta)
 	if suspicion_delta != 0: GameState.add_suspicion(suspicion_delta)
+	# Raise the permanent floor after the delta so the added points settle above
+	# it and the locked-in floor is what remains once temporary suspicion decays.
+	if suspicion_floor_raise != 0: GameState.raise_suspicion_floor(suspicion_floor_raise)
 	if anger_delta != 0:     GameState.add_anger(anger_delta)
 
 	for ing_id in ingredients:

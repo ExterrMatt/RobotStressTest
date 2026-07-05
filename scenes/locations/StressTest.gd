@@ -1720,25 +1720,48 @@ func _consequence_pause_overlap_seconds(start_elapsed: float, end_elapsed: float
 	return total
 
 
+## Anger applied for a totally failed (0% average) completed stress test. A
+## perfect (100%) night applies 0. The averaged electricity + screw score
+## linearly removes anger between those two ends, rewarding clean nights.
+const STRESS_TEST_MAX_ANGER: int = 20
+
+
 func _complete_stress_test_success() -> void:
 	if _night_finished:
 		return
 	if _is_intro_tutorial_stress_test():
 		_finish_intro_tutorial_stress_test()
 		return
+	var average_percent := _stress_test_average_percent()
+	DayCycle.register_stress_test_score(average_percent)
 	_begin_stress_test_summary(
 		true,
 		"",
 		{
 			"money_delta": 0,
 			"suspicion_delta": 0,
-			"anger_delta": -10,
+			"anger_delta": _anger_from_average_percent(average_percent),
 			"ingredients": {},
 			"skip_advance": false,
 		},
 		false,
 		true
 	)
+
+
+## Average of the electricity and screw scores (each 0-100), which drives both
+## the end-of-night anger and the robot's suspicion the next morning.
+func _stress_test_average_percent() -> float:
+	var electricity := _electricity_summary()
+	var screws := _screw_summary()
+	return clampf((float(electricity["score"]) + float(screws["score"])) * 0.5, 0.0, 100.0)
+
+
+## Map an average percent (0-100) to anger points. 100% removes all
+## STRESS_TEST_MAX_ANGER (0 applied); 0% removes none (full penalty applied).
+func _anger_from_average_percent(average_percent: float) -> int:
+	var removed := (clampf(average_percent, 0.0, 100.0) / 100.0) * float(STRESS_TEST_MAX_ANGER)
+	return int(round(float(STRESS_TEST_MAX_ANGER) - removed))
 
 
 func _handle_night_timer_finished() -> void:
