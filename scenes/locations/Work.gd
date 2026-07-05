@@ -312,6 +312,13 @@ func _apply_completion_screen() -> void:
 		DEFAULT_DIALOGUE_FRAME_SIZE,
 		_default_main_frame_outer_width(main)
 	)
+	# We shrink the frame from the large minigame back to the standard size,
+	# and the animated resize marks the new texture as "seen" — which defeats
+	# the passive texture-swap watcher that would re-evaluate the presentation.
+	# Re-run it explicitly so the standard scrap image drops into the full-bleed
+	# look (gold corner pills) instead of the fallback HUD bar, matching School.
+	if main and main.has_method("_apply_scene_presentation_mode"):
+		main._apply_scene_presentation_mode()
 
 	_enter_completion_intro()
 	
@@ -484,6 +491,7 @@ func _build_choice_button(label: String) -> Button:
 	# two buttons share the row evenly; text shrinks/clips on overflow
 	# rather than ballooning a single button.
 	var btn := Button.new()
+	btn.theme_type_variation = &"ChoiceButton"
 	btn.text = label
 	btn.custom_minimum_size = Vector2(0, CHOICE_BUTTON_HEIGHT)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
