@@ -1,0 +1,28 @@
+# Recurring event dialogue (outside the intro sequence).
+# Format: see data/dialogue/school.dlg.
+
+# Uncle's biweekly rent collection. Played in the morning of every second
+# week. The $2000 charge is applied by Main when this dialogue ends.
+[uncle_rent]
+Uncle: Morning. You know what day it is.
+You: ...Rent.
+Uncle: Rent. Two grand. Roof, heat, power - none of it's free, and it's been two weeks.
+You: I know, I know.
+Uncle: Then hand it over. I'd rather not have the spreadsheet conversation again.
+You: Here. Two thousand.
+Uncle: Good. See? Painless. Do it on time and we stay friends.
+Uncle: Now go on. Whatever you're up to down there, keep it quiet.
+
+# Robot's morning suspicion after a badly-scored night. Only reachable once the
+# player has animated part of the robot AND scored 20% or less overnight.
+[robot_suspicious]
+Her: ...You're back.
+Her: Last night felt... wrong. Uneven. Like something kept slipping.
+You: It was a rough test. That's all.
+Her: No. It was more than rough.
+Her: The power kept surging, the panels kept working loose... Did something happen out there?
+You: ...Why do you ask?
+Her: Because it felt like someone almost found us.
+Her: If something suspicious happened last night, I'd rather you told me.
+Thoughts: She's more aware than I thought...
+You: ...It was nothing. Get some rest.

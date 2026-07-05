@@ -51,6 +51,9 @@ const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
 const INTRO_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/IntroDialogue.tscn"
 const INTRO_DIALOGUE_LOCATION_ID: StringName = &"intro_dialogue"
+const EVENT_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/EventDialogue.tscn"
+const EVENT_DIALOGUE_LOCATION_ID: StringName = &"event_dialogue"
+const MORNING_EVENT_PREVIEW_PATH: String = "res://assets/textures/backgrounds/bedroom_morning.png"
 const INTRO_STEPS: Array[Dictionary] = [
 	{"step": "exposition", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
 	{"step": "school_first", "kind": "location", "phase": 0, "location_id": &"school"},
@@ -303,6 +306,11 @@ var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
 var _intro_sequence_enabled: bool = false
 var _suppress_phase_selection_refresh: bool = false
+
+## Config for the morning event dialogue currently being opened. Consumed in
+## _apply_location_pick_swap to stamp metadata onto the EventDialogue instance
+## before it enters the tree. Empty when no event is in flight.
+var _pending_event_config: Dictionary = {}
 
 func _ready() -> void:
 	_create_mouse_tooltip()
@@ -1392,6 +1400,11 @@ func _apply_scanlines_enabled(enabled: bool) -> void:
 #   so the frame's already at its new size as the wipe lifts.
 
 func _show_selection_screen() -> void:
+	# A pending morning event (rent, robot suspicion) plays over the bedroom
+	# before the day-planner appears. It opens the event dialogue and returns
+	# here itself once dismissed, by which point the event is consumed.
+	if _maybe_trigger_morning_event():
+		return
 	_load_locations()
 	# Rebuild the button grid NOW. The grid sits below the picture frame
 	# and isn't visible until the location host is hidden, which happens
@@ -1425,6 +1438,69 @@ func _show_selection_screen() -> void:
 		)
 	else:
 		_play_transition_then(_apply_selection_screen_swap.bind(true))
+
+
+## If a scripted morning event is due, open its dialogue and return true so the
+## caller skips showing the day-planner this pass. Rent is charged first (a hard
+## obligation); a low-score night's robot suspicion follows. Each event consumes
+## its trigger here, so re-entering _show_selection_screen after it finishes
+## falls through to the planner (or the next queued event).
+func _maybe_trigger_morning_event() -> bool:
+	if _intro_sequence_enabled:
+		return false
+	if GameState.intro_active and not GameState.intro_completed:
+		return false
+	if not _has_shown_initial:
+		return false
+	if GameState.phase != DayCycle.Phase.MORNING:
+		return false
+	if _is_any_transition_playing():
+		return false
+
+	if _should_charge_rent():
+		GameState.last_rent_day = GameState.day
+		_open_morning_event("uncle_rent", "uncle", -GameState.RENT_AMOUNT)
+		return true
+	if GameState.pending_suspicious_dialogue:
+		GameState.pending_suspicious_dialogue = false
+		_open_morning_event("robot_suspicious", "robot", 0)
+		return true
+	return false
+
+
+func _should_charge_rent() -> bool:
+	if GameState.day <= 0:
+		return false
+	if GameState.day % GameState.RENT_INTERVAL_DAYS != 0:
+		return false
+	return GameState.last_rent_day != GameState.day
+
+
+func _open_morning_event(event_key: String, portrait: String, money_delta: int) -> void:
+	if not ResourceLoader.exists(EVENT_DIALOGUE_SCENE_PATH):
+		push_error("Main: could not load %s" % EVENT_DIALOGUE_SCENE_PATH)
+		return
+	_pending_event_config = {
+		"event_key": event_key,
+		"event_portrait": portrait,
+		"event_money_delta": money_delta,
+		"event_anger_delta": 0,
+		"event_suspicion_delta": 0,
+	}
+	var loc := LocationData.new()
+	loc.id = EVENT_DIALOGUE_LOCATION_ID
+	loc.display_name = "Event"
+	loc.scene_path = EVENT_DIALOGUE_SCENE_PATH
+	loc.preview_texture = _load_morning_event_preview()
+	_on_location_picked(loc)
+
+
+func _load_morning_event_preview() -> Texture2D:
+	if ResourceLoader.exists(MORNING_EVENT_PREVIEW_PATH):
+		var tex := load(MORNING_EVENT_PREVIEW_PATH) as Texture2D
+		if tex != null:
+			return tex
+	return PHASE_BACKGROUNDS.get(GameState.phase, _default_scene_image)
 
 
 ## Runs at the wipe midpoint when returning to the selection screen.
@@ -1735,6 +1811,10 @@ func _apply_location_pick_swap(
 		_current_location_node.set_meta("intro_sequence_location", true)
 		_current_location_node.set_meta("intro_step", GameState.intro_step)
 		_current_location_node.set_meta("intro_location_id", String(loc.id))
+	if loc.id == EVENT_DIALOGUE_LOCATION_ID and not _pending_event_config.is_empty():
+		for meta_key in _pending_event_config:
+			_current_location_node.set_meta(meta_key, _pending_event_config[meta_key])
+		_pending_event_config = {}
 	_current_location_fullscreen = loc.fullscreen_scene
 	_current_location_id = loc.id
 	location_host.add_child(_current_location_node)

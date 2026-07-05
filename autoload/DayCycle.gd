@@ -28,11 +28,19 @@ const CARRYOVER_DIVISOR: int = 25
 const FAIL_PENALTY_PER_WAKE: int = 10
 const FAIL_PENALTY_CAP: int = 50
 
+## A completed stress test scoring at or below this average percent (of the
+## electricity + screw meters) makes the robot suspicious the next morning.
+const SUSPICIOUS_SCORE_THRESHOLD: float = 20.0
+
 ## Nightly state - resets every day. Tracked here rather than on GameState
 ## because it's conceptually about the current night's stress-test result,
 ## not about persistent character state.
 var nightly_wakes: int = 0
 var nightly_stress_test_completed: bool = false
+## Average percent (0-100) of the last completed stress test this night, or
+## -1 if none has completed yet. -1 (not 0) so "no test" is distinct from a
+## genuine 0% night.
+var nightly_stress_test_score: float = -1.0
 
 
 func _ready() -> void:
@@ -43,6 +51,7 @@ func _ready() -> void:
 func reset_for_new_game() -> void:
 	nightly_wakes = 0
 	nightly_stress_test_completed = false
+	nightly_stress_test_score = -1.0
 
 
 ## Returns the human-readable name of a phase enum value.
@@ -73,6 +82,7 @@ func end_day() -> void:
 
 	nightly_wakes = 0
 	nightly_stress_test_completed = false
+	nightly_stress_test_score = -1.0
 	# Wipe the per-day store-purchase ledger so the player can buy each
 	# item again tomorrow.
 	GameState.reset_daily_purchases()
@@ -115,3 +125,13 @@ func register_stress_test_wake() -> void:
 
 func register_stress_test_completed() -> void:
 	nightly_stress_test_completed = true
+
+
+## Called by the stress-test scene when a test completes, with the averaged
+## electricity + screw score (0-100). A poor score (<= threshold) primes the
+## robot's suspicious-morning dialogue, but only once the robot has been
+## animated - a lifeless heap can't ask questions.
+func register_stress_test_score(average_percent: float) -> void:
+	nightly_stress_test_score = clampf(average_percent, 0.0, 100.0)
+	if nightly_stress_test_score <= SUSPICIOUS_SCORE_THRESHOLD and GameState.has_animated_robot_part():
+		GameState.pending_suspicious_dialogue = true

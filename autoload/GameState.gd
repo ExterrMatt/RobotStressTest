@@ -33,6 +33,12 @@ const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
 const ARREST_THRESHOLD: int = 100  # tweak later; suspicion at/above this triggers arrest event
 const DEFAULT_PLAYER_NAME: String = "Noah"
+
+## Rent your uncle collects every two weeks. Charged in the morning of every
+## RENT_INTERVAL_DAYS-th day (day 14, 28, ...). Money can't go below 0, so a
+## broke player simply loses whatever they have.
+const RENT_AMOUNT: int = 2000
+const RENT_INTERVAL_DAYS: int = 14
 const LEGACY_TOOL_ID_MAP: Dictionary = {
 	"electric_prod": "taser",
 }
@@ -61,6 +67,15 @@ var player_name: String = ""
 var intro_active: bool = true
 var intro_completed: bool = false
 var intro_step: String = "exposition"
+
+## Last day on which rent was collected, so the biweekly charge only fires
+## once per due day even if the morning screen is rebuilt.
+var last_rent_day: int = 0
+
+## Set by DayCycle when a completed stress test scores 20% or lower AND the
+## player has animated part of the robot. Consumed by Main the next morning to
+## play the robot's "did something suspicious happen?" dialogue.
+var pending_suspicious_dialogue: bool = false
 
 var money: int:
 	get: return _money
@@ -183,6 +198,8 @@ func reset_for_new_game() -> void:
 	_anger = 0
 	player_name = ""
 	equipped_limbs = 0
+	last_rent_day = 0
+	pending_suspicious_dialogue = false
 
 	for id in robot_parts.keys():
 		robot_parts[id] = 0
@@ -291,6 +308,16 @@ func get_robot_part_count(id: String) -> int:
 
 func has_robot_part(id: String, amount: int = 1) -> bool:
 	return get_robot_part_count(id) >= amount
+
+
+## True once the player has built (animated) at least one part of the robot.
+## Used to gate the robot's suspicious-morning dialogue: the robot can only
+## question a bad night if it has been brought to life at all.
+func has_animated_robot_part() -> bool:
+	for id in ROBOT_PART_IDS:
+		if get_robot_part_count(id) > 0:
+			return true
+	return false
 
 
 func set_all_robot_parts(amount: int) -> void:
@@ -432,6 +459,8 @@ func to_dict() -> Dictionary:
 		"owned_tools": owned_tools.duplicate(),
 		"purchased_today": purchased_today.duplicate(),
 		"player_name": player_name,
+		"last_rent_day": last_rent_day,
+		"pending_suspicious_dialogue": pending_suspicious_dialogue,
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
 		"intro_step": intro_step,
@@ -465,6 +494,8 @@ func from_dict(data: Dictionary) -> void:
 		unlock_tool("sneaky_shoes")
 	purchased_today.assign(data.get("purchased_today", []))
 	set_player_name(String(data.get("player_name", DEFAULT_PLAYER_NAME)))
+	last_rent_day = int(data.get("last_rent_day", 0))
+	pending_suspicious_dialogue = bool(data.get("pending_suspicious_dialogue", false))
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))
