@@ -1692,25 +1692,16 @@ func _init_choice_highlight() -> void:
 	for i in _choice_entries.size():
 		_apply_choice_button_style(_choice_entries[i]["button"], false)
 	if consequence_label != null:
-		# Pin the label to exactly one line's height so the choice box is the
-		# same size whether or not a consequence line is shown. Without this the
-		# empty label collapses to its (shorter) minimum and the box resizes on
-		# first selection.
-		consequence_label.custom_minimum_size.y = _consequence_line_height()
+		# Reserve the height the label will have once a consequence line shows,
+		# so the choice box never resizes on first selection. Measure it by
+		# rendering a real sample line and reading the resulting content height
+		# back, rather than predicting it from font metrics.
+		consequence_label.text = "[center]Ag[/center]"
+		consequence_label.custom_minimum_size.y = maxf(
+			consequence_label.custom_minimum_size.y,
+			float(consequence_label.get_content_height())
+		)
 		consequence_label.text = ""
-
-
-## Rendered height of a single consequence line, used as the label's minimum so
-## its height never changes between the empty and the selected states.
-func _consequence_line_height() -> float:
-	if consequence_label == null:
-		return 0.0
-	var font := consequence_label.get_theme_font("normal_font")
-	var font_size := consequence_label.get_theme_font_size("normal_font_size")
-	if font == null or font_size <= 0:
-		return consequence_label.custom_minimum_size.y
-	var line_separation := float(consequence_label.get_theme_constant("line_separation"))
-	return ceilf(font.get_height(font_size) + line_separation)
 
 
 func _highlight_choice(index: int) -> void:
