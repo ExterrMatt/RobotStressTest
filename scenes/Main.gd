@@ -117,7 +117,9 @@ const CHOICE_GLOW: Color = Color(0.91, 0.784, 0.471, 0.28)
 const STAT_CLAUSE_BBCODE_COLOR: String = "e8c878"
 ## Invisible one-line placeholder that keeps the consequence label (and the
 ## choice box around it) at a constant height when no choice is highlighted.
-const CONSEQUENCE_LINE_PLACEHOLDER: String = " "
+## A bare space gets its height trimmed, so use a real (but fully transparent)
+## glyph wrapped exactly like a real consequence line to reserve the same height.
+const CONSEQUENCE_LINE_PLACEHOLDER: String = "[center][color=#00000000]—[/color][/center]"
 const PILL_MONEY_BBCODE_COLOR: String = "e8c878"
 const PILL_SUS_BBCODE_COLOR: String = "e8c878"
 const PILL_ANGER_BBCODE_COLOR: String = "e0906a"
