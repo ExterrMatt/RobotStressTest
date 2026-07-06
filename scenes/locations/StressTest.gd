@@ -61,6 +61,7 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @export var night_duration_seconds: float = 60.0
 @export var intro_tutorial_duration_seconds: float = 30.0
 @export var intro_head_interaction_unlock_remaining_seconds: float = 5.0
+@export var timer_label_text: String = "Time"
 
 @export_group("Electricity Meter")
 @export var electricity_label_text: String = "Electricity"
@@ -1473,7 +1474,7 @@ func _debug_mode_enabled() -> bool:
 func _refresh_stress_hud() -> void:
 	var debug_mode := _debug_mode_enabled()
 	if timer_value_label != null:
-		timer_value_label.text = _format_remaining_time()
+		timer_value_label.text = "%s: %s" % [timer_label_text, _format_remaining_time()]
 	if electricity_value_label != null:
 		if debug_mode:
 			electricity_value_label.text = "%s: %.0f%% (%+.1f%%/s)" % [
