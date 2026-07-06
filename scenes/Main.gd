@@ -1612,7 +1612,7 @@ func _selection_narration_text() -> String:
 		DayCycle.Phase.NIGHT:
 			return "Night falls. Where will you go?"
 		_:
-			return "A new day begins. Where will you go?"
+			return "Where will you go?"
 
 
 func _add_choice_entry(btn: Button, loc: LocationData) -> void:

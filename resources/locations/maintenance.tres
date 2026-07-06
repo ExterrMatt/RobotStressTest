@@ -15,5 +15,5 @@ frame_size = Vector2(800, 640)
 frame_outer_width = 800.0
 fullscreen_scene = true
 free_action = false
-consequence_text = "Tend to your inner workings."
+consequence_text = "Repair and clean the machine."
 stat_clause = "Anger ↓"
