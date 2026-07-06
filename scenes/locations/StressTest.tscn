@@ -35,6 +35,12 @@
 [ext_resource type="Texture2D" uid="uid://bwhwvms6kmiir" path="res://assets/textures/backgrounds/stress_test/window/bulb_over_window.png" id="34_bulb_over_window"]
 [ext_resource type="Texture2D" uid="uid://ijuiwks7mxh" path="res://assets/textures/backgrounds/stress_test/window/light.png" id="35_light"]
 [ext_resource type="Texture2D" uid="uid://buqh1w4htw3lo" path="res://assets/textures/backgrounds/stress_test/window/bulb.png" id="36_bulb"]
+[ext_resource type="Texture2D" uid="uid://cg87tqloimpqx" path="res://assets/textures/characters/robot/stresstest/arms/screw_left_top.png" id="37_screw_arm_left_top"]
+[ext_resource type="Texture2D" uid="uid://behaq1b3q75ag" path="res://assets/textures/characters/robot/stresstest/arms/screw_left_mid.png" id="38_screw_arm_left_mid"]
+[ext_resource type="Texture2D" uid="uid://qxi6tc0knq41" path="res://assets/textures/characters/robot/stresstest/arms/screw_left_elbow.png" id="39_screw_arm_left_elbow"]
+[ext_resource type="Texture2D" uid="uid://c3sby3vjayl45" path="res://assets/textures/characters/robot/stresstest/arms/screw_right_top.png" id="40_screw_arm_right_top"]
+[ext_resource type="Texture2D" uid="uid://dhdtdui8wvqlu" path="res://assets/textures/characters/robot/stresstest/arms/screw_right_mid.png" id="41_screw_arm_right_mid"]
+[ext_resource type="Texture2D" uid="uid://cpsiwa3qiipux" path="res://assets/textures/characters/robot/stresstest/arms/screw_right_elbow.png" id="42_screw_arm_right_elbow"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -439,6 +445,145 @@ position = Vector2(103.5, 54.5)
 
 [node name="RightMid" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair/ScrewdriverPositions" unique_id=498013492]
 position = Vector2(149, 53.5)
+
+[node name="LeftArmScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1033814792]
+z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("10_head_screw_repair")
+blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
+flipped_screwdriver_indices = [0, 1, 2]
+screw_nodes = Array[NodePath]([NodePath("ScrewTop"), NodePath("ScrewMid"), NodePath("ScrewElbow")])
+screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Top"), NodePath("ScrewdriverPositions/Mid"), NodePath("ScrewdriverPositions/Elbow")])
+
+[node name="ScrewTop" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair" unique_id=1164449265]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("37_screw_arm_left_top")
+expand_mode = 1
+
+[node name="ScrewMid" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair" unique_id=1260452322]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("38_screw_arm_left_mid")
+expand_mode = 1
+
+[node name="ScrewElbow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair" unique_id=1276609867]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("39_screw_arm_left_elbow")
+expand_mode = 1
+
+[node name="Screwdriver" type="Sprite2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair" unique_id=1311922282]
+visible = false
+texture = ExtResource("15_screwdriver_horizontal")
+centered = false
+offset = Vector2(0, -12)
+region_enabled = true
+region_rect = Rect2(0, 0, 48, 24)
+
+[node name="ScrewdriverPositions" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair" unique_id=1345668199]
+
+[node name="Top" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair/ScrewdriverPositions" unique_id=1413835041]
+position = Vector2(87, 111)
+
+[node name="Mid" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair/ScrewdriverPositions" unique_id=1557223260]
+position = Vector2(80.5, 140)
+
+[node name="Elbow" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair/ScrewdriverPositions" unique_id=1603845494]
+position = Vector2(97.5, 145.5)
+
+[node name="RightArmScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1636750782]
+z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("10_head_screw_repair")
+blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
+screw_nodes = Array[NodePath]([NodePath("ScrewTop"), NodePath("ScrewMid"), NodePath("ScrewElbow")])
+screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Top"), NodePath("ScrewdriverPositions/Mid"), NodePath("ScrewdriverPositions/Elbow")])
+
+[node name="ScrewTop" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair" unique_id=1676965761]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("40_screw_arm_right_top")
+expand_mode = 1
+
+[node name="ScrewMid" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair" unique_id=170047882]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("41_screw_arm_right_mid")
+expand_mode = 1
+
+[node name="ScrewElbow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair" unique_id=1790734986]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("42_screw_arm_right_elbow")
+expand_mode = 1
+
+[node name="Screwdriver" type="Sprite2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair" unique_id=1876880586]
+visible = false
+texture = ExtResource("15_screwdriver_horizontal")
+centered = false
+offset = Vector2(0, -12)
+region_enabled = true
+region_rect = Rect2(0, 0, 48, 24)
+
+[node name="ScrewdriverPositions" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair" unique_id=1958716700]
+
+[node name="Top" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair/ScrewdriverPositions" unique_id=248554765]
+position = Vector2(163.5, 111)
+
+[node name="Mid" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair/ScrewdriverPositions" unique_id=442026618]
+position = Vector2(169.5, 140)
+
+[node name="Elbow" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair/ScrewdriverPositions" unique_id=853430534]
+position = Vector2(152.5, 145.5)
 
 [node name="PullCord" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=720968412]
 layout_mode = 1

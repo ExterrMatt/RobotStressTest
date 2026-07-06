@@ -11,12 +11,7 @@ const SCREW_LOOSEN_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/screws/screw_coming_loose_2.mp3",
 	"res://assets/sounds/screws/screw_coming_loose_3.mp3",
 ]
-const SCREW_REPAIR_SOUND_PATHS: Array[String] = [
-	"res://assets/sounds/screws/screw_in_1.mp3",
-	"res://assets/sounds/screws/screw_in_2.mp3",
-	"res://assets/sounds/screws/screw_in_3.mp3",
-	"res://assets/sounds/screws/screw_in_4.mp3",
-]
+const SCREW_REPAIR_SOUND_PATH: String = "res://assets/sounds/screws/screw_in_1.mp3"
 const SCREW_LOOSEN_PITCH_VARIATION: float = 0.15
 
 @export var enabled: bool = true
@@ -56,10 +51,9 @@ var _loosen_enabled: bool = true
 var _screw_loosen_sounds: Array[AudioStream] = []
 var _screw_loosen_audio_player: AudioStreamPlayer = null
 var _last_screw_loosen_sound_index: int = -1
-var _screw_repair_sounds: Array[AudioStream] = []
+var _screw_repair_sound: AudioStream = null
 var _screw_repair_audio_player: AudioStreamPlayer = null
 var _repair_sound_loop_active: bool = false
-var _repair_sound_index: int = 0
 var _repair_sound_segment_index: int = 0
 var _repair_sound_segment_elapsed: float = 0.0
 var _repair_sound_segment_playing: bool = false
@@ -379,12 +373,8 @@ func _blocked_hover_boxes() -> Array[Control]:
 
 
 func _initialize_screw_repair_sounds() -> void:
-	_screw_repair_sounds.clear()
-	for path in SCREW_REPAIR_SOUND_PATHS:
-		var stream := load(path) as AudioStream
-		if stream != null:
-			_screw_repair_sounds.append(stream)
-	if _screw_repair_sounds.is_empty():
+	_screw_repair_sound = load(SCREW_REPAIR_SOUND_PATH) as AudioStream
+	if _screw_repair_sound == null:
 		return
 
 	_screw_repair_audio_player = AudioStreamPlayer.new()
@@ -393,7 +383,7 @@ func _initialize_screw_repair_sounds() -> void:
 
 
 func _start_screw_repair_sound_loop() -> void:
-	if _screw_repair_audio_player == null or _screw_repair_sounds.is_empty():
+	if _screw_repair_audio_player == null or _screw_repair_sound == null:
 		return
 
 	_repair_sound_loop_active = true
@@ -431,35 +421,25 @@ func _update_screw_repair_sound(delta: float) -> void:
 
 func _advance_screw_repair_segment() -> void:
 	_repair_sound_segment_index += 1
-	if _repair_sound_segment_index < 4:
-		return
-
-	_repair_sound_segment_index = 0
-	_repair_sound_index = (_repair_sound_index + 1) % _screw_repair_sounds.size()
+	if _repair_sound_segment_index >= 4:
+		_repair_sound_segment_index = 0
 
 
 func _begin_screw_repair_segment() -> void:
-	if _screw_repair_audio_player == null or _screw_repair_sounds.is_empty():
-		return
-
-	var stream := _screw_repair_sounds[_repair_sound_index]
-	if stream == null:
+	if _screw_repair_audio_player == null or _screw_repair_sound == null:
 		return
 
 	var segment_seconds := _current_screw_repair_segment_seconds()
-	_screw_repair_audio_player.stream = stream
+	_screw_repair_audio_player.stream = _screw_repair_sound
 	_screw_repair_audio_player.pitch_scale = 1.0
 	_screw_repair_audio_player.play(segment_seconds * float(_repair_sound_segment_index))
 	_repair_sound_segment_playing = true
 
 
 func _current_screw_repair_segment_seconds() -> float:
-	if _screw_repair_sounds.is_empty():
+	if _screw_repair_sound == null:
 		return 0.1
-	var stream := _screw_repair_sounds[_repair_sound_index]
-	if stream == null:
-		return 0.1
-	return maxf(0.01, stream.get_length() * 0.25)
+	return maxf(0.01, _screw_repair_sound.get_length() * 0.25)
 
 
 func _refresh_editor_preview() -> void:
