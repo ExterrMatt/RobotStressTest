@@ -22,6 +22,14 @@ nothing and is reported as incompatible on every machine.
 
 The app should now offer the Windows download.
 
+> **Trap:** platform checkboxes belong to the *upload*, not the project.
+> Deleting an upload and adding a new file resets its platform tags — every
+> re-upload needs the Windows box ticked again. Note that the website's
+> direct Download button ignores these tags (anyone can grab the file), but
+> the itch.io desktop app enforces them — which is why an untagged upload
+> can look fine to browser users while app users get "no compatible
+> versions".
+
 ## Exporting the build
 
 The Windows Desktop preset in `export_presets.cfg` is configured with
