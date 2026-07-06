@@ -200,7 +200,7 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.353, 0.29, 0.149, 1)
+border_color = Color(0.725, 0.604, 0.306, 1)
 
 [sub_resource type="StyleBoxFlat" id="sb_ornate_tag"]
 bg_color = Color(0.016, 0.016, 0.027, 0.75)
@@ -208,7 +208,7 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.353, 0.29, 0.149, 1)
+border_color = Color(0.725, 0.604, 0.306, 1)
 
 [sub_resource type="StyleBoxFlat" id="sb_gold_btn_normal"]
 content_margin_left = 12.0

@@ -1683,16 +1683,16 @@ func _apply_choice_button_style(btn: Button, selected: bool) -> void:
 		btn.add_theme_color_override(color_slot, text_col)
 
 
+## Enter the selection screen with nothing highlighted and no consequence line.
+## The first hover (or arrow-key press) selects a button via _highlight_choice,
+## after which the normal sticky behaviour takes over — the selection persists
+## even when the pointer leaves the button.
 func _init_choice_highlight() -> void:
-	if _choice_entries.is_empty():
-		consequence_label.text = ""
-		return
-	var start := 0
+	_selected_choice_index = -1
 	for i in _choice_entries.size():
-		if not (_choice_entries[i]["button"] as Button).disabled:
-			start = i
-			break
-	_highlight_choice(start)
+		_apply_choice_button_style(_choice_entries[i]["button"], false)
+	if consequence_label != null:
+		consequence_label.text = ""
 
 
 func _highlight_choice(index: int) -> void:
