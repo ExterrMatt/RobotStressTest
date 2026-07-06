@@ -115,6 +115,9 @@ const CHOICE_UNSELECTED_BORDER: Color = Color(0.2, 0.188, 0.165)
 const CHOICE_SELECTED_BG: Color = Color(0.126, 0.11, 0.204, 1.0)
 const CHOICE_GLOW: Color = Color(0.91, 0.784, 0.471, 0.28)
 const STAT_CLAUSE_BBCODE_COLOR: String = "e8c878"
+## Invisible one-line placeholder that keeps the consequence label (and the
+## choice box around it) at a constant height when no choice is highlighted.
+const CONSEQUENCE_LINE_PLACEHOLDER: String = " "
 const PILL_MONEY_BBCODE_COLOR: String = "e8c878"
 const PILL_SUS_BBCODE_COLOR: String = "e8c878"
 const PILL_ANGER_BBCODE_COLOR: String = "e0906a"
@@ -1692,7 +1695,9 @@ func _init_choice_highlight() -> void:
 	for i in _choice_entries.size():
 		_apply_choice_button_style(_choice_entries[i]["button"], false)
 	if consequence_label != null:
-		consequence_label.text = ""
+		# Reserve one blank line rather than emptying the label, so the choice
+		# box keeps the same height whether or not a consequence line is shown.
+		consequence_label.text = CONSEQUENCE_LINE_PLACEHOLDER
 
 
 func _highlight_choice(index: int) -> void:
@@ -1708,7 +1713,7 @@ func _update_consequence_line() -> void:
 	if consequence_label == null:
 		return
 	if _selected_choice_index < 0 or _selected_choice_index >= _choice_entries.size():
-		consequence_label.text = ""
+		consequence_label.text = CONSEQUENCE_LINE_PLACEHOLDER
 		return
 	var loc: LocationData = _choice_entries[_selected_choice_index]["loc"]
 	if loc == null:
