@@ -115,11 +115,6 @@ const CHOICE_UNSELECTED_BORDER: Color = Color(0.2, 0.188, 0.165)
 const CHOICE_SELECTED_BG: Color = Color(0.126, 0.11, 0.204, 1.0)
 const CHOICE_GLOW: Color = Color(0.91, 0.784, 0.471, 0.28)
 const STAT_CLAUSE_BBCODE_COLOR: String = "e8c878"
-## Invisible one-line placeholder that keeps the consequence label (and the
-## choice box around it) at a constant height when no choice is highlighted.
-## A bare space gets its height trimmed, so use a real (but fully transparent)
-## glyph wrapped exactly like a real consequence line to reserve the same height.
-const CONSEQUENCE_LINE_PLACEHOLDER: String = "[center][color=#00000000]—[/color][/center]"
 const PILL_MONEY_BBCODE_COLOR: String = "e8c878"
 const PILL_SUS_BBCODE_COLOR: String = "e8c878"
 const PILL_ANGER_BBCODE_COLOR: String = "e0906a"
@@ -1697,9 +1692,25 @@ func _init_choice_highlight() -> void:
 	for i in _choice_entries.size():
 		_apply_choice_button_style(_choice_entries[i]["button"], false)
 	if consequence_label != null:
-		# Reserve one blank line rather than emptying the label, so the choice
-		# box keeps the same height whether or not a consequence line is shown.
-		consequence_label.text = CONSEQUENCE_LINE_PLACEHOLDER
+		# Pin the label to exactly one line's height so the choice box is the
+		# same size whether or not a consequence line is shown. Without this the
+		# empty label collapses to its (shorter) minimum and the box resizes on
+		# first selection.
+		consequence_label.custom_minimum_size.y = _consequence_line_height()
+		consequence_label.text = ""
+
+
+## Rendered height of a single consequence line, used as the label's minimum so
+## its height never changes between the empty and the selected states.
+func _consequence_line_height() -> float:
+	if consequence_label == null:
+		return 0.0
+	var font := consequence_label.get_theme_font("normal_font")
+	var font_size := consequence_label.get_theme_font_size("normal_font_size")
+	if font == null or font_size <= 0:
+		return consequence_label.custom_minimum_size.y
+	var line_separation := float(consequence_label.get_theme_constant("line_separation"))
+	return ceilf(font.get_height(font_size) + line_separation)
 
 
 func _highlight_choice(index: int) -> void:
@@ -1715,7 +1726,7 @@ func _update_consequence_line() -> void:
 	if consequence_label == null:
 		return
 	if _selected_choice_index < 0 or _selected_choice_index >= _choice_entries.size():
-		consequence_label.text = CONSEQUENCE_LINE_PLACEHOLDER
+		consequence_label.text = ""
 		return
 	var loc: LocationData = _choice_entries[_selected_choice_index]["loc"]
 	if loc == null:
