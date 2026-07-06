@@ -61,7 +61,6 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @export var night_duration_seconds: float = 60.0
 @export var intro_tutorial_duration_seconds: float = 30.0
 @export var intro_head_interaction_unlock_remaining_seconds: float = 5.0
-@export var timer_label_text: String = "Time"
 
 @export_group("Electricity Meter")
 @export var electricity_label_text: String = "Electricity"
@@ -1466,15 +1465,27 @@ func _update_emergency_power_gas_equalization(delta: float) -> void:
 	_gas_last_change_percent = _gas_flow_percent - previous
 
 
+func _debug_mode_enabled() -> bool:
+	var state := get_node_or_null("/root/GameState")
+	return state != null and bool(state.debug_mode_enabled)
+
+
 func _refresh_stress_hud() -> void:
+	var debug_mode := _debug_mode_enabled()
 	if timer_value_label != null:
-		timer_value_label.text = "%s: %s" % [timer_label_text, _format_remaining_time()]
+		timer_value_label.text = _format_remaining_time()
 	if electricity_value_label != null:
-		electricity_value_label.text = "%s: %.0f%% (%+.1f%%/s)" % [
-			electricity_label_text,
-			_electricity_percent,
-			-_current_electricity_decay_per_second(),
-		]
+		if debug_mode:
+			electricity_value_label.text = "%s: %.0f%% (%+.1f%%/s)" % [
+				electricity_label_text,
+				_electricity_percent,
+				-_current_electricity_decay_per_second(),
+			]
+		else:
+			electricity_value_label.text = "%s: %.0f%%" % [
+				electricity_label_text,
+				_electricity_percent,
+			]
 	if gas_value_label != null:
 		gas_value_label.text = "%s: %.0f%% / %.0f%% (%+.1f%%)" % [
 			gas_label_text,
@@ -1488,11 +1499,13 @@ func _refresh_stress_hud() -> void:
 
 
 func _format_uncle_meter_text() -> String:
-	var seen_limit := maxf(0.0, window_alert_seen_failure_seconds)
 	var light_text := "--"
 	if _window_alert_state == WINDOW_ALERT_YELLOW:
 		var light_remaining := maxf(0.0, _window_alert_light_duration - _window_alert_elapsed)
 		light_text = "%.1fs" % light_remaining
+	if not _debug_mode_enabled():
+		return "Light: %s" % light_text
+	var seen_limit := maxf(0.0, window_alert_seen_failure_seconds)
 	var leave_text := "--"
 	if _window_alert_state == WINDOW_ALERT_RED and not _is_uncle_exposure_active():
 		var leave_remaining := maxf(0.0, _window_alert_silhouette_leave_seconds - _window_alert_safe_elapsed)
