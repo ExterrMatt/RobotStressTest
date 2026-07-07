@@ -56,6 +56,7 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 ]
 const TORSO_SCREW_INDEX_LEFT_WAIST: int = 2
 const TORSO_SCREW_INDEX_RIGHT_WAIST: int = 3
+const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
 @export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
 
@@ -161,6 +162,8 @@ const TORSO_SCREW_INDEX_RIGHT_WAIST: int = 3
 @onready var left_arm_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair
 @onready var right_arm_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair
 @onready var torso_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/TorsoScrewRepair
+@onready var left_leg_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair
+@onready var right_leg_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair
 @onready var gas_valve: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/GasValve
 @onready var emergency_power_button: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton
 @onready var window_alert_rect: ColorRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/WindowAlertRect
@@ -1592,6 +1595,14 @@ func _apply_body_part_screw_availability() -> void:
 	if torso_screw_repair != null and torso_screw_repair.has_method("set_screw_available"):
 		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_LEFT_WAIST, arm_count < 1)
 		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_RIGHT_WAIST, arm_count < 2)
+	var leg_count := _robot_part_count("leg")
+	_set_screw_repair_available(left_leg_screw_repair, leg_count >= 1)
+	_set_screw_repair_available(right_leg_screw_repair, leg_count >= 2)
+	# The inner knee is hidden between the legs, so it is only exposed once a
+	# leg is missing. Keep it unavailable while both legs are still attached.
+	for leg_repair in [left_leg_screw_repair, right_leg_screw_repair]:
+		if leg_repair != null and leg_repair.has_method("set_screw_available"):
+			leg_repair.call("set_screw_available", LEG_SCREW_INDEX_INNER_KNEE, leg_count < 2)
 
 
 func _set_screw_repair_available(repair: Node, available: bool) -> void:
