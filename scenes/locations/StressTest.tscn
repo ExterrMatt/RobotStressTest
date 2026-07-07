@@ -47,6 +47,16 @@
 [ext_resource type="Texture2D" uid="uid://6pe6bhcywbdc" path="res://assets/textures/characters/robot/stresstest/torso/screw_right_waist.png" id="46_screw_torso_right_waist"]
 [ext_resource type="Texture2D" uid="uid://y8f7atygf7mb" path="res://assets/textures/characters/robot/stresstest/torso/screw_left_coco.png" id="47_screw_chest_left_coco"]
 [ext_resource type="Texture2D" uid="uid://c20pv0kexm7rf" path="res://assets/textures/characters/robot/stresstest/torso/screw_right_coco.png" id="48_screw_chest_right_coco"]
+[ext_resource type="Texture2D" uid="uid://b06xwdacjndyt" path="res://assets/textures/characters/robot/stresstest/legs/screw_left_cheek.png" id="49_screw_leg_left_cheek"]
+[ext_resource type="Texture2D" uid="uid://ckuxcavqbht3s" path="res://assets/textures/characters/robot/stresstest/legs/screw_left_outer_knee.png" id="50_screw_leg_left_outer_knee"]
+[ext_resource type="Texture2D" uid="uid://2w5ujjycy556" path="res://assets/textures/characters/robot/stresstest/legs/screw_left_inner_knee.png" id="51_screw_leg_left_inner_knee"]
+[ext_resource type="Texture2D" uid="uid://cbf6frg3i4ffk" path="res://assets/textures/characters/robot/stresstest/legs/screw_left_ankle.png" id="52_screw_leg_left_ankle"]
+[ext_resource type="Texture2D" uid="uid://c5wk4ialh0l7m" path="res://assets/textures/characters/robot/stresstest/legs/screw_left_foot.png" id="53_screw_leg_left_foot"]
+[ext_resource type="Texture2D" uid="uid://p2ix1wvbkiwx" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_cheek.png" id="54_screw_leg_right_cheek"]
+[ext_resource type="Texture2D" uid="uid://dnhxs6g5o8bj7" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_outer_knee.png" id="55_screw_leg_right_outer_knee"]
+[ext_resource type="Texture2D" uid="uid://03alar1kv0nj" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_inner_knee.png" id="56_screw_leg_right_inner_knee"]
+[ext_resource type="Texture2D" uid="uid://kthxawrxvjgl" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_ankle.png" id="57_screw_leg_right_ankle"]
+[ext_resource type="Texture2D" uid="uid://o0mfqg6yf4qg" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_foot.png" id="58_screw_leg_right_foot"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -732,6 +742,206 @@ position = Vector2(103.5, 102.5)
 
 [node name="RightCoco" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/ChestScrewRepair/ScrewdriverPositions" unique_id=589028188]
 position = Vector2(146.5, 102.5)
+
+[node name="LeftLegScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=2101000001]
+z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("10_head_screw_repair")
+blocked_hover_box_paths = Array[NodePath]([NodePath("../PelvisHoverBox")])
+flipped_screwdriver_indices = [0, 1, 2, 3, 4]
+screw_nodes = Array[NodePath]([NodePath("ScrewCheek"), NodePath("ScrewOuterKnee"), NodePath("ScrewInnerKnee"), NodePath("ScrewAnkle"), NodePath("ScrewFoot")])
+screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Cheek"), NodePath("ScrewdriverPositions/OuterKnee"), NodePath("ScrewdriverPositions/InnerKnee"), NodePath("ScrewdriverPositions/Ankle"), NodePath("ScrewdriverPositions/Foot")])
+
+[node name="ScrewCheek" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000002]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("49_screw_leg_left_cheek")
+expand_mode = 1
+
+[node name="ScrewOuterKnee" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000003]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("50_screw_leg_left_outer_knee")
+expand_mode = 1
+
+[node name="ScrewInnerKnee" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000004]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("51_screw_leg_left_inner_knee")
+expand_mode = 1
+
+[node name="ScrewAnkle" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000005]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("52_screw_leg_left_ankle")
+expand_mode = 1
+
+[node name="ScrewFoot" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000006]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("53_screw_leg_left_foot")
+expand_mode = 1
+
+[node name="Screwdriver" type="Sprite2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000007]
+visible = false
+texture = ExtResource("15_screwdriver_horizontal")
+centered = false
+offset = Vector2(0, -12)
+region_enabled = true
+region_rect = Rect2(0, 0, 48, 24)
+
+[node name="ScrewdriverPositions" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000008]
+
+[node name="Cheek" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair/ScrewdriverPositions" unique_id=2101000009]
+position = Vector2(90, 169.5)
+
+[node name="OuterKnee" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair/ScrewdriverPositions" unique_id=2101000010]
+position = Vector2(102.5, 237)
+
+[node name="InnerKnee" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair/ScrewdriverPositions" unique_id=2101000011]
+position = Vector2(124, 235)
+
+[node name="Ankle" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair/ScrewdriverPositions" unique_id=2101000012]
+position = Vector2(107.5, 301.5)
+
+[node name="Foot" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair/ScrewdriverPositions" unique_id=2101000013]
+position = Vector2(105, 313.5)
+
+[node name="RightLegScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=2102000001]
+z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("10_head_screw_repair")
+blocked_hover_box_paths = Array[NodePath]([NodePath("../PelvisHoverBox")])
+flipped_screwdriver_indices = []
+screw_nodes = Array[NodePath]([NodePath("ScrewCheek"), NodePath("ScrewOuterKnee"), NodePath("ScrewInnerKnee"), NodePath("ScrewAnkle"), NodePath("ScrewFoot")])
+screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Cheek"), NodePath("ScrewdriverPositions/OuterKnee"), NodePath("ScrewdriverPositions/InnerKnee"), NodePath("ScrewdriverPositions/Ankle"), NodePath("ScrewdriverPositions/Foot")])
+
+[node name="ScrewCheek" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000002]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("54_screw_leg_right_cheek")
+expand_mode = 1
+
+[node name="ScrewOuterKnee" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000003]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("55_screw_leg_right_outer_knee")
+expand_mode = 1
+
+[node name="ScrewInnerKnee" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000004]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("56_screw_leg_right_inner_knee")
+expand_mode = 1
+
+[node name="ScrewAnkle" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000005]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("57_screw_leg_right_ankle")
+expand_mode = 1
+
+[node name="ScrewFoot" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000006]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("58_screw_leg_right_foot")
+expand_mode = 1
+
+[node name="Screwdriver" type="Sprite2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000007]
+visible = false
+texture = ExtResource("15_screwdriver_horizontal")
+centered = false
+offset = Vector2(0, -12)
+region_enabled = true
+region_rect = Rect2(0, 0, 48, 24)
+
+[node name="ScrewdriverPositions" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000008]
+
+[node name="Cheek" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair/ScrewdriverPositions" unique_id=2102000009]
+position = Vector2(159, 169.5)
+
+[node name="OuterKnee" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair/ScrewdriverPositions" unique_id=2102000010]
+position = Vector2(146.5, 237)
+
+[node name="InnerKnee" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair/ScrewdriverPositions" unique_id=2102000011]
+position = Vector2(125, 235)
+
+[node name="Ankle" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair/ScrewdriverPositions" unique_id=2102000012]
+position = Vector2(141.5, 301.5)
+
+[node name="Foot" type="Node2D" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair/ScrewdriverPositions" unique_id=2102000013]
+position = Vector2(144, 313.5)
 
 [node name="PullCord" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=720968412]
 layout_mode = 1
