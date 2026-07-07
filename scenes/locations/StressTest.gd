@@ -154,6 +154,8 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @onready var stress_test_robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot
 @onready var left_arm_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair
 @onready var right_arm_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair
+@onready var torso_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/TorsoScrewRepair
+@onready var chest_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/ChestScrewRepair
 @onready var gas_valve: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/GasValve
 @onready var emergency_power_button: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton
 @onready var window_alert_rect: ColorRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/WindowAlertRect
@@ -1142,7 +1144,7 @@ func _initialize_stress_systems() -> void:
 	_screw_late_count = 0
 	_screw_late_penalty_total = 0.0
 	_screw_active_events.clear()
-	_apply_arm_screw_availability()
+	_apply_body_part_screw_availability()
 	_connect_screw_summary_tracking()
 	_screw_expected_events = _expected_screw_event_count()
 
@@ -1574,10 +1576,13 @@ func _current_electricity_decay_per_second() -> float:
 	return electricity_decay_percent_per_second * multiplier
 
 
-func _apply_arm_screw_availability() -> void:
+func _apply_body_part_screw_availability() -> void:
 	var arm_count := _robot_part_count("arm")
 	_set_screw_repair_available(left_arm_screw_repair, arm_count >= 1)
 	_set_screw_repair_available(right_arm_screw_repair, arm_count >= 2)
+	var has_torso := _robot_part_count("torso") >= 1
+	_set_screw_repair_available(torso_screw_repair, has_torso)
+	_set_screw_repair_available(chest_screw_repair, has_torso)
 
 
 func _set_screw_repair_available(repair: Node, available: bool) -> void:
