@@ -15,7 +15,6 @@ const SCREW_REPAIR_SOUND_PATH: String = "res://assets/sounds/screws/screw_in_1.m
 const SCREW_LOOSEN_PITCH_VARIATION: float = 0.15
 
 @export var enabled: bool = true
-@export var screw_interval_seconds: float = 10.0
 @export var repair_animation_seconds: float = 1.35
 @export var repair_animation_fps: float = 10.0
 @export var click_radius: float = 16.0
@@ -39,15 +38,14 @@ const SCREW_LOOSEN_PITCH_VARIATION: float = 0.15
 		_refresh_editor_preview()
 
 var _rng := RandomNumberGenerator.new()
-var _time_until_next_loose: float = 0.0
 var _loose_screw_indices: Array = []
+var _unavailable_screw_indices: Array = []
 var _last_screw_index: int = -1
 var _repairing: bool = false
 var _repairing_screw_index: int = -1
 var _repair_elapsed: float = 0.0
 var _repair_animation_duration_multiplier: float = 1.0
 var _completion_enabled: bool = true
-var _loosen_enabled: bool = true
 var _screw_loosen_sounds: Array[AudioStream] = []
 var _screw_loosen_audio_player: AudioStreamPlayer = null
 var _last_screw_loosen_sound_index: int = -1
@@ -73,7 +71,6 @@ func _ready() -> void:
 	_rng.randomize()
 	_initialize_screw_loosen_sounds()
 	_initialize_screw_repair_sounds()
-	_time_until_next_loose = maxf(0.1, screw_interval_seconds)
 	set_process(enabled)
 	set_process_input(enabled)
 
@@ -85,19 +82,6 @@ func _process(delta: float) -> void:
 	if _repairing:
 		_update_repair_animation(delta)
 		_update_screw_repair_sound(delta)
-
-	if not enabled or not _completion_enabled or not _loosen_enabled:
-		return
-
-	if _any_blocked_hover_box_active():
-		return
-	if _all_screws_loose():
-		return
-
-	_time_until_next_loose -= delta
-	if _time_until_next_loose <= 0.0:
-		if _loosen_next_screw():
-			_time_until_next_loose = maxf(0.1, screw_interval_seconds)
 
 
 func _input(event: InputEvent) -> void:
@@ -196,8 +180,27 @@ func set_completion_enabled(value: bool) -> void:
 	_completion_enabled = value
 
 
-func set_loosen_enabled(value: bool) -> void:
-	_loosen_enabled = value
+func set_screw_available(index: int, value: bool) -> void:
+	if value:
+		_unavailable_screw_indices.erase(index)
+	elif not _unavailable_screw_indices.has(index):
+		_unavailable_screw_indices.append(index)
+
+
+func loosen_screws(count: int) -> int:
+	if Engine.is_editor_hint():
+		return 0
+	if not enabled or not _completion_enabled:
+		return 0
+	if _any_blocked_hover_box_active():
+		return 0
+
+	var loosened := 0
+	for _i in range(maxi(0, count)):
+		if not _loosen_next_screw():
+			break
+		loosened += 1
+	return loosened
 
 
 func interrupt_repair() -> bool:
@@ -343,13 +346,10 @@ func _screwdriver_position_for_index(index: int) -> Vector2:
 func _available_screw_indices() -> Array:
 	var indices: Array = []
 	for i in range(screw_nodes.size()):
-		if not _loose_screw_indices.has(i):
-			indices.append(i)
+		if _loose_screw_indices.has(i) or _unavailable_screw_indices.has(i):
+			continue
+		indices.append(i)
 	return indices
-
-
-func _all_screws_loose() -> bool:
-	return screw_nodes.size() > 0 and _loose_screw_indices.size() >= screw_nodes.size()
 
 
 func _get_screwdriver() -> Sprite2D:

@@ -687,6 +687,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_head_screw_repair")
+enabled = false
 blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
 flipped_screwdriver_indices = [0]
 screw_nodes = Array[NodePath]([NodePath("ScrewLeftCoco"), NodePath("ScrewRightCoco")])

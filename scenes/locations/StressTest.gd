@@ -54,6 +54,8 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 	&"Zoom2_R3_C1",
 	&"Zoom2_R4_C1",
 ]
+const TORSO_SCREW_INDEX_LEFT_WAIST: int = 2
+const TORSO_SCREW_INDEX_RIGHT_WAIST: int = 3
 @export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
 @export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
 
@@ -127,7 +129,11 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @export var electricity_target_min_percent: float = 70.0
 @export var electricity_target_max_percent: float = 110.0
 @export_range(0.0, 1.0, 0.01) var electricity_five_star_required_ratio: float = 0.8
-@export var screw_spawn_end_buffer_seconds: float = 10.0
+@export var screw_spawn_start_buffer_seconds: float = 5.0
+@export var screw_spawn_end_buffer_seconds: float = 5.0
+@export var screw_batch_interval_min_seconds: float = 7.0
+@export var screw_batch_interval_max_seconds: float = 10.0
+@export_range(0, 8, 1) var screw_batch_max_per_limb: int = 2
 @export var screw_response_grace_seconds: float = 5.0
 @export var screw_late_penalty_percent: float = 5.0
 @export var screw_unrepaired_penalty_percent: float = 20.0
@@ -155,7 +161,6 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 @onready var left_arm_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair
 @onready var right_arm_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair
 @onready var torso_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/TorsoScrewRepair
-@onready var chest_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/ChestScrewRepair
 @onready var gas_valve: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/GasValve
 @onready var emergency_power_button: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton
 @onready var window_alert_rect: ColorRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/WindowAlertRect
@@ -211,7 +216,7 @@ var _summary_reason: String = ""
 var _electricity_target_elapsed: float = 0.0
 var _electricity_consequence_pause_until: float = 0.0
 var _consequence_pause_intervals: Array[Vector2] = []
-var _screw_expected_events: int = 0
+var _next_screw_batch_elapsed: float = 0.0
 var _screw_started_count: int = 0
 var _screw_repaired_count: int = 0
 var _screw_late_count: int = 0
@@ -268,7 +273,7 @@ func _process(delta: float) -> void:
 	if _electricity_percent <= 0.0 and _emergency_power_shutoff_pressed:
 		_set_emergency_power_shutoff_pressed(false)
 	_update_electricity_summary_time(_night_elapsed - previous_elapsed)
-	_update_screw_loosen_availability()
+	_update_screw_batches()
 	_apply_scheduled_meter_events()
 	_update_emergency_power_gas_equalization(delta)
 	_update_generator_power_sound()
@@ -1144,9 +1149,12 @@ func _initialize_stress_systems() -> void:
 	_screw_late_count = 0
 	_screw_late_penalty_total = 0.0
 	_screw_active_events.clear()
+	_next_screw_batch_elapsed = maxf(
+		maxf(0.0, screw_spawn_start_buffer_seconds),
+		_random_screw_batch_interval()
+	)
 	_apply_body_part_screw_availability()
 	_connect_screw_summary_tracking()
-	_screw_expected_events = _expected_screw_event_count()
 
 	var optimal_count := _random_event_count(gas_optimal_event_count_min, gas_optimal_event_count_max)
 	var drift_count := _random_event_count(gas_drift_event_count_min, gas_drift_event_count_max)
@@ -1580,9 +1588,10 @@ func _apply_body_part_screw_availability() -> void:
 	var arm_count := _robot_part_count("arm")
 	_set_screw_repair_available(left_arm_screw_repair, arm_count >= 1)
 	_set_screw_repair_available(right_arm_screw_repair, arm_count >= 2)
-	var has_torso := _robot_part_count("torso") >= 1
-	_set_screw_repair_available(torso_screw_repair, has_torso)
-	_set_screw_repair_available(chest_screw_repair, has_torso)
+	_set_screw_repair_available(torso_screw_repair, _robot_part_count("torso") >= 1)
+	if torso_screw_repair != null and torso_screw_repair.has_method("set_screw_available"):
+		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_LEFT_WAIST, arm_count < 1)
+		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_RIGHT_WAIST, arm_count < 2)
 
 
 func _set_screw_repair_available(repair: Node, available: bool) -> void:
@@ -1618,7 +1627,6 @@ func _connect_screw_summary_tracking() -> void:
 		_connect_screw_signal(repair, "repair_started", "_on_screw_repair_started")
 		_connect_screw_signal(repair, "repair_interrupted", "_on_screw_repair_interrupted")
 		_connect_screw_signal(repair, "screw_repaired", "_on_screw_repaired")
-	_update_screw_loosen_availability()
 
 
 func _connect_screw_signal(repair: Node, signal_name: StringName, method_name: StringName) -> void:
@@ -1680,30 +1688,27 @@ func _on_screw_repaired(index: int, repair: Node) -> void:
 	_screw_active_events.erase(key)
 
 
-func _update_screw_loosen_availability() -> void:
-	var allow_loosen := _night_elapsed < maxf(0.0, night_duration_seconds - maxf(0.0, screw_spawn_end_buffer_seconds))
-	for repair in _screw_repair_controllers():
-		if repair.has_method("set_loosen_enabled"):
-			repair.call("set_loosen_enabled", allow_loosen)
+func _update_screw_batches() -> void:
+	if _night_elapsed < maxf(0.0, screw_spawn_start_buffer_seconds):
+		return
+	if _night_elapsed > night_duration_seconds - maxf(0.0, screw_spawn_end_buffer_seconds):
+		return
+	if _night_elapsed < _next_screw_batch_elapsed:
+		return
 
-
-func _expected_screw_event_count() -> int:
-	var expected := 0
+	_next_screw_batch_elapsed = _night_elapsed + _random_screw_batch_interval()
 	for repair in _screw_repair_controllers():
-		var enabled_value = repair.get("enabled")
-		if enabled_value != null and not bool(enabled_value):
+		if not repair.has_method("loosen_screws"):
 			continue
-		var interval := 0.0
-		var interval_value = repair.get("screw_interval_seconds")
-		if interval_value != null:
-			interval = float(interval_value)
-		if interval > 0.0:
-			var available_duration := maxf(
-				0.0,
-				night_duration_seconds - maxf(0.0, screw_spawn_end_buffer_seconds)
-			)
-			expected += int(ceil(available_duration / interval))
-	return expected
+		var count := _rng.randi_range(0, maxi(0, screw_batch_max_per_limb))
+		if count > 0:
+			repair.call("loosen_screws", count)
+
+
+func _random_screw_batch_interval() -> float:
+	var low := maxf(0.1, minf(screw_batch_interval_min_seconds, screw_batch_interval_max_seconds))
+	var high := maxf(low, screw_batch_interval_max_seconds)
+	return _rng.randf_range(low, high)
 
 
 func _update_electricity_summary_time(delta: float) -> void:
@@ -1936,7 +1941,7 @@ func _electricity_summary() -> Dictionary:
 
 
 func _screw_summary() -> Dictionary:
-	var expected_count := maxi(0, _screw_expected_events)
+	var expected_count := maxi(0, _screw_started_count)
 	var unrepaired_count := _screw_active_events.size()
 	var score := 100.0
 	score -= _screw_late_penalty_total
