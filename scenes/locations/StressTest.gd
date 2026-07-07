@@ -132,10 +132,11 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export_range(0.0, 1.0, 0.01) var electricity_five_star_required_ratio: float = 0.8
 @export var screw_spawn_start_buffer_seconds: float = 5.0
 @export var screw_spawn_end_buffer_seconds: float = 5.0
-@export var screw_batch_interval_min_seconds: float = 7.0
-@export var screw_batch_interval_max_seconds: float = 10.0
+@export var screw_batch_interval_min_seconds: float = 10.0
+@export var screw_batch_interval_max_seconds: float = 15.0
 @export_range(0, 8, 1) var screw_batch_max_per_limb: int = 2
-@export var screw_response_grace_seconds: float = 5.0
+@export_range(0.0, 1.0, 0.01) var screw_electrical_pull_chance: float = 0.25
+@export var screw_response_grace_seconds: float = 7.0
 @export var screw_late_penalty_percent: float = 5.0
 @export var screw_unrepaired_penalty_percent: float = 20.0
 @export_range(0.0, 1.0, 0.01) var screw_completion_target_ratio: float = 0.8
@@ -1400,6 +1401,17 @@ func _on_electrical_cord_max_pull_reached() -> void:
 	_play_rip_cord_full_extend_sound()
 	_electricity_percent += electricity_ripcord_gain_percent
 	_refresh_stress_hud()
+	if _rng.randf() < clampf(screw_electrical_pull_chance, 0.0, 1.0):
+		_trigger_random_screw()
+
+
+func _trigger_random_screw() -> bool:
+	var controllers := _screw_repair_controllers()
+	controllers.shuffle()
+	for repair in controllers:
+		if repair.has_method("loosen_screws") and int(repair.call("loosen_screws", 1)) > 0:
+			return true
+	return false
 
 
 func _handle_gas_valve_input(event: InputEvent) -> bool:
