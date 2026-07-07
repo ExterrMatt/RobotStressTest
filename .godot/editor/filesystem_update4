@@ -7,3 +7,6 @@ res://autoload/GameState.gd
 res://scenes/locations/EventDialogue.gd
 res://scenes/locations/LocationBase.gd
 res://scenes/ui/MainMenu.gd
+res://scenes/locations/StressTest.tscn
+res://scenes/locations/HeadScrewRepair.gd
+res://scenes/locations/StressTest.gd
