@@ -140,6 +140,66 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.42, 0.333, 0.196, 1)
 
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_disabled"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.059, 0.071, 0.118, 0.6)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.502, 0.42, 0.243, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_focus"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+draw_center = false
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.91, 0.784, 0.471, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_hover"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.118, 0.141, 0.235, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.788, 0.663, 0.416, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_normal"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.059, 0.071, 0.118, 0.85)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.725, 0.604, 0.306, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_gold_btn_pressed"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 4.0
+bg_color = Color(0.118, 0.141, 0.235, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.788, 0.663, 0.416, 1)
+
 [sub_resource type="StyleBoxFlat" id="sb_hud_panel"]
 bg_color = Color(0.059, 0.071, 0.118, 0.75)
 border_width_left = 3
@@ -147,24 +207,6 @@ border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.227, 0.251, 0.408, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_divider"]
-bg_color = Color(0.725, 0.604, 0.306, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_ornate_outer"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
-bg_color = Color(0.063, 0.075, 0.133, 0.97)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.725, 0.604, 0.306, 1)
-shadow_color = Color(0, 0, 0, 0.72)
-shadow_size = 12
-shadow_offset = Vector2(0, 10)
 
 [sub_resource type="StyleBoxFlat" id="sb_ornate_inner"]
 content_margin_left = 40.0
@@ -190,6 +232,21 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.91, 0.784, 0.471, 1)
 
+[sub_resource type="StyleBoxFlat" id="sb_ornate_outer"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.063, 0.075, 0.133, 0.97)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.725, 0.604, 0.306, 1)
+shadow_color = Color(0, 0, 0, 0.72)
+shadow_size = 12
+shadow_offset = Vector2(0, 10)
+
 [sub_resource type="StyleBoxFlat" id="sb_ornate_pill"]
 content_margin_left = 16.0
 content_margin_top = 6.0
@@ -210,65 +267,8 @@ border_width_right = 3
 border_width_bottom = 3
 border_color = Color(0.353, 0.29, 0.149, 1)
 
-[sub_resource type="StyleBoxFlat" id="sb_gold_btn_normal"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.059, 0.071, 0.118, 0.85)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.725, 0.604, 0.306, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_gold_btn_hover"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.118, 0.141, 0.235, 0.92)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.788, 0.663, 0.416, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_gold_btn_pressed"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 4.0
-bg_color = Color(0.118, 0.141, 0.235, 0.98)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.788, 0.663, 0.416, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_gold_btn_focus"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-draw_center = false
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.91, 0.784, 0.471, 1)
-
-[sub_resource type="StyleBoxFlat" id="sb_gold_btn_disabled"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.059, 0.071, 0.118, 0.6)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.502, 0.42, 0.243, 1)
+[sub_resource type="StyleBoxFlat" id="sb_divider"]
+bg_color = Color(0.725, 0.604, 0.306, 1)
 
 [resource]
 default_font = ExtResource("1_rjgu6")
@@ -284,24 +284,27 @@ Button/styles/focus = SubResource("sb_btn_focus")
 Button/styles/hover = SubResource("sb_btn_hover")
 Button/styles/normal = SubResource("sb_btn_normal")
 Button/styles/pressed = SubResource("sb_btn_pressed")
-GoldHudButton/base_type = &"Button"
-GoldHudButton/styles/normal = SubResource("sb_gold_btn_normal")
-GoldHudButton/styles/hover = SubResource("sb_gold_btn_hover")
-GoldHudButton/styles/pressed = SubResource("sb_gold_btn_pressed")
-GoldHudButton/styles/focus = SubResource("sb_gold_btn_focus")
-GoldHudButton/styles/disabled = SubResource("sb_gold_btn_disabled")
 ChoiceButton/base_type = &"Button"
 ChoiceButton/styles/disabled = SubResource("sb_choice_normal")
 ChoiceButton/styles/focus = SubResource("sb_choice_focus")
 ChoiceButton/styles/hover = SubResource("sb_choice_hover")
 ChoiceButton/styles/normal = SubResource("sb_choice_normal")
 ChoiceButton/styles/pressed = SubResource("sb_choice_pressed")
+Consequence/base_type = &"Label"
+Consequence/colors/font_color = Color(0.702, 0.663, 0.533, 1)
+Consequence/font_sizes/font_size = 30
 FrameInsetDark/base_type = &"PanelContainer"
 FrameInsetDark/styles/panel = SubResource("sb_frame_inset_dark")
 FrameInsetMid/base_type = &"PanelContainer"
 FrameInsetMid/styles/panel = SubResource("sb_frame_inset_mid")
 FrameOuter/base_type = &"PanelContainer"
 FrameOuter/styles/panel = SubResource("sb_frame_outer")
+GoldHudButton/base_type = &"Button"
+GoldHudButton/styles/disabled = SubResource("sb_gold_btn_disabled")
+GoldHudButton/styles/focus = SubResource("sb_gold_btn_focus")
+GoldHudButton/styles/hover = SubResource("sb_gold_btn_hover")
+GoldHudButton/styles/normal = SubResource("sb_gold_btn_normal")
+GoldHudButton/styles/pressed = SubResource("sb_gold_btn_pressed")
 HUDLabel/base_type = &"Label"
 HUDLabel/colors/font_color = Color(0.478, 0.51, 0.659, 1)
 HUDLabel/font_sizes/font_size = 24
@@ -310,29 +313,26 @@ HUDPanel/styles/panel = SubResource("sb_hud_panel")
 HUDStat/base_type = &"Label"
 HUDStat/colors/font_color = Color(0.784, 0.8, 0.878, 1)
 HUDStat/font_sizes/font_size = 24
-OrnateFrameOuter/base_type = &"PanelContainer"
-OrnateFrameOuter/styles/panel = SubResource("sb_ornate_outer")
+Label/colors/font_color = Color(0.784, 0.8, 0.878, 1)
+Label/font_sizes/font_size = 22
+Narration/base_type = &"Label"
+Narration/colors/font_color = Color(0.953, 0.925, 0.847, 1)
+Narration/font_sizes/font_size = 40
 OrnateFrameInner/base_type = &"PanelContainer"
 OrnateFrameInner/styles/panel = SubResource("sb_ornate_inner")
 OrnateFrameInnerCompact/base_type = &"PanelContainer"
 OrnateFrameInnerCompact/styles/panel = SubResource("sb_ornate_inner_compact")
+OrnateFrameOuter/base_type = &"PanelContainer"
+OrnateFrameOuter/styles/panel = SubResource("sb_ornate_outer")
 OrnatePill/base_type = &"PanelContainer"
 OrnatePill/styles/panel = SubResource("sb_ornate_pill")
 OrnateTag/base_type = &"PanelContainer"
 OrnateTag/styles/panel = SubResource("sb_ornate_tag")
-Narration/base_type = &"Label"
-Narration/colors/font_color = Color(0.953, 0.925, 0.847, 1)
-Narration/font_sizes/font_size = 40
-Consequence/base_type = &"Label"
-Consequence/colors/font_color = Color(0.702, 0.663, 0.533, 1)
-Consequence/font_sizes/font_size = 30
+PanelDivider/base_type = &"PanelContainer"
+PanelDivider/styles/panel = SubResource("sb_divider")
 PillText/base_type = &"Label"
 PillText/colors/font_color = Color(0.941, 0.894, 0.753, 1)
 PillText/font_sizes/font_size = 30
-Label/colors/font_color = Color(0.784, 0.8, 0.878, 1)
-Label/font_sizes/font_size = 22
-PanelDivider/base_type = &"PanelContainer"
-PanelDivider/styles/panel = SubResource("sb_divider")
 Prompt/base_type = &"Label"
 Prompt/colors/font_color = Color(0.941, 0.941, 1, 1)
 Prompt/colors/font_outline_color = Color(0, 0, 0, 1)
