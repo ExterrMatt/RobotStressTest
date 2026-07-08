@@ -108,25 +108,6 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 }
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 const WORKSHOP_PIECE_SCRIPT_PATH: String = "res://scenes/locations/WorkshopPiece.gd"
-# Flat silhouette mask for the placement-hint ghosts. Each ghost is drawn as a
-# hard-edged solid fill (no soft edges, no interior colour) so that when the
-# pieces are flattened together in a CanvasGroup their overlaps merge into one
-# uniform shape. The whole thing then fades as a single image via the layer's
-# modulate — it never reveals the internal edges/pixels that sit behind the
-# piece ordering when the item is solid. Edge-detection is deliberately avoided
-# here: it depends on TEXTURE_PIXEL_SIZE, which does not read back correctly
-# from a CanvasGroup's own material under the GL Compatibility renderer.
-const PLACEMENT_HINT_SHADER_CODE: String = """
-shader_type canvas_item;
-
-uniform vec4 hint_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
-uniform float alpha_threshold = 0.08;
-
-void fragment() {
-	float a = texture(TEXTURE, UV).a;
-	COLOR = vec4(hint_color.rgb, hint_color.a * step(alpha_threshold, a));
-}
-"""
 
 @onready var ingredients_tray: Control = %IngredientsTray
 @onready var craft_bin: WorkshopBin = %CraftBin
@@ -158,7 +139,6 @@ var _spawn_rng := RandomNumberGenerator.new()
 var _assembly_templates_collected: bool = false
 var _placement_hint_layer: Control = null
 var _placement_hint_group: CanvasGroup = null
-var _placement_hint_material: ShaderMaterial = null
 var _placement_hint_elapsed: float = 0.0
 
 
@@ -279,21 +259,10 @@ func _setup_placement_hint_layer() -> void:
 	add_child(_placement_hint_layer)
 
 
-func _get_placement_hint_material() -> ShaderMaterial:
-	if _placement_hint_material != null:
-		return _placement_hint_material
-	var shader := Shader.new()
-	shader.code = PLACEMENT_HINT_SHADER_CODE
-	_placement_hint_material = ShaderMaterial.new()
-	_placement_hint_material.shader = shader
-	return _placement_hint_material
-
-
 ## Every ghost for the current hint lives under a single CanvasGroup. The group
-## flattens the individual piece silhouettes into one buffer, so an item (or a
-## paired axel+cap group) fades as a single image via the layer's modulate and
-## never exposes the internal edges that are occluded when the item is solid.
-## The group itself carries no material; the flat-mask shader is on the ghosts.
+## flattens the real piece textures into one composited image (cap over axle),
+## so the hint fades as a single sprite via the group's modulate and never
+## exposes the axle pixels that are hidden behind the cap when it is solid.
 func _ensure_hint_group() -> CanvasGroup:
 	if _placement_hint_group != null and is_instance_valid(_placement_hint_group):
 		return _placement_hint_group
@@ -313,10 +282,9 @@ func _update_placement_hint_flash(delta: float) -> void:
 	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
 	# The opacity must be driven on the CanvasGroup itself: an ancestor's
 	# modulate does not reach a CanvasGroup's composited output, so animating
-	# the layer's modulate left the flattened silhouette fully opaque. Gentle
-	# range because the hint is a filled shape, not a thin outline.
+	# the layer's modulate left the flattened image fully opaque.
 	var color := _placement_hint_group.modulate
-	color.a = lerpf(0.06, 0.5, wave)
+	color.a = lerpf(0.2, 0.85, wave)
 	_placement_hint_group.modulate = color
 
 
@@ -371,21 +339,23 @@ func _show_placement_hint_layer() -> void:
 	_placement_hint_layer.visible = has_hints
 	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	if has_hints:
-		_placement_hint_group.modulate = Color(1.0, 1.0, 1.0, 0.5)
+		_placement_hint_group.modulate = Color(1.0, 1.0, 1.0, 0.85)
 	_placement_hint_elapsed = 0.0
 
 
 func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
 	if _placement_hint_layer == null or piece == null or piece.texture == null:
 		return
-	# The flat-mask shader turns the ghost into a hard-edged silhouette; the
-	# CanvasGroup then merges every ghost into one shape that fades together.
+	# Draw the real sprite art (no shader). The CanvasGroup bakes the pieces
+	# into one composited image with the cap over the axle, so fading the group
+	# shows the combined sprite and never reveals the axle pixels hidden behind
+	# the cap. Ghosts are added back-to-front by the caller, so later children
+	# (the cap) draw on top.
 	var group := _ensure_hint_group()
 	var ghost := TextureRect.new()
 	ghost.texture = piece.texture
 	ghost.size = piece.texture_draw_size()
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ghost.material = _get_placement_hint_material()
 	group.add_child(ghost)
 	ghost.global_position = target_texture_global_position
 
