@@ -108,35 +108,23 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 }
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 const WORKSHOP_PIECE_SCRIPT_PATH: String = "res://scenes/locations/WorkshopPiece.gd"
+# Flat silhouette mask for the placement-hint ghosts. Each ghost is drawn as a
+# hard-edged solid fill (no soft edges, no interior colour) so that when the
+# pieces are flattened together in a CanvasGroup their overlaps merge into one
+# uniform shape. The whole thing then fades as a single image via the layer's
+# modulate — it never reveals the internal edges/pixels that sit behind the
+# piece ordering when the item is solid. Edge-detection is deliberately avoided
+# here: it depends on TEXTURE_PIXEL_SIZE, which does not read back correctly
+# from a CanvasGroup's own material under the GL Compatibility renderer.
 const PLACEMENT_HINT_SHADER_CODE: String = """
 shader_type canvas_item;
 
-uniform vec4 border_color = vec4(1.0, 1.0, 1.0, 1.0);
+uniform vec4 hint_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float alpha_threshold = 0.08;
-uniform float border_width = 1.4;
-
-float alpha_at(vec2 uv) {
-	if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) {
-		return 0.0;
-	}
-	return texture(TEXTURE, uv).a;
-}
 
 void fragment() {
-	vec2 px = TEXTURE_PIXEL_SIZE * border_width;
-	float center = alpha_at(UV);
-	float has_clear_neighbor = 0.0;
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(px.x, 0.0))));
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(-px.x, 0.0))));
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(0.0, px.y))));
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(0.0, -px.y))));
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(px.x, px.y))));
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(-px.x, px.y))));
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(px.x, -px.y))));
-	has_clear_neighbor = max(has_clear_neighbor, 1.0 - step(alpha_threshold, alpha_at(UV + vec2(-px.x, -px.y))));
-
-	float edge = step(alpha_threshold, center) * step(0.5, has_clear_neighbor);
-	COLOR = vec4(border_color.rgb, border_color.a * edge);
+	float a = texture(TEXTURE, UV).a;
+	COLOR = vec4(hint_color.rgb, hint_color.a * step(alpha_threshold, a));
 }
 """
 
@@ -301,17 +289,16 @@ func _get_placement_hint_material() -> ShaderMaterial:
 	return _placement_hint_material
 
 
-## Every ghost for the current hint lives under a single CanvasGroup so the
-## pieces are flattened into one buffer before the outline shader runs. This
-## makes an item (or a paired axel+cap group) fade as a single silhouette
-## instead of exposing each piece's own edges — including the internal edges
-## that are occluded when the item is solid — as the flash dips to low opacity.
+## Every ghost for the current hint lives under a single CanvasGroup. The group
+## flattens the individual piece silhouettes into one buffer, so an item (or a
+## paired axel+cap group) fades as a single image via the layer's modulate and
+## never exposes the internal edges that are occluded when the item is solid.
+## The group itself carries no material; the flat-mask shader is on the ghosts.
 func _ensure_hint_group() -> CanvasGroup:
 	if _placement_hint_group != null and is_instance_valid(_placement_hint_group):
 		return _placement_hint_group
 	var group := CanvasGroup.new()
 	group.name = "PlacementHintGroup"
-	group.material = _get_placement_hint_material()
 	_placement_hint_layer.add_child(group)
 	_placement_hint_group = group
 	return group
@@ -323,7 +310,9 @@ func _update_placement_hint_flash(delta: float) -> void:
 	_placement_hint_elapsed += delta
 	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
 	var color := _placement_hint_layer.modulate
-	color.a = lerpf(0.1, 0.95, wave)
+	# Gentle range: the hint is now a filled silhouette rather than a thin
+	# outline, so peak opacity is kept well below 1.0 to avoid masking the slot.
+	color.a = lerpf(0.06, 0.5, wave)
 	_placement_hint_layer.modulate = color
 
 
@@ -376,20 +365,21 @@ func _show_placement_hint_layer() -> void:
 		and is_instance_valid(_placement_hint_group) \
 		and _placement_hint_group.get_child_count() > 0
 	_placement_hint_layer.visible = has_hints
-	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 0.95)
+	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 0.5)
 	_placement_hint_elapsed = 0.0
 
 
 func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
 	if _placement_hint_layer == null or piece == null or piece.texture == null:
 		return
-	# The outline shader lives on the shared CanvasGroup, not the ghost, so the
-	# ghost contributes its solid texture to the flattened silhouette.
+	# The flat-mask shader turns the ghost into a hard-edged silhouette; the
+	# CanvasGroup then merges every ghost into one shape that fades together.
 	var group := _ensure_hint_group()
 	var ghost := TextureRect.new()
 	ghost.texture = piece.texture
 	ghost.size = piece.texture_draw_size()
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ghost.material = _get_placement_hint_material()
 	group.add_child(ghost)
 	ghost.global_position = target_texture_global_position
 
