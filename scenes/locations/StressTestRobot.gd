@@ -75,6 +75,21 @@ const RIGHT_LEG_PART_PATHS: Array[NodePath] = [
 	^"Legs/RightLegUpShin",
 ]
 
+## The vegetable-mission strips carry both hand grips as separate columns.
+## Only one grip is shown at a time; the H key flips between them in debug mode.
+const OVERGRIP_HAND_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionIntro/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/RightHandOvergrip",
+]
+const UNDERGRIP_HAND_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/LeftHandUndergrip",
+	^"AnimationLayers/VegetableMissionIntro/RightHandUndergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandUndergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
+]
+
 @export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox"]:
 	set(value):
 		hover_box_paths = value
@@ -98,6 +113,7 @@ var _managed_paths: Array[NodePath] = []
 var _base_visibility: Dictionary = {}
 var _interaction_enabled: bool = true
 var _editor_preview_was_active: bool = false
+var _hand_grip_overgrip: bool = true
 
 var _active_animation_box: Control = null
 var _animation_phase: String = ANIMATION_PHASE_NONE
@@ -139,6 +155,9 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if Engine.is_editor_hint():
 		return
+	if event is InputEventKey:
+		_handle_debug_key(event as InputEventKey)
+		return
 	if not _interaction_enabled:
 		return
 	if not (event is InputEventMouseButton):
@@ -154,6 +173,35 @@ func _input(event: InputEvent) -> void:
 
 	_handle_hover_box_click(clicked_box)
 	get_viewport().set_input_as_handled()
+
+
+func _handle_debug_key(event: InputEventKey) -> void:
+	if not event.pressed or event.echo:
+		return
+	if event.keycode != KEY_H:
+		return
+	if not _debug_mode_enabled():
+		return
+	_toggle_hand_grip()
+	get_viewport().set_input_as_handled()
+
+
+func _toggle_hand_grip() -> void:
+	_hand_grip_overgrip = not _hand_grip_overgrip
+	_apply_visibility_state()
+
+
+func _debug_mode_enabled() -> bool:
+	var state := get_node_or_null("/root/GameState")
+	return state != null and bool(state.get("debug_mode_enabled"))
+
+
+## Hides whichever hand grip is not currently selected so the two
+## overlapping grip columns never render at once.
+func _apply_hand_grip_selection(resolved: Dictionary) -> void:
+	var hidden_paths := UNDERGRIP_HAND_PATHS if _hand_grip_overgrip else OVERGRIP_HAND_PATHS
+	for path in hidden_paths:
+		resolved[path] = false
 
 
 func prime_head_animation() -> bool:
@@ -539,6 +587,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 		_apply_box_visibility_to_dictionary(box, resolved)
 		_apply_box_animation_visibility_to_dictionary(box, resolved)
 
+	_apply_hand_grip_selection(resolved)
 	_apply_animation_parent_visibility(resolved)
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
