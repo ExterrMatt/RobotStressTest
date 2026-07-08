@@ -307,13 +307,17 @@ func _ensure_hint_group() -> CanvasGroup:
 func _update_placement_hint_flash(delta: float) -> void:
 	if _placement_hint_layer == null or not _placement_hint_layer.visible:
 		return
+	if _placement_hint_group == null or not is_instance_valid(_placement_hint_group):
+		return
 	_placement_hint_elapsed += delta
 	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
-	var color := _placement_hint_layer.modulate
-	# Gentle range: the hint is now a filled silhouette rather than a thin
-	# outline, so peak opacity is kept well below 1.0 to avoid masking the slot.
+	# The opacity must be driven on the CanvasGroup itself: an ancestor's
+	# modulate does not reach a CanvasGroup's composited output, so animating
+	# the layer's modulate left the flattened silhouette fully opaque. Gentle
+	# range because the hint is a filled shape, not a thin outline.
+	var color := _placement_hint_group.modulate
 	color.a = lerpf(0.06, 0.5, wave)
-	_placement_hint_layer.modulate = color
+	_placement_hint_group.modulate = color
 
 
 func _clear_placement_hints() -> void:
@@ -365,7 +369,9 @@ func _show_placement_hint_layer() -> void:
 		and is_instance_valid(_placement_hint_group) \
 		and _placement_hint_group.get_child_count() > 0
 	_placement_hint_layer.visible = has_hints
-	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 0.5)
+	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 1.0)
+	if has_hints:
+		_placement_hint_group.modulate = Color(1.0, 1.0, 1.0, 0.5)
 	_placement_hint_elapsed = 0.0
 
 
