@@ -15,6 +15,10 @@ const CRAFTABLE_PARTS: Dictionary = {
 		"display_name": "Leg",
 		"recipe": {"scrap_metal": 1},
 	},
+	"arm": {
+		"display_name": "Arm",
+		"recipe": {"nuts_bolts": 1},
+	},
 }
 
 const INGREDIENT_PATHS: Dictionary = {
@@ -51,6 +55,39 @@ const HEAD_SEGMENT_IDS: Array[StringName] = [
 const HEAD_EYE_SEGMENT_IDS: Array[StringName] = [&"left_eye", &"right_eye"]
 const HEAD_EYELID_SEGMENT_IDS: Array[StringName] = [&"left_eyelid", &"right_eyelid"]
 const HEAD_EYE_HITBOX_GROW: Vector2 = Vector2(18.0, 14.0)
+
+const ARM_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot arm"
+const ARM_ASSEMBLY_SIZE: Vector2 = Vector2(350, 350)
+## Back-to-front draw order for the assembled arm. Godot draws later Control
+## siblings on top, so this is the reverse of the Aseprite layer stack. The
+## "_outline" layers are not listed here — each is loaded as its base piece's
+## outline (drawn behind the base, dragged with it, hidden once placed).
+const ARM_SEGMENT_IDS: Array[StringName] = [
+	&"thumb_base",
+	&"thumb_tip",
+	&"hand_left",
+	&"hand_right",
+	&"pinky_base",
+	&"pinky_tip",
+	&"ring_tip",
+	&"ring_base",
+	&"middle_base",
+	&"middle_tip",
+	&"pointer_tip",
+	&"pointer_base",
+	&"wrist",
+	&"elbow_inner_gears",
+	&"forearm_lower",
+	&"forearm",
+	&"elbow_joint",
+	&"elbow_cap",
+	&"upper_arm_plate_lower",
+	&"upper_arm_plate",
+	&"bicep",
+	&"tricep",
+	&"shoulder_pad",
+	&"shoulder_joint",
+]
 const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"scrap_metal":   "res://assets/textures/icons/scrap_metal_shadow.png",
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts_shadow.png",
@@ -106,6 +143,7 @@ var _leg_assembly_slot_ids: Array[StringName] = []
 var _active_assembly_slot_ids: Array[StringName] = []
 var _head_slot_placement_offsets: Dictionary = {}
 var _head_assembly: Control = null
+var _arm_assembly: Control = null
 
 var _active_drag_segment: WorkshopSegment = null
 var _passenger_segments: Array = []
@@ -136,6 +174,7 @@ func _ready() -> void:
 	_spawn_rng.randomize()
 
 	_setup_head_assembly()
+	_setup_arm_assembly()
 	_configure_assembly_for_part("")
 
 	# Set up global shadow rendering layer (drawn entirely behind pieces)
@@ -739,7 +778,7 @@ func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblyS
 	if segment == null or slot == null:
 		return
 	_apply_socket_art_for_segment(segment, slot)
-	_clear_placed_head_outline(segment, slot)
+	_clear_placed_part_outline(segment, slot)
 	slot.accept_segment(segment)
 	segment.position = _placement_offset_for_slot(segment, slot)
 
@@ -809,8 +848,8 @@ func _refit_segment_bounds(segment: WorkshopSegment) -> void:
 	segment.placement_offset = bounds.position
 
 
-func _clear_placed_head_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
-	if _crafted_part_id != "head":
+func _clear_placed_part_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
+	if _crafted_part_id != "head" and _crafted_part_id != "arm":
 		return
 
 	for child in segment.get_children():
@@ -1062,6 +1101,56 @@ func _load_head_outline(segment_id: StringName) -> Texture2D:
 	return _load_texture("%s/%s_outline.png" % [HEAD_TEXTURE_DIR, segment_id])
 
 
+func _setup_arm_assembly() -> void:
+	_arm_assembly = Control.new()
+	_arm_assembly.name = "AssemblyArm"
+	_arm_assembly.size = ARM_ASSEMBLY_SIZE
+	_arm_assembly.position = (assembly.size - ARM_ASSEMBLY_SIZE) * 0.5
+	_arm_assembly.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_arm_assembly.visible = false
+
+	for segment_id in ARM_SEGMENT_IDS:
+		var tex: Texture2D = _load_arm_layer(segment_id)
+		if tex == null:
+			push_warning("Workshop: missing arm layer '%s' in %s." % [segment_id, ARM_TEXTURE_DIR])
+			continue
+
+		var used_rect: Rect2 = _used_rect_for_texture(tex)
+
+		var slot := WorkshopAssemblySlot.new()
+		slot.name = "%sSlot" % String(segment_id).capitalize().replace(" ", "")
+		slot.accepts_segment_id = segment_id
+		slot.position = Vector2.ZERO
+		slot.size = ARM_ASSEMBLY_SIZE
+		slot.hitbox_rect = used_rect
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var placed_callable := Callable(self, "_on_slot_placed")
+		if not slot.placed.is_connected(placed_callable):
+			slot.placed.connect(placed_callable)
+		_arm_assembly.add_child(slot)
+		_assembly_slots[segment_id] = slot
+		_segments[segment_id] = {
+			"pieces": [
+				{
+					"id": segment_id,
+					"texture": tex,
+					"outline": _load_arm_outline(segment_id),
+					"shadow": null,
+				}
+			]
+		}
+
+	assembly.add_child.call_deferred(_arm_assembly)
+
+
+func _load_arm_layer(segment_id: StringName) -> Texture2D:
+	return _load_texture("%s/%s.png" % [ARM_TEXTURE_DIR, segment_id])
+
+
+func _load_arm_outline(segment_id: StringName) -> Texture2D:
+	return _load_texture("%s/%s_outline.png" % [ARM_TEXTURE_DIR, segment_id])
+
+
 func _load_texture(path: String) -> Texture2D:
 	if not ResourceLoader.exists(path):
 		return null
@@ -1111,10 +1200,16 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		leg_node.visible = part_id == "" or part_id == "leg"
 	if _head_assembly != null:
 		_head_assembly.visible = part_id == "head"
+	if _arm_assembly != null:
+		_arm_assembly.visible = part_id == "arm"
 
 	_active_assembly_slot_ids.clear()
 	if part_id == "head":
 		for id in HEAD_SEGMENT_IDS:
+			if _assembly_slots.has(id):
+				_active_assembly_slot_ids.append(id)
+	elif part_id == "arm":
+		for id in ARM_SEGMENT_IDS:
 			if _assembly_slots.has(id):
 				_active_assembly_slot_ids.append(id)
 	elif part_id == "leg":
