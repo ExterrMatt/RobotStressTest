@@ -169,6 +169,7 @@ var _shadow_drawer: Control = null
 var _spawn_rng := RandomNumberGenerator.new()
 var _assembly_templates_collected: bool = false
 var _placement_hint_layer: Control = null
+var _placement_hint_group: CanvasGroup = null
 var _placement_hint_material: ShaderMaterial = null
 var _placement_hint_elapsed: float = 0.0
 
@@ -300,6 +301,22 @@ func _get_placement_hint_material() -> ShaderMaterial:
 	return _placement_hint_material
 
 
+## Every ghost for the current hint lives under a single CanvasGroup so the
+## pieces are flattened into one buffer before the outline shader runs. This
+## makes an item (or a paired axel+cap group) fade as a single silhouette
+## instead of exposing each piece's own edges — including the internal edges
+## that are occluded when the item is solid — as the flash dips to low opacity.
+func _ensure_hint_group() -> CanvasGroup:
+	if _placement_hint_group != null and is_instance_valid(_placement_hint_group):
+		return _placement_hint_group
+	var group := CanvasGroup.new()
+	group.name = "PlacementHintGroup"
+	group.material = _get_placement_hint_material()
+	_placement_hint_layer.add_child(group)
+	_placement_hint_group = group
+	return group
+
+
 func _update_placement_hint_flash(delta: float) -> void:
 	if _placement_hint_layer == null or not _placement_hint_layer.visible:
 		return
@@ -315,6 +332,7 @@ func _clear_placement_hints() -> void:
 		return
 	for child in _placement_hint_layer.get_children():
 		child.queue_free()
+	_placement_hint_group = null
 	_placement_hint_layer.visible = false
 	_placement_hint_elapsed = 0.0
 
@@ -354,7 +372,10 @@ func _show_segment_placement_hints(segments: Array) -> void:
 func _show_placement_hint_layer() -> void:
 	if _placement_hint_layer == null:
 		return
-	_placement_hint_layer.visible = _placement_hint_layer.get_child_count() > 0
+	var has_hints: bool = _placement_hint_group != null \
+		and is_instance_valid(_placement_hint_group) \
+		and _placement_hint_group.get_child_count() > 0
+	_placement_hint_layer.visible = has_hints
 	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 0.95)
 	_placement_hint_elapsed = 0.0
 
@@ -362,12 +383,14 @@ func _show_placement_hint_layer() -> void:
 func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
 	if _placement_hint_layer == null or piece == null or piece.texture == null:
 		return
+	# The outline shader lives on the shared CanvasGroup, not the ghost, so the
+	# ghost contributes its solid texture to the flattened silhouette.
+	var group := _ensure_hint_group()
 	var ghost := TextureRect.new()
 	ghost.texture = piece.texture
 	ghost.size = piece.texture_draw_size()
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ghost.material = _get_placement_hint_material()
-	_placement_hint_layer.add_child(ghost)
+	group.add_child(ghost)
 	ghost.global_position = target_texture_global_position
 
 
@@ -1488,7 +1511,28 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 				- primary_slot_local - primary.placement_offset
 			positioned[member] = true
 
+	_enforce_axle_cap_order()
 	craft_bin.contents_changed.emit()
+
+
+## Segments spawn into the bin in a shuffled order, so an "_axel" segment can
+## randomly land on top of the cap/joint it pairs with. Godot draws later
+## siblings on top, so we push each axel below its paired partner right after
+## spawning — the cap then rests on top, matching how it looks while dragged and
+## once assembled.
+func _enforce_axle_cap_order() -> void:
+	var axels: Array[WorkshopSegment] = []
+	for child in craft_bin.get_children():
+		if child is WorkshopSegment and String(child.segment_id).ends_with("_axel"):
+			axels.append(child)
+	for axel in axels:
+		for partner in axel.pair_partners:
+			if not (partner is WorkshopSegment) or not is_instance_valid(partner):
+				continue
+			if partner.get_parent() != craft_bin:
+				continue
+			if axel.get_index() > partner.get_index():
+				craft_bin.move_child(axel, partner.get_index())
 
 
 func _segment_spawn_center(index: int, total: int) -> Vector2:
