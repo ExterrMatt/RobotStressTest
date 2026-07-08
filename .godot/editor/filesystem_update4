@@ -12,3 +12,4 @@ res://scenes/locations/HeadScrewRepair.gd
 res://scenes/locations/StressTest.gd
 res://scenes/locations/StressTestRobot.gd
 res://scenes/locations/StressTestRobot.tscn
+res://scenes/locations/WorkshopMinigame.gd
