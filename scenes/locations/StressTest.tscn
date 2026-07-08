@@ -57,6 +57,16 @@
 [ext_resource type="Texture2D" uid="uid://03alar1kv0nj" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_inner_knee.png" id="56_screw_leg_right_inner_knee"]
 [ext_resource type="Texture2D" uid="uid://kthxawrxvjgl" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_ankle.png" id="57_screw_leg_right_ankle"]
 [ext_resource type="Texture2D" uid="uid://o0mfqg6yf4qg" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_foot.png" id="58_screw_leg_right_foot"]
+[ext_resource type="Texture2D" uid="uid://bah3e0rmdkw7q" path="res://assets/textures/backgrounds/stress_test/window/window_og.png" id="59_window_og"]
+[ext_resource type="Texture2D" uid="uid://43mde3viqmjn" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_1.png" id="60_gas_thing_1"]
+[ext_resource type="Texture2D" uid="uid://8bvryni852kh" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_2.png" id="61_gas_thing_2"]
+[ext_resource type="Texture2D" uid="uid://cb1h7p4bk0fjm" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_3.png" id="62_gas_thing_3"]
+[ext_resource type="Texture2D" uid="uid://dhc818up8g4pg" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_4.png" id="63_gas_thing_4"]
+[ext_resource type="Texture2D" uid="uid://73a5qbgrip4x" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_5.png" id="64_gas_thing_5"]
+[ext_resource type="Texture2D" uid="uid://csnvmtyqs3k74" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_6.png" id="65_gas_thing_6"]
+[ext_resource type="Texture2D" uid="uid://cvaclwh4trfat" path="res://assets/textures/backgrounds/stress_test/darkness/dark1.png" id="66_dark1"]
+[ext_resource type="Texture2D" uid="uid://ca68pj836p1h2" path="res://assets/textures/backgrounds/stress_test/darkness/dark2.png" id="67_dark2"]
+[ext_resource type="Texture2D" uid="uid://dnn78kemxu1hk" path="res://assets/textures/backgrounds/stress_test/darkness/dark3.png" id="68_dark3"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -253,6 +263,17 @@ mouse_filter = 2
 texture = ExtResource("28_table")
 expand_mode = 1
 
+[node name="WindowOg" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1284097159]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("59_window_og")
+expand_mode = 1
+
 [node name="Window" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1284097158]
 layout_mode = 1
 anchors_preset = 15
@@ -319,6 +340,105 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("36_bulb")
+expand_mode = 1
+
+[node name="GasThing6" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000006]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("65_gas_thing_6")
+expand_mode = 1
+
+[node name="GasThing5" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000005]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("64_gas_thing_5")
+expand_mode = 1
+
+[node name="GasThing4" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000004]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("63_gas_thing_4")
+expand_mode = 1
+
+[node name="GasThing3" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000003]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("62_gas_thing_3")
+expand_mode = 1
+
+[node name="GasThing2" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("61_gas_thing_2")
+expand_mode = 1
+
+[node name="GasThing1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000001]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("60_gas_thing_1")
+expand_mode = 1
+
+[node name="Dark1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000001]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("66_dark1")
+expand_mode = 1
+
+[node name="Dark2" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("67_dark2")
+expand_mode = 1
+
+[node name="Dark3" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000003]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("68_dark3")
 expand_mode = 1
 
 [node name="DarkPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1297079992]
