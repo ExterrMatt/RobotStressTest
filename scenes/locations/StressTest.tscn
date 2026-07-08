@@ -498,7 +498,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="HeadScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1897075763]
-z_index = 20
+z_index = 0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -583,7 +583,7 @@ position = Vector2(103.5, 54.5)
 position = Vector2(149, 53.5)
 
 [node name="LeftArmScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1033814792]
-z_index = 20
+z_index = 0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -653,7 +653,7 @@ position = Vector2(80.5, 140)
 position = Vector2(97.5, 145.5)
 
 [node name="RightArmScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1636750782]
-z_index = 20
+z_index = 0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -723,7 +723,7 @@ position = Vector2(169.5, 140)
 position = Vector2(152.5, 145.5)
 
 [node name="TorsoScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1307891682]
-z_index = 20
+z_index = 0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -808,7 +808,7 @@ position = Vector2(103, 143)
 position = Vector2(147, 143)
 
 [node name="ChestScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=1187686243]
-z_index = 20
+z_index = 0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -864,7 +864,7 @@ position = Vector2(103.5, 102.5)
 position = Vector2(146.5, 102.5)
 
 [node name="LeftLegScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=2101000001]
-z_index = 20
+z_index = 0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -964,7 +964,7 @@ position = Vector2(107.5, 301.5)
 position = Vector2(105, 313.5)
 
 [node name="RightLegScrewRepair" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot" unique_id=2102000001]
-z_index = 20
+z_index = 0
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
