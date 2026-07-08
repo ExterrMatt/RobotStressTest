@@ -272,7 +272,8 @@ func _clear_placement_hints() -> void:
 
 func _show_piece_placement_hint(piece: WorkshopPiece, target_global_position: Vector2) -> void:
 	_clear_placement_hints()
-	_add_piece_hint(piece, target_global_position)
+	var group: CanvasGroup = _add_hint_group()
+	_add_piece_hint(group, piece, target_global_position)
 	_show_placement_hint_layer()
 
 
@@ -290,6 +291,10 @@ func _show_segment_placement_hints(segments: Array) -> void:
 				continue
 			var slot_xform: Transform2D = slot.get_global_transform()
 			var target_placement_offset: Vector2 = _placement_offset_for_slot(segment, slot)
+			# One CanvasGroup per previewed item flattens its overlapping
+			# pieces into a single silhouette, so the pulsing outline reads as
+			# one image instead of revealing each piece's occluded edges.
+			var group: CanvasGroup = _add_hint_group()
 			for child in segment.get_children():
 				if child is WorkshopPiece:
 					var piece := child as WorkshopPiece
@@ -298,7 +303,7 @@ func _show_segment_placement_hints(segments: Array) -> void:
 						+ piece.position
 						+ _piece_texture_draw_position(piece)
 					)
-					_add_piece_hint(piece, texture_global_position)
+					_add_piece_hint(group, piece, texture_global_position)
 	_show_placement_hint_layer()
 
 
@@ -310,15 +315,28 @@ func _show_placement_hint_layer() -> void:
 	_placement_hint_elapsed = 0.0
 
 
-func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
-	if _placement_hint_layer == null or piece == null or piece.texture == null:
+# A CanvasGroup composites all of its child ghosts into one offscreen buffer
+# before the outline shader runs, so overlapping pieces merge into a single
+# silhouette. The shared border material lives on the group (not the ghosts)
+# so it outlines only the exterior of that merged shape.
+func _add_hint_group() -> CanvasGroup:
+	if _placement_hint_layer == null:
+		return null
+	var group := CanvasGroup.new()
+	group.fit_margin = 64.0
+	group.material = _get_placement_hint_material()
+	_placement_hint_layer.add_child(group)
+	return group
+
+
+func _add_piece_hint(group: CanvasGroup, piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
+	if group == null or piece == null or piece.texture == null:
 		return
 	var ghost := TextureRect.new()
 	ghost.texture = piece.texture
 	ghost.size = piece.texture_draw_size()
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ghost.material = _get_placement_hint_material()
-	_placement_hint_layer.add_child(ghost)
+	group.add_child(ghost)
 	ghost.global_position = target_texture_global_position
 
 
@@ -1342,7 +1360,29 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 				- primary_slot_local - primary.placement_offset
 			positioned[member] = true
 
+	_enforce_axle_cap_order(segments_by_id, output_parent)
+
 	craft_bin.contents_changed.emit()
+
+
+# Segments spawn in a shuffled order, so an axle can land on top of the cap it
+# is meant to sit under. Re-order each "_axel" segment below its paired partner
+# (the cap / joint) so the cap always draws on top, matching the assembled look.
+func _enforce_axle_cap_order(segments_by_id: Dictionary, output_parent: Control) -> void:
+	for seg_id in segments_by_id:
+		if not String(seg_id).ends_with("_axel"):
+			continue
+		var axle: WorkshopSegment = segments_by_id[seg_id]
+		var slot: WorkshopAssemblySlot = _assembly_slots.get(seg_id)
+		if slot == null or String(slot.paired_with) == "":
+			continue
+		var cap: WorkshopSegment = segments_by_id.get(slot.paired_with)
+		if cap == null or not is_instance_valid(axle) or not is_instance_valid(cap):
+			continue
+		if axle.get_parent() != output_parent or cap.get_parent() != output_parent:
+			continue
+		if axle.get_index() > cap.get_index():
+			output_parent.move_child(axle, cap.get_index())
 
 
 func _segment_spawn_center(index: int, total: int) -> Vector2:
