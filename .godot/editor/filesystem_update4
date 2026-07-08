@@ -1,15 +1,4 @@
-res://scenes/Main.gd
-res://resources/LocationData.gd
-res://scenes/ui/DialogueBox.gd
-res://themes/main_theme.tres
-res://autoload/DayCycle.gd
-res://autoload/GameState.gd
-res://scenes/locations/EventDialogue.gd
-res://scenes/locations/LocationBase.gd
-res://scenes/ui/MainMenu.gd
 res://scenes/locations/StressTest.tscn
-res://scenes/locations/HeadScrewRepair.gd
-res://scenes/locations/StressTest.gd
-res://scenes/locations/StressTestRobot.gd
-res://scenes/locations/StressTestRobot.tscn
+res://themes/main_theme.tres
 res://scenes/locations/WorkshopMinigame.gd
+res://scenes/locations/WorkshopPiece.gd
