@@ -28,6 +28,13 @@ const CENTER_ON_GRAB_DURATION: float = 0.05
 		outline_texture = value
 		queue_redraw()
 
+## When true, the outline is part of the final art and keeps drawing after the
+## piece is placed, instead of behaving like a pick-up-only drag hint.
+@export var persistent_outline: bool = false:
+	set(value):
+		persistent_outline = value
+		queue_redraw()
+
 @export_group("Offsets & Drawing")
 @export var visual_offset: Vector2 = Vector2.ZERO:
 	set(value):
@@ -182,6 +189,8 @@ func is_dragging() -> bool:
 
 
 func _should_draw_outline() -> bool:
+	if persistent_outline:
+		return true
 	if locked:
 		return false
 	var n: Node = get_parent()

@@ -95,6 +95,9 @@ const ARM_SEGMENT_IDS: Array[StringName] = [
 	&"shoulder_pad",
 	&"shoulder_joint",
 ]
+## Arm segments whose "_outline" is part of the final art and must keep drawing
+## after the piece is placed (rather than acting as a pick-up-only drag hint).
+const ARM_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"elbow_inner_gears"]
 const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"scrap_metal":   "res://assets/textures/icons/scrap_metal_shadow.png",
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts_shadow.png",
@@ -742,8 +745,10 @@ func _slot_tree_index(segment: WorkshopSegment) -> int:
 # --- pick-up ---
 
 func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
-	var passengers: Array = []
+	var passengers: Array = _gather_pair_passengers(segment)
 	var all_members: Array = [segment]
+	for passenger in passengers:
+		all_members.append(passenger)
 	all_members.sort_custom(func(a, b): return _slot_tree_index(a) < _slot_tree_index(b))
 
 	for seg in all_members:
@@ -770,6 +775,28 @@ func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
 		for seg in all_members:
 			if seg is WorkshopSegment and seg.get_parent() == self:
 				move_child(seg, get_child_count() - 1)
+
+
+## Collects the still-unplaced segments chained to `segment` through their
+## slots' paired_with links, so a paired group (an axel and its cap, or the
+## toes and their border) is picked up, dragged, and placed as one unit.
+func _gather_pair_passengers(segment: WorkshopSegment) -> Array:
+	var passengers: Array = []
+	var seen: Array = [segment]
+	var frontier: Array = [segment]
+	while not frontier.is_empty():
+		var current: WorkshopSegment = frontier.pop_back()
+		for partner in current.pair_partners:
+			if not (partner is WorkshopSegment) or not is_instance_valid(partner):
+				continue
+			if seen.has(partner):
+				continue
+			seen.append(partner)
+			if partner.locked:
+				continue
+			passengers.append(partner)
+			frontier.append(partner)
+	return passengers
 
 
 func _sync_passenger_segments_to_active_drag() -> void:
@@ -864,6 +891,8 @@ func _clear_placed_part_outline(segment: WorkshopSegment, slot: WorkshopAssembly
 			continue
 		var piece := child as WorkshopPiece
 		if piece == null:
+			continue
+		if piece.persistent_outline:
 			continue
 		piece.outline_texture = null
 		piece.queue_redraw()
@@ -1536,6 +1565,7 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 	piece.texture = tex
 	piece.shadow_texture = piece_def.get("shadow")
 	piece.outline_texture = piece_def.get("outline")
+	piece.persistent_outline = ARM_PERSISTENT_OUTLINE_IDS.has(seg_id)
 
 	piece.piece_offset = Vector2.ZERO
 	piece.visual_offset = Vector2.ZERO
