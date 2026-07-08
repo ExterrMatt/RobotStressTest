@@ -108,21 +108,6 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 }
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 const WORKSHOP_PIECE_SCRIPT_PATH: String = "res://scenes/locations/WorkshopPiece.gd"
-# Fades the placement-hint CanvasGroup. Its buffer is premultiplied alpha, so we
-# scale the premultiplied colour by `fade` and composite with the premultiplied
-# blend mode — the correct single-stage fade. Driving opacity through the group's
-# modulate instead tints the sprite (white when only alpha is scaled, black when
-# all channels are), because modulate is applied per child before compositing.
-const PLACEMENT_HINT_FADE_SHADER: String = """
-shader_type canvas_item;
-render_mode blend_premul_alpha;
-
-uniform float fade : hint_range(0.0, 1.0) = 1.0;
-
-void fragment() {
-	COLOR = texture(TEXTURE, UV) * fade;
-}
-"""
 
 @onready var ingredients_tray: Control = %IngredientsTray
 @onready var craft_bin: WorkshopBin = %CraftBin
@@ -153,8 +138,8 @@ var _shadow_drawer: Control = null
 var _spawn_rng := RandomNumberGenerator.new()
 var _assembly_templates_collected: bool = false
 var _placement_hint_layer: Control = null
-var _placement_hint_group: CanvasGroup = null
-var _placement_hint_material: ShaderMaterial = null
+var _placement_hint_sprite: TextureRect = null
+var _pending_hint_entries: Array = []
 var _placement_hint_elapsed: float = 0.0
 
 
@@ -275,41 +260,72 @@ func _setup_placement_hint_layer() -> void:
 	add_child(_placement_hint_layer)
 
 
-func _get_placement_hint_material() -> ShaderMaterial:
-	if _placement_hint_material != null:
-		return _placement_hint_material
-	var shader := Shader.new()
-	shader.code = PLACEMENT_HINT_FADE_SHADER
-	_placement_hint_material = ShaderMaterial.new()
-	_placement_hint_material.shader = shader
-	return _placement_hint_material
+## Composites all of the current hint's pieces into one flat texture (cap over
+## axle) and displays it as a single TextureRect. Baking to one sprite is what
+## lets the hint fade as a single image: a lone straight-alpha texture dissolves
+## cleanly via modulate.a, with none of the reveal (each piece fading on its own)
+## or the CanvasGroup pitfalls in the GL Compatibility renderer (custom materials
+## render as a white box; modulate tints premultiplied colour white or black).
+func _bake_pending_hints() -> void:
+	if _pending_hint_entries.is_empty():
+		return
 
+	var min_p := Vector2(INF, INF)
+	var max_p := Vector2(-INF, -INF)
+	for e in _pending_hint_entries:
+		var p: Vector2 = e["position"]
+		var s: Vector2 = e["size"]
+		min_p = min_p.min(p)
+		max_p = max_p.max(p + s)
 
-## Every ghost for the current hint lives under a single CanvasGroup. The group
-## flattens the real piece textures into one composited image (cap over axle),
-## and the fade shader on the group dissolves that single sprite — so the hint
-## never exposes the axle pixels that are hidden behind the cap when it is solid.
-func _ensure_hint_group() -> CanvasGroup:
-	if _placement_hint_group != null and is_instance_valid(_placement_hint_group):
-		return _placement_hint_group
-	var group := CanvasGroup.new()
-	group.name = "PlacementHintGroup"
-	group.material = _get_placement_hint_material()
-	_placement_hint_layer.add_child(group)
-	_placement_hint_group = group
-	return group
+	var origin := Vector2(floorf(min_p.x), floorf(min_p.y))
+	var w := int(ceilf(max_p.x - origin.x))
+	var h := int(ceilf(max_p.y - origin.y))
+	if w <= 0 or h <= 0:
+		return
+
+	var canvas := Image.create_empty(w, h, false, Image.FORMAT_RGBA8)
+	for e in _pending_hint_entries:
+		var tex: Texture2D = e["texture"]
+		if tex == null:
+			continue
+		var src: Image = tex.get_image()
+		if src == null:
+			continue
+		if src.is_compressed():
+			src.decompress()
+		if src.get_format() != Image.FORMAT_RGBA8:
+			src.convert(Image.FORMAT_RGBA8)
+		var s: Vector2 = e["size"]
+		var sw := maxi(1, int(roundf(s.x)))
+		var sh := maxi(1, int(roundf(s.y)))
+		if src.get_width() != sw or src.get_height() != sh:
+			src.resize(sw, sh, Image.INTERPOLATE_BILINEAR)
+		var p: Vector2 = e["position"]
+		var dst := Vector2i(int(roundf(p.x - origin.x)), int(roundf(p.y - origin.y)))
+		# blend_rect alpha-composites src over the canvas, so entries added
+		# back-to-front (axle then cap) merge with the cap on top.
+		canvas.blend_rect(src, Rect2i(0, 0, src.get_width(), src.get_height()), dst)
+
+	_placement_hint_sprite = TextureRect.new()
+	_placement_hint_sprite.texture = ImageTexture.create_from_image(canvas)
+	_placement_hint_sprite.size = Vector2(w, h)
+	_placement_hint_sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_placement_hint_layer.add_child(_placement_hint_sprite)
+	_placement_hint_sprite.global_position = origin
+	_pending_hint_entries.clear()
 
 
 func _update_placement_hint_flash(delta: float) -> void:
 	if _placement_hint_layer == null or not _placement_hint_layer.visible:
 		return
-	if _placement_hint_group == null or not is_instance_valid(_placement_hint_group):
+	if _placement_hint_sprite == null or not is_instance_valid(_placement_hint_sprite):
 		return
 	_placement_hint_elapsed += delta
 	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
-	# Fade via the group's shader uniform, not its modulate — see
-	# PLACEMENT_HINT_FADE_SHADER for why modulate tints the sprite.
-	_get_placement_hint_material().set_shader_parameter("fade", lerpf(0.2, 0.85, wave))
+	var color := _placement_hint_sprite.modulate
+	color.a = lerpf(0.2, 0.85, wave)
+	_placement_hint_sprite.modulate = color
 
 
 func _clear_placement_hints() -> void:
@@ -317,7 +333,8 @@ func _clear_placement_hints() -> void:
 		return
 	for child in _placement_hint_layer.get_children():
 		child.queue_free()
-	_placement_hint_group = null
+	_placement_hint_sprite = null
+	_pending_hint_entries.clear()
 	_placement_hint_layer.visible = false
 	_placement_hint_elapsed = 0.0
 
@@ -357,30 +374,28 @@ func _show_segment_placement_hints(segments: Array) -> void:
 func _show_placement_hint_layer() -> void:
 	if _placement_hint_layer == null:
 		return
-	var has_hints: bool = _placement_hint_group != null \
-		and is_instance_valid(_placement_hint_group) \
-		and _placement_hint_group.get_child_count() > 0
+	_bake_pending_hints()
+	var has_hints: bool = _placement_hint_sprite != null and is_instance_valid(_placement_hint_sprite)
 	_placement_hint_layer.visible = has_hints
 	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	_get_placement_hint_material().set_shader_parameter("fade", 0.85)
+	if has_hints:
+		var color := _placement_hint_sprite.modulate
+		color.a = 0.85
+		_placement_hint_sprite.modulate = color
 	_placement_hint_elapsed = 0.0
 
 
 func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
 	if _placement_hint_layer == null or piece == null or piece.texture == null:
 		return
-	# Draw the real sprite art (no shader). The CanvasGroup bakes the pieces
-	# into one composited image with the cap over the axle, so fading the group
-	# shows the combined sprite and never reveals the axle pixels hidden behind
-	# the cap. Ghosts are added back-to-front by the caller, so later children
-	# (the cap) draw on top.
-	var group := _ensure_hint_group()
-	var ghost := TextureRect.new()
-	ghost.texture = piece.texture
-	ghost.size = piece.texture_draw_size()
-	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	group.add_child(ghost)
-	ghost.global_position = target_texture_global_position
+	# Queue the piece's real art for baking. Entries are added back-to-front by
+	# the caller, so when they are composited into one texture the cap lands on
+	# top of the axle and the fade never reveals the pixels hidden behind it.
+	_pending_hint_entries.append({
+		"texture": piece.texture,
+		"position": target_texture_global_position,
+		"size": piece.texture_draw_size(),
+	})
 
 
 func _piece_texture_draw_position(piece: WorkshopPiece) -> Vector2:
