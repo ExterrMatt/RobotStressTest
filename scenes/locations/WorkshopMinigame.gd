@@ -108,6 +108,21 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 }
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 const WORKSHOP_PIECE_SCRIPT_PATH: String = "res://scenes/locations/WorkshopPiece.gd"
+# Fades the placement-hint CanvasGroup. Its buffer is premultiplied alpha, so we
+# scale the premultiplied colour by `fade` and composite with the premultiplied
+# blend mode — the correct single-stage fade. Driving opacity through the group's
+# modulate instead tints the sprite (white when only alpha is scaled, black when
+# all channels are), because modulate is applied per child before compositing.
+const PLACEMENT_HINT_FADE_SHADER: String = """
+shader_type canvas_item;
+render_mode blend_premul_alpha;
+
+uniform float fade : hint_range(0.0, 1.0) = 1.0;
+
+void fragment() {
+	COLOR = texture(TEXTURE, UV) * fade;
+}
+"""
 
 @onready var ingredients_tray: Control = %IngredientsTray
 @onready var craft_bin: WorkshopBin = %CraftBin
@@ -139,6 +154,7 @@ var _spawn_rng := RandomNumberGenerator.new()
 var _assembly_templates_collected: bool = false
 var _placement_hint_layer: Control = null
 var _placement_hint_group: CanvasGroup = null
+var _placement_hint_material: ShaderMaterial = null
 var _placement_hint_elapsed: float = 0.0
 
 
@@ -259,15 +275,26 @@ func _setup_placement_hint_layer() -> void:
 	add_child(_placement_hint_layer)
 
 
+func _get_placement_hint_material() -> ShaderMaterial:
+	if _placement_hint_material != null:
+		return _placement_hint_material
+	var shader := Shader.new()
+	shader.code = PLACEMENT_HINT_FADE_SHADER
+	_placement_hint_material = ShaderMaterial.new()
+	_placement_hint_material.shader = shader
+	return _placement_hint_material
+
+
 ## Every ghost for the current hint lives under a single CanvasGroup. The group
 ## flattens the real piece textures into one composited image (cap over axle),
-## so the hint fades as a single sprite via the group's modulate and never
-## exposes the axle pixels that are hidden behind the cap when it is solid.
+## and the fade shader on the group dissolves that single sprite — so the hint
+## never exposes the axle pixels that are hidden behind the cap when it is solid.
 func _ensure_hint_group() -> CanvasGroup:
 	if _placement_hint_group != null and is_instance_valid(_placement_hint_group):
 		return _placement_hint_group
 	var group := CanvasGroup.new()
 	group.name = "PlacementHintGroup"
+	group.material = _get_placement_hint_material()
 	_placement_hint_layer.add_child(group)
 	_placement_hint_group = group
 	return group
@@ -280,14 +307,9 @@ func _update_placement_hint_flash(delta: float) -> void:
 		return
 	_placement_hint_elapsed += delta
 	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
-	# The opacity must be driven on the CanvasGroup itself (an ancestor's
-	# modulate does not reach a CanvasGroup's composited output). A CanvasGroup's
-	# buffer is premultiplied, so fading only the alpha channel leaves the rgb at
-	# full strength and the sprite blends additively — a white/washed-out tint at
-	# low opacity. Scale all four channels together so rgb and alpha drop in step
-	# and it blends as true transparency.
-	var v := lerpf(0.2, 0.85, wave)
-	_placement_hint_group.modulate = Color(v, v, v, v)
+	# Fade via the group's shader uniform, not its modulate — see
+	# PLACEMENT_HINT_FADE_SHADER for why modulate tints the sprite.
+	_get_placement_hint_material().set_shader_parameter("fade", lerpf(0.2, 0.85, wave))
 
 
 func _clear_placement_hints() -> void:
@@ -340,9 +362,7 @@ func _show_placement_hint_layer() -> void:
 		and _placement_hint_group.get_child_count() > 0
 	_placement_hint_layer.visible = has_hints
 	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 1.0)
-	if has_hints:
-		# Premultiplied buffer: scale rgb and alpha together (see the flash update).
-		_placement_hint_group.modulate = Color(0.85, 0.85, 0.85, 0.85)
+	_get_placement_hint_material().set_shader_parameter("fade", 0.85)
 	_placement_hint_elapsed = 0.0
 
 
