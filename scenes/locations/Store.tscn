@@ -95,6 +95,7 @@ id = &"screwdriver"
 display_name = "Screwdriver"
 cost = 80
 is_tool = true
+max_quantity = 2
 
 [sub_resource type="Resource" id="Item_WeldingGun"]
 script = ExtResource("2")

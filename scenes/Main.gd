@@ -925,6 +925,7 @@ func _debug_clear_inventory() -> void:
 
 	GameState.set_all_robot_parts(0)
 	GameState.owned_tools = ["mouth", "hand"]
+	GameState.tool_counts.clear()
 	GameState.purchased_today.clear()
 	GameState.purchased_today_changed.emit(GameState.purchased_today)
 	_log("[color=#ffcc88]Debug: inventory cleared[/color]")

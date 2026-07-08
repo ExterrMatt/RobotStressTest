@@ -55,6 +55,10 @@ var _repair_sound_loop_active: bool = false
 var _repair_sound_segment_index: int = 0
 var _repair_sound_segment_elapsed: float = 0.0
 var _repair_sound_segment_playing: bool = false
+## Optional gate consulted before a repair may begin. Set by the stress test so
+## only one screw is driven at a time (or one per side with two screwdrivers).
+## Receives the screw's side ("left"/"right"/"") and returns whether to allow it.
+var _repair_gate: Callable = Callable()
 
 
 func _ready() -> void:
@@ -98,6 +102,8 @@ func _input(event: InputEvent) -> void:
 
 	var clicked_screw_index := _find_clicked_loose_screw(mouse_event.global_position)
 	if clicked_screw_index < 0:
+		return
+	if not _can_begin_repair(clicked_screw_index):
 		return
 
 	_start_repair_animation(clicked_screw_index)
@@ -174,6 +180,51 @@ func set_repair_animation_duration_multiplier(value: float) -> void:
 
 func is_repairing() -> bool:
 	return _repairing
+
+
+## Registers the permission gate consulted before a repair starts. Pass an
+## invalid Callable to clear it (repairs are then always permitted).
+func set_repair_gate(gate: Callable) -> void:
+	_repair_gate = gate
+
+
+func _can_begin_repair(index: int) -> bool:
+	if not _repair_gate.is_valid():
+		return true
+	return bool(_repair_gate.call(side_for_screw(index)))
+
+
+## The body side ("left"/"right"/"") a screw belongs to. Head, torso and chest
+## screws carry the side in their own name; arm and leg repairs use generic
+## screw names, so those fall back to this controller's node name.
+func side_for_screw(index: int) -> String:
+	var screw_name := ""
+	if index >= 0 and index < screw_nodes.size():
+		screw_name = String(screw_nodes[index])
+	return _side_from_text(screw_name, String(name))
+
+
+## The side of the screw currently being driven, or "" when idle.
+func repairing_side() -> String:
+	if not _repairing:
+		return ""
+	return side_for_screw(_repairing_screw_index)
+
+
+func _side_from_text(primary: String, fallback: String) -> String:
+	var side := _side_in(primary)
+	if side != "":
+		return side
+	return _side_in(fallback)
+
+
+func _side_in(text: String) -> String:
+	var lower := text.to_lower()
+	if lower.contains("left"):
+		return "left"
+	if lower.contains("right"):
+		return "right"
+	return ""
 
 
 func set_completion_enabled(value: bool) -> void:

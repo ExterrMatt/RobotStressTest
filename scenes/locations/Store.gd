@@ -370,7 +370,7 @@ func _is_lottery_item_available(item: StoreItemData) -> bool:
 	var item_id := String(item.id)
 	if item_id == "":
 		return false
-	return not (item.is_tool and GameState.has_tool(item_id))
+	return not (item.is_tool and _tool_at_max_quantity(item))
 
 
 func _has_available_lottery_items() -> bool:
@@ -480,7 +480,7 @@ func _refresh_slot(item_id: String) -> void:
 		return
 
 	var bought: bool = GameState.has_purchased_today(item_id)
-	var already_owned_tool: bool = item.is_tool and GameState.has_tool(item_id)
+	var already_owned_tool: bool = item.is_tool and _tool_at_max_quantity(item)
 	var affordable: bool = GameState.can_afford(item.cost)
 	var clickable: bool = (not bought) and (not already_owned_tool) and affordable
 
@@ -493,6 +493,16 @@ func _refresh_slot(item_id: String) -> void:
 func _refresh_all_slots() -> void:
 	for item_id in _slot_by_id:
 		_refresh_slot(item_id)
+
+
+## True when the player already owns as many of this tool as it allows, so it
+## should stop being offered. Single-unlock tools cap at one; stackable tools
+## (e.g. the screwdriver) cap at their max_quantity.
+func _tool_at_max_quantity(item: StoreItemData) -> bool:
+	if item == null or not item.is_tool:
+		return false
+	var cap: int = maxi(1, item.max_quantity)
+	return GameState.get_tool_count(String(item.id)) >= cap
 
 
 func _find_item(item_id: String) -> StoreItemData:
@@ -514,7 +524,7 @@ func _try_purchase(item: StoreItemData) -> void:
 		_collect_intro_pickup_item(item)
 		return
 
-	if item.is_tool and GameState.has_tool(item_id):
+	if item.is_tool and _tool_at_max_quantity(item):
 		return
 	if GameState.has_purchased_today(item_id):
 		return
