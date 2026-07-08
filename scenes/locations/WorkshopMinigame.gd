@@ -280,12 +280,14 @@ func _update_placement_hint_flash(delta: float) -> void:
 		return
 	_placement_hint_elapsed += delta
 	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
-	# The opacity must be driven on the CanvasGroup itself: an ancestor's
-	# modulate does not reach a CanvasGroup's composited output, so animating
-	# the layer's modulate left the flattened image fully opaque.
-	var color := _placement_hint_group.modulate
-	color.a = lerpf(0.2, 0.85, wave)
-	_placement_hint_group.modulate = color
+	# The opacity must be driven on the CanvasGroup itself (an ancestor's
+	# modulate does not reach a CanvasGroup's composited output). A CanvasGroup's
+	# buffer is premultiplied, so fading only the alpha channel leaves the rgb at
+	# full strength and the sprite blends additively — a white/washed-out tint at
+	# low opacity. Scale all four channels together so rgb and alpha drop in step
+	# and it blends as true transparency.
+	var v := lerpf(0.2, 0.85, wave)
+	_placement_hint_group.modulate = Color(v, v, v, v)
 
 
 func _clear_placement_hints() -> void:
@@ -339,7 +341,8 @@ func _show_placement_hint_layer() -> void:
 	_placement_hint_layer.visible = has_hints
 	_placement_hint_layer.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	if has_hints:
-		_placement_hint_group.modulate = Color(1.0, 1.0, 1.0, 0.85)
+		# Premultiplied buffer: scale rgb and alpha together (see the flash update).
+		_placement_hint_group.modulate = Color(0.85, 0.85, 0.85, 0.85)
 	_placement_hint_elapsed = 0.0
 
 
