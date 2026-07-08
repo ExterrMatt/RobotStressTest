@@ -1708,8 +1708,8 @@ func _on_screw_loosened(index: int, repair: Node) -> void:
 
 
 func _on_screw_repair_started(index: int, repair: Node) -> void:
-	# The robot picks up the screwdriver with the matching hand, so hide it for
-	# the duration of the screwdriver animation.
+	# The player pulls the matching hand off the robot to hold the screwdriver,
+	# so hide that hand for the duration of the screwdriver animation.
 	_set_repair_hand_hidden_for_screw(repair, index, true)
 	var key := _screw_event_key(repair, index)
 	if not _screw_active_events.has(key):
