@@ -6,6 +6,13 @@ signal ended()
 
 @export var forced_part_id: String = ""
 
+## Fine-tune the on-screen placement of the procedurally-built head and arm
+## assemblies. These are created at runtime (unlike the leg, which is authored
+## in the scene), so this is the only way to nudge them in the editor. The arm
+## defaults to having its visible art centred in the assembly area.
+@export var head_assembly_offset: Vector2 = Vector2.ZERO
+@export var arm_assembly_offset: Vector2 = Vector2.ZERO
+
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
 		"display_name": "Head",
@@ -1054,7 +1061,7 @@ func _setup_head_assembly() -> void:
 	_head_assembly = Control.new()
 	_head_assembly.name = "AssemblyHead"
 	_head_assembly.size = HEAD_ASSEMBLY_SIZE
-	_head_assembly.position = (assembly.size - HEAD_ASSEMBLY_SIZE) * 0.5
+	_head_assembly.position = (assembly.size - HEAD_ASSEMBLY_SIZE) * 0.5 + head_assembly_offset
 	_head_assembly.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_head_assembly.visible = false
 
@@ -1105,9 +1112,11 @@ func _setup_arm_assembly() -> void:
 	_arm_assembly = Control.new()
 	_arm_assembly.name = "AssemblyArm"
 	_arm_assembly.size = ARM_ASSEMBLY_SIZE
-	_arm_assembly.position = (assembly.size - ARM_ASSEMBLY_SIZE) * 0.5
 	_arm_assembly.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_arm_assembly.visible = false
+
+	var content_bounds: Rect2 = Rect2()
+	var found_any: bool = false
 
 	for segment_id in ARM_SEGMENT_IDS:
 		var tex: Texture2D = _load_arm_layer(segment_id)
@@ -1116,6 +1125,12 @@ func _setup_arm_assembly() -> void:
 			continue
 
 		var used_rect: Rect2 = _used_rect_for_texture(tex)
+		if used_rect.size.x > 0.0 and used_rect.size.y > 0.0:
+			if not found_any:
+				content_bounds = used_rect
+				found_any = true
+			else:
+				content_bounds = content_bounds.merge(used_rect)
 
 		var slot := WorkshopAssemblySlot.new()
 		slot.name = "%sSlot" % String(segment_id).capitalize().replace(" ", "")
@@ -1139,6 +1154,13 @@ func _setup_arm_assembly() -> void:
 				}
 			]
 		}
+
+	if not found_any:
+		content_bounds = Rect2(Vector2.ZERO, ARM_ASSEMBLY_SIZE)
+	# Centre the arm's visible art (not the whole 350x350 canvas, whose content
+	# sits off-centre) in the assembly area, then apply the editor nudge.
+	var content_center: Vector2 = content_bounds.position + content_bounds.size * 0.5
+	_arm_assembly.position = assembly.size * 0.5 - content_center + arm_assembly_offset
 
 	assembly.add_child.call_deferred(_arm_assembly)
 
