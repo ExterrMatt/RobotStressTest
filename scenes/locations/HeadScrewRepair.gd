@@ -13,6 +13,9 @@ const SCREW_LOOSEN_SOUND_PATHS: Array[String] = [
 ]
 const SCREW_REPAIR_SOUND_PATH: String = "res://assets/sounds/screws/screw_in_1.mp3"
 const SCREW_LOOSEN_PITCH_VARIATION: float = 0.15
+## Fallback path for the bare-hand screwing animation, used when the player owns
+## no screwdriver. Loaded only if hand_screw_texture is left unset in the scene.
+const HAND_SCREW_TEXTURE_PATH: String = "res://assets/textures/icons/hand_horizontal_screwing.png"
 
 @export var enabled: bool = true
 @export var repair_animation_seconds: float = 1.35
@@ -26,6 +29,17 @@ const SCREW_LOOSEN_PITCH_VARIATION: float = 0.15
 @export var screwdriver_sprite_path: NodePath = ^"Screwdriver"
 @export var screwdriver_frame_size: Vector2i = Vector2i(48, 24)
 @export var screwdriver_frame_count: int = 2
+
+@export_group("Manual Screwing")
+## Animation shown when the player owns no screwdriver and drives the screw by
+## hand. Points left like the screwdriver, so the same flipped_screwdriver_indices
+## apply. If left unset, HAND_SCREW_TEXTURE_PATH is loaded when it exists.
+@export var hand_screw_texture: Texture2D
+## The hand strip is twice as tall as the screwdriver strip and has four frames.
+@export var hand_screw_frame_size: Vector2i = Vector2i(48, 48)
+@export var hand_screw_frame_count: int = 4
+## Manual screwing takes this much longer than using a screwdriver.
+@export var manual_repair_duration_multiplier: float = 2.0
 
 @export_group("Editor Preview")
 @export_range(-1, 16, 1) var editor_preview_screw_index: int = -1:
@@ -55,6 +69,14 @@ var _repair_sound_loop_active: bool = false
 var _repair_sound_segment_index: int = 0
 var _repair_sound_segment_elapsed: float = 0.0
 var _repair_sound_segment_playing: bool = false
+## When true the player has no screwdriver and screws by hand: a taller,
+## four-frame animation that takes manual_repair_duration_multiplier times as
+## long. Set by the stress test from the player's screwdriver count.
+var _manual_screwing: bool = false
+## The screwdriver sprite's authored texture, restored when not screwing by hand.
+var _screwdriver_default_texture: Texture2D = null
+## Resolved bare-hand texture (export or fallback path), or null when missing.
+var _hand_screw_texture_resolved: Texture2D = null
 ## Optional gate consulted before a repair may begin. Set by the stress test so
 ## only one screw is driven at a time (or one per side with two screwdrivers).
 ## Receives the screw's side ("left"/"right"/"") and returns whether to allow it.
@@ -231,6 +253,32 @@ func set_completion_enabled(value: bool) -> void:
 	_completion_enabled = value
 
 
+## Switches between screwdriver and bare-hand screwing. Ignored while a repair is
+## already in progress so the active animation isn't swapped mid-drive.
+func set_manual_screwing(enabled: bool) -> void:
+	if _repairing:
+		return
+	_manual_screwing = enabled
+
+
+func _uses_hand_visuals() -> bool:
+	return _manual_screwing and _hand_screw_texture_resolved != null
+
+
+func _active_frame_size() -> Vector2i:
+	return hand_screw_frame_size if _uses_hand_visuals() else screwdriver_frame_size
+
+
+func _active_frame_count() -> int:
+	return hand_screw_frame_count if _uses_hand_visuals() else screwdriver_frame_count
+
+
+func _apply_active_screw_texture(screwdriver: Sprite2D) -> void:
+	if screwdriver == null:
+		return
+	screwdriver.texture = _hand_screw_texture_resolved if _uses_hand_visuals() else _screwdriver_default_texture
+
+
 func set_screw_available(index: int, value: bool) -> void:
 	if value:
 		_unavailable_screw_indices.erase(index)
@@ -278,6 +326,7 @@ func _start_repair_animation(screw_index: int) -> void:
 	repair_started.emit(screw_index)
 	var screwdriver := _get_screwdriver()
 	if screwdriver != null:
+		_apply_active_screw_texture(screwdriver)
 		screwdriver.position = _screwdriver_position_for_index(screw_index)
 		_apply_screwdriver_orientation(screw_index)
 		screwdriver.visible = true
@@ -286,7 +335,7 @@ func _start_repair_animation(screw_index: int) -> void:
 
 func _update_repair_animation(delta: float) -> void:
 	_repair_elapsed += delta
-	var frame := int(floor(_repair_elapsed * maxf(0.1, repair_animation_fps))) % maxi(1, screwdriver_frame_count)
+	var frame := int(floor(_repair_elapsed * maxf(0.1, repair_animation_fps))) % maxi(1, _active_frame_count())
 	_set_screwdriver_frame(frame)
 
 	if _repair_elapsed < _current_repair_animation_seconds():
@@ -320,28 +369,42 @@ func _find_clicked_loose_screw(global_position: Vector2) -> int:
 
 
 func _current_repair_animation_seconds() -> float:
-	return repair_animation_seconds * _repair_animation_duration_multiplier
+	var manual_multiplier := maxf(0.1, manual_repair_duration_multiplier) if _manual_screwing else 1.0
+	return repair_animation_seconds * _repair_animation_duration_multiplier * manual_multiplier
 
 
 func _configure_screwdriver() -> void:
 	var screwdriver := _get_screwdriver()
 	if screwdriver == null:
 		return
+	if _screwdriver_default_texture == null:
+		_screwdriver_default_texture = screwdriver.texture
+	if _hand_screw_texture_resolved == null:
+		_hand_screw_texture_resolved = _resolve_hand_screw_texture()
 	screwdriver.centered = false
 	screwdriver.region_enabled = true
 	_set_screwdriver_frame(0)
 	screwdriver.visible = false
 
 
+func _resolve_hand_screw_texture() -> Texture2D:
+	if hand_screw_texture != null:
+		return hand_screw_texture
+	if ResourceLoader.exists(HAND_SCREW_TEXTURE_PATH):
+		return load(HAND_SCREW_TEXTURE_PATH) as Texture2D
+	return null
+
+
 func _set_screwdriver_frame(frame: int) -> void:
 	var screwdriver := _get_screwdriver()
 	if screwdriver == null:
 		return
+	var active_frame_size := _active_frame_size()
 	var frame_size := Vector2(
-		float(maxi(1, screwdriver_frame_size.x)),
-		float(maxi(1, screwdriver_frame_size.y))
+		float(maxi(1, active_frame_size.x)),
+		float(maxi(1, active_frame_size.y))
 	)
-	var frame_count := maxi(1, screwdriver_frame_count)
+	var frame_count := maxi(1, _active_frame_count())
 	var clamped_frame := posmod(frame, frame_count)
 	screwdriver.region_rect = Rect2(Vector2(0.0, float(clamped_frame) * frame_size.y), frame_size)
 	var pivot_x := -frame_size.x if screwdriver.flip_h else 0.0

@@ -1645,9 +1645,12 @@ func _collect_screw_repair_controllers(node: Node, out: Array[Node]) -> void:
 
 
 func _connect_screw_summary_tracking() -> void:
+	var manual_screwing := _screwdriver_count() <= 0
 	for repair in _screw_repair_controllers():
 		if repair.has_method("set_repair_gate"):
 			repair.call("set_repair_gate", Callable(self, "_can_begin_screw_repair"))
+		if repair.has_method("set_manual_screwing"):
+			repair.call("set_manual_screwing", manual_screwing)
 		_connect_screw_signal(repair, "screw_loosened", "_on_screw_loosened")
 		_connect_screw_signal(repair, "repair_started", "_on_screw_repair_started")
 		_connect_screw_signal(repair, "repair_interrupted", "_on_screw_repair_interrupted")
