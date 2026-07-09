@@ -322,7 +322,12 @@ func _show_question_choices() -> void:
 
 	var choices: Array = _current_question["choices"]
 	var correct_index: int = _current_question["correct"]
-	for i in choices.size():
+	# Randomize the on-screen order so the correct answer isn't always in the
+	# same slot. Each button stays bound to its ORIGINAL choice index, so the
+	# correctness check is unaffected by where it lands.
+	var order: Array = range(choices.size())
+	order.shuffle()
+	for i in order:
 		var btn := _build_choice_button(str(choices[i]))
 		btn.pressed.connect(_on_answer_pressed.bind(i, correct_index))
 		choice_grid.add_child(btn)
