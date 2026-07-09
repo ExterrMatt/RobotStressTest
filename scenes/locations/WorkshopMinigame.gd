@@ -409,6 +409,14 @@ func _debug_mode_enabled() -> bool:
 	return settings != null and settings.debug_mode_enabled
 
 
+## Debug (number-4 give-items): rebuild the ingredients tray from the current
+## inventory so newly granted items become available without reloading the scene.
+## Only ever called from the key press, never polled.
+func debug_recalibrate() -> void:
+	_populate_ingredients_tray()
+	_refresh_craft_button()
+
+
 func _enter_held() -> bool:
 	return Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER)
 

@@ -1628,6 +1628,16 @@ func _current_electricity_decay_per_second() -> float:
 	return electricity_decay_percent_per_second * multiplier
 
 
+## Debug (number-4 give-items): re-derive which limbs expose screws now that new
+## parts may have been granted, and refresh the screwdriver/manual repair mode.
+## The robot's limb visuals already update live via robot_parts_changed; the
+## screw wiring is intentionally only recomputed on this explicit trigger, never
+## polled, so there is no per-frame cost.
+func debug_recalibrate() -> void:
+	_apply_body_part_screw_availability()
+	_connect_screw_summary_tracking()
+
+
 func _apply_body_part_screw_availability() -> void:
 	var arm_count := _robot_part_count("arm")
 	_set_screw_repair_available(left_arm_screw_repair, arm_count >= 1)

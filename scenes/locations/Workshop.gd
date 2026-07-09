@@ -297,6 +297,14 @@ func _on_end_button_pressed() -> void:
 	finish(0, 0, 0, {}, false)
 
 
+## Debug (number-4 give-items): forward the recalibration to the live minigame
+## so its ingredient tray rebuilds and shows the newly granted items without a
+## scene reload. No-op before the minigame exists.
+func debug_recalibrate() -> void:
+	if _minigame != null and is_instance_valid(_minigame) and _minigame.has_method("debug_recalibrate"):
+		_minigame.call("debug_recalibrate")
+
+
 func _on_minigame_collected(part_id: String) -> void:
 	var ingredients: Dictionary = {part_id: 1}
 	finish(

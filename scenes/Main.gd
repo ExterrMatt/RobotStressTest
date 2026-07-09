@@ -631,9 +631,22 @@ func _handle_debug_number_shortcut(key_event: InputEventKey) -> bool:
 			if not key_event.shift_pressed:
 				_debug_give_all_items()
 			_debug_give_money()
+			_debug_recalibrate_current_location()
 		5:
 			_debug_clear_inventory()
 	return true
+
+
+## Debug: after the number-4 give-items shortcut, let the active location
+## re-derive any state it built from the inventory/limbs at load — the Workshop
+## ingredient tray, the Stress Test screw availability, etc. The key press is the
+## sole trigger; locations do NOT poll for changes, so nothing recalculates every
+## frame.
+func _debug_recalibrate_current_location() -> void:
+	if _current_location_node != null \
+			and is_instance_valid(_current_location_node) \
+			and _current_location_node.has_method("debug_recalibrate"):
+		_current_location_node.call("debug_recalibrate")
 
 
 func _debug_number_for_keycode(keycode: Key) -> int:
