@@ -1609,13 +1609,7 @@ func _restore_fullscreen_layout_for_shrink() -> void:
 
 
 func _selection_narration_text() -> String:
-	match GameState.phase:
-		DayCycle.Phase.EVENING:
-			return "Evening settles in. Where will you go?"
-		DayCycle.Phase.NIGHT:
-			return "Night falls. Where will you go?"
-		_:
-			return "Where will you go?"
+	return "Where will you go?"
 
 
 func _add_choice_entry(btn: Button, loc: LocationData) -> void:
