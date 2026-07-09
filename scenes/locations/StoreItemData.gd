@@ -27,9 +27,15 @@ class_name StoreItemData
 ## is_tool is true (tools are a one-time unlock, not a stacking quantity).
 @export var amount: int = 1
 
-## If true, treated as a one-time tool unlock (added to
-## GameState.owned_tools) instead of stacking into ingredients.
+## If true, treated as a tool unlock (added to GameState.owned_tools) instead
+## of stacking into ingredients.
 @export var is_tool: bool = false
+
+## Maximum number of this tool the player may own. Most tools are one-time
+## unlocks (1). Stackable tools such as the screwdriver set this higher so the
+## Store keeps offering it until the player owns the cap. Ignored when
+## is_tool is false. Values below 1 are treated as 1.
+@export var max_quantity: int = 1
 
 ## The item sprite shown on the table. The shadow path defaults to
 ## "<basename>_shadow.<ext>" alongside this texture, unless shadow_texture

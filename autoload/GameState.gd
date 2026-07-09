@@ -148,6 +148,13 @@ var skills: Array[String] = []
 # --- tools owned (default tools: mouth + hand are always available) ---
 var owned_tools: Array[String] = ["mouth", "hand"]
 
+# --- stackable tool quantities ---
+## How many of each tool the player owns. Most tools are one-time unlocks and
+## never appear here (has_tool covers them). Stackable tools such as the
+## screwdriver track a count so the stress test can allow one per hand once the
+## player owns two or more.
+var tool_counts: Dictionary = {}
+
 # --- daily purchase tracking (resets at day rollover) ---
 ## Item IDs the player has bought from the Store today. Used to enforce
 ## "one of each item per day". Cleared by DayCycle.end_day().
@@ -190,6 +197,7 @@ func reset_for_new_game() -> void:
 		ingredients[id] = 0
 	skills.clear()
 	owned_tools = ["mouth", "hand"]
+	tool_counts.clear()
 	purchased_today.clear()
 
 	intro_active = true
@@ -322,10 +330,20 @@ func has_tool(tool_id: String) -> bool:
 	return tool_id in owned_tools
 
 
-func unlock_tool(tool_id: String) -> void:
+func unlock_tool(tool_id: String, amount: int = 1) -> void:
 	tool_id = _normalized_tool_id(tool_id)
 	if tool_id not in owned_tools:
 		owned_tools.append(tool_id)
+	tool_counts[tool_id] = int(tool_counts.get(tool_id, 0)) + maxi(1, amount)
+
+
+## How many of the given tool the player owns. Falls back to 1 for tools that
+## are owned but predate the count ledger (e.g. loaded from an older save).
+func get_tool_count(tool_id: String) -> int:
+	tool_id = _normalized_tool_id(tool_id)
+	if tool_counts.has(tool_id):
+		return maxi(0, int(tool_counts[tool_id]))
+	return 1 if tool_id in owned_tools else 0
 
 
 func _normalized_tool_id(tool_id: String) -> String:
@@ -339,6 +357,19 @@ func _normalize_owned_tools() -> void:
 		if normalized_id not in normalized:
 			normalized.append(normalized_id)
 	owned_tools = normalized
+
+
+## Rebuilds the tool-count ledger from a loaded dictionary, applying the same
+## legacy id remapping used for owned_tools so counts survive renames.
+func _normalized_tool_counts(loaded: Dictionary) -> Dictionary:
+	var normalized: Dictionary = {}
+	for tool_id in loaded:
+		var normalized_id := _normalized_tool_id(String(tool_id))
+		var count := maxi(0, int(loaded[tool_id]))
+		if count <= 0:
+			continue
+		normalized[normalized_id] = int(normalized.get(normalized_id, 0)) + count
+	return normalized
 
 
 # --- daily purchases ---
@@ -430,6 +461,7 @@ func to_dict() -> Dictionary:
 		"ingredients": ingredients.duplicate(),
 		"skills": skills.duplicate(),
 		"owned_tools": owned_tools.duplicate(),
+		"tool_counts": tool_counts.duplicate(),
 		"purchased_today": purchased_today.duplicate(),
 		"player_name": player_name,
 		"intro_active": intro_active,
@@ -461,6 +493,7 @@ func from_dict(data: Dictionary) -> void:
 	skills.assign(data.get("skills", []))
 	owned_tools.assign(data.get("owned_tools", ["mouth", "hand"]))
 	_normalize_owned_tools()
+	tool_counts = _normalized_tool_counts(data.get("tool_counts", {}))
 	if had_legacy_sneaky_shoes:
 		unlock_tool("sneaky_shoes")
 	purchased_today.assign(data.get("purchased_today", []))

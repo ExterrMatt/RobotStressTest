@@ -90,6 +90,23 @@ const UNDERGRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
 ]
 
+## The player's own hands, gripping the robot's raised legs during the pelvis
+## animation. These are the human hands seen on-screen (both grip styles, in
+## the intro and loop layers), grouped by side so the matching one can be
+## hidden while that hand is busy driving a screw.
+const LEFT_GRIP_HAND_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionIntro/LeftHandUndergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandUndergrip",
+]
+const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionIntro/RightHandUndergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
+]
+
 @export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox"]:
 	set(value):
 		hover_box_paths = value
@@ -126,6 +143,9 @@ var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
 var _wood_creak_audio_player: AudioStreamPlayer = null
 var _hand_rub_audio_player: AudioStreamPlayer = null
+## Sides ("left"/"right") whose player hand is currently hidden because that
+## hand is holding the screwdriver on that side during a stress-test repair.
+var _repair_hidden_hand_sides: Dictionary = {}
 
 
 func _ready() -> void:
@@ -236,6 +256,25 @@ func toggle_pelvis_pose() -> void:
 		_toggle_box_effect(box)
 
 
+## Hides or restores the player's hand on the given side while a screw on that
+## side is being driven. The player pulls that hand off the robot to hold the
+## screwdriver, so the gripping hand disappears for the length of the
+## screwdriver animation. Only has a visible effect while the pelvis animation
+## is showing those hands; otherwise it is a harmless no-op.
+func set_repair_hand_hidden(side: String, hidden: bool) -> void:
+	var key := side.to_lower()
+	if key != "left" and key != "right":
+		return
+	if bool(_repair_hidden_hand_sides.get(key, false)) == hidden:
+		return
+	if hidden:
+		_repair_hidden_hand_sides[key] = true
+	else:
+		_repair_hidden_hand_sides.erase(key)
+	if not Engine.is_editor_hint():
+		_apply_visibility_state()
+
+
 func set_head_interaction_enabled(value: bool) -> void:
 	_interaction_enabled = value
 	for box in _hover_boxes:
@@ -255,6 +294,7 @@ func reset_interactions_to_default() -> void:
 	_animation_phase = ANIMATION_PHASE_NONE
 	_animation_playing = false
 	_animation_elapsed = 0.0
+	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
 			continue
@@ -591,6 +631,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_animation_parent_visibility(resolved)
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
+	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_pelvis_torso_crunch_animation_slot(resolved)
 	_apply_resolved_visibility(resolved)
 
@@ -656,6 +697,13 @@ func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 	var leg_count := _robot_part_count("leg")
 	_apply_paths_available(resolved, LEFT_LEG_PART_PATHS, leg_count >= 1)
 	_apply_paths_available(resolved, RIGHT_LEG_PART_PATHS, leg_count >= 2)
+
+
+func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
+	if bool(_repair_hidden_hand_sides.get("left", false)):
+		_apply_paths_available(resolved, LEFT_GRIP_HAND_PATHS, false)
+	if bool(_repair_hidden_hand_sides.get("right", false)):
+		_apply_paths_available(resolved, RIGHT_GRIP_HAND_PATHS, false)
 
 
 func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], available: bool) -> void:

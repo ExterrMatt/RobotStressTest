@@ -142,6 +142,15 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export_range(0.0, 1.0, 0.01) var screw_completion_target_ratio: float = 0.8
 @export var screw_completion_penalty_step_percent: float = 10.0
 
+@export_group("Manual Screwing")
+## Foundational nudge for the bare-hand screwing animation, in base scene
+## pixels, authored against the left side. Applied on top of the automatic
+## centering for every screw on every limb, so a constant misalignment can be
+## corrected once here. Positive x moves it right, positive y moves it down.
+## The right side's animation is mirrored, so its horizontal component is
+## negated automatically to stay aligned.
+@export var hand_screw_animation_offset: Vector2 = Vector2.ZERO
+
 @export_group("Robot Position")
 @export var head_only_drop_px: float = 57.0
 
@@ -1645,11 +1654,44 @@ func _collect_screw_repair_controllers(node: Node, out: Array[Node]) -> void:
 
 
 func _connect_screw_summary_tracking() -> void:
+	var manual_screwing := _screwdriver_count() <= 0
 	for repair in _screw_repair_controllers():
+		if repair.has_method("set_repair_gate"):
+			repair.call("set_repair_gate", Callable(self, "_can_begin_screw_repair"))
+		if repair.has_method("set_manual_screwing"):
+			repair.call("set_manual_screwing", manual_screwing)
+		if repair.has_method("set_hand_screw_offset"):
+			repair.call("set_hand_screw_offset", hand_screw_animation_offset)
 		_connect_screw_signal(repair, "screw_loosened", "_on_screw_loosened")
 		_connect_screw_signal(repair, "repair_started", "_on_screw_repair_started")
 		_connect_screw_signal(repair, "repair_interrupted", "_on_screw_repair_interrupted")
 		_connect_screw_signal(repair, "screw_repaired", "_on_screw_repaired")
+
+
+## Permission gate handed to each screw repair controller. Two hands are free
+## when the player either owns two or more screwdrivers or owns none at all and
+## screws bare-handed, so one left-side and one right-side repair may run at
+## once (but never two on the same side). With exactly one screwdriver a single
+## hand is occupied holding it, so only one screw may be driven at a time.
+func _can_begin_screw_repair(side: String) -> bool:
+	var screwdriver_count := _screwdriver_count()
+	if screwdriver_count >= 2 or screwdriver_count <= 0:
+		return not _is_side_screw_repair_active(side)
+	return not _is_screw_repair_animation_active()
+
+
+func _is_side_screw_repair_active(side: String) -> bool:
+	for repair in _screw_repair_controllers():
+		if repair.has_method("is_side_repairing") and bool(repair.call("is_side_repairing", side)):
+			return true
+	return false
+
+
+func _screwdriver_count() -> int:
+	var state := get_node_or_null("/root/GameState")
+	if state != null and state.has_method("get_tool_count"):
+		return int(state.call("get_tool_count", "screwdriver"))
+	return 1
 
 
 func _connect_screw_signal(repair: Node, signal_name: StringName, method_name: StringName) -> void:
@@ -1676,6 +1718,9 @@ func _on_screw_loosened(index: int, repair: Node) -> void:
 
 
 func _on_screw_repair_started(index: int, repair: Node) -> void:
+	# The player pulls the matching hand off the robot to hold the screwdriver,
+	# so hide that hand for the duration of the screwdriver animation.
+	_set_repair_hand_hidden_for_screw(repair, index, true)
 	var key := _screw_event_key(repair, index)
 	if not _screw_active_events.has(key):
 		return
@@ -1685,6 +1730,7 @@ func _on_screw_repair_started(index: int, repair: Node) -> void:
 
 
 func _on_screw_repair_interrupted(index: int, repair: Node) -> void:
+	_set_repair_hand_hidden_for_screw(repair, index, false)
 	var key := _screw_event_key(repair, index)
 	if not _screw_active_events.has(key):
 		return
@@ -1694,6 +1740,8 @@ func _on_screw_repair_interrupted(index: int, repair: Node) -> void:
 
 
 func _on_screw_repaired(index: int, repair: Node) -> void:
+	# Animation is over: the hand can return to its resting pose.
+	_set_repair_hand_hidden_for_screw(repair, index, false)
 	var key := _screw_event_key(repair, index)
 	if not _screw_active_events.has(key):
 		return
@@ -1709,6 +1757,17 @@ func _on_screw_repaired(index: int, repair: Node) -> void:
 		_screw_late_penalty_total += maxf(0.0, screw_late_penalty_percent)
 	_screw_repaired_count += 1
 	_screw_active_events.erase(key)
+
+
+func _set_repair_hand_hidden_for_screw(repair: Node, index: int, hidden: bool) -> void:
+	if stress_test_robot == null or not stress_test_robot.has_method("set_repair_hand_hidden"):
+		return
+	if repair == null or not repair.has_method("side_for_screw"):
+		return
+	var side := String(repair.call("side_for_screw", index))
+	if side.is_empty():
+		return
+	stress_test_robot.call("set_repair_hand_hidden", side, hidden)
 
 
 func _update_screw_batches() -> void:

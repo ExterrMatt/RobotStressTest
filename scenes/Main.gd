@@ -907,6 +907,8 @@ func _debug_give_all_items() -> void:
 	GameState.set_all_robot_parts(99)
 	GameState.unlock_tool("taser")
 	GameState.unlock_tool("screwdriver")
+	# Grant both screwdrivers so the two-handed (one-per-side) screwing is usable.
+	GameState.tool_counts["screwdriver"] = 2
 	GameState.unlock_tool("welding_gun")
 	GameState.unlock_tool("sneaky_shoes")
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
@@ -925,6 +927,7 @@ func _debug_clear_inventory() -> void:
 
 	GameState.set_all_robot_parts(0)
 	GameState.owned_tools = ["mouth", "hand"]
+	GameState.tool_counts.clear()
 	GameState.purchased_today.clear()
 	GameState.purchased_today_changed.emit(GameState.purchased_today)
 	_log("[color=#ffcc88]Debug: inventory cleared[/color]")
