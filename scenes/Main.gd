@@ -215,6 +215,11 @@ var _default_scene_image: Texture2D
 ## Flipped with the X key. Persists across teachers within a session.
 var _alt_portrait: bool = false
 
+## The Tab debug menu is lifted onto its own very-high canvas layer so it draws
+## above every other overlay, and given a live info/legend block above the log.
+var _debug_overlay_layer: CanvasLayer = null
+var _debug_info_label: RichTextLabel = null
+
 ## Base texture path of the currently-shown teacher portrait (no "2" suffix),
 ## so we can swap variants when the toggle changes.
 var _portrait_base_path: String = ""
@@ -361,6 +366,7 @@ func _ready() -> void:
 
 	_apply_brightness(GameState.brightness_value)
 	_apply_scanlines_enabled(GameState.scanlines_enabled)
+	_setup_debug_overlay()
 	_update_large_scene_hud_visibility()
 	_apply_scene_presentation_mode()
 	_refresh_hud()
@@ -430,9 +436,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var debug_mode_active := _debug_mode_enabled()
 
-	# Tab toggles the debug event log overlay.
+	# Tab toggles the debug menu overlay.
 	if debug_mode_active and key_event.keycode == KEY_TAB:
 		log_overlay.visible = not log_overlay.visible
+		if log_overlay.visible:
+			_refresh_debug_info()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -635,8 +643,12 @@ func _handle_debug_number_shortcut(key_event: InputEventKey) -> bool:
 			_debug_give_money()
 			_debug_recalibrate_current_location()
 		5:
-			_debug_clear_inventory()
-			_debug_recalibrate_current_location()
+			# Shift+5 wipes money only; plain 5 clears items (keeping HEAD) too.
+			if not key_event.shift_pressed:
+				_debug_clear_inventory()
+				_debug_recalibrate_current_location()
+			_debug_clear_money()
+	_refresh_debug_info_if_visible()
 	return true
 
 
@@ -943,6 +955,105 @@ func _debug_give_all_items() -> void:
 func _debug_give_money() -> void:
 	GameState.add_money(1000)
 	_log("[color=#88ff88]Debug: +$1000[/color]")
+
+
+func _debug_clear_money() -> void:
+	GameState.money = 0
+	_log("[color=#ffcc88]Debug: money cleared[/color]")
+
+
+## Canvas layer for the Tab debug menu. Higher than the scanlines (10), the
+## large-scene HUD, and the entry-input blocker (4095) so it always draws on top.
+const DEBUG_OVERLAY_CANVAS_LAYER: int = 4096
+
+
+## Lift the Tab debug menu onto its own high canvas layer (so it renders above
+## everything) and add a live info/legend block above the event log.
+func _setup_debug_overlay() -> void:
+	if log_overlay == null:
+		return
+	if _debug_overlay_layer == null:
+		_debug_overlay_layer = CanvasLayer.new()
+		_debug_overlay_layer.name = "DebugOverlayLayer"
+		_debug_overlay_layer.layer = DEBUG_OVERLAY_CANVAS_LAYER
+		add_child(_debug_overlay_layer)
+		var parent := log_overlay.get_parent()
+		if parent != null:
+			parent.remove_child(log_overlay)
+		_debug_overlay_layer.add_child(log_overlay)
+
+	var vbox := log_overlay.get_node_or_null("LogMargin/LogVBox") as VBoxContainer
+	if vbox == null:
+		return
+	var header := vbox.get_node_or_null("LogHeader") as Label
+	if header != null:
+		header.text = "DEBUG MENU  (Tab to hide)"
+	if _debug_info_label == null:
+		_debug_info_label = RichTextLabel.new()
+		_debug_info_label.name = "DebugInfo"
+		_debug_info_label.bbcode_enabled = true
+		_debug_info_label.fit_content = true
+		_debug_info_label.scroll_active = false
+		_debug_info_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_child(_debug_info_label)
+		# Sit just below the header, above the scrolling event log.
+		vbox.move_child(_debug_info_label, 1)
+	_refresh_debug_info()
+
+
+## Rebuild the debug menu's live state readout + shortcut legend. Called when the
+## menu is opened and whenever tracked state changes while it is visible — never
+## polled every frame.
+func _refresh_debug_info() -> void:
+	if _debug_info_label == null:
+		return
+	var loc := String(_current_location_id) if _current_location_id != &"" else "your room"
+	var lines: Array[String] = []
+	lines.append("[b]STATE[/b]")
+	lines.append("Day %d  |  %s  |  $%d" % [
+		GameState.day, DayCycle.phase_name(GameState.phase), GameState.money
+	])
+	lines.append("Suspicion %d  |  Anger %d" % [GameState.suspicion, GameState.anger])
+	lines.append("Location: %s" % loc)
+	if GameState.intro_active and not GameState.intro_completed:
+		lines.append("Intro step: %s" % GameState.intro_step)
+	lines.append("Parts: %s" % _debug_parts_summary())
+	lines.append("Tools: %s" % _debug_tools_summary())
+	lines.append("")
+	lines.append("[b]DEBUG KEYS[/b]")
+	lines.append("1/2/3  room @ Morning / Evening / Night")
+	lines.append("  +Shift → school / store / stress test")
+	lines.append("  +Ctrl → work / workshop / sleep")
+	lines.append("  +Shift+Ctrl → maintenance / room")
+	lines.append("4  all items +$1000     Shift+4  $1000 only")
+	lines.append("5  clear items (keep HEAD) + wipe $     Shift+5  wipe $ only")
+	lines.append("  (4 / 5 also refresh the open scene)")
+	lines.append("6  workshop: auto-complete segments")
+	lines.append("Hold Enter  speed through intro obstacles")
+	lines.append("Z zoom   X portrait alt   Space inventory   Esc settings")
+	_debug_info_label.text = "[color=#a9e6ff]%s[/color]" % "\n".join(lines)
+
+
+func _debug_parts_summary() -> String:
+	var parts: Array[String] = []
+	for id in GameState.ROBOT_PART_IDS:
+		var count := GameState.get_robot_part_count(id)
+		if count > 0:
+			parts.append("%s x%d" % [id, count])
+	return "none" if parts.is_empty() else "   ".join(parts)
+
+
+func _debug_tools_summary() -> String:
+	var tools: Array[String] = []
+	for tool_id in GameState.owned_tools:
+		var count := GameState.get_tool_count(String(tool_id))
+		tools.append("%s x%d" % [String(tool_id), count] if count > 1 else String(tool_id))
+	return "none" if tools.is_empty() else "   ".join(tools)
+
+
+func _refresh_debug_info_if_visible() -> void:
+	if log_overlay != null and log_overlay.visible:
+		_refresh_debug_info()
 
 
 func _debug_clear_inventory() -> void:
@@ -1538,10 +1649,18 @@ func _format_work_hud_elapsed_time() -> String:
 	return "%02d:%02d:%02d" % [first, second, third]
 
 
-func _on_money_changed(_v: int) -> void:    _refresh_hud()
-func _on_suspicion_changed(_v: int) -> void: _refresh_hud()
-func _on_anger_changed(_v: int) -> void:     _refresh_hud()
-func _on_day_changed(_v: int) -> void:       _refresh_hud()
+func _on_money_changed(_v: int) -> void:
+	_refresh_hud()
+	_refresh_debug_info_if_visible()
+func _on_suspicion_changed(_v: int) -> void:
+	_refresh_hud()
+	_refresh_debug_info_if_visible()
+func _on_anger_changed(_v: int) -> void:
+	_refresh_hud()
+	_refresh_debug_info_if_visible()
+func _on_day_changed(_v: int) -> void:
+	_refresh_hud()
+	_refresh_debug_info_if_visible()
 func _on_brightness_changed(value: float) -> void: _apply_brightness(value)
 func _on_scanlines_enabled_changed(enabled: bool) -> void: _apply_scanlines_enabled(enabled)
 func _on_debug_mode_changed(enabled: bool) -> void:
@@ -1549,6 +1668,7 @@ func _on_debug_mode_changed(enabled: bool) -> void:
 		log_overlay.visible = false
 func _on_phase_changed(_v: int) -> void:
 	_refresh_hud()
+	_refresh_debug_info_if_visible()
 	if _suppress_phase_selection_refresh:
 		return
 	_show_selection_screen()
