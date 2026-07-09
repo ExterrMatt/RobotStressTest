@@ -49,6 +49,9 @@ const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
 const WORK_LOCATION_ID: StringName = &"work"
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
+## Placeholder shown in the selection subtitle when nothing is selected yet,
+## matching the em-dash the Laptop option shows. Replaced once a choice is made.
+const NO_SELECTION_SUBTITLE: String = "[center]—[/center]"
 const INTRO_DIALOGUE_SCENE_PATH: String = "res://scenes/locations/IntroDialogue.tscn"
 const INTRO_DIALOGUE_LOCATION_ID: StringName = &"intro_dialogue"
 const INTRO_STEPS: Array[Dictionary] = [
@@ -1698,7 +1701,7 @@ func _init_choice_highlight() -> void:
 			consequence_label.custom_minimum_size.y,
 			float(consequence_label.get_content_height())
 		)
-		consequence_label.text = ""
+		consequence_label.text = NO_SELECTION_SUBTITLE
 
 
 func _highlight_choice(index: int) -> void:
@@ -1714,11 +1717,11 @@ func _update_consequence_line() -> void:
 	if consequence_label == null:
 		return
 	if _selected_choice_index < 0 or _selected_choice_index >= _choice_entries.size():
-		consequence_label.text = ""
+		consequence_label.text = NO_SELECTION_SUBTITLE
 		return
 	var loc: LocationData = _choice_entries[_selected_choice_index]["loc"]
 	if loc == null:
-		consequence_label.text = "[center]—[/center]"
+		consequence_label.text = NO_SELECTION_SUBTITLE
 		return
 	var body := loc.consequence_text.strip_edges()
 	if body.is_empty():
