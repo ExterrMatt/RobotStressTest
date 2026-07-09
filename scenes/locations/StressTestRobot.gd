@@ -73,6 +73,21 @@ const RIGHT_HAND_PART_PATHS: Array[NodePath] = [
 	^"Hands/RightOpenFingers",
 	^"Hands/RightFlexedFingers",
 ]
+
+## Hand-pose options cycled by the per-hand hover boxes, in click order. One
+## texture per hand is shown at a time; clicking the hand advances to the next.
+const LEFT_HAND_TEXTURE_OPTIONS: Array[NodePath] = [
+	^"Hands/LeftPalmUp",
+	^"Hands/LeftOpenFingers",
+	^"Hands/LeftFlexedFingers",
+]
+const RIGHT_HAND_TEXTURE_OPTIONS: Array[NodePath] = [
+	^"Hands/RightPalmUp",
+	^"Hands/RightOpenFingers",
+	^"Hands/RightFlexedFingers",
+]
+const LEFT_HAND_HOVER_BOX_NAME: String = "LeftHandHoverBox"
+const RIGHT_HAND_HOVER_BOX_NAME: String = "RightHandHoverBox"
 const LEFT_LEG_PART_PATHS: Array[NodePath] = [
 	^"Legs/LeftLeg",
 	^"Legs/LeftLegSlightlyOut",
@@ -125,7 +140,7 @@ const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox"]:
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()
@@ -158,6 +173,9 @@ var _animation_elapsed: float = 0.0
 ## pose; the stress test leaves this off and lifts on the first click.
 var _leg_slight_out_prestage_enabled: bool = false
 var _leg_prestage_active: bool = false
+## Currently selected hand-pose option per side (index into the option lists).
+var _left_hand_texture_index: int = 0
+var _right_hand_texture_index: int = 0
 var _animation_torso_restore_state: Dictionary = {}
 var _raised_legs_restore_index: int = -1
 var _rng := RandomNumberGenerator.new()
@@ -330,6 +348,8 @@ func reset_interactions_to_default() -> void:
 	_animation_playing = false
 	_animation_elapsed = 0.0
 	_leg_prestage_active = false
+	_left_hand_texture_index = 0
+	_right_hand_texture_index = 0
 	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -346,6 +366,8 @@ func is_in_default_pose() -> bool:
 	if _active_animation_box != null and is_instance_valid(_active_animation_box):
 		return false
 	if _leg_prestage_active:
+		return false
+	if _left_hand_texture_index != 0 or _right_hand_texture_index != 0:
 		return false
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -377,6 +399,8 @@ func hovered_hover_box_description() -> String:
 		return "Remove Chest Cover" if _is_boob_cover_visible() else "Equip Chest Cover"
 	if _is_shoulder_hover_box(box):
 		return "Equip Shoulder Pads" if _are_shoulder_pads_removed() else "Remove Shoulder Pads"
+	if _is_hand_hover_box(box):
+		return "Switch Hand"
 	return String(box.get("hover_description"))
 
 
@@ -558,7 +582,26 @@ func _handle_hover_box_click(box: Control) -> void:
 	if _is_shoulder_hover_box(box):
 		_toggle_shoulder_pads()
 		return
+	if _is_hand_hover_box(box):
+		_cycle_hand_texture(box)
+		return
 	_toggle_box_effect(box)
+
+
+func _is_hand_hover_box(box: Control) -> bool:
+	if box == null:
+		return false
+	var box_name := String(box.name)
+	return box_name == LEFT_HAND_HOVER_BOX_NAME or box_name == RIGHT_HAND_HOVER_BOX_NAME
+
+
+## Advances the clicked hand to the next pose option, wrapping around.
+func _cycle_hand_texture(box: Control) -> void:
+	if String(box.name) == LEFT_HAND_HOVER_BOX_NAME and not LEFT_HAND_TEXTURE_OPTIONS.is_empty():
+		_left_hand_texture_index = (_left_hand_texture_index + 1) % LEFT_HAND_TEXTURE_OPTIONS.size()
+	elif String(box.name) == RIGHT_HAND_HOVER_BOX_NAME and not RIGHT_HAND_TEXTURE_OPTIONS.is_empty():
+		_right_hand_texture_index = (_right_hand_texture_index + 1) % RIGHT_HAND_TEXTURE_OPTIONS.size()
+	_apply_visibility_state()
 
 
 ## Either shoulder box drives a single shared toggle, so clicking one removes or
@@ -719,6 +762,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_animation_parent_visibility(resolved)
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_leg_prestage_visibility(resolved)
+	_apply_hand_texture_selection(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_pelvis_torso_crunch_animation_slot(resolved)
@@ -783,6 +827,21 @@ func _apply_leg_prestage_visibility(resolved: Dictionary) -> void:
 		resolved[path] = false
 	for path in LEG_PRESTAGE_SHOWN_PATHS:
 		resolved[path] = true
+
+
+## Shows the selected pose per hand and hides the other options. Runs before the
+## part-availability pass so a removed hand still hides every option.
+func _apply_hand_texture_selection(resolved: Dictionary) -> void:
+	_apply_single_hand_texture_selection(resolved, LEFT_HAND_TEXTURE_OPTIONS, _left_hand_texture_index)
+	_apply_single_hand_texture_selection(resolved, RIGHT_HAND_TEXTURE_OPTIONS, _right_hand_texture_index)
+
+
+func _apply_single_hand_texture_selection(resolved: Dictionary, options: Array[NodePath], index: int) -> void:
+	if options.is_empty():
+		return
+	var selected := index % options.size()
+	for i in range(options.size()):
+		resolved[options[i]] = (i == selected)
 
 
 func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
@@ -946,6 +1005,10 @@ func _is_hover_box_available(box: Control) -> bool:
 		return false
 	if box.name == "PelvisHoverBox" or box.name == "BoobCoverHoverBox" or _is_shoulder_hover_box(box):
 		return _robot_part_count("torso") >= 1
+	if box.name == LEFT_HAND_HOVER_BOX_NAME:
+		return _robot_part_count("hand") >= 1
+	if box.name == RIGHT_HAND_HOVER_BOX_NAME:
+		return _robot_part_count("hand") >= 2
 	return true
 
 

@@ -894,3 +894,29 @@ mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 41
 hover_description = "Remove Shoulder Pads"
+
+[node name="LeftHandHoverBox" type="Control" parent="." unique_id=1489784487]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 52.0
+offset_top = 172.0
+offset_right = 85.0
+offset_bottom = 207.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 50
+hover_description = "Switch Hand"
+
+[node name="RightHandHoverBox" type="Control" parent="." unique_id=1489784488]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 165.0
+offset_top = 172.0
+offset_right = 198.0
+offset_bottom = 207.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 51
+hover_description = "Switch Hand"
