@@ -142,6 +142,13 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export_range(0.0, 1.0, 0.01) var screw_completion_target_ratio: float = 0.8
 @export var screw_completion_penalty_step_percent: float = 10.0
 
+@export_group("Manual Screwing")
+## Foundational nudge for the bare-hand screwing animation, in base scene
+## pixels. Applied on top of the automatic centering for every screw on every
+## limb, so a constant misalignment can be corrected once here. Positive x
+## moves it right, positive y moves it down.
+@export var hand_screw_animation_offset: Vector2 = Vector2.ZERO
+
 @export_group("Robot Position")
 @export var head_only_drop_px: float = 57.0
 
@@ -1651,6 +1658,8 @@ func _connect_screw_summary_tracking() -> void:
 			repair.call("set_repair_gate", Callable(self, "_can_begin_screw_repair"))
 		if repair.has_method("set_manual_screwing"):
 			repair.call("set_manual_screwing", manual_screwing)
+		if repair.has_method("set_hand_screw_offset"):
+			repair.call("set_hand_screw_offset", hand_screw_animation_offset)
 		_connect_screw_signal(repair, "screw_loosened", "_on_screw_loosened")
 		_connect_screw_signal(repair, "repair_started", "_on_screw_repair_started")
 		_connect_screw_signal(repair, "repair_interrupted", "_on_screw_repair_interrupted")

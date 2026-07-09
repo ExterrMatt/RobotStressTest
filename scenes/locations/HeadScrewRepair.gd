@@ -77,6 +77,9 @@ var _manual_screwing: bool = false
 var _screwdriver_default_texture: Texture2D = null
 ## Resolved bare-hand texture (export or fallback path), or null when missing.
 var _hand_screw_texture_resolved: Texture2D = null
+## Foundational alignment nudge for the hand animation, pushed by the stress
+## test so a constant offset can be corrected in one place for every screw.
+var _hand_screw_offset: Vector2 = Vector2.ZERO
 ## Optional gate consulted before a repair may begin. Set by the stress test so
 ## only one screw is driven at a time (or one per side with two screwdrivers).
 ## Receives the screw's side ("left"/"right"/"") and returns whether to allow it.
@@ -261,6 +264,11 @@ func set_manual_screwing(enabled: bool) -> void:
 	_manual_screwing = enabled
 
 
+## Sets the foundational alignment offset applied to the hand animation only.
+func set_hand_screw_offset(offset: Vector2) -> void:
+	_hand_screw_offset = offset
+
+
 func _uses_hand_visuals() -> bool:
 	return _manual_screwing and _hand_screw_texture_resolved != null
 
@@ -408,7 +416,8 @@ func _set_screwdriver_frame(frame: int) -> void:
 	var clamped_frame := posmod(frame, frame_count)
 	screwdriver.region_rect = Rect2(Vector2(0.0, float(clamped_frame) * frame_size.y), frame_size)
 	var pivot_x := -frame_size.x if screwdriver.flip_h else 0.0
-	screwdriver.offset = Vector2(pivot_x, -frame_size.y * 0.5)
+	var alignment_offset := _hand_screw_offset if _uses_hand_visuals() else Vector2.ZERO
+	screwdriver.offset = Vector2(pivot_x, -frame_size.y * 0.5) + alignment_offset
 
 
 func _apply_screwdriver_orientation(index: int) -> void:
