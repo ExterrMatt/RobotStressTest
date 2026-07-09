@@ -20,9 +20,15 @@ const MAINTENANCE_ITEM_IDS: Array[StringName] = [
 @export_range(0.0, 1.0, 0.01) var robot_alpha_threshold: float = 0.05
 @export var force_show_hover_border: bool = false
 
+## Design values for the corner END button, kept in sync with Main's shared
+## floating END/LEAVE button: the GoldHudButton look at 1.5x font + padding.
+const END_BUTTON_FONT_SIZE: int = 48         # Main.LARGE_SCENE_HUD_FONT_SIZE (32) * 1.5
+const END_BUTTON_PADDING_SCALE: float = 1.5  # Main.LARGE_SCENE_END_BUTTON_SIZE_SCALE
+
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
 @onready var robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/RobotLayer/PersonalityTestRobot
+@onready var end_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton
 
 var _robot_bbox_local: Rect2 = Rect2()
 var _hover_box: Control = null
@@ -50,7 +56,34 @@ func _ready() -> void:
 	_spawn_hover_box()
 	_spawn_drop_slots()
 	_spawn_scrub_bar()
+	_style_end_button_like_workshop()
 	call_deferred("_cache_scrub_item")
+
+
+## Restyle the in-scene END button to match Main's shared corner END/LEAVE button
+## (the gold-bordered GoldHudButton look at 1.5x font + padding). Only the design
+## changes: the button keeps its authored bottom-right anchor and offsets, and
+## since it grows toward the top-left (grow direction BEGIN) its bottom-right
+## corner stays exactly where it is while the larger design expands up and left.
+func _style_end_button_like_workshop() -> void:
+	if end_button == null:
+		return
+	end_button.theme_type_variation = &"GoldHudButton"
+	end_button.focus_mode = Control.FOCUS_NONE
+	end_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	end_button.add_theme_font_size_override("font_size", END_BUTTON_FONT_SIZE)
+	# Scale each state's stylebox padding to match the enlarged font while leaving
+	# the theme's border width untouched (so it stays crisp, like Main's button).
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		var base := end_button.get_theme_stylebox(state)
+		if base == null:
+			continue
+		var sb := base.duplicate() as StyleBox
+		sb.content_margin_left = base.get_margin(SIDE_LEFT) * END_BUTTON_PADDING_SCALE
+		sb.content_margin_top = base.get_margin(SIDE_TOP) * END_BUTTON_PADDING_SCALE
+		sb.content_margin_right = base.get_margin(SIDE_RIGHT) * END_BUTTON_PADDING_SCALE
+		sb.content_margin_bottom = base.get_margin(SIDE_BOTTOM) * END_BUTTON_PADDING_SCALE
+		end_button.add_theme_stylebox_override(state, sb)
 
 
 func _input(event: InputEvent) -> void:
