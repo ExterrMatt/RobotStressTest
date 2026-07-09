@@ -86,6 +86,13 @@ const RIGHT_LEG_PART_PATHS: Array[NodePath] = [
 	^"Legs/RightLegUpShin",
 ]
 
+## Sleep-only leg pre-stage: the first click parts the legs into the
+## "slightly out" pose before the following click lifts them. The standing
+## legs are swapped for their slightly-out variants for this one stage.
+const LEG_PRESTAGE_HIDDEN_PATHS: Array[NodePath] = [^"Legs/LeftLeg", ^"Legs/RightLeg"]
+const LEG_PRESTAGE_SHOWN_PATHS: Array[NodePath] = [^"Legs/LeftLegSlightlyOut", ^"Legs/RightLegSlightlyOut"]
+const LEG_PRESTAGE_BOX_NAME: String = "PelvisHoverBox"
+
 ## The vegetable-mission strips carry both hand grips as separate columns.
 ## Only one grip is shown at a time; the H key flips between them in debug mode.
 const OVERGRIP_HAND_PATHS: Array[NodePath] = [
@@ -147,6 +154,10 @@ var _active_animation_box: Control = null
 var _animation_phase: String = ANIMATION_PHASE_NONE
 var _animation_playing: bool = false
 var _animation_elapsed: float = 0.0
+## When enabled (Sleep scene) the leg lift gains a preliminary "slightly out"
+## pose; the stress test leaves this off and lifts on the first click.
+var _leg_slight_out_prestage_enabled: bool = false
+var _leg_prestage_active: bool = false
 var _animation_torso_restore_state: Dictionary = {}
 var _raised_legs_restore_index: int = -1
 var _rng := RandomNumberGenerator.new()
@@ -286,6 +297,19 @@ func set_repair_hand_hidden(side: String, hidden: bool) -> void:
 		_apply_visibility_state()
 
 
+## Enables the "slightly out" leg pre-stage (Sleep scene). While enabled, the
+## first click on the leg parts it into the slightly-out pose and only the next
+## click lifts it; the stress test keeps this off so the leg lifts immediately.
+func set_leg_slight_out_prestage_enabled(value: bool) -> void:
+	if _leg_slight_out_prestage_enabled == value:
+		return
+	_leg_slight_out_prestage_enabled = value
+	if not value and _leg_prestage_active:
+		_leg_prestage_active = false
+		if not Engine.is_editor_hint():
+			_apply_visibility_state()
+
+
 func set_head_interaction_enabled(value: bool) -> void:
 	_interaction_enabled = value
 	for box in _hover_boxes:
@@ -305,6 +329,7 @@ func reset_interactions_to_default() -> void:
 	_animation_phase = ANIMATION_PHASE_NONE
 	_animation_playing = false
 	_animation_elapsed = 0.0
+	_leg_prestage_active = false
 	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -319,6 +344,8 @@ func reset_interactions_to_default() -> void:
 
 func is_in_default_pose() -> bool:
 	if _active_animation_box != null and is_instance_valid(_active_animation_box):
+		return false
+	if _leg_prestage_active:
 		return false
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -567,6 +594,14 @@ func _handle_layered_animation_click(box: Control) -> void:
 		_toggle_box_effect(box)
 		return
 
+	if _leg_slight_out_prestage_enabled and _is_leg_prestage_box(box) \
+			and _active_animation_box != box:
+		if not _leg_prestage_active:
+			_enter_leg_prestage()
+			return
+		# Second click: leave the slightly-out pose and lift the leg as usual.
+		_leg_prestage_active = false
+
 	if _active_animation_box != box:
 		_finish_layered_animation(false)
 		_prime_layered_animation(box)
@@ -589,7 +624,21 @@ func _handle_layered_animation_click(box: Control) -> void:
 	_apply_visibility_state()
 
 
+func _is_leg_prestage_box(box: Control) -> bool:
+	return box != null and String(box.name) == LEG_PRESTAGE_BOX_NAME
+
+
+## Parts the legs into the slightly-out pose without lifting them, as the first
+## step of the Sleep-scene leg interaction.
+func _enter_leg_prestage() -> void:
+	_finish_layered_animation(false)
+	_leg_prestage_active = true
+	_play_wood_creak_sound()
+	_apply_visibility_state()
+
+
 func _prime_layered_animation(box: Control) -> void:
+	_leg_prestage_active = false
 	_active_animation_box = box
 	_animation_phase = ANIMATION_PHASE_INTRO
 	_animation_playing = false
@@ -634,6 +683,7 @@ func _advance_animation(delta: float) -> void:
 
 
 func _finish_layered_animation(apply_state: bool = true) -> void:
+	_leg_prestage_active = false
 	if _active_animation_box != null and is_instance_valid(_active_animation_box) \
 			and _active_animation_box.has_method("set_runtime_active"):
 		_active_animation_box.call("set_runtime_active", false)
@@ -668,6 +718,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_hand_grip_selection(resolved)
 	_apply_animation_parent_visibility(resolved)
 	_apply_always_hidden_to_dictionary(resolved)
+	_apply_leg_prestage_visibility(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_pelvis_torso_crunch_animation_slot(resolved)
@@ -720,6 +771,18 @@ func _apply_animation_parent_visibility(resolved: Dictionary) -> void:
 func _apply_always_hidden_to_dictionary(resolved: Dictionary) -> void:
 	for path in always_hidden_image_paths:
 		resolved[path] = false
+
+
+## Shows the slightly-out legs in place of the standing legs while the Sleep
+## leg pre-stage is active. Runs before the part-availability pass so a removed
+## leg still hides its slightly-out variant.
+func _apply_leg_prestage_visibility(resolved: Dictionary) -> void:
+	if not _leg_prestage_active:
+		return
+	for path in LEG_PRESTAGE_HIDDEN_PATHS:
+		resolved[path] = false
+	for path in LEG_PRESTAGE_SHOWN_PATHS:
+		resolved[path] = true
 
 
 func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:

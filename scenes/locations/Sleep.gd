@@ -64,6 +64,8 @@ func _ready() -> void:
 	pillow_slightly_indented.visible = false
 	blanket.visible = false
 	_configure_head_hover_pillow_toggle()
+	if bot_placeholder.has_method("set_leg_slight_out_prestage_enabled"):
+		bot_placeholder.set_leg_slight_out_prestage_enabled(true)
 
 
 func _unhandled_input(event: InputEvent) -> void:
