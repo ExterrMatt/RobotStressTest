@@ -137,6 +137,11 @@ const LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 118.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_FONT_SIZE: int = 32
+## The floating corner action button (Workshop END / Store LEAVE) is scaled up
+## by this factor. Scaling (rather than a bigger font) keeps the in-frame
+## CRAFT/COLLECT buttons — which share the GoldHudButton theme — at their
+## original size.
+const LARGE_SCENE_END_BUTTON_SCALE: float = 2.0
 const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
 ## The vertical corner panels (the "outer" HUD) are restyled to read as a set
 ## with the floating pills (the "inner" HUD over the image): a gold border that
@@ -1234,6 +1239,11 @@ func _make_large_scene_end_button() -> Button:
 	# Shared gold-bordered look so the in-frame CRAFT/COLLECT buttons match it.
 	btn.theme_type_variation = &"GoldHudButton"
 	btn.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
+	# Scale up ×2, pivoting on the bottom-right corner so the button grows toward
+	# the top-left and its anchored bottom-right corner stays put. The pivot
+	# tracks the auto-sized rect as the label changes (END / LEAVE / COLLECT …).
+	btn.scale = Vector2(LARGE_SCENE_END_BUTTON_SCALE, LARGE_SCENE_END_BUTTON_SCALE)
+	btn.resized.connect(func() -> void: btn.pivot_offset = btn.size)
 	return btn
 
 
