@@ -64,8 +64,6 @@ const GRID_BOTTOM_OFFSET: float = 120.0
 const ITEM_DIMMED_MODULATE: Color = Color(0.5, 0.5, 0.5, 1)
 const ITEM_NORMAL_MODULATE: Color = Color(1, 1, 1, 1)
 
-## Track whether the player has bought ANYTHING this visit.
-var _bought_anything: bool = false
 var _store_active: bool = false
 var _signals_connected: bool = false
 var _intro_pickup_active: bool = false
@@ -169,6 +167,8 @@ func _enter_store_ui() -> void:
 	if _intro_pickup_active:
 		if main and main.has_method("hide_corner_button"):
 			main.hide_corner_button()
+		if main and main.has_method("hide_large_scene_end_button"):
+			main.hide_large_scene_end_button()
 		return
 
 	if not _signals_connected:
@@ -176,13 +176,15 @@ func _enter_store_ui() -> void:
 		GameState.purchased_today_changed.connect(_on_purchased_today_changed)
 		_signals_connected = true
 
-	_refresh_corner_button()
+	_show_leave_button()
 
 
 func _exit_tree() -> void:
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("hide_corner_button"):
 		main.hide_corner_button()
+	if main and main.has_method("hide_large_scene_end_button"):
+		main.hide_large_scene_end_button()
 	if main and main.has_method("hide_scene_overlay"):
 		main.hide_scene_overlay()
 
@@ -554,10 +556,9 @@ func _try_purchase(item: StoreItemData) -> void:
 		GameState.add_ingredient(item_id, item.amount)
 
 	GameState.mark_purchased_today(item_id)
-	_bought_anything = true
 	if not _has_available_lottery_items():
 		_build_grid()
-	_refresh_corner_button()
+	_show_leave_button()
 
 
 func _collect_intro_pickup_item(item: StoreItemData) -> void:
@@ -592,20 +593,22 @@ func _offset_control_vertically(control: Control, amount: float) -> void:
 	control.offset_bottom += amount
 
 
-# --- corner button ---
+# --- leave button ---
+## The Store uses the same floating corner END button the Workshop mounts on
+## Main (show_large_scene_end_button), just relabelled "LEAVE". It replaces the
+## old "WINDOW SHOP AND LEAVE" / "LEAVE WITH YOUR PURCHASES" corner button.
 
-func _refresh_corner_button() -> void:
+func _show_leave_button() -> void:
 	var main: Node = get_tree().current_scene
-	if main == null or not main.has_method("show_corner_button"):
+	if main == null or not main.has_method("show_large_scene_end_button"):
 		return
-	var label: String = "LEAVE WITH YOUR PURCHASES" if _bought_anything else "WINDOW SHOP AND LEAVE"
-	main.show_corner_button(label, _on_leave_pressed)
+	main.show_large_scene_end_button("LEAVE", _on_leave_pressed)
 
 
 func _on_leave_pressed() -> void:
 	var main: Node = get_tree().current_scene
-	if main and main.has_method("hide_corner_button"):
-		main.hide_corner_button()
+	if main and main.has_method("hide_large_scene_end_button"):
+		main.hide_large_scene_end_button()
 	finish(0, 0, 0, {}, false)
 
 
