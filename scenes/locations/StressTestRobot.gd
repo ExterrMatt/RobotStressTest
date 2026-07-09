@@ -28,10 +28,19 @@ const HAND_RUB_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/hands/hand_rub_loud.mp3",
 ]
 
+## Chest textures swapped by the shoulder-pad toggle: the outlined chest is
+## shown while the pads are on, the outline-free chest while they are off.
+const CHEST_PATH: NodePath = ^"Torso/Chest"
+const CHEST_NO_OUTLINE_PATH: NodePath = ^"Torso/ChestNoOutline"
+const LEFT_SHOULDER_PAD_PATH: NodePath = ^"Arms/LeftShoulderPad"
+const RIGHT_SHOULDER_PAD_PATH: NodePath = ^"Arms/RightShoulderPad"
+const SHOULDER_HOVER_BOX_NAMES: Array[String] = ["LeftShoulderHoverBox", "RightShoulderHoverBox"]
+
 const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
 	^"Torso/TorsoBase",
 	^"Torso/Chest",
+	^"Torso/ChestNoOutline",
 	^"Torso/BigCoconuts",
 	^"Torso/Nipples",
 	^"Torso/TorsoCrunch",
@@ -44,11 +53,13 @@ const TORSO_PART_PATHS: Array[NodePath] = [
 ]
 const LEFT_ARM_PART_PATHS: Array[NodePath] = [
 	^"Arms/LeftArm",
+	^"Arms/LeftShoulderPad",
 	^"AnimationArmLayers/LeftArm",
 	^"AnimationArmLayers/MouthBLoopMedium/LeftArm",
 ]
 const RIGHT_ARM_PART_PATHS: Array[NodePath] = [
 	^"Arms/RightArm",
+	^"Arms/RightShoulderPad",
 	^"AnimationArmLayers/RightArm",
 	^"AnimationArmLayers/MouthBLoopMedium/RightArm",
 ]
@@ -107,7 +118,7 @@ const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox"]:
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()
@@ -337,6 +348,8 @@ func hovered_hover_box_description() -> String:
 		return "Lower Legs" if _is_box_effect_active(box) else "Raise Legs"
 	if String(box.name) == "BoobCoverHoverBox":
 		return "Remove Chest Cover" if _is_boob_cover_visible() else "Equip Chest Cover"
+	if _is_shoulder_hover_box(box):
+		return "Equip Shoulder Pads" if _are_shoulder_pads_removed() else "Remove Shoulder Pads"
 	return String(box.get("hover_description"))
 
 
@@ -515,7 +528,32 @@ func _handle_hover_box_click(box: Control) -> void:
 	if action == CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION:
 		_handle_layered_animation_click(box)
 		return
+	if _is_shoulder_hover_box(box):
+		_toggle_shoulder_pads()
+		return
 	_toggle_box_effect(box)
+
+
+## Either shoulder box drives a single shared toggle, so clicking one removes or
+## restores both shoulder pads together and keeps the two boxes in sync.
+func _toggle_shoulder_pads() -> void:
+	var new_active := not _are_shoulder_pads_removed()
+	for box_name in SHOULDER_HOVER_BOX_NAMES:
+		var box := _find_hover_box_by_name(box_name)
+		if box != null and box.has_method("set_runtime_active"):
+			box.call("set_runtime_active", new_active)
+	_apply_visibility_state()
+
+
+func _is_shoulder_hover_box(box: Control) -> bool:
+	return box != null and SHOULDER_HOVER_BOX_NAMES.has(String(box.name))
+
+
+func _are_shoulder_pads_removed() -> bool:
+	for box_name in SHOULDER_HOVER_BOX_NAMES:
+		if _is_named_box_effect_active(box_name):
+			return true
+	return false
 
 
 func _toggle_box_effect(box: Control) -> void:
@@ -633,6 +671,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_pelvis_torso_crunch_animation_slot(resolved)
+	_apply_shoulder_pad_state(resolved)
 	_apply_resolved_visibility(resolved)
 
 
@@ -704,6 +743,23 @@ func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
 		_apply_paths_available(resolved, LEFT_GRIP_HAND_PATHS, false)
 	if bool(_repair_hidden_hand_sides.get("right", false)):
 		_apply_paths_available(resolved, RIGHT_GRIP_HAND_PATHS, false)
+
+
+## Resolves the shoulder-pad toggle. When the pads are removed they are hidden
+## and the outlined chest is swapped for the outline-free chest wherever the
+## chest would otherwise show; when the pads are on the outline-free chest stays
+## hidden and the regular chest is left untouched.
+func _apply_shoulder_pad_state(resolved: Dictionary) -> void:
+	if not _are_shoulder_pads_removed():
+		resolved[CHEST_NO_OUTLINE_PATH] = false
+		return
+	resolved[LEFT_SHOULDER_PAD_PATH] = false
+	resolved[RIGHT_SHOULDER_PAD_PATH] = false
+	if bool(resolved.get(CHEST_PATH, false)):
+		resolved[CHEST_PATH] = false
+		resolved[CHEST_NO_OUTLINE_PATH] = true
+	else:
+		resolved[CHEST_NO_OUTLINE_PATH] = false
 
 
 func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], available: bool) -> void:
@@ -825,7 +881,7 @@ func _is_hover_box_available(box: Control) -> bool:
 		return false
 	if _is_hover_box_blocked_by_repair(box):
 		return false
-	if box.name == "PelvisHoverBox" or box.name == "BoobCoverHoverBox":
+	if box.name == "PelvisHoverBox" or box.name == "BoobCoverHoverBox" or _is_shoulder_hover_box(box):
 		return _robot_part_count("torso") >= 1
 	return true
 

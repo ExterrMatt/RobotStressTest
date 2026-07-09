@@ -35,6 +35,9 @@
 [ext_resource type="Texture2D" uid="uid://belnxxgc3k8qa" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png" id="25_mouth_b_loop_medium"]
 [ext_resource type="Texture2D" uid="uid://c71qt80w3mb1h" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/vegetable_mssion_intro.png" id="26_vegetable_mission_intro"]
 [ext_resource type="Texture2D" uid="uid://byojxnpwinxol" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/vegetable_mission_loop_medium.png" id="27_vegetable_mission_loop_medium"]
+[ext_resource type="Texture2D" uid="uid://b74p0dongfxgb" path="res://assets/textures/characters/robot/stresstest/torso/chest_no_outline.png" id="28_chest_no_outline"]
+[ext_resource type="Texture2D" uid="uid://cdtqvcab7vmls" path="res://assets/textures/characters/robot/stresstest/arms/left_shoulder_pad.png" id="29_left_shoulder_pad"]
+[ext_resource type="Texture2D" uid="uid://ctnpnm6c88viq" path="res://assets/textures/characters/robot/stresstest/arms/right_shoulder_pad.png" id="30_right_shoulder_pad"]
 
 [node name="StressTestRobot" type="Control" unique_id=1977347602]
 custom_minimum_size = Vector2(250, 350)
@@ -108,6 +111,19 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("8_chest")
+expand_mode = 1
+
+[node name="ChestNoOutline" type="TextureRect" parent="Torso" unique_id=1974583021]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("28_chest_no_outline")
 expand_mode = 1
 
 [node name="BigCoconuts" type="TextureRect" parent="Torso" unique_id=1796253818]
@@ -229,6 +245,28 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("16_left_arm")
+expand_mode = 1
+
+[node name="RightShoulderPad" type="TextureRect" parent="Arms" unique_id=1373138815]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("30_right_shoulder_pad")
+expand_mode = 1
+
+[node name="LeftShoulderPad" type="TextureRect" parent="Arms" unique_id=1049253850]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("29_left_shoulder_pad")
 expand_mode = 1
 
 [node name="Hands" type="Control" parent="." unique_id=366454601]
@@ -790,7 +828,7 @@ script = ExtResource("2_hover_box")
 priority = 10
 click_action = 1
 hover_description = "Raise Head"
-hidden_while_active_image_paths = Array[NodePath]([NodePath("HairBack"), NodePath("Torso/Neck"), NodePath("Head/HeadBase"), NodePath("Head/SquintEyes"), NodePath("Head/HairFrontNormal"), NodePath("Head/HairFrontBangs"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Nipples"), NodePath("Torso/TorsoCrunch"), NodePath("Arms/RightArm"), NodePath("Arms/LeftArm")])
+hidden_while_active_image_paths = Array[NodePath]([NodePath("HairBack"), NodePath("Torso/Neck"), NodePath("Head/HeadBase"), NodePath("Head/SquintEyes"), NodePath("Head/HairFrontNormal"), NodePath("Head/HairFrontBangs"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/ChestNoOutline"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Nipples"), NodePath("Torso/TorsoCrunch"), NodePath("Arms/RightArm"), NodePath("Arms/LeftArm"), NodePath("Arms/RightShoulderPad"), NodePath("Arms/LeftShoulderPad")])
 shown_while_active_image_paths = Array[NodePath]([NodePath("AnimationLayers")])
 intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/HairBack"), NodePath("AnimationLayers/Head"), NodePath("AnimationLayers/Neck"), NodePath("AnimationLayers/SquintEyes"), NodePath("AnimationLayers/Torso"), NodePath("AnimationLayers/HairFrontNormal"), NodePath("AnimationArmLayers/LeftArm"), NodePath("AnimationArmLayers/RightArm"), NodePath("AnimationLayers/Banana")])
 loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBLoopMedium/HairBack"), NodePath("AnimationLayers/MouthBLoopMedium/Neck"), NodePath("AnimationLayers/MouthBLoopMedium/Head"), NodePath("AnimationLayers/MouthBLoopMedium/SquintEyes"), NodePath("AnimationArmLayers/MouthBLoopMedium/LeftArm"), NodePath("AnimationArmLayers/MouthBLoopMedium/RightArm"), NodePath("AnimationLayers/MouthBLoopMedium/Torso"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontNormal"), NodePath("AnimationLayers/MouthBLoopMedium/Banana")])
@@ -830,3 +868,29 @@ script = ExtResource("2_hover_box")
 priority = 30
 hover_description = "Remove Chest Cover"
 hidden_while_active_image_paths = Array[NodePath]([NodePath("BoobCover")])
+
+[node name="LeftShoulderHoverBox" type="Control" parent="." unique_id=1489784485]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 83.0
+offset_top = 84.0
+offset_right = 113.0
+offset_bottom = 120.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 40
+hover_description = "Remove Shoulder Pads"
+
+[node name="RightShoulderHoverBox" type="Control" parent="." unique_id=1489784486]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 137.0
+offset_top = 84.0
+offset_right = 167.0
+offset_bottom = 120.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 41
+hover_description = "Remove Shoulder Pads"
