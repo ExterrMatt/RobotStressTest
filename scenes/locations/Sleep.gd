@@ -68,6 +68,23 @@ func _ready() -> void:
 		bot_placeholder.set_leg_slight_out_prestage_enabled(true)
 
 
+## Debug speedrun: while Enter is held, mirror the two bed clicks — first lower
+## the blanket, then (next frame) fall asleep — so the player can pass the
+## bedroom without releasing Enter. Only the intro variant (no robot in bed) is
+## automated; the robot-in-bed layout keeps its manual head interactions.
+func _process(_delta: float) -> void:
+	if _has_robot_in_bed:
+		return
+	if not debug_enter_held():
+		return
+	if not _blanket_removed:
+		_blanket_removed = true
+		blanket.visible = false
+		blanket_bump.visible = false
+		return
+	finish()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		var mouse_event := event as InputEventMouseButton

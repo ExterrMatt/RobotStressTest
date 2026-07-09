@@ -29,6 +29,19 @@ var _entry_input_blocker: Control = null
 var _entry_input_lock_serial: int = 0
 
 
+## True when debug mode is on AND the player is currently holding Enter.
+##
+## The dialogue box already lets a held Enter fast-forward prose while debug
+## mode is on. Intro obstacle minigames (the school question, Ed's shop, the
+## sleep blanket, the work slots, the workshop craft, the stress test) break
+## that flow because they need a manual click. Scenes poll this each frame so a
+## held Enter can auto-resolve them too — letting a debug player speed through
+## the whole intro without ever releasing Enter. Non-debug play is untouched.
+func debug_enter_held() -> bool:
+	return GameState.debug_mode_enabled \
+		and (Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER))
+
+
 func lock_entry_input(seconds: float = DEFAULT_ENTRY_INPUT_LOCK_SECONDS) -> void:
 	if seconds <= 0.0:
 		return

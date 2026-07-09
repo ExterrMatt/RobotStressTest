@@ -97,6 +97,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _scene_phase != WorkPhase.MINIGAME or _work_timed_out:
 		return
+	# Debug speedrun: a held Enter fills every slot with its matching shape so
+	# the shift completes without manual dragging.
+	if debug_enter_held() and work_inventory != null and not work_inventory.is_complete():
+		work_inventory.auto_solve()
 	_work_elapsed_seconds += delta
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("set_work_hud_elapsed_seconds"):

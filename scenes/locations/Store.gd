@@ -196,6 +196,23 @@ func _exit_tree() -> void:
 ##
 ## Safety: bail out if a dialogue overlay or transition is active so we
 ## don't fire purchases during scene swaps.
+## Debug speedrun: while Enter is held during the intro pickup, collect the
+## available items one per frame until all three are gathered (which finishes
+## the visit), so the player can grab everything without releasing Enter.
+func _process(_delta: float) -> void:
+	if not _store_active or not _intro_pickup_active:
+		return
+	if not debug_enter_held():
+		return
+	for hit in _slot_hits:
+		var item: StoreItemData = hit["item"]
+		if item == null:
+			continue
+		if not _intro_collected_item_ids.has(String(item.id)):
+			_collect_intro_pickup_item(item)
+			return
+
+
 func _input(event: InputEvent) -> void:
 	if not _store_active:
 		return

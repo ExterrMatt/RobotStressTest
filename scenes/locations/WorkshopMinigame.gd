@@ -217,6 +217,8 @@ func _process(_delta: float) -> void:
 		_shadow_drawer.queue_redraw()
 	_sync_passenger_segments_to_active_drag()
 	_update_placement_hint_flash(_delta)
+	if _debug_mode_enabled() and _enter_held():
+		_auto_progress_with_enter()
 
 
 func _on_shadow_drawer_draw() -> void:
@@ -405,6 +407,81 @@ func _piece_texture_draw_position(piece: WorkshopPiece) -> Vector2:
 func _debug_mode_enabled() -> bool:
 	var settings := get_node_or_null("/root/GameState")
 	return settings != null and settings.debug_mode_enabled
+
+
+func _enter_held() -> bool:
+	return Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER)
+
+
+## Debug speedrun: advance the craft flow one step per frame while Enter is
+## held so the player never has to release Enter. Order mirrors the manual
+## flow: drop the recipe ingredients into the bin, CRAFT, auto-assemble the
+## spawned segments (the same routine the debug "6" key runs), then COLLECT.
+## Only runs while a drag isn't in progress so it never fights the player.
+func _auto_progress_with_enter() -> void:
+	if _active_drag_segment != null or _active_drag_piece != null:
+		return
+	if not _crafted:
+		if _matching_recipe_part_id() == "":
+			_auto_place_recipe_ingredients()
+			return
+		if not craft_button.disabled:
+			_on_craft_pressed()
+		return
+	if collect_button.disabled:
+		_auto_assemble_craft_bin_segments()
+		return
+	if collect_button.visible and not collect_button.disabled:
+		_on_collect_pressed()
+
+
+## Move enough of each recipe ingredient from the tray into the craft bin to
+## satisfy the forced recipe (the intro head). No forced part -> no-op, so
+## non-intro workshops are left for the player to fill by hand.
+func _auto_place_recipe_ingredients() -> void:
+	var recipe := _forced_recipe()
+	if recipe.is_empty():
+		return
+	var counts: Dictionary = craft_bin.count_items()
+	for id_key in recipe:
+		var id: String = String(id_key)
+		var need: int = int(recipe[id_key])
+		var have: int = int(counts.get(id, 0))
+		while have < need:
+			var piece: WorkshopPiece = _take_tray_piece(id)
+			if piece == null:
+				break
+			_drop_piece_in_bin_center(piece)
+			have += 1
+
+
+func _forced_recipe() -> Dictionary:
+	if forced_part_id.strip_edges().is_empty():
+		return {}
+	var data: Dictionary = CRAFTABLE_PARTS.get(forced_part_id, {})
+	return data.get("recipe", {})
+
+
+func _take_tray_piece(id: String) -> WorkshopPiece:
+	var slot := ingredients_tray.get_node_or_null("Tray_" + id) as Control
+	if slot == null:
+		return null
+	for child in slot.get_children():
+		if child is WorkshopPiece:
+			return child as WorkshopPiece
+	return null
+
+
+func _drop_piece_in_bin_center(piece: WorkshopPiece) -> void:
+	var parent := piece.get_parent()
+	if parent != null:
+		parent.remove_child(piece)
+	craft_bin.add_child(piece)
+	piece.position = craft_bin.local_center() - piece.size * 0.5
+	piece.position.x = clamp(piece.position.x, 0, max(0, craft_bin.size.x - piece.size.x))
+	piece.position.y = clamp(piece.position.y, 0, max(0, craft_bin.size.y - piece.size.y))
+	craft_bin.contents_changed.emit()
+	_refresh_tray_counts()
 
 
 # --- global input pipe ---

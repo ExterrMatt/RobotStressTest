@@ -197,6 +197,21 @@ func _ready() -> void:
 	_enter_lecture()
 
 
+## Debug speedrun: while Enter is held, auto-pick a choice so the player never
+## has to release Enter to answer. In the intro history question every answer
+## routes to the same feedback, so the first button is always a valid pick.
+func _process(_delta: float) -> void:
+	if not debug_enter_held():
+		return
+	if _scene_phase != SchoolPhase.QUESTION_CHOICES \
+			and _scene_phase != SchoolPhase.POST_CLASS_CHOICES:
+		return
+	for child in choice_grid.get_children():
+		if child is Button and not (child as Button).disabled:
+			(child as Button).pressed.emit()
+			return
+
+
 func _pick_teacher_and_question() -> void:
 	if _is_intro_school_first():
 		_current_teacher = INTRO_HISTORY_TEACHER

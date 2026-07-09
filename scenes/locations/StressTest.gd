@@ -279,10 +279,16 @@ func _process(delta: float) -> void:
 		_hide_mouse_tooltip()
 		return
 
+	# Debug speedrun: a held Enter freezes the electricity drain, runs the night
+	# clock at 10x, and keeps the uncle from ever appearing, so the player can
+	# ride the stress test out without releasing Enter or risking a fail.
+	var speedrun := debug_enter_held()
+
 	var previous_elapsed := _night_elapsed
-	_night_elapsed += delta
+	_night_elapsed += delta * (10.0 if speedrun else 1.0)
 	_update_intro_head_interaction_gate()
-	_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * delta)
+	if not speedrun:
+		_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * delta)
 	if _electricity_percent <= 0.0 and _emergency_power_shutoff_pressed:
 		_set_emergency_power_shutoff_pressed(false)
 	_update_electricity_summary_time(_night_elapsed - previous_elapsed)
@@ -290,7 +296,10 @@ func _process(delta: float) -> void:
 	_apply_scheduled_meter_events()
 	_update_emergency_power_gas_equalization(delta)
 	_update_generator_power_sound()
-	_update_window_alert(delta)
+	if speedrun:
+		_suppress_uncle_appearance()
+	else:
+		_update_window_alert(delta)
 	_refresh_stress_hud()
 	_update_hover_box_tooltip()
 
@@ -1506,6 +1515,17 @@ func _update_emergency_power_gas_equalization(delta: float) -> void:
 func _debug_mode_enabled() -> bool:
 	var state := get_node_or_null("/root/GameState")
 	return state != null and bool(state.debug_mode_enabled)
+
+
+## Debug speedrun: keep the uncle from ever appearing while Enter is held.
+## Any live window alert is cleared, and alerts whose scheduled time has passed
+## (including those the 10x clock races through) are skipped so none queue up to
+## fire the instant Enter is released.
+func _suppress_uncle_appearance() -> void:
+	if _window_alert_state != WINDOW_ALERT_NONE:
+		_clear_window_alert()
+	else:
+		_skip_elapsed_window_alert_events()
 
 
 func _refresh_stress_hud() -> void:

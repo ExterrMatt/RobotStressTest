@@ -103,6 +103,34 @@ func _on_drag_released(item: DraggableItem, _release_pos: Vector2) -> void:
 	item.snap_home()
 
 
+## Debug speedrun helper: drop every draggable straight into its matching slot
+## so a held Enter completes the puzzle without any manual dragging. Emits
+## slots_changed as each slot fills, driving the same completion path a normal
+## drag would.
+func auto_solve() -> void:
+	drop_slots = _collect_drop_slots_from_root()
+	for slot in drop_slots:
+		if slot.filled_by != null:
+			continue
+		for item in draggables:
+			if item == null or not is_instance_valid(item):
+				continue
+			if item.item_id != slot.accepts_item_id:
+				continue
+			if _item_placed_in_slot(item):
+				continue
+			slot.fill_with(item)
+			slots_changed.emit(_filled_count())
+			break
+
+
+func _item_placed_in_slot(item: DraggableItem) -> bool:
+	for slot in drop_slots:
+		if slot.filled_by == item:
+			return true
+	return false
+
+
 ## Returns true if all four drop slots are filled.
 func is_complete() -> bool:
 	for slot in drop_slots:
