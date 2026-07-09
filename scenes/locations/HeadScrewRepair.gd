@@ -269,16 +269,36 @@ func set_hand_screw_offset(offset: Vector2) -> void:
 	_hand_screw_offset = offset
 
 
+## The hand-animation alignment nudge for the screw being driven. Zero unless
+## the bare-hand animation is showing. The offset is authored against the left
+## side; the right side's animation is mirrored, so its horizontal component is
+## negated to keep the correction consistent.
+func _hand_screw_alignment_offset_for_current_screw() -> Vector2:
+	if not _uses_hand_visuals():
+		return Vector2.ZERO
+	var offset := _hand_screw_offset
+	if side_for_screw(_repairing_screw_index) == "right":
+		offset.x = -offset.x
+	return offset
+
+
 func _uses_hand_visuals() -> bool:
 	return _manual_screwing and _hand_screw_texture_resolved != null
 
 
 func _active_frame_size() -> Vector2i:
-	return hand_screw_frame_size if _uses_hand_visuals() else screwdriver_frame_size
+	if not _uses_hand_visuals():
+		return screwdriver_frame_size
+	# Guard against a scene that serialized these exports as zero/null.
+	if hand_screw_frame_size.x > 0 and hand_screw_frame_size.y > 0:
+		return hand_screw_frame_size
+	return Vector2i(48, 48)
 
 
 func _active_frame_count() -> int:
-	return hand_screw_frame_count if _uses_hand_visuals() else screwdriver_frame_count
+	if not _uses_hand_visuals():
+		return screwdriver_frame_count
+	return hand_screw_frame_count if hand_screw_frame_count > 0 else 4
 
 
 func _apply_active_screw_texture(screwdriver: Sprite2D) -> void:
@@ -377,7 +397,10 @@ func _find_clicked_loose_screw(global_position: Vector2) -> int:
 
 
 func _current_repair_animation_seconds() -> float:
-	var manual_multiplier := maxf(0.1, manual_repair_duration_multiplier) if _manual_screwing else 1.0
+	# Fall back to 2x if the export was serialized as zero/null in the scene.
+	var manual_multiplier := 1.0
+	if _manual_screwing:
+		manual_multiplier = manual_repair_duration_multiplier if manual_repair_duration_multiplier > 0.0 else 2.0
 	return repair_animation_seconds * _repair_animation_duration_multiplier * manual_multiplier
 
 
@@ -416,7 +439,7 @@ func _set_screwdriver_frame(frame: int) -> void:
 	var clamped_frame := posmod(frame, frame_count)
 	screwdriver.region_rect = Rect2(Vector2(0.0, float(clamped_frame) * frame_size.y), frame_size)
 	var pivot_x := -frame_size.x if screwdriver.flip_h else 0.0
-	var alignment_offset := _hand_screw_offset if _uses_hand_visuals() else Vector2.ZERO
+	var alignment_offset := _hand_screw_alignment_offset_for_current_screw()
 	screwdriver.offset = Vector2(pivot_x, -frame_size.y * 0.5) + alignment_offset
 
 

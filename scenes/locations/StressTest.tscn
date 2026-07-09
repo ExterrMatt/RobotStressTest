@@ -511,9 +511,6 @@ blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
 flipped_screwdriver_indices = [0, 2]
 screw_nodes = Array[NodePath]([NodePath("ScrewLeftTop"), NodePath("ScrewRightTop"), NodePath("ScrewLeftMid"), NodePath("ScrewRightMid")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/LeftTop"), NodePath("ScrewdriverPositions/RightTop"), NodePath("ScrewdriverPositions/LeftMid"), NodePath("ScrewdriverPositions/RightMid")])
-hand_screw_frame_size = null
-hand_screw_frame_count = null
-manual_repair_duration_multiplier = null
 
 [node name="ScrewLeftTop" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/HeadScrewRepair" unique_id=767834265]
 visible = false
@@ -598,9 +595,6 @@ blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
 flipped_screwdriver_indices = [0, 1]
 screw_nodes = Array[NodePath]([NodePath("ScrewTop"), NodePath("ScrewMid"), NodePath("ScrewElbow")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Top"), NodePath("ScrewdriverPositions/Mid"), NodePath("ScrewdriverPositions/Elbow")])
-hand_screw_frame_size = null
-hand_screw_frame_count = null
-manual_repair_duration_multiplier = null
 
 [node name="ScrewTop" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftArmScrewRepair" unique_id=1164449265]
 visible = false
@@ -670,9 +664,6 @@ blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
 flipped_screwdriver_indices = [2]
 screw_nodes = Array[NodePath]([NodePath("ScrewTop"), NodePath("ScrewMid"), NodePath("ScrewElbow")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Top"), NodePath("ScrewdriverPositions/Mid"), NodePath("ScrewdriverPositions/Elbow")])
-hand_screw_frame_size = null
-hand_screw_frame_count = null
-manual_repair_duration_multiplier = null
 
 [node name="ScrewTop" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightArmScrewRepair" unique_id=1676965761]
 visible = false
@@ -742,9 +733,6 @@ blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox"), NodePath
 flipped_screwdriver_indices = [0, 2]
 screw_nodes = Array[NodePath]([NodePath("ScrewLeftRib"), NodePath("ScrewRightRib"), NodePath("ScrewLeftWaist"), NodePath("ScrewRightWaist")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/LeftRib"), NodePath("ScrewdriverPositions/RightRib"), NodePath("ScrewdriverPositions/LeftWaist"), NodePath("ScrewdriverPositions/RightWaist")])
-hand_screw_frame_size = null
-hand_screw_frame_count = null
-manual_repair_duration_multiplier = null
 
 [node name="ScrewLeftRib" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/TorsoScrewRepair" unique_id=340770418]
 visible = false
@@ -830,9 +818,6 @@ blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
 flipped_screwdriver_indices = [0]
 screw_nodes = Array[NodePath]([NodePath("ScrewLeftCoco"), NodePath("ScrewRightCoco")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/LeftCoco"), NodePath("ScrewdriverPositions/RightCoco")])
-hand_screw_frame_size = null
-hand_screw_frame_count = null
-manual_repair_duration_multiplier = null
 
 [node name="ScrewLeftCoco" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/ChestScrewRepair" unique_id=159265421]
 visible = false
@@ -887,9 +872,6 @@ blocked_hover_box_paths = Array[NodePath]([NodePath("../PelvisHoverBox")])
 flipped_screwdriver_indices = [0, 1, 3, 4]
 screw_nodes = Array[NodePath]([NodePath("ScrewCheek"), NodePath("ScrewOuterKnee"), NodePath("ScrewInnerKnee"), NodePath("ScrewAnkle"), NodePath("ScrewFoot")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Cheek"), NodePath("ScrewdriverPositions/OuterKnee"), NodePath("ScrewdriverPositions/InnerKnee"), NodePath("ScrewdriverPositions/Ankle"), NodePath("ScrewdriverPositions/Foot")])
-hand_screw_frame_size = null
-hand_screw_frame_count = null
-manual_repair_duration_multiplier = null
 
 [node name="ScrewCheek" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair" unique_id=2101000002]
 visible = false
@@ -989,9 +971,6 @@ blocked_hover_box_paths = Array[NodePath]([NodePath("../PelvisHoverBox")])
 flipped_screwdriver_indices = [2]
 screw_nodes = Array[NodePath]([NodePath("ScrewCheek"), NodePath("ScrewOuterKnee"), NodePath("ScrewInnerKnee"), NodePath("ScrewAnkle"), NodePath("ScrewFoot")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Cheek"), NodePath("ScrewdriverPositions/OuterKnee"), NodePath("ScrewdriverPositions/InnerKnee"), NodePath("ScrewdriverPositions/Ankle"), NodePath("ScrewdriverPositions/Foot")])
-hand_screw_frame_size = null
-hand_screw_frame_count = null
-manual_repair_duration_multiplier = null
 
 [node name="ScrewCheek" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair" unique_id=2102000002]
 visible = false

@@ -144,9 +144,11 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 
 @export_group("Manual Screwing")
 ## Foundational nudge for the bare-hand screwing animation, in base scene
-## pixels. Applied on top of the automatic centering for every screw on every
-## limb, so a constant misalignment can be corrected once here. Positive x
-## moves it right, positive y moves it down.
+## pixels, authored against the left side. Applied on top of the automatic
+## centering for every screw on every limb, so a constant misalignment can be
+## corrected once here. Positive x moves it right, positive y moves it down.
+## The right side's animation is mirrored, so its horizontal component is
+## negated automatically to stay aligned.
 @export var hand_screw_animation_offset: Vector2 = Vector2.ZERO
 
 @export_group("Robot Position")
@@ -1666,12 +1668,14 @@ func _connect_screw_summary_tracking() -> void:
 		_connect_screw_signal(repair, "screw_repaired", "_on_screw_repaired")
 
 
-## Permission gate handed to each screw repair controller. With a single
-## screwdriver only one screw may be driven at a time. Owning two or more
-## screwdrivers frees a hand per side, so one left-side and one right-side
-## repair may run at once (but never two on the same side).
+## Permission gate handed to each screw repair controller. Two hands are free
+## when the player either owns two or more screwdrivers or owns none at all and
+## screws bare-handed, so one left-side and one right-side repair may run at
+## once (but never two on the same side). With exactly one screwdriver a single
+## hand is occupied holding it, so only one screw may be driven at a time.
 func _can_begin_screw_repair(side: String) -> bool:
-	if _screwdriver_count() >= 2:
+	var screwdriver_count := _screwdriver_count()
+	if screwdriver_count >= 2 or screwdriver_count <= 0:
 		return not _is_side_screw_repair_active(side)
 	return not _is_screw_repair_animation_active()
 
