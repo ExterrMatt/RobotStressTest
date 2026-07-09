@@ -55,9 +55,14 @@ var _rng := RandomNumberGenerator.new()
 var _loose_screw_indices: Array = []
 var _unavailable_screw_indices: Array = []
 var _last_screw_index: int = -1
-var _repairing: bool = false
-var _repairing_screw_index: int = -1
-var _repair_elapsed: float = 0.0
+## Repairs currently in progress, keyed by body side ("left"/"right"/""). Each
+## value is {"index": int, "elapsed": float}. A controller that owns both left
+## and right screws (head, torso, chest) can therefore drive one screw per side
+## at once; single-side arm/leg controllers still run one at a time.
+var _active_repairs: Dictionary = {}
+## One screwdriver/hand sprite per active side, duplicated from the authored
+## template sprite so each concurrent repair renders independently.
+var _side_sprites: Dictionary = {}
 var _repair_animation_duration_multiplier: float = 1.0
 var _completion_enabled: bool = true
 var _screw_loosen_sounds: Array[AudioStream] = []
@@ -108,7 +113,7 @@ func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	if _repairing:
+	if not _active_repairs.is_empty():
 		_update_repair_animation(delta)
 		_update_screw_repair_sound(delta)
 
@@ -116,7 +121,7 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if Engine.is_editor_hint():
 		return
-	if not enabled or not _completion_enabled or _repairing or _loose_screw_indices.is_empty():
+	if not enabled or not _completion_enabled or _loose_screw_indices.is_empty():
 		return
 	if not (event is InputEventMouseButton):
 		return
@@ -204,7 +209,13 @@ func set_repair_animation_duration_multiplier(value: float) -> void:
 
 
 func is_repairing() -> bool:
-	return _repairing
+	return not _active_repairs.is_empty()
+
+
+## Whether a screw on the given side is currently being driven by this
+## controller. Lets the stress test enforce one repair per side across limbs.
+func is_side_repairing(side: String) -> bool:
+	return _active_repairs.has(side)
 
 
 ## Registers the permission gate consulted before a repair starts. Pass an
@@ -229,11 +240,12 @@ func side_for_screw(index: int) -> String:
 	return _side_from_text(screw_name, String(name))
 
 
-## The side of the screw currently being driven, or "" when idle.
+## Any side currently being driven, or "" when idle. Prefer is_side_repairing
+## for per-side checks; this stays for callers that just need one active side.
 func repairing_side() -> String:
-	if not _repairing:
-		return ""
-	return side_for_screw(_repairing_screw_index)
+	for side in _active_repairs:
+		return String(side)
+	return ""
 
 
 func _side_from_text(primary: String, fallback: String) -> String:
@@ -259,7 +271,7 @@ func set_completion_enabled(value: bool) -> void:
 ## Switches between screwdriver and bare-hand screwing. Ignored while a repair is
 ## already in progress so the active animation isn't swapped mid-drive.
 func set_manual_screwing(enabled: bool) -> void:
-	if _repairing:
+	if not _active_repairs.is_empty():
 		return
 	_manual_screwing = enabled
 
@@ -273,11 +285,11 @@ func set_hand_screw_offset(offset: Vector2) -> void:
 ## the bare-hand animation is showing. The offset is authored against the left
 ## side; the right side's animation is mirrored, so its horizontal component is
 ## negated to keep the correction consistent.
-func _hand_screw_alignment_offset_for_current_screw() -> Vector2:
+func _hand_screw_alignment_offset_for_screw(index: int) -> Vector2:
 	if not _uses_hand_visuals():
 		return Vector2.ZERO
 	var offset := _hand_screw_offset
-	if side_for_screw(_repairing_screw_index) == "right":
+	if side_for_screw(index) == "right":
 		offset.x = -offset.x
 	return offset
 
@@ -331,56 +343,61 @@ func loosen_screws(count: int) -> int:
 
 
 func interrupt_repair() -> bool:
-	if not _repairing:
+	if _active_repairs.is_empty():
 		return false
 
-	var interrupted_index := _repairing_screw_index
-	_repairing = false
-	_repairing_screw_index = -1
-	_repair_elapsed = 0.0
-	var screwdriver := _get_screwdriver()
-	if screwdriver != null:
-		screwdriver.visible = false
+	for side in _active_repairs.keys():
+		var interrupted_index := int(_active_repairs[side].get("index", -1))
+		_active_repairs.erase(side)
+		_hide_side_sprite(side)
+		repair_interrupted.emit(interrupted_index)
 	_stop_screw_repair_sound_loop()
-	repair_interrupted.emit(interrupted_index)
 	return true
 
 
 func _start_repair_animation(screw_index: int) -> void:
-	_repairing = true
-	_repairing_screw_index = screw_index
-	_repair_elapsed = 0.0
-	_start_screw_repair_sound_loop()
+	var side := side_for_screw(screw_index)
+	if _active_repairs.is_empty():
+		_start_screw_repair_sound_loop()
+	_active_repairs[side] = {"index": screw_index, "elapsed": 0.0}
 	repair_started.emit(screw_index)
-	var screwdriver := _get_screwdriver()
-	if screwdriver != null:
-		_apply_active_screw_texture(screwdriver)
-		screwdriver.position = _screwdriver_position_for_index(screw_index)
-		_apply_screwdriver_orientation(screw_index)
-		screwdriver.visible = true
-		_set_screwdriver_frame(0)
+	var sprite := _side_sprite(side)
+	if sprite != null:
+		_apply_active_screw_texture(sprite)
+		sprite.position = _screwdriver_position_for_index(screw_index)
+		_apply_screwdriver_orientation(sprite, screw_index)
+		sprite.visible = true
+		_set_sprite_frame(sprite, screw_index, 0)
 
 
 func _update_repair_animation(delta: float) -> void:
-	_repair_elapsed += delta
-	var frame := int(floor(_repair_elapsed * maxf(0.1, repair_animation_fps))) % maxi(1, _active_frame_count())
-	_set_screwdriver_frame(frame)
+	var completed_sides: Array = []
+	var animation_seconds := _current_repair_animation_seconds()
+	for side in _active_repairs.keys():
+		var slot: Dictionary = _active_repairs[side]
+		slot["elapsed"] = float(slot["elapsed"]) + delta
+		var screw_index := int(slot["index"])
+		var frame := int(floor(float(slot["elapsed"]) * maxf(0.1, repair_animation_fps))) % maxi(1, _active_frame_count())
+		var sprite := _side_sprite(side)
+		if sprite != null:
+			_set_sprite_frame(sprite, screw_index, frame)
+		if _completion_enabled and float(slot["elapsed"]) >= animation_seconds:
+			completed_sides.append(side)
 
-	if _repair_elapsed < _current_repair_animation_seconds():
-		return
-	if not _completion_enabled:
-		return
+	for side in completed_sides:
+		_complete_repair(String(side))
 
-	var repaired_index := _repairing_screw_index
+
+func _complete_repair(side: String) -> void:
+	if not _active_repairs.has(side):
+		return
+	var repaired_index := int(_active_repairs[side].get("index", -1))
+	_active_repairs.erase(side)
 	_set_screw_visible(repaired_index, false)
 	_loose_screw_indices.erase(repaired_index)
-	_repairing = false
-	_repairing_screw_index = -1
-	_repair_elapsed = 0.0
-	var screwdriver := _get_screwdriver()
-	if screwdriver != null:
-		screwdriver.visible = false
-	_stop_screw_repair_sound_loop()
+	_hide_side_sprite(side)
+	if _active_repairs.is_empty():
+		_stop_screw_repair_sound_loop()
 	screw_repaired.emit(repaired_index)
 
 
@@ -414,7 +431,7 @@ func _configure_screwdriver() -> void:
 		_hand_screw_texture_resolved = _resolve_hand_screw_texture()
 	screwdriver.centered = false
 	screwdriver.region_enabled = true
-	_set_screwdriver_frame(0)
+	_set_sprite_frame(screwdriver, -1, 0)
 	screwdriver.visible = false
 
 
@@ -426,9 +443,8 @@ func _resolve_hand_screw_texture() -> Texture2D:
 	return null
 
 
-func _set_screwdriver_frame(frame: int) -> void:
-	var screwdriver := _get_screwdriver()
-	if screwdriver == null:
+func _set_sprite_frame(sprite: Sprite2D, screw_index: int, frame: int) -> void:
+	if sprite == null:
 		return
 	var active_frame_size := _active_frame_size()
 	var frame_size := Vector2(
@@ -437,17 +453,49 @@ func _set_screwdriver_frame(frame: int) -> void:
 	)
 	var frame_count := maxi(1, _active_frame_count())
 	var clamped_frame := posmod(frame, frame_count)
-	screwdriver.region_rect = Rect2(Vector2(0.0, float(clamped_frame) * frame_size.y), frame_size)
-	var pivot_x := -frame_size.x if screwdriver.flip_h else 0.0
-	var alignment_offset := _hand_screw_alignment_offset_for_current_screw()
-	screwdriver.offset = Vector2(pivot_x, -frame_size.y * 0.5) + alignment_offset
+	sprite.region_rect = Rect2(Vector2(0.0, float(clamped_frame) * frame_size.y), frame_size)
+	var pivot_x := -frame_size.x if sprite.flip_h else 0.0
+	var alignment_offset := _hand_screw_alignment_offset_for_screw(screw_index)
+	sprite.offset = Vector2(pivot_x, -frame_size.y * 0.5) + alignment_offset
 
 
-func _apply_screwdriver_orientation(index: int) -> void:
-	var screwdriver := _get_screwdriver()
-	if screwdriver == null:
+func _apply_screwdriver_orientation(sprite: Sprite2D, index: int) -> void:
+	if sprite == null:
 		return
-	screwdriver.flip_h = _is_screwdriver_flipped(index)
+	sprite.flip_h = _is_screwdriver_flipped(index)
+
+
+## Returns (creating if needed) the sprite used to render a repair on the given
+## side. The authored Screwdriver node is the template; the first side reuses it
+## and additional sides render on runtime duplicates so they can overlap.
+func _side_sprite(side: String) -> Sprite2D:
+	if _side_sprites.has(side):
+		var existing := _side_sprites[side] as Sprite2D
+		if existing != null and is_instance_valid(existing):
+			return existing
+		_side_sprites.erase(side)
+
+	var template := _get_screwdriver()
+	if template == null:
+		return null
+
+	var sprite: Sprite2D = template
+	if _side_sprites.values().has(template):
+		sprite = template.duplicate() as Sprite2D
+		var parent := template.get_parent()
+		if parent != null:
+			parent.add_child(sprite)
+	sprite.centered = false
+	sprite.region_enabled = true
+	sprite.visible = false
+	_side_sprites[side] = sprite
+	return sprite
+
+
+func _hide_side_sprite(side: String) -> void:
+	var sprite := _side_sprites.get(side) as Sprite2D
+	if sprite != null and is_instance_valid(sprite):
+		sprite.visible = false
 
 
 func _is_screwdriver_flipped(index: int) -> bool:
@@ -459,11 +507,12 @@ func _is_screwdriver_flipped(index: int) -> bool:
 
 func _hide_all_screws() -> void:
 	_loose_screw_indices.clear()
-	_repairing = false
-	_repairing_screw_index = -1
+	_active_repairs.clear()
 	_stop_screw_repair_sound_loop()
 	for i in range(screw_nodes.size()):
 		_set_screw_visible(i, false)
+	for side in _side_sprites.keys():
+		_hide_side_sprite(side)
 	var screwdriver := _get_screwdriver()
 	if screwdriver != null:
 		screwdriver.visible = false
@@ -600,5 +649,5 @@ func _refresh_editor_preview() -> void:
 		screwdriver.visible = editor_preview_screwdriver and editor_preview_screw_index >= 0
 		if screwdriver.visible:
 			screwdriver.position = _screwdriver_position_for_index(editor_preview_screw_index)
-			_apply_screwdriver_orientation(editor_preview_screw_index)
-			_set_screwdriver_frame(0)
+			_apply_screwdriver_orientation(screwdriver, editor_preview_screw_index)
+			_set_sprite_frame(screwdriver, editor_preview_screw_index, 0)

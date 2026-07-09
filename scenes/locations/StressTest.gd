@@ -1682,13 +1682,7 @@ func _can_begin_screw_repair(side: String) -> bool:
 
 func _is_side_screw_repair_active(side: String) -> bool:
 	for repair in _screw_repair_controllers():
-		if not (repair.has_method("is_repairing") and bool(repair.call("is_repairing"))):
-			continue
-		var active_side := ""
-		if repair.has_method("repairing_side"):
-			active_side = String(repair.call("repairing_side"))
-		# Same side is busy, or either side is unknown (can't tell hands apart).
-		if active_side == side or active_side == "" or side == "":
+		if repair.has_method("is_side_repairing") and bool(repair.call("is_side_repairing", side)):
 			return true
 	return false
 
