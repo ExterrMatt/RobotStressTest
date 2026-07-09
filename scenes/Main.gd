@@ -636,6 +636,7 @@ func _handle_debug_number_shortcut(key_event: InputEventKey) -> bool:
 			_debug_recalibrate_current_location()
 		5:
 			_debug_clear_inventory()
+			_debug_recalibrate_current_location()
 	return true
 
 
@@ -948,12 +949,17 @@ func _debug_clear_inventory() -> void:
 	for id in GameState.ingredients.keys():
 		GameState.ingredients[id] = 0
 
+	# Never strip a HEAD the player already owns — the intro can't be replayed to
+	# re-craft it, so clearing it would soft-lock the robot. Preserve its count.
+	var head_count := GameState.get_robot_part_count("head")
 	GameState.set_all_robot_parts(0)
+	if head_count > 0:
+		GameState.set_robot_part_count("head", head_count)
 	GameState.owned_tools = ["mouth", "hand"]
 	GameState.tool_counts.clear()
 	GameState.purchased_today.clear()
 	GameState.purchased_today_changed.emit(GameState.purchased_today)
-	_log("[color=#ffcc88]Debug: inventory cleared[/color]")
+	_log("[color=#ffcc88]Debug: inventory cleared (HEAD kept)[/color]")
 
 func _load_locations() -> void:
 	if _locations_loaded:
