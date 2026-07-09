@@ -197,14 +197,16 @@ func _ready() -> void:
 	_enter_lecture()
 
 
-## Debug speedrun: while Enter is held, auto-pick a choice so the player never
-## has to release Enter to answer. In the intro history question every answer
-## routes to the same feedback, so the first button is always a valid pick.
+## Debug speedrun: while Enter is held, auto-pick the question answer so the
+## player never has to release Enter. Scoped to the intro history question only
+## (every intro answer routes to the same feedback, so the first button is
+## always a valid pick); normal school days keep their manual choices.
 func _process(_delta: float) -> void:
 	if not debug_enter_held():
 		return
-	if _scene_phase != SchoolPhase.QUESTION_CHOICES \
-			and _scene_phase != SchoolPhase.POST_CLASS_CHOICES:
+	if not _is_intro_school_first():
+		return
+	if _scene_phase != SchoolPhase.QUESTION_CHOICES:
 		return
 	for child in choice_grid.get_children():
 		if child is Button and not (child as Button).disabled:
