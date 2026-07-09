@@ -137,11 +137,13 @@ const LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT: float = 118.0
 const LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT: float = 178.0
 const LARGE_SCENE_HUD_FONT_SIZE: int = 32
-## The floating corner action button (Workshop END / Store LEAVE) is scaled up
-## by this factor. Scaling (rather than a bigger font) keeps the in-frame
-## CRAFT/COLLECT buttons — which share the GoldHudButton theme — at their
-## original size.
-const LARGE_SCENE_END_BUTTON_SCALE: float = 2.0
+## The floating corner action button (Workshop END / Store LEAVE) is sized up by
+## this factor relative to the other GoldHudButton controls — a genuine bump to
+## its font size and stylebox padding, NOT a Transform scale (which would blur
+## the text and thicken the border). Only this one button's overrides change, so
+## the in-frame CRAFT/COLLECT buttons that share the theme stay their original
+## size with the same crisp 3px border.
+const LARGE_SCENE_END_BUTTON_SIZE_SCALE: float = 1.5
 const LARGE_SCENE_TIMER_MAX_TICKS: int = 999999
 ## The vertical corner panels (the "outer" HUD) are restyled to read as a set
 ## with the floating pills (the "inner" HUD over the image): a gold border that
@@ -1148,6 +1150,7 @@ func _create_large_scene_hud() -> void:
 
 	_large_scene_end_button = _make_large_scene_end_button()
 	_large_scene_hud_layer.add_child(_large_scene_end_button)
+	_apply_large_scene_end_button_size(_large_scene_end_button)
 
 	_refresh_hud()
 
@@ -1251,13 +1254,31 @@ func _make_large_scene_end_button() -> Button:
 	btn.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	# Shared gold-bordered look so the in-frame CRAFT/COLLECT buttons match it.
 	btn.theme_type_variation = &"GoldHudButton"
-	btn.add_theme_font_size_override("font_size", LARGE_SCENE_HUD_FONT_SIZE)
-	# Scale up ×2, pivoting on the bottom-right corner so the button grows toward
-	# the top-left and its anchored bottom-right corner stays put. The pivot
-	# tracks the auto-sized rect as the label changes (END / LEAVE / COLLECT …).
-	btn.scale = Vector2(LARGE_SCENE_END_BUTTON_SCALE, LARGE_SCENE_END_BUTTON_SCALE)
-	btn.resized.connect(func() -> void: btn.pivot_offset = btn.size)
+	# Size it up ~1.5x with a bigger font (crisp, not a blurry Transform scale).
+	# The matching padding is applied in _apply_large_scene_end_button_size once
+	# the button is in the tree and can resolve the GoldHudButton styleboxes.
+	btn.add_theme_font_size_override(
+		"font_size", int(round(LARGE_SCENE_HUD_FONT_SIZE * LARGE_SCENE_END_BUTTON_SIZE_SCALE))
+	)
 	return btn
+
+
+## Scale up the end button's stylebox padding to match its enlarged font, so the
+## whole button grows proportionally while keeping the theme's 3px border at its
+## original crisp thickness. Duplicates each state's stylebox so only this button
+## is affected; the shared CRAFT/COLLECT buttons keep the base padding. Must run
+## after the button is in the tree (get_theme_stylebox needs the ambient theme).
+func _apply_large_scene_end_button_size(btn: Button) -> void:
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		var base := btn.get_theme_stylebox(state)
+		if base == null:
+			continue
+		var sb := base.duplicate() as StyleBox
+		sb.content_margin_left = base.get_margin(SIDE_LEFT) * LARGE_SCENE_END_BUTTON_SIZE_SCALE
+		sb.content_margin_top = base.get_margin(SIDE_TOP) * LARGE_SCENE_END_BUTTON_SIZE_SCALE
+		sb.content_margin_right = base.get_margin(SIDE_RIGHT) * LARGE_SCENE_END_BUTTON_SIZE_SCALE
+		sb.content_margin_bottom = base.get_margin(SIDE_BOTTOM) * LARGE_SCENE_END_BUTTON_SIZE_SCALE
+		btn.add_theme_stylebox_override(state, sb)
 
 
 ## Mount a bottom-right margin action button (e.g. the Workshop "END"). Safe to
