@@ -38,6 +38,8 @@
 [ext_resource type="Texture2D" uid="uid://b74p0dongfxgb" path="res://assets/textures/characters/robot/stresstest/torso/chest_no_outline.png" id="28_chest_no_outline"]
 [ext_resource type="Texture2D" uid="uid://cdtqvcab7vmls" path="res://assets/textures/characters/robot/stresstest/arms/left_shoulder_pad.png" id="29_left_shoulder_pad"]
 [ext_resource type="Texture2D" uid="uid://ctnpnm6c88viq" path="res://assets/textures/characters/robot/stresstest/arms/right_shoulder_pad.png" id="30_right_shoulder_pad"]
+[ext_resource type="Texture2D" uid="uid://bole2xy2wfl2g" path="res://assets/textures/characters/robot/stresstest/head/hair_front_swing.png" id="31_hair_front_swing"]
+[ext_resource type="Texture2D" uid="uid://bqdryqu3ah4c4" path="res://assets/textures/characters/robot/stresstest/head/head_2.png" id="32_head_2"]
 
 [node name="StressTestRobot" type="Control" unique_id=1977347602]
 custom_minimum_size = Vector2(250, 350)
@@ -182,6 +184,17 @@ mouse_filter = 2
 texture = ExtResource("11_head")
 expand_mode = 1
 
+[node name="Head2" type="TextureRect" parent="Head" unique_id=1541472918]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("32_head_2")
+expand_mode = 1
+
 [node name="SquintEyes" type="TextureRect" parent="Head" unique_id=1646704345]
 layout_mode = 1
 anchors_preset = 15
@@ -194,6 +207,7 @@ texture = ExtResource("12_squint_eyes")
 expand_mode = 1
 
 [node name="HairFrontNormal" type="TextureRect" parent="Head" unique_id=1845867497]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -202,6 +216,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("13_hair_front_normal")
+expand_mode = 1
+
+[node name="HairFrontSwing" type="TextureRect" parent="Head" unique_id=1845867498]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("31_hair_front_swing")
 expand_mode = 1
 
 [node name="HairFrontBangs" type="TextureRect" parent="Head" unique_id=1071634240]
@@ -369,7 +394,7 @@ visible = false
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
-region_rect = Rect2(1750, 0, 250, 350)
+region_rect = Rect2(1250, 0, 250, 350)
 
 [node name="MouthBLoopMedium" type="Node2D" parent="AnimationArmLayers" unique_id=1580547671]
 
@@ -378,7 +403,7 @@ visible = false
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
-region_rect = Rect2(1000, 0, 250, 350)
+region_rect = Rect2(1500, 0, 250, 350)
 
 [node name="RightArm" type="Sprite2D" parent="AnimationArmLayers/MouthBLoopMedium" unique_id=87096943]
 visible = false
@@ -514,33 +539,68 @@ centered = false
 region_enabled = true
 region_rect = Rect2(250, 0, 250, 350)
 
-[node name="Neck" type="Sprite2D" parent="AnimationLayers" unique_id=182480256]
+[node name="Head2" type="Sprite2D" parent="AnimationLayers" unique_id=236239305]
 visible = false
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(500, 0, 250, 350)
 
-[node name="SquintEyes" type="Sprite2D" parent="AnimationLayers" unique_id=245303743]
+[node name="Neck" type="Sprite2D" parent="AnimationLayers" unique_id=182480256]
 visible = false
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(750, 0, 250, 350)
 
+[node name="SquintEyes" type="Sprite2D" parent="AnimationLayers" unique_id=245303743]
+visible = false
+texture = ExtResource("24_mouth_b_intro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1000, 0, 250, 350)
+
 [node name="HairFrontNormal" type="Sprite2D" parent="AnimationLayers" unique_id=2033993871]
 visible = false
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
-region_rect = Rect2(1250, 0, 250, 350)
+region_rect = Rect2(2500, 0, 250, 350)
+
+[node name="HairFrontSwing" type="Sprite2D" parent="AnimationLayers" unique_id=2033993872]
+visible = false
+texture = ExtResource("24_mouth_b_intro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2750, 0, 250, 350)
+
+[node name="HairFrontBangs" type="Sprite2D" parent="AnimationLayers" unique_id=2033993873]
+visible = false
+texture = ExtResource("24_mouth_b_intro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3000, 0, 250, 350)
 
 [node name="Torso" type="Sprite2D" parent="AnimationLayers" unique_id=1007274420]
 visible = false
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
-region_rect = Rect2(1000, 0, 250, 350)
+region_rect = Rect2(1750, 0, 250, 350)
+
+[node name="ChestDetails" type="Sprite2D" parent="AnimationLayers" unique_id=1007274421]
+visible = false
+texture = ExtResource("24_mouth_b_intro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2000, 0, 250, 350)
+
+[node name="Outline" type="Sprite2D" parent="AnimationLayers" unique_id=1007274422]
+visible = false
+texture = ExtResource("24_mouth_b_intro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2250, 0, 250, 350)
 
 [node name="Nipples" type="TextureRect" parent="AnimationLayers/Torso" unique_id=2024828478]
 visible = false
@@ -565,7 +625,7 @@ visible = false
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
-region_rect = Rect2(2000, 0, 250, 350)
+region_rect = Rect2(3250, 0, 250, 350)
 
 [node name="VegetableMissionIntro" type="Node2D" parent="AnimationLayers" unique_id=1253382922]
 
@@ -671,19 +731,40 @@ centered = false
 region_enabled = true
 region_rect = Rect2(500, 0, 250, 350)
 
-[node name="SquintEyes" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=187088775]
+[node name="Head2" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=2092772271]
 visible = false
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
 region_rect = Rect2(750, 0, 250, 350)
 
+[node name="SquintEyes" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=187088775]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(1000, 0, 250, 350)
+
 [node name="Torso" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1174504308]
 visible = false
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
-region_rect = Rect2(1500, 0, 250, 350)
+region_rect = Rect2(1750, 0, 250, 350)
+
+[node name="ChestDetails" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1174504309]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(2000, 0, 250, 350)
+
+[node name="Outline" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1174504310]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(2250, 0, 250, 350)
 
 [node name="Nipples" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1913889230]
 visible = false
@@ -697,14 +778,28 @@ visible = false
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
-region_rect = Rect2(1750, 0, 250, 350)
+region_rect = Rect2(2500, 0, 250, 350)
+
+[node name="HairFrontSwing" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=305767675]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(2750, 0, 250, 350)
+
+[node name="HairFrontBangs" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=305767676]
+visible = false
+texture = ExtResource("25_mouth_b_loop_medium")
+centered = false
+region_enabled = true
+region_rect = Rect2(3000, 0, 250, 350)
 
 [node name="Banana" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=871399523]
 visible = false
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
-region_rect = Rect2(2000, 0, 250, 350)
+region_rect = Rect2(3250, 0, 250, 350)
 
 [node name="VegetableMissionLoopMedium" type="Node2D" parent="AnimationLayers" unique_id=371959530]
 
@@ -820,7 +915,7 @@ z_index = 1000
 z_as_relative = false
 anchors_preset = 0
 offset_left = 100.0
-offset_top = 34.0
+offset_top = 65.5
 offset_right = 150.0
 offset_bottom = 97.0
 mouse_filter = 2
@@ -828,12 +923,25 @@ script = ExtResource("2_hover_box")
 priority = 10
 click_action = 1
 hover_description = "Raise Head"
-hidden_while_active_image_paths = Array[NodePath]([NodePath("HairBack"), NodePath("Torso/Neck"), NodePath("Head/HeadBase"), NodePath("Head/SquintEyes"), NodePath("Head/HairFrontNormal"), NodePath("Head/HairFrontBangs"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/ChestNoOutline"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Nipples"), NodePath("Torso/TorsoCrunch"), NodePath("Arms/RightArm"), NodePath("Arms/LeftArm"), NodePath("Arms/RightShoulderPad"), NodePath("Arms/LeftShoulderPad")])
+hidden_while_active_image_paths = Array[NodePath]([NodePath("HairBack"), NodePath("Torso/Neck"), NodePath("Head/HeadBase"), NodePath("Head/Head2"), NodePath("Head/SquintEyes"), NodePath("Head/HairFrontNormal"), NodePath("Head/HairFrontSwing"), NodePath("Head/HairFrontBangs"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/ChestNoOutline"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Nipples"), NodePath("Torso/TorsoCrunch"), NodePath("Arms/RightArm"), NodePath("Arms/LeftArm"), NodePath("Arms/RightShoulderPad"), NodePath("Arms/LeftShoulderPad")])
 shown_while_active_image_paths = Array[NodePath]([NodePath("AnimationLayers")])
-intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/HairBack"), NodePath("AnimationLayers/Head"), NodePath("AnimationLayers/Neck"), NodePath("AnimationLayers/SquintEyes"), NodePath("AnimationLayers/Torso"), NodePath("AnimationLayers/HairFrontNormal"), NodePath("AnimationArmLayers/LeftArm"), NodePath("AnimationArmLayers/RightArm"), NodePath("AnimationLayers/Banana")])
-loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBLoopMedium/HairBack"), NodePath("AnimationLayers/MouthBLoopMedium/Neck"), NodePath("AnimationLayers/MouthBLoopMedium/Head"), NodePath("AnimationLayers/MouthBLoopMedium/SquintEyes"), NodePath("AnimationArmLayers/MouthBLoopMedium/LeftArm"), NodePath("AnimationArmLayers/MouthBLoopMedium/RightArm"), NodePath("AnimationLayers/MouthBLoopMedium/Torso"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontNormal"), NodePath("AnimationLayers/MouthBLoopMedium/Banana")])
+intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/HairBack"), NodePath("AnimationLayers/Head"), NodePath("AnimationLayers/Head2"), NodePath("AnimationLayers/Neck"), NodePath("AnimationLayers/SquintEyes"), NodePath("AnimationArmLayers/RightArm"), NodePath("AnimationArmLayers/LeftArm"), NodePath("AnimationLayers/Torso"), NodePath("AnimationLayers/ChestDetails"), NodePath("AnimationLayers/Outline"), NodePath("AnimationLayers/HairFrontNormal"), NodePath("AnimationLayers/HairFrontSwing"), NodePath("AnimationLayers/HairFrontBangs"), NodePath("AnimationLayers/Banana")])
+loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBLoopMedium/HairBack"), NodePath("AnimationLayers/MouthBLoopMedium/Neck"), NodePath("AnimationLayers/MouthBLoopMedium/Head"), NodePath("AnimationLayers/MouthBLoopMedium/Head2"), NodePath("AnimationLayers/MouthBLoopMedium/SquintEyes"), NodePath("AnimationArmLayers/MouthBLoopMedium/RightArm"), NodePath("AnimationArmLayers/MouthBLoopMedium/LeftArm"), NodePath("AnimationLayers/MouthBLoopMedium/Torso"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetails"), NodePath("AnimationLayers/MouthBLoopMedium/Outline"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontNormal"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontSwing"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontBangs"), NodePath("AnimationLayers/MouthBLoopMedium/Banana")])
 intro_frame_count = 16
 loop_frame_count = 8
+
+[node name="HairHoverBox" type="Control" parent="." unique_id=1361736467]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 100.0
+offset_top = 34.0
+offset_right = 150.0
+offset_bottom = 65.5
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 11
+hover_description = "Switch Hairstyle"
 
 [node name="PelvisHoverBox" type="Control" parent="." unique_id=897079671]
 z_index = 1000

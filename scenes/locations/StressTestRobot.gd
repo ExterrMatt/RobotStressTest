@@ -36,6 +36,40 @@ const LEFT_SHOULDER_PAD_PATH: NodePath = ^"Arms/LeftShoulderPad"
 const RIGHT_SHOULDER_PAD_PATH: NodePath = ^"Arms/RightShoulderPad"
 const SHOULDER_HOVER_BOX_NAMES: Array[String] = ["LeftShoulderHoverBox", "RightShoulderHoverBox"]
 
+## The animation strip carries the chest as three stacked columns (base chest,
+## chest details, outline). The shoulder-pad toggle mirrors the static robot:
+## the outline shows while the pads are on and the chest details show while they
+## are off, so exactly one of these overlays is visible during the head anim.
+const ANIM_OUTLINE_PATHS: Array[NodePath] = [
+	^"AnimationLayers/Outline",
+	^"AnimationLayers/MouthBLoopMedium/Outline",
+]
+const ANIM_CHEST_DETAILS_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestDetails",
+	^"AnimationLayers/MouthBLoopMedium/ChestDetails",
+]
+
+## Hair-front styles cycled by the hair hover box, in click order. One style is
+## shown at a time on the static head; the matching column drives the head
+## animation. The default is the swing style.
+const HAIR_HOVER_BOX_NAME: String = "HairHoverBox"
+const HAIR_DEFAULT_INDEX: int = 1
+const HAIR_STATIC_OPTIONS: Array[NodePath] = [
+	^"Head/HairFrontNormal",
+	^"Head/HairFrontSwing",
+	^"Head/HairFrontBangs",
+]
+const HAIR_INTRO_ANIM_OPTIONS: Array[NodePath] = [
+	^"AnimationLayers/HairFrontNormal",
+	^"AnimationLayers/HairFrontSwing",
+	^"AnimationLayers/HairFrontBangs",
+]
+const HAIR_LOOP_ANIM_OPTIONS: Array[NodePath] = [
+	^"AnimationLayers/MouthBLoopMedium/HairFrontNormal",
+	^"AnimationLayers/MouthBLoopMedium/HairFrontSwing",
+	^"AnimationLayers/MouthBLoopMedium/HairFrontBangs",
+]
+
 const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
 	^"Torso/TorsoBase",
@@ -46,9 +80,13 @@ const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoCrunch",
 	^"BoobCover",
 	^"AnimationLayers/Torso",
+	^"AnimationLayers/ChestDetails",
+	^"AnimationLayers/Outline",
 	^"AnimationLayers/Nipples",
 	^"AnimationLayers/Torso/Nipples",
 	^"AnimationLayers/MouthBLoopMedium/Torso",
+	^"AnimationLayers/MouthBLoopMedium/ChestDetails",
+	^"AnimationLayers/MouthBLoopMedium/Outline",
 	^"AnimationLayers/MouthBLoopMedium/Nipples",
 ]
 const LEFT_ARM_PART_PATHS: Array[NodePath] = [
@@ -140,7 +178,7 @@ const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox"]:
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()
@@ -153,7 +191,7 @@ const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
 @export var sync_animation_layer_scale: bool = true
 
 ## Nodes that must stay hidden in-game and in hover previews until removed here.
-@export var always_hidden_image_paths: Array[NodePath] = [^"Head/HairFrontBangs"]:
+@export var always_hidden_image_paths: Array[NodePath] = []:
 	set(value):
 		always_hidden_image_paths = value
 		_request_configuration_refresh()
@@ -176,6 +214,8 @@ var _leg_prestage_active: bool = false
 ## Currently selected hand-pose option per side (index into the option lists).
 var _left_hand_texture_index: int = 0
 var _right_hand_texture_index: int = 0
+## Currently selected hair-front style (index into the hair option lists).
+var _hair_texture_index: int = HAIR_DEFAULT_INDEX
 var _animation_torso_restore_state: Dictionary = {}
 var _raised_legs_restore_index: int = -1
 var _rng := RandomNumberGenerator.new()
@@ -350,6 +390,7 @@ func reset_interactions_to_default() -> void:
 	_leg_prestage_active = false
 	_left_hand_texture_index = 0
 	_right_hand_texture_index = 0
+	_hair_texture_index = HAIR_DEFAULT_INDEX
 	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -368,6 +409,8 @@ func is_in_default_pose() -> bool:
 	if _leg_prestage_active:
 		return false
 	if _left_hand_texture_index != 0 or _right_hand_texture_index != 0:
+		return false
+	if _hair_texture_index != HAIR_DEFAULT_INDEX:
 		return false
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -401,6 +444,8 @@ func hovered_hover_box_description() -> String:
 		return "Equip Shoulder Pads" if _are_shoulder_pads_removed() else "Remove Shoulder Pads"
 	if _is_hand_hover_box(box):
 		return "Switch Hand"
+	if _is_hair_hover_box(box):
+		return "Switch Hairstyle"
 	return String(box.get("hover_description"))
 
 
@@ -585,7 +630,23 @@ func _handle_hover_box_click(box: Control) -> void:
 	if _is_hand_hover_box(box):
 		_cycle_hand_texture(box)
 		return
+	if _is_hair_hover_box(box):
+		_cycle_hair_texture()
+		return
 	_toggle_box_effect(box)
+
+
+func _is_hair_hover_box(box: Control) -> bool:
+	return box != null and String(box.name) == HAIR_HOVER_BOX_NAME
+
+
+## Advances to the next hair-front style, wrapping around. The selection drives
+## both the static head and the matching head-animation column.
+func _cycle_hair_texture() -> void:
+	if HAIR_STATIC_OPTIONS.is_empty():
+		return
+	_hair_texture_index = (_hair_texture_index + 1) % HAIR_STATIC_OPTIONS.size()
+	_apply_visibility_state()
 
 
 func _is_hand_hover_box(box: Control) -> bool:
@@ -763,6 +824,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_leg_prestage_visibility(resolved)
 	_apply_hand_texture_selection(resolved)
+	_apply_hair_texture_selection(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_pelvis_torso_crunch_animation_slot(resolved)
@@ -844,6 +906,24 @@ func _apply_single_hand_texture_selection(resolved: Dictionary, options: Array[N
 		resolved[options[i]] = (i == selected)
 
 
+## Shows the selected hair-front style and hides the others. The static head hair
+## is only shown while the head is lowered (the head animation supplies its own
+## hair strip); the animation hair columns keep only the selected style visible.
+func _apply_hair_texture_selection(resolved: Dictionary) -> void:
+	if HAIR_STATIC_OPTIONS.is_empty():
+		return
+	var selected := _hair_texture_index % HAIR_STATIC_OPTIONS.size()
+	var head_active := _is_named_box_effect_active("HeadHoverBox")
+	for i in range(HAIR_STATIC_OPTIONS.size()):
+		resolved[HAIR_STATIC_OPTIONS[i]] = (not head_active) and (i == selected)
+		if i == selected:
+			continue
+		if i < HAIR_INTRO_ANIM_OPTIONS.size():
+			resolved[HAIR_INTRO_ANIM_OPTIONS[i]] = false
+		if i < HAIR_LOOP_ANIM_OPTIONS.size():
+			resolved[HAIR_LOOP_ANIM_OPTIONS[i]] = false
+
+
 func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 	_apply_paths_available(resolved, TORSO_PART_PATHS, _robot_part_count("torso") >= 1)
 
@@ -870,10 +950,13 @@ func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
 ## Resolves the shoulder-pad toggle. When the pads are removed they are hidden
 ## and the outlined chest is swapped for the outline-free chest wherever the
 ## chest would otherwise show; when the pads are on the outline-free chest stays
-## hidden and the regular chest is left untouched.
+## hidden and the regular chest is left untouched. The head-animation strip
+## mirrors this: its outline column shows with the pads on and its chest-details
+## column shows with the pads off.
 func _apply_shoulder_pad_state(resolved: Dictionary) -> void:
 	if not _are_shoulder_pads_removed():
 		resolved[CHEST_NO_OUTLINE_PATH] = false
+		_hide_paths(resolved, ANIM_CHEST_DETAILS_PATHS)
 		return
 	resolved[LEFT_SHOULDER_PAD_PATH] = false
 	resolved[RIGHT_SHOULDER_PAD_PATH] = false
@@ -882,6 +965,12 @@ func _apply_shoulder_pad_state(resolved: Dictionary) -> void:
 		resolved[CHEST_NO_OUTLINE_PATH] = true
 	else:
 		resolved[CHEST_NO_OUTLINE_PATH] = false
+	_hide_paths(resolved, ANIM_OUTLINE_PATHS)
+
+
+func _hide_paths(resolved: Dictionary, paths: Array[NodePath]) -> void:
+	for path in paths:
+		resolved[path] = false
 
 
 func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], available: bool) -> void:
