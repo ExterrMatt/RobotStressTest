@@ -20,3 +20,4 @@ res://scenes/locations/WorkInventory.gd
 res://scenes/locations/Workshop.gd
 res://scenes/locations/Maintenance.gd
 res://scenes/locations/Maintenance.tscn
+res://scenes/locations/StressTestRobotShadow.gd
