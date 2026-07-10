@@ -49,6 +49,30 @@ const ANIM_CHEST_DETAILS_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/ChestDetails",
 ]
 
+## Head styles swapped by the Shift+H debug key. One is shown at a time on the
+## static head and the matching column drives the head animation. The default is
+## head_2 (index 1).
+const HEAD_DEFAULT_INDEX: int = 1
+const HEAD_STATIC_OPTIONS: Array[NodePath] = [
+	^"Head/HeadBase",
+	^"Head/Head2",
+]
+const HEAD_INTRO_ANIM_OPTIONS: Array[NodePath] = [
+	^"AnimationLayers/Head",
+	^"AnimationLayers/Head2",
+]
+const HEAD_LOOP_ANIM_OPTIONS: Array[NodePath] = [
+	^"AnimationLayers/MouthBLoopMedium/Head",
+	^"AnimationLayers/MouthBLoopMedium/Head2",
+]
+
+## Squint-eyes overlay toggled by the Ctrl+Shift+H debug key.
+const SQUINT_STATIC_PATH: NodePath = ^"Head/SquintEyes"
+const SQUINT_ANIM_PATHS: Array[NodePath] = [
+	^"AnimationLayers/SquintEyes",
+	^"AnimationLayers/MouthBLoopMedium/SquintEyes",
+]
+
 ## Hair-front styles cycled by the hair hover box, in click order. One style is
 ## shown at a time on the static head; the matching column drives the head
 ## animation. The default is the swing style.
@@ -216,6 +240,10 @@ var _left_hand_texture_index: int = 0
 var _right_hand_texture_index: int = 0
 ## Currently selected hair-front style (index into the hair option lists).
 var _hair_texture_index: int = HAIR_DEFAULT_INDEX
+## Currently selected head style (index into the head option lists).
+var _head_texture_index: int = HEAD_DEFAULT_INDEX
+## Whether the squint-eyes overlay is shown.
+var _squint_eyes_enabled: bool = true
 var _animation_torso_restore_state: Dictionary = {}
 var _raised_legs_restore_index: int = -1
 var _rng := RandomNumberGenerator.new()
@@ -282,12 +310,33 @@ func _handle_debug_key(event: InputEventKey) -> void:
 		return
 	if not _debug_mode_enabled():
 		return
-	_toggle_hand_grip()
+	if event.ctrl_pressed and event.shift_pressed:
+		_toggle_squint_eyes()
+	elif event.shift_pressed and not event.ctrl_pressed:
+		_swap_head_texture()
+	elif not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed:
+		_toggle_hand_grip()
+	else:
+		return
 	get_viewport().set_input_as_handled()
 
 
 func _toggle_hand_grip() -> void:
 	_hand_grip_overgrip = not _hand_grip_overgrip
+	_apply_visibility_state()
+
+
+## Swaps the head between the two head styles (head and head_2).
+func _swap_head_texture() -> void:
+	if HEAD_STATIC_OPTIONS.is_empty():
+		return
+	_head_texture_index = (_head_texture_index + 1) % HEAD_STATIC_OPTIONS.size()
+	_apply_visibility_state()
+
+
+## Shows or hides the squint-eyes overlay on the head.
+func _toggle_squint_eyes() -> void:
+	_squint_eyes_enabled = not _squint_eyes_enabled
 	_apply_visibility_state()
 
 
@@ -391,6 +440,8 @@ func reset_interactions_to_default() -> void:
 	_left_hand_texture_index = 0
 	_right_hand_texture_index = 0
 	_hair_texture_index = HAIR_DEFAULT_INDEX
+	_head_texture_index = HEAD_DEFAULT_INDEX
+	_squint_eyes_enabled = true
 	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -411,6 +462,10 @@ func is_in_default_pose() -> bool:
 	if _left_hand_texture_index != 0 or _right_hand_texture_index != 0:
 		return false
 	if _hair_texture_index != HAIR_DEFAULT_INDEX:
+		return false
+	if _head_texture_index != HEAD_DEFAULT_INDEX:
+		return false
+	if not _squint_eyes_enabled:
 		return false
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -825,6 +880,8 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_leg_prestage_visibility(resolved)
 	_apply_hand_texture_selection(resolved)
 	_apply_hair_texture_selection(resolved)
+	_apply_head_texture_selection(resolved)
+	_apply_squint_eyes_state(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_pelvis_torso_crunch_animation_slot(resolved)
@@ -922,6 +979,32 @@ func _apply_hair_texture_selection(resolved: Dictionary) -> void:
 			resolved[HAIR_INTRO_ANIM_OPTIONS[i]] = false
 		if i < HAIR_LOOP_ANIM_OPTIONS.size():
 			resolved[HAIR_LOOP_ANIM_OPTIONS[i]] = false
+
+
+## Shows the selected head style and hides the other. Like the hair, the static
+## head styles are only shown while the head is lowered; during the animation the
+## matching head column stays visible and the other is hidden.
+func _apply_head_texture_selection(resolved: Dictionary) -> void:
+	if HEAD_STATIC_OPTIONS.is_empty():
+		return
+	var selected := _head_texture_index % HEAD_STATIC_OPTIONS.size()
+	var head_active := _is_named_box_effect_active("HeadHoverBox")
+	for i in range(HEAD_STATIC_OPTIONS.size()):
+		resolved[HEAD_STATIC_OPTIONS[i]] = (not head_active) and (i == selected)
+		if i == selected:
+			continue
+		if i < HEAD_INTRO_ANIM_OPTIONS.size():
+			resolved[HEAD_INTRO_ANIM_OPTIONS[i]] = false
+		if i < HEAD_LOOP_ANIM_OPTIONS.size():
+			resolved[HEAD_LOOP_ANIM_OPTIONS[i]] = false
+
+
+## Hides the squint-eyes overlay (static and animation) while it is toggled off.
+func _apply_squint_eyes_state(resolved: Dictionary) -> void:
+	if _squint_eyes_enabled:
+		return
+	resolved[SQUINT_STATIC_PATH] = false
+	_hide_paths(resolved, SQUINT_ANIM_PATHS)
 
 
 func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
