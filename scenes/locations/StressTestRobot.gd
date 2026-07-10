@@ -53,6 +53,7 @@ const ANIM_CHEST_DETAILS_PATHS: Array[NodePath] = [
 ## static head and the matching column drives the head animation. The default is
 ## head_2 (index 1).
 const HEAD_DEFAULT_INDEX: int = 1
+const HEAD_HEAD2_INDEX: int = 1
 const HEAD_STATIC_OPTIONS: Array[NodePath] = [
 	^"Head/HeadBase",
 	^"Head/Head2",
@@ -66,7 +67,10 @@ const HEAD_LOOP_ANIM_OPTIONS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/Head2",
 ]
 
-## Squint-eyes overlay toggled by the Ctrl+Shift+H debug key.
+## Squint-eyes overlay toggled by the Ctrl+Shift+H debug key. Off by default.
+## While the head_2 style is selected, the static squint eyes sit one pixel lower.
+const SQUINT_DEFAULT_ENABLED: bool = false
+const SQUINT_HEAD2_LOWER_PX: float = 1.0
 const SQUINT_STATIC_PATH: NodePath = ^"Head/SquintEyes"
 const SQUINT_ANIM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/SquintEyes",
@@ -243,7 +247,7 @@ var _hair_texture_index: int = HAIR_DEFAULT_INDEX
 ## Currently selected head style (index into the head option lists).
 var _head_texture_index: int = HEAD_DEFAULT_INDEX
 ## Whether the squint-eyes overlay is shown.
-var _squint_eyes_enabled: bool = true
+var _squint_eyes_enabled: bool = SQUINT_DEFAULT_ENABLED
 var _animation_torso_restore_state: Dictionary = {}
 var _raised_legs_restore_index: int = -1
 var _rng := RandomNumberGenerator.new()
@@ -441,7 +445,7 @@ func reset_interactions_to_default() -> void:
 	_right_hand_texture_index = 0
 	_hair_texture_index = HAIR_DEFAULT_INDEX
 	_head_texture_index = HEAD_DEFAULT_INDEX
-	_squint_eyes_enabled = true
+	_squint_eyes_enabled = SQUINT_DEFAULT_ENABLED
 	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -465,7 +469,7 @@ func is_in_default_pose() -> bool:
 		return false
 	if _head_texture_index != HEAD_DEFAULT_INDEX:
 		return false
-	if not _squint_eyes_enabled:
+	if _squint_eyes_enabled != SQUINT_DEFAULT_ENABLED:
 		return false
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -887,6 +891,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_pelvis_torso_crunch_animation_slot(resolved)
 	_apply_shoulder_pad_state(resolved)
 	_apply_resolved_visibility(resolved)
+	_apply_squint_eyes_offset()
 
 
 func _restore_base_visibility() -> void:
@@ -999,12 +1004,28 @@ func _apply_head_texture_selection(resolved: Dictionary) -> void:
 			resolved[HEAD_LOOP_ANIM_OPTIONS[i]] = false
 
 
-## Hides the squint-eyes overlay (static and animation) while it is toggled off.
+## Resolves the squint-eyes overlay. It is shown on the static head only while
+## enabled and the head is lowered; while it is toggled off the static and
+## animation squint eyes are hidden everywhere.
 func _apply_squint_eyes_state(resolved: Dictionary) -> void:
-	if _squint_eyes_enabled:
+	var head_active := _is_named_box_effect_active("HeadHoverBox")
+	resolved[SQUINT_STATIC_PATH] = _squint_eyes_enabled and not head_active
+	if not _squint_eyes_enabled:
+		_hide_paths(resolved, SQUINT_ANIM_PATHS)
+
+
+## Nudges the static squint eyes down one pixel while the head_2 style is shown
+## in the default (lowered) pose, so they line up with that head's eye sockets.
+func _apply_squint_eyes_offset() -> void:
+	var node := get_node_or_null(SQUINT_STATIC_PATH) as Control
+	if node == null:
 		return
-	resolved[SQUINT_STATIC_PATH] = false
-	_hide_paths(resolved, SQUINT_ANIM_PATHS)
+	var lowered := _squint_eyes_enabled \
+			and _head_texture_index == HEAD_HEAD2_INDEX \
+			and not _is_named_box_effect_active("HeadHoverBox")
+	var offset := SQUINT_HEAD2_LOWER_PX if lowered else 0.0
+	node.offset_top = offset
+	node.offset_bottom = offset
 
 
 func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
