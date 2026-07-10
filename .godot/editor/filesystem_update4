@@ -11,3 +11,12 @@ res://scenes/locations/HeadScrewRepair.gd
 res://scenes/locations/Store.gd
 res://scenes/locations/StoreItemData.gd
 res://scenes/locations/StressTest.gd
+res://scenes/locations/Sleep.gd
+res://scenes/locations/StressTestRobot.tscn
+res://scenes/locations/LocationBase.gd
+res://scenes/locations/School.gd
+res://scenes/locations/Work.gd
+res://scenes/locations/WorkInventory.gd
+res://scenes/locations/Workshop.gd
+res://scenes/locations/Maintenance.gd
+res://scenes/locations/Maintenance.tscn
