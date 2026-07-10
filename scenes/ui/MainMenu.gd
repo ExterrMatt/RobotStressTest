@@ -832,8 +832,10 @@ func _close_overlay() -> void:
 
 
 ## Shared backdrop + panel skeleton. Returns {back, content} so callers can
-## stuff things into the content VBox.
-func _build_overlay_shell(title: String) -> Dictionary:
+## stuff things into the content VBox. When `ornate` is true the panel uses the
+## double golden border (OrnateFrameOuter shell + OrnateFrameInner line), the
+## same look the DialogueBox uses.
+func _build_overlay_shell(title: String, ornate: bool = false) -> Dictionary:
 	var back := ColorRect.new()
 	back.name = "OverlayBack"
 	back.color = Color(0.008, 0.012, 0.039, 0.7)
@@ -852,21 +854,33 @@ func _build_overlay_shell(title: String) -> Dictionary:
 	back.add_child(center)
 
 	var panel := PanelContainer.new()
-	panel.theme_type_variation = &"HUDPanel"
 	panel.custom_minimum_size = Vector2(560, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	center.add_child(panel)
 
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 28)
-	margin.add_theme_constant_override("margin_top", 24)
-	margin.add_theme_constant_override("margin_right", 28)
-	margin.add_theme_constant_override("margin_bottom", 24)
-	panel.add_child(margin)
-
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)
-	margin.add_child(vbox)
+
+	if ornate:
+		# OrnateFrameOuter (dark fill + gold border) wrapping an
+		# OrnateFrameInner (inner gold line) gives the double golden border.
+		# The inner frame already carries generous content margins, so the
+		# VBox is parented straight into it without an extra MarginContainer.
+		panel.theme_type_variation = &"OrnateFrameOuter"
+		var inner_frame := PanelContainer.new()
+		inner_frame.name = "InnerFrame"
+		inner_frame.theme_type_variation = &"OrnateFrameInner"
+		panel.add_child(inner_frame)
+		inner_frame.add_child(vbox)
+	else:
+		panel.theme_type_variation = &"HUDPanel"
+		var margin := MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", 28)
+		margin.add_theme_constant_override("margin_top", 24)
+		margin.add_theme_constant_override("margin_right", 28)
+		margin.add_theme_constant_override("margin_bottom", 24)
+		panel.add_child(margin)
+		margin.add_child(vbox)
 
 	var title_label := Label.new()
 	title_label.text = title
@@ -947,24 +961,38 @@ func _build_save_slot(data: Dictionary) -> Control:
 
 
 func _build_settings_panel() -> Control:
-	var shell: Dictionary = _build_overlay_shell("SETTINGS")
+	# Double golden border on the larger container; each inner setting row gets
+	# its own single golden border via _wrap_in_gold_panel.
+	var shell: Dictionary = _build_overlay_shell("SETTINGS", true)
 	var content: VBoxContainer = shell["content"]
 
-	content.add_child(_build_option_row("DISPLAY MODE", \
-		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], _window_mode, _on_window_mode_selected))
-	content.add_child(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed))
-	content.add_child(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled))
-	content.add_child(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled))
+	content.add_child(_wrap_in_gold_panel(_build_option_row("DISPLAY MODE", \
+		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], _window_mode, _on_window_mode_selected)))
+	content.add_child(_wrap_in_gold_panel(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed)))
+	content.add_child(_wrap_in_gold_panel(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled)))
+	content.add_child(_wrap_in_gold_panel(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled)))
 
 	var apply_row := HBoxContainer.new()
 	apply_row.alignment = BoxContainer.ALIGNMENT_END
 	var apply_btn := Button.new()
 	apply_btn.text = "CLOSE"
+	# Match the gold-bordered LEAVE / END buttons used across the locations.
+	apply_btn.theme_type_variation = &"GoldHudButton"
 	apply_btn.pressed.connect(_close_overlay)
 	apply_row.add_child(apply_btn)
 	content.add_child(apply_row)
 
 	return shell["back"]
+
+
+## Wrap a settings control in a single-gold-border panel so each inner row
+## reads as its own framed element inside the double-bordered settings shell.
+func _wrap_in_gold_panel(inner: Control) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"GoldPanel"
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_child(inner)
+	return panel
 
 
 func _build_slider_row(label_text: String, initial: float, changed_callback: Callable) -> HBoxContainer:

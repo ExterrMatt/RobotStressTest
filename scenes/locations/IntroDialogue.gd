@@ -61,22 +61,22 @@ func _build_name_prompt_panel() -> void:
 	if parent == null:
 		return
 
+	# Match the DialogueBox's double golden border: an OrnateFrameOuter shell
+	# (dark fill + gold border) wrapping an OrnateFrameInner (inner gold line).
 	var panel := PanelContainer.new()
 	panel.name = "NamePromptPanel"
-	panel.theme_type_variation = &"HUDPanel"
+	panel.theme_type_variation = &"OrnateFrameOuter"
 	panel.custom_minimum_size = Vector2(0.0, 140.0)
 	panel.visible = false
 
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_top", 18)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_bottom", 18)
-	panel.add_child(margin)
+	var inner_frame := PanelContainer.new()
+	inner_frame.name = "InnerFrame"
+	inner_frame.theme_type_variation = &"OrnateFrameInner"
+	panel.add_child(inner_frame)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 12)
-	margin.add_child(vbox)
+	inner_frame.add_child(vbox)
 
 	var label := Label.new()
 	label.text = "What is your name?"
@@ -98,6 +98,9 @@ func _build_name_prompt_panel() -> void:
 
 	var continue_button := Button.new()
 	continue_button.text = "CONTINUE"
+	# Same gold-bordered look as the store/maintenance/workshop LEAVE / END
+	# buttons so the intro's continue reads as part of the same UI language.
+	continue_button.theme_type_variation = &"GoldHudButton"
 	continue_button.custom_minimum_size = Vector2(180.0, 48.0)
 	continue_button.pressed.connect(_accept_player_name)
 	row.add_child(continue_button)
@@ -113,6 +116,10 @@ func _accept_player_name() -> void:
 		_name_prompt_panel.visible = false
 	dialogue_box.visible = true
 	_apply_intro_visuals(_intro_key)
+	# The name is often submitted by pressing Enter. In debug mode a held Enter
+	# would otherwise seed a hold-skip and eat the uncle's first line, so make
+	# this Enter act purely as a "click continue" on the newly shown dialogue.
+	dialogue_box.suppress_next_enter_hold()
 	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key))
 
 
