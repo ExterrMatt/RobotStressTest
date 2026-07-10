@@ -90,15 +90,23 @@ extends Control
 
 @export var face_and_front_hair_shadow_paths: Array[NodePath] = [
 	^"Head/HeadBase",
+	^"Head/Head2",
 	^"Head/SquintEyes",
 	^"Head/HairFrontNormal",
+	^"Head/HairFrontSwing",
 	^"Head/HairFrontBangs",
 	^"AnimationLayers/Head",
+	^"AnimationLayers/Head2",
 	^"AnimationLayers/SquintEyes",
 	^"AnimationLayers/HairFrontNormal",
+	^"AnimationLayers/HairFrontSwing",
+	^"AnimationLayers/HairFrontBangs",
 	^"AnimationLayers/MouthBLoopMedium/Head",
+	^"AnimationLayers/MouthBLoopMedium/Head2",
 	^"AnimationLayers/MouthBLoopMedium/SquintEyes",
 	^"AnimationLayers/MouthBLoopMedium/HairFrontNormal",
+	^"AnimationLayers/MouthBLoopMedium/HairFrontSwing",
+	^"AnimationLayers/MouthBLoopMedium/HairFrontBangs",
 ]
 
 @export var source_robot_path: NodePath = ^"../StressTestRobot"
