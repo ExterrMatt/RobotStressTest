@@ -214,6 +214,24 @@ func _process(_delta: float) -> void:
 			return
 
 
+## Debug (number-6 key, routed from Main): answer the current question as if the
+## player clicked the correct choice, advancing straight into the feedback
+## dialogue. Only acts while the answer buttons are up. During the intro history
+## question every answer routes to the same feedback, so we click the first
+## available button there.
+func debug_auto_solve() -> void:
+	if _scene_phase != SchoolPhase.QUESTION_CHOICES:
+		return
+	if _is_intro_school_first():
+		for child in choice_grid.get_children():
+			if child is Button and not (child as Button).disabled:
+				(child as Button).pressed.emit()
+				return
+		return
+	var correct_index: int = int(_current_question.get("correct", 0))
+	_on_answer_pressed(correct_index, correct_index)
+
+
 func _pick_teacher_and_question() -> void:
 	if _is_intro_school_first():
 		_current_teacher = INTRO_HISTORY_TEACHER
