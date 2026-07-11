@@ -29,9 +29,14 @@ const LIGHT_ANIM_SECONDS: float = 0.5
 const LIGHT_PHASE_1: float = 0.4
 const LIGHT_PHASE_2: float = 0.2
 
-## On-screen height (px) of every drone layer, anchored centre-bottom over the
-## scene image. The source art is 256x256; it is drawn at this height.
-const DRONE_HEIGHT: float = 192.0
+## The drone art is 256x256, but the top 64px are empty — every layer's content
+## sits in the lower 256x192 window. All layers share that canvas, so cropping
+## them to the same window keeps them in register while making the art read as
+## 256x192. We then scale that window to fill the scene image top-to-bottom
+## (like the Ms. Vey portrait), keeping aspect, anchored centre-bottom.
+const DRONE_CROP_RECT: Rect2 = Rect2(0.0, 64.0, 256.0, 192.0)
+## Drone height as a fraction of the scene-image height (1.0 = fills top to bottom).
+const DRONE_FILL_SCALE: float = 1.0
 
 # Suspicion thresholds that colour the drone's clean-scan sign-off line.
 const SUSPICION_CRIMINAL: int = 50
@@ -113,13 +118,24 @@ func _make_layer(node_name: String, path: String) -> TextureRect:
 	var rect := TextureRect.new()
 	rect.name = node_name
 	if not path.is_empty() and ResourceLoader.exists(path):
-		rect.texture = load(path) as Texture2D
+		rect.texture = _cropped(load(path) as Texture2D)
 	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_drone_stage.add_child(rect)
 	return rect
+
+
+## Wrap a 256x256 drone texture so only the 256x192 content window shows. Every
+## layer uses the same crop, so the composite stays aligned.
+func _cropped(tex: Texture2D) -> Texture2D:
+	if tex == null:
+		return null
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = DRONE_CROP_RECT
+	return atlas
 
 
 ## Size and place the drone stack bottom-centre over the scene image, matching
@@ -130,8 +146,8 @@ func _layout_drone() -> void:
 	var sz: Vector2 = _overlay_root.size
 	if sz.x <= 0.0 or sz.y <= 0.0:
 		return
-	var h: float = DRONE_HEIGHT
-	var w: float = h  # base sprite is square (256x256)
+	var h: float = sz.y * DRONE_FILL_SCALE
+	var w: float = h * (DRONE_CROP_RECT.size.x / DRONE_CROP_RECT.size.y)
 	_drone_stage.position = Vector2((sz.x - w) * 0.5, sz.y - h)
 	_drone_stage.size = Vector2(w, h)
 
@@ -299,7 +315,7 @@ func _show_light(path: String) -> void:
 	if _layer_light == null:
 		return
 	if ResourceLoader.exists(path):
-		_layer_light.texture = load(path) as Texture2D
+		_layer_light.texture = _cropped(load(path) as Texture2D)
 	_layer_light.visible = true
 
 
