@@ -1,28 +1,18 @@
-extends Control
+extends LocationBase
 class_name DroneEncounter
 ## Patrol-drone street inspection that plays after a regular school or work run.
 ##
-## A short, self-contained cutscene over the park background. The drone is drawn
-## as a stack of layers the same way the teacher/uncle portraits sit over the
-## scene image: a base drone sprite that is ALWAYS on, plus independent overlays
-## composited on top of it:
-##   - id     (id.png)      the claw presenting the player's ID
-##   - gun    (guns.png)    the drawn weapon
-##   - light  (light_1/2)   the camera light, animated for scans / photos
-## Each overlay shares the base drone's rect so it lines up; the base stays on
-## underneath because the overlays only depict the claw / gun / light, not the
-## whole drone.
+## Loaded like any other dialogue location, so it inherits the normal framed
+## presentation: the park background in the golden picture frame, the standard
+## dialogue box, and the HUD. Main wipes into it from the previous scene and
+## wipes out to the bedroom when it finishes.
 ##
-## The dialogue branches on whether the player stole the previous scene's
-## contraband. Layer changes are driven off the dialogue page that narrates
-## them (ID handed over / returned, gun drawn, photo snapped).
+## The drone is drawn over the scene image the same way the uncle/teacher
+## portraits are — a bottom-centre stack of layers. A base sprite stays on;
+## independent id / gun / light overlays composite on top (all 256x256, so they
+## register). The dialogue branches on whether the player stole the previous
+## scene's contraband, and layer changes are driven off the narrating page.
 
-signal finished
-
-const DIALOGUE_BOX_SCENE: PackedScene = preload("res://scenes/ui/DialogueBox.tscn")
-
-# --- assets ---
-const BACKGROUND_PATH: String = "res://assets/textures/backgrounds/park.png"
 const DRONE_BASE: String = "res://assets/textures/characters/drone/drone.png"
 const DRONE_ID: String = "res://assets/textures/characters/drone/id.png"
 const DRONE_GUN: String = "res://assets/textures/characters/drone/guns.png"
@@ -39,75 +29,67 @@ const LIGHT_ANIM_SECONDS: float = 0.5
 const LIGHT_PHASE_1: float = 0.4
 const LIGHT_PHASE_2: float = 0.2
 
-## Vertical space (px) reserved at the bottom for the dialogue box; the drone is
-## laid out above it.
-const DIALOGUE_RESERVED: float = 235.0
+## Drone height as a multiple of the scene-image height, bottom-centred — the
+## same footprint the uncle's ~1.1 bottom-centre portrait uses.
+const DRONE_PORTRAIT_SCALE: float = 1.05
 
 # Suspicion thresholds that colour the drone's clean-scan sign-off line.
 const SUSPICION_CRIMINAL: int = 50
 const SUSPICION_ACKNOWLEDGED: int = 75
 
-# --- inputs (set via configure() before the node enters the tree) ---
+@onready var dialogue_box: DialogueBox = %DialogueBox
+
+# --- inputs (pulled from Main at _ready) ---
 var _place: String = "work"
 var _contraband: String = ""
 
-# --- nodes ---
+# --- drone layers (parented onto the scene image via show_scene_overlay) ---
+var _overlay_root: Control = null
 var _drone_stage: Control = null
 var _layer_base: TextureRect = null
 var _layer_id: TextureRect = null
 var _layer_gun: TextureRect = null
 var _layer_light: TextureRect = null
-var _dialogue_box: DialogueBox = null
 
-# Per-page callables, parallel to the pages handed to the DialogueBox. Entry i
-# runs when page i begins (ID on/off, gun out, light blink...).
+# Per-page callables, parallel to the pages handed to the DialogueBox.
 var _page_actions: Array[Callable] = []
 ## Bumped whenever a new light action starts so a stale in-flight blink bails.
 var _light_serial: int = 0
 
 
-## Called by Main before add_child so _ready has the branch inputs it needs.
-## `place` is "school" or "work"; `contraband` is the stolen item's display
-## name (empty when the player left clean).
-func configure(place: String, contraband: String) -> void:
-	_place = place
-	_contraband = contraband
-
-
 func _ready() -> void:
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	_build_ui()
-	get_viewport().size_changed.connect(_layout_drone)
-	_layout_drone()
+	var main := get_tree().current_scene
+	if main != null and main.has_method("consume_pending_drone_args"):
+		var args: Dictionary = main.consume_pending_drone_args()
+		_place = String(args.get("place", "work"))
+		_contraband = String(args.get("contraband", ""))
+	# No teacher/uncle portrait should linger under the drone.
+	if main != null and main.has_method("hide_teacher_portrait"):
+		main.hide_teacher_portrait()
+
+	_build_drone_overlay()
+	if main != null and main.has_method("show_scene_overlay"):
+		main.show_scene_overlay(_overlay_root)
+
+	dialogue_box.finished.connect(_on_dialogue_finished)
+	dialogue_box.page_advanced.connect(_on_page_advanced)
 	_start()
 
 
-func _build_ui() -> void:
-	# Solid fill behind the park in case the background ever fails to load.
-	var back := ColorRect.new()
-	back.name = "Backdrop"
-	back.color = Color(0.02, 0.03, 0.05, 1.0)
-	back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(back)
+# --- drone layer stack -------------------------------------------------------
 
-	if ResourceLoader.exists(BACKGROUND_PATH):
-		var bg := TextureRect.new()
-		bg.name = "Background"
-		bg.texture = load(BACKGROUND_PATH) as Texture2D
-		bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(bg)
+func _build_drone_overlay() -> void:
+	_overlay_root = Control.new()
+	_overlay_root.name = "DroneOverlay"
+	_overlay_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_overlay_root.resized.connect(_layout_drone)
 
-	# The drone "portrait": a stage rect (positioned in _layout_drone) holding
-	# the base sprite and its overlays, all filling the stage so they align.
+	# The stack of layers, positioned bottom-centre in _layout_drone.
 	_drone_stage = Control.new()
 	_drone_stage.name = "DroneStage"
+	_drone_stage.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_drone_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_drone_stage)
+	_overlay_root.add_child(_drone_stage)
 
 	_layer_base = _make_layer("DroneBase", DRONE_BASE)
 	_layer_id = _make_layer("DroneId", DRONE_ID)
@@ -118,27 +100,12 @@ func _build_ui() -> void:
 	_layer_gun.visible = false
 	_layer_light.visible = false
 
-	# Dialogue box pinned to the bottom.
-	_dialogue_box = DIALOGUE_BOX_SCENE.instantiate() as DialogueBox
-	_dialogue_box.name = "DroneDialogue"
-	_dialogue_box.anchor_left = 0.0
-	_dialogue_box.anchor_right = 1.0
-	_dialogue_box.anchor_top = 1.0
-	_dialogue_box.anchor_bottom = 1.0
-	_dialogue_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_dialogue_box.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_dialogue_box.offset_left = 80.0
-	_dialogue_box.offset_right = -80.0
-	_dialogue_box.offset_top = -(DIALOGUE_RESERVED - 15.0)
-	_dialogue_box.offset_bottom = -40.0
-	add_child(_dialogue_box)
-	_dialogue_box.page_advanced.connect(_on_page_advanced)
-	_dialogue_box.finished.connect(_on_dialogue_finished)
+	_layout_drone.call_deferred()
 
 
-## Build one drone layer as a full-rect child of the stage so every layer maps
-## onto the same box and composites in register. `path` may be empty for the
-## light layer, whose texture is set per-frame.
+## One drone layer as a full-rect child of the stage so every layer maps onto
+## the same box and composites in register. `path` may be empty (the light
+## layer, whose texture is set per-frame).
 func _make_layer(node_name: String, path: String) -> TextureRect:
 	var rect := TextureRect.new()
 	rect.name = node_name
@@ -152,35 +119,21 @@ func _make_layer(node_name: String, path: String) -> TextureRect:
 	return rect
 
 
-## Size and place the drone stage bottom-centre over the park, above the
-## dialogue box — the same footprint the teacher/uncle portraits use.
+## Size and place the drone stack bottom-centre over the scene image, matching
+## the uncle/teacher portrait footprint.
 func _layout_drone() -> void:
-	if _drone_stage == null:
+	if _overlay_root == null or _drone_stage == null:
 		return
-	var vp: Vector2 = get_viewport_rect().size
-	var aspect: float = 1.0
-	var base_tex := load(DRONE_BASE) as Texture2D
-	if base_tex != null and base_tex.get_size().y > 0.0:
-		aspect = base_tex.get_size().x / base_tex.get_size().y
+	var sz: Vector2 = _overlay_root.size
+	if sz.x <= 0.0 or sz.y <= 0.0:
+		return
+	var h: float = sz.y * DRONE_PORTRAIT_SCALE
+	var w: float = h  # base sprite is square (256x256)
+	_drone_stage.position = Vector2((sz.x - w) * 0.5, sz.y - h)
+	_drone_stage.size = Vector2(w, h)
 
-	var top_margin: float = 24.0
-	var avail_h: float = maxf(1.0, vp.y - DIALOGUE_RESERVED - top_margin)
-	var h: float = minf(vp.y * 0.6, avail_h)
-	var w: float = h * aspect
-	var max_w: float = vp.x * 0.9
-	if w > max_w:
-		w = max_w
-		h = w / maxf(0.01, aspect)
 
-	_drone_stage.anchor_left = 0.5
-	_drone_stage.anchor_right = 0.5
-	_drone_stage.anchor_top = 1.0
-	_drone_stage.anchor_bottom = 1.0
-	_drone_stage.offset_left = -w * 0.5
-	_drone_stage.offset_right = w * 0.5
-	_drone_stage.offset_top = -DIALOGUE_RESERVED - h
-	_drone_stage.offset_bottom = -DIALOGUE_RESERVED
-
+# --- dialogue ----------------------------------------------------------------
 
 func _start() -> void:
 	var stole := not _contraband.is_empty()
@@ -203,14 +156,11 @@ func _start() -> void:
 	else:
 		GameState.drone_caught_last_inspection = false
 
-	_dialogue_box.play_pages(pages)
+	dialogue_box.play_pages(pages)
 
 
-# --- page assembly -----------------------------------------------------------
-#
 # _add_page keeps _page_actions aligned 1:1 with the pages array so
 # _on_page_advanced can run the layer change for the page just shown.
-
 func _add_page(pages: Array, lines: Array, action: Callable = Callable()) -> void:
 	pages.append(lines)
 	_page_actions.append(action)
@@ -311,17 +261,17 @@ func _play_light_animation() -> void:
 
 	_show_light(DRONE_LIGHT_1)
 	await get_tree().create_timer(LIGHT_ANIM_SECONDS * LIGHT_PHASE_1).timeout
-	if serial != _light_serial or not is_inside_tree():
+	if serial != _light_serial or _layer_light == null or not is_instance_valid(_layer_light):
 		return
 
 	_show_light(DRONE_LIGHT_2)
 	await get_tree().create_timer(LIGHT_ANIM_SECONDS * LIGHT_PHASE_2).timeout
-	if serial != _light_serial or not is_inside_tree():
+	if serial != _light_serial or _layer_light == null or not is_instance_valid(_layer_light):
 		return
 
 	_show_light(DRONE_LIGHT_1)
 	await get_tree().create_timer(LIGHT_ANIM_SECONDS * LIGHT_PHASE_1).timeout
-	if serial != _light_serial or not is_inside_tree():
+	if serial != _light_serial or _layer_light == null or not is_instance_valid(_layer_light):
 		return
 
 	_hide_light()
@@ -345,4 +295,6 @@ func _hide_light() -> void:
 # --- completion --------------------------------------------------------------
 
 func _on_dialogue_finished() -> void:
-	finished.emit()
+	# Hand control back to Main, which advances the phase (wiping to the
+	# bedroom). The scene overlay is torn down automatically on location exit.
+	finish(0, 0, 0, {}, false)

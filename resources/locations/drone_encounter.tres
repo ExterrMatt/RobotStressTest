@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=3 format=3 uid="uid://cdroneenctres"]
+
+[ext_resource type="Script" uid="uid://d370vjofljuj2" path="res://resources/LocationData.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://c34mb0yasx23b" path="res://assets/textures/backgrounds/park.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"drone_encounter"
+display_name = "Patrol Drone"
+description = "A patrol drone stops you on the walk home."
+allowed_phases = []
+scene_path = "res://scenes/locations/DroneEncounter.tscn"
+preview_texture = ExtResource("2")
+free_action = false
