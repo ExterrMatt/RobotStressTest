@@ -76,16 +76,13 @@ const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryO
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
-const DIALOGUE_BOX_SCENE: PackedScene = preload("res://scenes/ui/DialogueBox.tscn")
+const DRONE_ENCOUNTER_SCRIPT: GDScript = preload("res://scenes/ui/DroneEncounter.gd")
 
-## Random "the robot shows up after school/work" encounter. When a regular
-## (non-intro) school or work activity finishes, there's a chance the robot
-## appears before the day advances. The dialogue here is a placeholder.
+## Patrol-drone street inspection that plays after a regular (non-intro) school
+## or work run: a chance the drone stops the player before the day advances.
 ## NOTE: chance is TEMPORARILY 1.0 (100%) for testing — dial back later.
-const POST_ACTIVITY_ROBOT_ENCOUNTER_CHANCE: float = 1.0
-const POST_ACTIVITY_ROBOT_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
-const POST_ACTIVITY_ROBOT_TEXTURE_PATH: String = \
-	"res://assets/textures/characters/robot/stresstest/stress_test_bot_full.png"
+const POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE: float = 1.0
+const POST_ACTIVITY_DRONE_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
 
 ## Default authored size of the framed scene image. Standard 500x125 scene
 ## textures are normalized to STANDARD_SCENE_TEXTURE_SCALE at runtime, and
@@ -221,11 +218,11 @@ var _current_location_node: Node = null
 var _current_location_fullscreen: bool = false
 var _current_location_id: StringName = &""
 
-## Post-school/work robot encounter overlay + the callable that resumes the
-## normal end-of-activity flow once the encounter is dismissed.
-var _robot_encounter_layer: CanvasLayer = null
-var _robot_encounter_after: Callable = Callable()
-var _robot_encounter_rng := RandomNumberGenerator.new()
+## Post-school/work patrol-drone encounter overlay + the callable that resumes
+## the normal end-of-activity flow once the encounter is dismissed.
+var _drone_encounter_layer: CanvasLayer = null
+var _drone_encounter_after: Callable = Callable()
+var _drone_encounter_rng := RandomNumberGenerator.new()
 var _default_scene_image: Texture2D
 ## Toggle for the alternate teacher portrait (e.g., Health.png → Health2.png).
 ## Flipped with the X key. Persists across teachers within a session.
@@ -369,7 +366,7 @@ func _ready() -> void:
 	_frame_visual_size_start = _target_frame_visual_size(scene_image.custom_minimum_size, _default_frame_outer_width)
 	_frame_visual_size_target = _frame_visual_size_start
 
-	_robot_encounter_rng.randomize()
+	_drone_encounter_rng.randomize()
 
 	GameState.money_changed.connect(_on_money_changed)
 	GameState.suspicion_changed.connect(_on_suspicion_changed)
@@ -432,6 +429,11 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# While the drone encounter is up it owns input; its own DialogueBox handles
+	# advancing. Don't let Main's Space/ESC/debug shortcuts fire underneath it.
+	if _drone_encounter_layer != null and is_instance_valid(_drone_encounter_layer):
+		return
+
 	if _play_disabled_location_button_sound_from_event(event):
 		get_viewport().set_input_as_handled()
 		return
@@ -2879,95 +2881,65 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 
 	if result.get("skip_advance", false):
 		_show_selection_screen()
-	elif _maybe_show_post_activity_robot_encounter():
-		# The robot showed up. The encounter advances the phase itself once the
-		# player dismisses it, so we don't advance here.
+	elif _maybe_show_post_activity_drone_encounter(result):
+		# The drone stopped the player. The encounter advances the phase itself
+		# once dismissed, so we don't advance here.
 		return
 	else:
 		DayCycle.advance_phase()
 
 
-# --- post-school/work robot encounter ---
+# --- post-school/work patrol-drone encounter ---
 
 ## If the just-finished activity was a regular (non-intro) school or work run,
-## maybe drop the robot in before the day advances. Returns true when the
+## maybe drop the patrol drone in before the day advances. Returns true when the
 ## encounter was shown (in which case the caller must NOT advance the phase —
-## the encounter does that on dismissal).
-func _maybe_show_post_activity_robot_encounter() -> bool:
-	if not POST_ACTIVITY_ROBOT_LOCATION_IDS.has(_current_location_id):
+## the encounter does that on dismissal). `result` carries the "contraband"
+## field the drone branches on.
+func _maybe_show_post_activity_drone_encounter(result: Dictionary) -> bool:
+	if not POST_ACTIVITY_DRONE_LOCATION_IDS.has(_current_location_id):
 		return false
-	if _robot_encounter_rng.randf() >= POST_ACTIVITY_ROBOT_ENCOUNTER_CHANCE:
+	if _drone_encounter_rng.randf() >= POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE:
 		return false
-	_show_robot_encounter(func() -> void: DayCycle.advance_phase())
+	var place := "school" if _current_location_id == &"school" else "work"
+	var contraband := String(result.get("contraband", ""))
+	_show_drone_encounter(place, contraband, func() -> void: DayCycle.advance_phase())
 	return true
 
 
-## Build a self-contained overlay: an opaque backdrop, the robot portrait, and a
-## DialogueBox with placeholder lines. On dismissal it tears itself down and
-## runs `after` (normally DayCycle.advance_phase). Kept independent of the
-## per-location scene-image portrait system so it works from the Main context.
-func _show_robot_encounter(after: Callable) -> void:
-	_dismiss_robot_encounter()
-	_robot_encounter_after = after
+## Mount the DroneEncounter overlay on its own CanvasLayer. On completion it
+## tears itself down and runs `after` (normally DayCycle.advance_phase).
+func _show_drone_encounter(place: String, contraband: String, after: Callable) -> void:
+	_dismiss_drone_encounter()
+	_drone_encounter_after = after
 
 	var layer := CanvasLayer.new()
-	layer.name = "PostActivityRobotEncounterLayer"
+	layer.name = "PostActivityDroneEncounterLayer"
 	layer.layer = 250
-	_robot_encounter_layer = layer
+	_drone_encounter_layer = layer
 	add_child(layer)
 
-	var back := ColorRect.new()
-	back.name = "RobotEncounterBack"
-	back.color = Color(0.008, 0.012, 0.039, 0.98)
-	back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	back.mouse_filter = Control.MOUSE_FILTER_STOP
-	layer.add_child(back)
-
-	var robot := TextureRect.new()
-	robot.name = "RobotPortrait"
-	robot.texture = load(POST_ACTIVITY_ROBOT_TEXTURE_PATH) as Texture2D
-	robot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	robot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	robot.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Leave room at the bottom for the dialogue box.
-	robot.offset_bottom = -260.0
-	robot.offset_top = 40.0
-	robot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	back.add_child(robot)
-
-	var box := DIALOGUE_BOX_SCENE.instantiate() as DialogueBox
-	box.name = "RobotEncounterDialogue"
-	box.anchor_left = 0.0
-	box.anchor_right = 1.0
-	box.anchor_top = 1.0
-	box.anchor_bottom = 1.0
-	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	box.offset_left = 80.0
-	box.offset_right = -80.0
-	box.offset_top = -220.0
-	box.offset_bottom = -40.0
-	back.add_child(box)
-	box.finished.connect(_on_robot_encounter_finished, CONNECT_ONE_SHOT)
-	# Placeholder content — swap in the real robot encounter later.
-	box.play_pages([
-		["[i]The robot is waiting for you.[/i]"],
-		["Robot: [ placeholder — post-activity robot encounter goes here. ]"],
-	])
+	var encounter: DroneEncounter = DRONE_ENCOUNTER_SCRIPT.new()
+	encounter.name = "DroneEncounter"
+	# configure() must run before the node enters the tree (its _ready builds
+	# and plays the branch immediately).
+	encounter.configure(place, contraband)
+	encounter.finished.connect(_on_drone_encounter_finished, CONNECT_ONE_SHOT)
+	layer.add_child(encounter)
 
 
-func _on_robot_encounter_finished() -> void:
-	var after := _robot_encounter_after
-	_robot_encounter_after = Callable()
-	_dismiss_robot_encounter()
+func _on_drone_encounter_finished() -> void:
+	var after := _drone_encounter_after
+	_drone_encounter_after = Callable()
+	_dismiss_drone_encounter()
 	if after.is_valid():
 		after.call()
 
 
-func _dismiss_robot_encounter() -> void:
-	if _robot_encounter_layer != null and is_instance_valid(_robot_encounter_layer):
-		_robot_encounter_layer.queue_free()
-	_robot_encounter_layer = null
+func _dismiss_drone_encounter() -> void:
+	if _drone_encounter_layer != null and is_instance_valid(_drone_encounter_layer):
+		_drone_encounter_layer.queue_free()
+	_drone_encounter_layer = null
 
 
 func _apply_skipped_stress_test_penalty(result: Dictionary) -> Dictionary:

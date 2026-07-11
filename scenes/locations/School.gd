@@ -185,6 +185,8 @@ var _scene_phase: SchoolPhase = SchoolPhase.LECTURE
 # Running totals applied on finish().
 var _total_suspicion: int = 0
 var _total_ingredients: Dictionary = {}
+## Set when the player takes the steal option; drives the drone-encounter branch.
+var _stole_contraband: bool = false
 
 
 func _ready() -> void:
@@ -459,6 +461,7 @@ func _on_leave_pressed() -> void:
 
 func _on_steal_pressed() -> void:
 	_accumulate_reward(REWARD_STEAL)
+	_stole_contraband = true
 	_finish_school()
 
 
@@ -539,7 +542,8 @@ func _show_school_cabinet_background() -> void:
 
 
 func _finish_school() -> void:
-	finish(0, _total_suspicion, 0, _total_ingredients, false)
+	var contraband := "pile of nanobots" if _stole_contraband else ""
+	finish(0, _total_suspicion, 0, _total_ingredients, false, contraband)
 
 
 func _is_intro_school_first() -> bool:

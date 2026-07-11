@@ -449,7 +449,8 @@ func _finish_work(stole: bool) -> void:
 		suspicion += int(REWARD_STEAL.get("suspicion", 0))
 		_merge_ingredients(ingredients, REWARD_STEAL.get("ingredients", {}))
 
-	finish(money, suspicion, 0, ingredients, false)
+	var contraband := "scrap metal" if stole else ""
+	finish(money, suspicion, 0, ingredients, false, contraband)
 
 
 func _finish_work_timeout() -> void:

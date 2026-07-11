@@ -62,6 +62,15 @@ var intro_active: bool = true
 var intro_completed: bool = false
 var intro_step: String = "exposition"
 
+# --- patrol drone encounter tracking ---
+## True once the player has been stopped by the patrol drone at least once
+## (used to play the closing "that was stressful" thought only the first time).
+var drone_encounter_seen: bool = false
+## True once the player has ever been caught with contraband by the drone.
+var drone_ever_caught: bool = false
+## Whether the most recent drone inspection caught the player with contraband.
+var drone_caught_last_inspection: bool = false
+
 var money: int:
 	get: return _money
 	set(value):
@@ -203,6 +212,10 @@ func reset_for_new_game() -> void:
 	intro_active = true
 	intro_completed = false
 	intro_step = "exposition"
+
+	drone_encounter_seen = false
+	drone_ever_caught = false
+	drone_caught_last_inspection = false
 
 	_emit_initial_state()
 
@@ -467,6 +480,9 @@ func to_dict() -> Dictionary:
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
 		"intro_step": intro_step,
+		"drone_encounter_seen": drone_encounter_seen,
+		"drone_ever_caught": drone_ever_caught,
+		"drone_caught_last_inspection": drone_caught_last_inspection,
 		"debug_mode_enabled": _debug_mode_enabled,
 		"window_mode": _window_mode,
 	}
@@ -501,6 +517,9 @@ func from_dict(data: Dictionary) -> void:
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))
+	drone_encounter_seen = bool(data.get("drone_encounter_seen", false))
+	drone_ever_caught = bool(data.get("drone_ever_caught", false))
+	drone_caught_last_inspection = bool(data.get("drone_caught_last_inspection", false))
 	_debug_mode_enabled = bool(data.get("debug_mode_enabled", false))
 	_window_mode = clampi(int(data.get("window_mode", WindowMode.WINDOWED)), WindowMode.WINDOWED, WindowMode.FULLSCREEN)
 	_emit_initial_state()
