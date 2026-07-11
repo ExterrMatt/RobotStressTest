@@ -21,3 +21,6 @@ res://scenes/locations/Workshop.gd
 res://scenes/locations/Maintenance.gd
 res://scenes/locations/Maintenance.tscn
 res://scenes/locations/StressTestRobotShadow.gd
+res://scenes/locations/IntroDialogue.gd
+res://scenes/ui/DialogueBox.gd
+res://scenes/ui/MainMenu.gd
