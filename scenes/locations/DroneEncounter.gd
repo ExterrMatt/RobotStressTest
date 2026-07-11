@@ -29,9 +29,9 @@ const LIGHT_ANIM_SECONDS: float = 0.5
 const LIGHT_PHASE_1: float = 0.4
 const LIGHT_PHASE_2: float = 0.2
 
-## Drone height as a multiple of the scene-image height, bottom-centred — the
-## same footprint the uncle's ~1.1 bottom-centre portrait uses.
-const DRONE_PORTRAIT_SCALE: float = 1.05
+## On-screen height (px) of every drone layer, anchored centre-bottom over the
+## scene image. The source art is 256x256; it is drawn at this height.
+const DRONE_HEIGHT: float = 192.0
 
 # Suspicion thresholds that colour the drone's clean-scan sign-off line.
 const SUSPICION_CRIMINAL: int = 50
@@ -130,7 +130,7 @@ func _layout_drone() -> void:
 	var sz: Vector2 = _overlay_root.size
 	if sz.x <= 0.0 or sz.y <= 0.0:
 		return
-	var h: float = sz.y * DRONE_PORTRAIT_SCALE
+	var h: float = DRONE_HEIGHT
 	var w: float = h  # base sprite is square (256x256)
 	_drone_stage.position = Vector2((sz.x - w) * 0.5, sz.y - h)
 	_drone_stage.size = Vector2(w, h)
@@ -202,7 +202,8 @@ func _append_caught_branch(pages: Array) -> void:
 		["[i]It drops your id at your feet on the sidewalk.[/i]"],
 		_set_id.bind(false))
 	_add_page(pages, ["DRONE: THANK YOU FOR YOUR COOPERATION, CRIMINAL."])
-	_add_page(pages, ["[i]The drone flies away.[/i]"])
+	# The drone leaves — hide it entirely (gun and all).
+	_add_page(pages, ["[i]The drone flies away.[/i]"], _hide_drone)
 	_add_page(pages, ["Thoughts: ...Damn."])
 
 
@@ -217,10 +218,10 @@ func _append_clean_branch(pages: Array, first_time: bool) -> void:
 		["[i]You hold out the id to the Patrol Drone.[/i]"],
 		_set_id.bind(true))
 	_add_page(pages, ["DRONE: EVERYTHING APPEARS TO BE IN ORDER. %s" % _clean_signoff()])
-	# The drone returns the ID as it departs.
+	# The drone returns the ID and departs — hide the whole drone.
 	_add_page(pages,
 		["[i]It flies off.[/i]"],
-		_set_id.bind(false))
+		_hide_drone)
 	# The reflective beat only ever plays on the very first drone encounter.
 	if first_time:
 		_add_page(pages, ["Thoughts: That was stressful... Good thing I didn't steal anything."])
@@ -249,6 +250,14 @@ func _on_page_advanced(index: int) -> void:
 func _set_base(on: bool) -> void:
 	if _layer_base != null:
 		_layer_base.visible = on
+
+
+## Hide the whole drone (base + every overlay) — used when it flies off.
+func _hide_drone() -> void:
+	_set_base(false)
+	_set_id(false)
+	_set_gun(false)
+	_hide_light()
 
 
 func _set_id(on: bool) -> void:
