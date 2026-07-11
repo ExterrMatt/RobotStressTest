@@ -51,8 +51,9 @@ var _layer_id: TextureRect = null
 var _layer_gun: TextureRect = null
 var _layer_light: TextureRect = null
 
-# Per-page callables, parallel to the pages handed to the DialogueBox.
-var _page_actions: Array[Callable] = []
+# Per-page callables, parallel to the pages handed to the DialogueBox. Kept
+# untyped: Callable is not a valid typed-array element type in GDScript.
+var _page_actions: Array = []
 ## Bumped whenever a new light action starts so a stale in-flight blink bails.
 var _light_serial: int = 0
 
@@ -95,12 +96,14 @@ func _build_drone_overlay() -> void:
 	_layer_id = _make_layer("DroneId", DRONE_ID)
 	_layer_gun = _make_layer("DroneGun", DRONE_GUN)
 	_layer_light = _make_layer("DroneLight", "")
-	# Overlays start hidden; the base drone is always shown.
+	# Everything starts hidden — the drone flies in when the dialogue introduces
+	# it (a couple of lines in); the claw/gun/light come on later still.
+	_layer_base.visible = false
 	_layer_id.visible = false
 	_layer_gun.visible = false
 	_layer_light.visible = false
 
-	_layout_drone.call_deferred()
+	call_deferred("_layout_drone")
 
 
 ## One drone layer as a full-rect child of the stage so every layer maps onto
@@ -168,7 +171,8 @@ func _add_page(pages: Array, lines: Array, action: Callable = Callable()) -> voi
 
 func _append_opening(pages: Array) -> void:
 	_add_page(pages, ["[i]The walk home is nice. It's a breath of fresh air after %s.[/i]" % _place])
-	_add_page(pages, ["DRONE: HELLO CITIZEN. IDENTIFY YOURSELF."])
+	# The drone drops in as it hails the player.
+	_add_page(pages, ["DRONE: HELLO CITIZEN. IDENTIFY YOURSELF."], _set_base.bind(true))
 	_add_page(pages, ["You: Uh.. Hi. I'm %s." % GameState.get_player_name()])
 	_add_page(pages, ["DRONE: PROVIDE IDENTIFICATION."])
 	_add_page(pages, ["[i]The drone's camera locks onto your hand as you reach into your pocket.[/i]"])
@@ -240,6 +244,11 @@ func _on_page_advanced(index: int) -> void:
 	var action: Callable = _page_actions[index]
 	if action.is_valid():
 		action.call()
+
+
+func _set_base(on: bool) -> void:
+	if _layer_base != null:
+		_layer_base.visible = on
 
 
 func _set_id(on: bool) -> void:
