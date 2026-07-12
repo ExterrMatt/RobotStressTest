@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://bdroneenctscn"]
+[gd_scene format=3 uid="uid://bdroneenctscn"]
 
 [ext_resource type="Script" uid="uid://ccujr5nfd0mwk" path="res://scenes/locations/DroneEncounter.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://b8dlgbox4dlg0" path="res://scenes/ui/DialogueBox.tscn" id="2"]

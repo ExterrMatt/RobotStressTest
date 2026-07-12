@@ -24,3 +24,6 @@ res://scenes/locations/StressTestRobotShadow.gd
 res://scenes/locations/IntroDialogue.gd
 res://scenes/ui/DialogueBox.gd
 res://scenes/ui/MainMenu.gd
+res://scenes/ui/DroneEncounter.gd
+res://resources/locations/drone_encounter.tres
+res://scenes/locations/DroneEncounter.gd
