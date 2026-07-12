@@ -18,8 +18,8 @@
 [ext_resource type="Texture2D" uid="uid://do60demwvspjt" path="res://assets/textures/backgrounds/sleep/bed/pillow_shadow_heavy.png" id="16_pillow_shadow_heavy"]
 [ext_resource type="Texture2D" uid="uid://sjmpdc6r8cly" path="res://assets/textures/backgrounds/sleep/bed/pillow.png" id="17_pillow"]
 [ext_resource type="Texture2D" uid="uid://d3fht6umtfbpg" path="res://assets/textures/backgrounds/sleep/bed/pillow_indented.png" id="18_pillow_indented"]
-[ext_resource type="Texture2D" uid="uid://bakyutktw30kr" path="res://assets/textures/backgrounds/sleep/bed/pillow_slightly_indented.png" id="19_pillow_slightly_indented"]
 [ext_resource type="Texture2D" uid="uid://daqvhg0yhl0hu" path="res://assets/textures/backgrounds/sleep/bed/bot_full_shadow_light.png" id="19_bot_shadow_light"]
+[ext_resource type="Texture2D" uid="uid://bakyutktw30kr" path="res://assets/textures/backgrounds/sleep/bed/pillow_slightly_indented.png" id="19_pillow_slightly_indented"]
 [ext_resource type="Texture2D" uid="uid://dvtc6jc3wvk5j" path="res://assets/textures/backgrounds/sleep/bed/bot_full_shadow_heavy.png" id="20_bot_shadow_heavy"]
 [ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="21_stress_test_robot"]
 [ext_resource type="Texture2D" uid="uid://dr8ugk2gassrm" path="res://assets/textures/backgrounds/sleep/bed/blanket.png" id="22_blanket"]
@@ -259,10 +259,13 @@ texture = ExtResource("16_pillow_shadow_heavy")
 expand_mode = 1
 
 [node name="Pillow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=439397510]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
+offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -275,18 +278,21 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
+offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("18_pillow_indented")
 expand_mode = 1
 
-[node name="PillowSlightlyIndented" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed"]
-visible = false
+[node name="PillowSlightlyIndented" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=366883292]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
+offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -324,10 +330,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -257.0
-offset_top = -435.66663
+offset_left = -257.00003
+offset_top = -438.66663
 offset_right = -7.0
-offset_bottom = -85.66663
+offset_bottom = -88.666626
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(2.134936, 2.134936)

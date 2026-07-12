@@ -2,26 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-<<<<<<<< HEAD:assets/textures/characters/robot/stresstest/torso/chest_details_left.png.import
-uid="uid://brylq445gvzei"
+uid="uid://dp25lf0glr675"
 path="res://.godot/imported/chest_details_left.png-9d9e2f24efb3dfd8f5a8488e2990cea6.ctex"
-========
-uid="uid://xgrw7ksscb7f"
-path="res://.godot/imported/chest_details.png-6c3d96208f2b104723255f7e685575fb.ctex"
->>>>>>>> 31e7504a208b1144d3f4be26351db665078099a3:assets/textures/characters/robot/stresstest/torso/chest_details.png.import
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-<<<<<<<< HEAD:assets/textures/characters/robot/stresstest/torso/chest_details_left.png.import
 source_file="res://assets/textures/characters/robot/stresstest/torso/chest_details_left.png"
 dest_files=["res://.godot/imported/chest_details_left.png-9d9e2f24efb3dfd8f5a8488e2990cea6.ctex"]
-========
-source_file="res://assets/textures/characters/robot/stresstest/torso/chest_details.png"
-dest_files=["res://.godot/imported/chest_details.png-6c3d96208f2b104723255f7e685575fb.ctex"]
->>>>>>>> 31e7504a208b1144d3f4be26351db665078099a3:assets/textures/characters/robot/stresstest/torso/chest_details.png.import
 
 [params]
 

@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://cojpanr0mgd26" path="res://scenes/locations/RobotHoverBox.gd" id="2_hover_box"]
 [ext_resource type="Texture2D" uid="uid://dixwup2p1omyi" path="res://assets/textures/characters/robot/stresstest/legs/right_leg_slightly_out.png" id="3_right_leg_slightly_out"]
 [ext_resource type="Texture2D" uid="uid://r2tx4hhhkcv8" path="res://assets/textures/characters/robot/stresstest/legs/left_leg_slightly_out.png" id="4_left_leg_slightly_out"]
+[ext_resource type="Texture2D" uid="uid://do0bmljju2ay0" path="res://assets/textures/characters/robot/stresstest/head/neck_front.png" id="5_g1ikh"]
 [ext_resource type="Texture2D" uid="uid://dramcpayssocy" path="res://assets/textures/characters/robot/stresstest/legs/right_leg.png" id="5_right_leg"]
 [ext_resource type="Texture2D" uid="uid://de33xva2c1dsm" path="res://assets/textures/characters/robot/stresstest/legs/left_leg.png" id="6_left_leg"]
 [ext_resource type="Texture2D" uid="uid://bv3g7cpd5tr7t" path="res://assets/textures/characters/robot/stresstest/legs/right_leg_up_thigh.png" id="7_right_leg_up_thigh"]
@@ -35,14 +36,14 @@
 [ext_resource type="Texture2D" uid="uid://belnxxgc3k8qa" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png" id="25_mouth_b_loop_medium"]
 [ext_resource type="Texture2D" uid="uid://c71qt80w3mb1h" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/vegetable_mssion_intro.png" id="26_vegetable_mission_intro"]
 [ext_resource type="Texture2D" uid="uid://byojxnpwinxol" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/vegetable_mission_loop_medium.png" id="27_vegetable_mission_loop_medium"]
-[ext_resource type="Texture2D" uid="uid://brylq445gvzei" path="res://assets/textures/characters/robot/stresstest/torso/chest_details_left.png" id="28_chest_details_left"]
-[ext_resource type="Texture2D" uid="uid://b52tv1jky0vlq" path="res://assets/textures/characters/robot/stresstest/torso/chest_details_right.png" id="33_chest_details_right"]
-[ext_resource type="Texture2D" uid="uid://c0o5w9pqigo3l" path="res://assets/textures/characters/robot/stresstest/torso/chest_outline_left.png" id="34_chest_outline_left"]
-[ext_resource type="Texture2D" uid="uid://c5sz27magu6nf" path="res://assets/textures/characters/robot/stresstest/torso/chest_outline_right.png" id="35_chest_outline_right"]
+[ext_resource type="Texture2D" uid="uid://dp25lf0glr675" path="res://assets/textures/characters/robot/stresstest/torso/chest_details_left.png" id="28_chest_details_left"]
 [ext_resource type="Texture2D" uid="uid://cdtqvcab7vmls" path="res://assets/textures/characters/robot/stresstest/arms/left_shoulder_pad.png" id="29_left_shoulder_pad"]
 [ext_resource type="Texture2D" uid="uid://ctnpnm6c88viq" path="res://assets/textures/characters/robot/stresstest/arms/right_shoulder_pad.png" id="30_right_shoulder_pad"]
 [ext_resource type="Texture2D" uid="uid://bole2xy2wfl2g" path="res://assets/textures/characters/robot/stresstest/head/hair_front_swing.png" id="31_hair_front_swing"]
 [ext_resource type="Texture2D" uid="uid://bqdryqu3ah4c4" path="res://assets/textures/characters/robot/stresstest/head/head_2.png" id="32_head_2"]
+[ext_resource type="Texture2D" uid="uid://b52tv1jky0vlq" path="res://assets/textures/characters/robot/stresstest/torso/chest_details_right.png" id="33_chest_details_right"]
+[ext_resource type="Texture2D" uid="uid://c0o5xapqigo3l" path="res://assets/textures/characters/robot/stresstest/torso/chest_outline_left.png" id="34_chest_outline_left"]
+[ext_resource type="Texture2D" uid="uid://c5s027magu6nf" path="res://assets/textures/characters/robot/stresstest/torso/chest_outline_right.png" id="35_chest_outline_right"]
 
 [node name="StressTestRobot" type="Control" unique_id=1977347602]
 custom_minimum_size = Vector2(250, 350)
@@ -104,6 +105,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = ExtResource("5_g1ikh")
 expand_mode = 1
 
 [node name="TorsoBase" type="TextureRect" parent="Torso" unique_id=445828145]
@@ -1013,10 +1015,11 @@ expand_mode = 1
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
-offset_left = 100.0
-offset_top = 65.5
-offset_right = 150.0
-offset_bottom = 97.0
+offset_left = 109.0
+offset_top = 56.5
+offset_right = 159.0
+offset_bottom = 88.0
+scale = Vector2(0.6400024, 1.0400001)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 10
@@ -1037,6 +1040,7 @@ offset_left = 100.0
 offset_top = 34.0
 offset_right = 150.0
 offset_bottom = 65.5
+scale = Vector2(1, 0.72)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 11
@@ -1050,6 +1054,7 @@ offset_left = 93.0
 offset_top = 146.333
 offset_right = 157.0
 offset_bottom = 188.0
+scale = Vector2(1, 1.44)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 20
@@ -1066,10 +1071,11 @@ loop_frame_count = 8
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
-offset_left = 96.0
-offset_top = 98.0
-offset_right = 154.0
-offset_bottom = 132.0
+offset_left = 99.0
+offset_top = 102.0
+offset_right = 157.0
+offset_bottom = 136.0
+scale = Vector2(0.9, 0.74)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 30
@@ -1080,10 +1086,11 @@ hidden_while_active_image_paths = Array[NodePath]([NodePath("BoobCover")])
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
-offset_left = 83.0
-offset_top = 84.0
-offset_right = 113.0
-offset_bottom = 120.0
+offset_left = 89.0
+offset_top = 86.0
+offset_right = 119.0
+offset_bottom = 122.0
+scale = Vector2(0.5999975, 0.7199975)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 40
@@ -1093,10 +1100,11 @@ hover_description = "Remove Shoulder Pads"
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
-offset_left = 137.0
-offset_top = 84.0
-offset_right = 167.0
-offset_bottom = 120.0
+offset_left = 143.0
+offset_top = 86.0
+offset_right = 173.0
+offset_bottom = 122.0
+scale = Vector2(0.599995, 0.7199975)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 41
@@ -1106,10 +1114,11 @@ hover_description = "Remove Shoulder Pads"
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
-offset_left = 52.0
-offset_top = 172.0
-offset_right = 85.0
-offset_bottom = 207.0
+offset_left = 55.0
+offset_top = 174.0
+offset_right = 88.0
+offset_bottom = 209.0
+scale = Vector2(0.76, 0.84000486)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 50
@@ -1119,10 +1128,11 @@ hover_description = "Switch Hand"
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
-offset_left = 165.0
-offset_top = 172.0
-offset_right = 198.0
-offset_bottom = 207.0
+offset_left = 170.0
+offset_top = 174.0
+offset_right = 203.0
+offset_bottom = 209.0
+scale = Vector2(0.76, 0.84000003)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 51
@@ -1132,10 +1142,11 @@ hover_description = "Switch Hand"
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
-offset_left = 93.0
-offset_top = 188.0
-offset_right = 125.0
-offset_bottom = 230.0
+offset_left = 99.0
+offset_top = 206.0
+offset_right = 131.0
+offset_bottom = 247.99998
+scale = Vector2(0.8, 2.96)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 15
@@ -1148,9 +1159,10 @@ z_index = 1000
 z_as_relative = false
 anchors_preset = 0
 offset_left = 125.0
-offset_top = 188.0
+offset_top = 206.00002
 offset_right = 157.0
-offset_bottom = 230.0
+offset_bottom = 248.0
+scale = Vector2(0.8, 2.9600027)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 16

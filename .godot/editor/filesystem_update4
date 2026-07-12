@@ -27,3 +27,4 @@ res://scenes/ui/MainMenu.gd
 res://scenes/ui/DroneEncounter.gd
 res://resources/locations/drone_encounter.tres
 res://scenes/locations/DroneEncounter.gd
+res://scenes/locations/Sleep.tscn
