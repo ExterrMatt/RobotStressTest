@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b74p0dongfxgb"
-path="res://.godot/imported/chest_no_outline.png-0bd90bce6b64ba9523e3319d87daae22.ctex"
+uid="uid://c5sz27magu6nf"
+path="res://.godot/imported/chest_outline_right.png-42815caad2e499446f70097f16a5c8a4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/robot/stresstest/torso/chest_no_outline.png"
-dest_files=["res://.godot/imported/chest_no_outline.png-0bd90bce6b64ba9523e3319d87daae22.ctex"]
+source_file="res://assets/textures/characters/robot/stresstest/torso/chest_outline_right.png"
+dest_files=["res://.godot/imported/chest_outline_right.png-42815caad2e499446f70097f16a5c8a4.ctex"]
 
 [params]
 
