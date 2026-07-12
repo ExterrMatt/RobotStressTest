@@ -1266,29 +1266,14 @@ func _set_animation_frame_for_box(box: Control, phase: String, frame: int) -> vo
 		frame_size = DEFAULT_FRAME_SIZE
 
 	var paths := _get_animation_phase_paths(box, phase)
-	for index in range(paths.size()):
-		var node := get_node_or_null(NodePath(String(paths[index]))) as Sprite2D
+	for column in range(paths.size()):
+		var node := get_node_or_null(NodePath(String(paths[column]))) as Sprite2D
 		if node == null:
 			continue
-		# A node normally reads the strip column matching its position in the
-		# list. Nodes carrying an "anim_column" metadata share another column
-		# instead, and "anim_half" restricts them to that column's left or
-		# right half (used by the per-side chest details/outline overlays).
-		var column := index
-		if node.has_meta("anim_column"):
-			column = int(node.get_meta("anim_column"))
-		var region := Rect2(
+		node.region_rect = Rect2(
 			Vector2(column * frame_size.x, frame * frame_size.y),
 			frame_size
 		)
-		var half := String(node.get_meta("anim_half", ""))
-		var half_width := floorf(frame_size.x / 2.0)
-		if half == "left":
-			region.size.x = half_width
-		elif half == "right":
-			region.position.x += half_width
-			region.size.x = frame_size.x - half_width
-		node.region_rect = region
 	visual_state_changed.emit()
 
 
