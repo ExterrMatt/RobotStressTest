@@ -11,10 +11,6 @@ const CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION: int = 1
 const ANIMATION_PHASE_NONE: String = ""
 const ANIMATION_PHASE_INTRO: String = "intro"
 const ANIMATION_PHASE_LOOP: String = "loop"
-const TORSO_CRUNCH_PATH: NodePath = ^"Torso/TorsoCrunch"
-const INTRO_ANIMATION_TORSO_PATH: NodePath = ^"AnimationLayers/Torso"
-const LOOP_ANIMATION_TORSO_PATH: NodePath = ^"AnimationLayers/MouthBLoopMedium/Torso"
-const LEGS_PATH: NodePath = ^"Legs"
 const HOVER_BOX_OVERLAY_Z_INDEX: int = 1000
 const WOOD_CREAK_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/wood/wood_creak.mp3",
@@ -28,26 +24,52 @@ const HAND_RUB_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/hands/hand_rub_loud.mp3",
 ]
 
-## Chest textures swapped by the shoulder-pad toggle: the outlined chest is
-## shown while the pads are on, the outline-free chest while they are off.
+## Chest overlays swapped by the per-side shoulder-pad toggles: each side shows
+## its chest outline while that side's pad is on, and its chest details while
+## the pad is off. The base chest stays visible in both states.
 const CHEST_PATH: NodePath = ^"Torso/Chest"
-const CHEST_NO_OUTLINE_PATH: NodePath = ^"Torso/ChestNoOutline"
+const CHEST_DETAILS_LEFT_PATH: NodePath = ^"Torso/ChestDetailsLeft"
+const CHEST_DETAILS_RIGHT_PATH: NodePath = ^"Torso/ChestDetailsRight"
+const CHEST_OUTLINE_LEFT_PATH: NodePath = ^"Torso/ChestOutlineLeft"
+const CHEST_OUTLINE_RIGHT_PATH: NodePath = ^"Torso/ChestOutlineRight"
 const LEFT_SHOULDER_PAD_PATH: NodePath = ^"Arms/LeftShoulderPad"
 const RIGHT_SHOULDER_PAD_PATH: NodePath = ^"Arms/RightShoulderPad"
-const SHOULDER_HOVER_BOX_NAMES: Array[String] = ["LeftShoulderHoverBox", "RightShoulderHoverBox"]
+const LEFT_SHOULDER_HOVER_BOX_NAME: String = "LeftShoulderHoverBox"
+const RIGHT_SHOULDER_HOVER_BOX_NAME: String = "RightShoulderHoverBox"
+const SHOULDER_HOVER_BOX_NAMES: Array[String] = [LEFT_SHOULDER_HOVER_BOX_NAME, RIGHT_SHOULDER_HOVER_BOX_NAME]
 
-## The animation strip carries the chest as three stacked columns (base chest,
-## chest details, outline). The shoulder-pad toggle mirrors the static robot:
-## the outline shows while the pads are on and the chest details show while they
-## are off, so exactly one of these overlays is visible during the head anim.
-const ANIM_OUTLINE_PATHS: Array[NodePath] = [
-	^"AnimationLayers/Outline",
-	^"AnimationLayers/MouthBLoopMedium/Outline",
+## The head-animation strips carry the shoulder pads and the per-side chest
+## outline/details as their own columns. Each side mirrors the static robot:
+## the pad and outline columns show while that side's pad is on, the details
+## column shows while it is off.
+const ANIM_LEFT_SHOULDER_PAD_PATHS: Array[NodePath] = [
+	^"AnimationLayers/LeftShoulderPad",
+	^"AnimationLayers/MouthBLoopMedium/LeftShoulderPad",
 ]
-const ANIM_CHEST_DETAILS_PATHS: Array[NodePath] = [
-	^"AnimationLayers/ChestDetails",
-	^"AnimationLayers/MouthBLoopMedium/ChestDetails",
+const ANIM_RIGHT_SHOULDER_PAD_PATHS: Array[NodePath] = [
+	^"AnimationLayers/RightShoulderPad",
+	^"AnimationLayers/MouthBLoopMedium/RightShoulderPad",
 ]
+const ANIM_CHEST_OUTLINE_LEFT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestOutlineLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestOutlineLeft",
+]
+const ANIM_CHEST_OUTLINE_RIGHT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestOutlineRight",
+	^"AnimationLayers/MouthBLoopMedium/ChestOutlineRight",
+]
+const ANIM_CHEST_DETAILS_LEFT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestDetailsLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestDetailsLeft",
+]
+const ANIM_CHEST_DETAILS_RIGHT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestDetailsRight",
+	^"AnimationLayers/MouthBLoopMedium/ChestDetailsRight",
+]
+
+## Front cover for the neck, shown only while the head is the robot's sole
+## remaining part (no torso, arms, hands, or legs).
+const NECK_FRONT_PATH: NodePath = ^"Torso/NeckFront"
 
 ## Head styles swapped by the Shift+H debug key. One is shown at a time on the
 ## static head and the matching column drives the head animation. The default is
@@ -102,32 +124,40 @@ const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
 	^"Torso/TorsoBase",
 	^"Torso/Chest",
-	^"Torso/ChestNoOutline",
+	^"Torso/ChestDetailsLeft",
+	^"Torso/ChestDetailsRight",
+	^"Torso/ChestOutlineLeft",
+	^"Torso/ChestOutlineRight",
 	^"Torso/BigCoconuts",
 	^"Torso/Nipples",
 	^"Torso/TorsoCrunch",
 	^"BoobCover",
-	^"AnimationLayers/Torso",
-	^"AnimationLayers/ChestDetails",
-	^"AnimationLayers/Outline",
-	^"AnimationLayers/Nipples",
-	^"AnimationLayers/Torso/Nipples",
-	^"AnimationLayers/MouthBLoopMedium/Torso",
-	^"AnimationLayers/MouthBLoopMedium/ChestDetails",
-	^"AnimationLayers/MouthBLoopMedium/Outline",
-	^"AnimationLayers/MouthBLoopMedium/Nipples",
+	^"AnimationLayers/Chest",
+	^"AnimationLayers/ChestDetailsLeft",
+	^"AnimationLayers/ChestDetailsRight",
+	^"AnimationLayers/ChestOutlineLeft",
+	^"AnimationLayers/ChestOutlineRight",
+	^"AnimationLayers/MouthBLoopMedium/Chest",
+	^"AnimationLayers/MouthBLoopMedium/ChestDetailsLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestDetailsRight",
+	^"AnimationLayers/MouthBLoopMedium/ChestOutlineLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestOutlineRight",
 ]
 const LEFT_ARM_PART_PATHS: Array[NodePath] = [
 	^"Arms/LeftArm",
 	^"Arms/LeftShoulderPad",
 	^"AnimationArmLayers/LeftArm",
 	^"AnimationArmLayers/MouthBLoopMedium/LeftArm",
+	^"AnimationLayers/LeftShoulderPad",
+	^"AnimationLayers/MouthBLoopMedium/LeftShoulderPad",
 ]
 const RIGHT_ARM_PART_PATHS: Array[NodePath] = [
 	^"Arms/RightArm",
 	^"Arms/RightShoulderPad",
 	^"AnimationArmLayers/RightArm",
 	^"AnimationArmLayers/MouthBLoopMedium/RightArm",
+	^"AnimationLayers/RightShoulderPad",
+	^"AnimationLayers/MouthBLoopMedium/RightShoulderPad",
 ]
 const LEFT_HAND_PART_PATHS: Array[NodePath] = [
 	^"Hands/LeftPalmUp",
@@ -174,6 +204,11 @@ const LEG_PRESTAGE_HIDDEN_PATHS: Array[NodePath] = [^"Legs/LeftLeg", ^"Legs/Righ
 const LEG_PRESTAGE_SHOWN_PATHS: Array[NodePath] = [^"Legs/LeftLegSlightlyOut", ^"Legs/RightLegSlightlyOut"]
 const LEG_PRESTAGE_BOX_NAME: String = "PelvisHoverBox"
 
+## Per-leg spread toggles beneath the pelvis hover box: clicking a leg swaps it
+## between the standing pose and the slightly-out pose for that side only.
+const LEFT_LEG_HOVER_BOX_NAME: String = "LeftLegHoverBox"
+const RIGHT_LEG_HOVER_BOX_NAME: String = "RightLegHoverBox"
+
 ## The vegetable-mission strips carry both hand grips as separate columns.
 ## Only one grip is shown at a time; the H key flips between them in debug mode.
 const OVERGRIP_HAND_PATHS: Array[NodePath] = [
@@ -206,7 +241,7 @@ const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox"]:
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox", ^"LeftLegHoverBox", ^"RightLegHoverBox"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()
@@ -231,10 +266,10 @@ var _interaction_enabled: bool = true
 var _editor_preview_was_active: bool = false
 var _hand_grip_overgrip: bool = true
 
-var _active_animation_box: Control = null
-var _animation_phase: String = ANIMATION_PHASE_NONE
-var _animation_playing: bool = false
-var _animation_elapsed: float = 0.0
+## Active layered animations, keyed by hover box. Each value is a Dictionary
+## with "phase" (String), "playing" (bool) and "elapsed" (float). Normally at
+## most one entry exists; debug shift-clicking can run head and pelvis at once.
+var _animation_states: Dictionary = {}
 ## When enabled (Sleep scene) the leg lift gains a preliminary "slightly out"
 ## pose; the stress test leaves this off and lifts on the first click.
 var _leg_slight_out_prestage_enabled: bool = false
@@ -248,8 +283,6 @@ var _hair_texture_index: int = HAIR_DEFAULT_INDEX
 var _head_texture_index: int = HEAD_DEFAULT_INDEX
 ## Whether the squint-eyes overlay is shown.
 var _squint_eyes_enabled: bool = SQUINT_DEFAULT_ENABLED
-var _animation_torso_restore_state: Dictionary = {}
-var _raised_legs_restore_index: int = -1
 var _rng := RandomNumberGenerator.new()
 var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
@@ -279,8 +312,8 @@ func _process(delta: float) -> void:
 		return
 
 	_update_hover_boxes()
-	if _animation_playing:
-		_advance_animation(delta)
+	if not _animation_states.is_empty():
+		_advance_animations(delta)
 	_enforce_always_hidden_paths()
 
 
@@ -303,7 +336,7 @@ func _input(event: InputEvent) -> void:
 	if clicked_box == null:
 		return
 
-	_handle_hover_box_click(clicked_box)
+	_handle_hover_box_click(clicked_box, mouse_event.shift_pressed)
 	get_viewport().set_input_as_handled()
 
 
@@ -359,8 +392,9 @@ func _apply_hand_grip_selection(resolved: Dictionary) -> void:
 
 func prime_head_animation() -> bool:
 	var box := _find_animation_hover_box()
-	if box == null or _active_animation_box == box:
+	if box == null or _animation_states.has(box):
 		return false
+	_finish_layered_animation(false)
 	_prime_layered_animation(box)
 	return true
 
@@ -369,12 +403,14 @@ func play_head_animation() -> bool:
 	var box := _find_animation_hover_box()
 	if box == null:
 		return false
-	if _active_animation_box != box:
+	if not _animation_states.has(box):
+		_finish_layered_animation(false)
 		_prime_layered_animation(box)
-	if _animation_playing:
+	var state: Dictionary = _animation_states[box]
+	if bool(state.get("playing", false)):
 		return false
-	_animation_elapsed = 0.0
-	_animation_playing = true
+	state["elapsed"] = 0.0
+	state["playing"] = true
 	_play_hand_rub_sound()
 	return true
 
@@ -436,10 +472,7 @@ func set_interaction_enabled(value: bool) -> void:
 
 
 func reset_interactions_to_default() -> void:
-	_active_animation_box = null
-	_animation_phase = ANIMATION_PHASE_NONE
-	_animation_playing = false
-	_animation_elapsed = 0.0
+	_animation_states.clear()
 	_leg_prestage_active = false
 	_left_hand_texture_index = 0
 	_right_hand_texture_index = 0
@@ -459,7 +492,7 @@ func reset_interactions_to_default() -> void:
 
 
 func is_in_default_pose() -> bool:
-	if _active_animation_box != null and is_instance_valid(_active_animation_box):
+	if not _animation_states.is_empty():
 		return false
 	if _leg_prestage_active:
 		return false
@@ -484,23 +517,27 @@ func hovered_hover_box_description() -> String:
 	if box == null:
 		return ""
 	if String(box.name) == "HeadHoverBox":
-		if _active_animation_box != box:
+		var head_state: Dictionary = _animation_states.get(box, {})
+		if head_state.is_empty():
 			return "Raise Head"
-		if _animation_phase == ANIMATION_PHASE_INTRO and not _animation_playing:
+		if String(head_state.get("phase", "")) == ANIMATION_PHASE_INTRO and not bool(head_state.get("playing", false)):
 			return "Animate Head"
 		return "Lower Head"
 	if String(box.name) == "PelvisHoverBox":
 		if _box_has_layered_animation(box):
-			if _active_animation_box != box:
+			var pelvis_state: Dictionary = _animation_states.get(box, {})
+			if pelvis_state.is_empty():
 				return "Raise Legs"
-			if _animation_phase == ANIMATION_PHASE_INTRO and not _animation_playing:
+			if String(pelvis_state.get("phase", "")) == ANIMATION_PHASE_INTRO and not bool(pelvis_state.get("playing", false)):
 				return "Animate Legs"
 			return "Lower Legs"
 		return "Lower Legs" if _is_box_effect_active(box) else "Raise Legs"
 	if String(box.name) == "BoobCoverHoverBox":
 		return "Remove Chest Cover" if _is_boob_cover_visible() else "Equip Chest Cover"
 	if _is_shoulder_hover_box(box):
-		return "Equip Shoulder Pads" if _are_shoulder_pads_removed() else "Remove Shoulder Pads"
+		return "Equip Shoulder Pad" if _is_box_effect_active(box) else "Remove Shoulder Pad"
+	if _is_leg_pose_hover_box(box):
+		return "Straighten Leg" if _is_box_effect_active(box) else "Spread Leg"
 	if _is_hand_hover_box(box):
 		return "Switch Hand"
 	if _is_hair_hover_box(box):
@@ -587,6 +624,7 @@ func _rebuild_visibility_cache() -> void:
 	_base_visibility.clear()
 	_add_managed_paths(always_hidden_image_paths)
 	_add_robot_part_managed_paths()
+	_add_managed_path(NECK_FRONT_PATH)
 	_add_managed_path(animation_layers_path)
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -678,13 +716,10 @@ func _find_hover_box_at(global_position: Vector2) -> Control:
 	return null
 
 
-func _handle_hover_box_click(box: Control) -> void:
+func _handle_hover_box_click(box: Control, shift_pressed: bool = false) -> void:
 	var action := int(box.get("click_action"))
 	if action == CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION:
-		_handle_layered_animation_click(box)
-		return
-	if _is_shoulder_hover_box(box):
-		_toggle_shoulder_pads()
+		_handle_layered_animation_click(box, shift_pressed)
 		return
 	if _is_hand_hover_box(box):
 		_cycle_hand_texture(box)
@@ -693,6 +728,13 @@ func _handle_hover_box_click(box: Control) -> void:
 		_cycle_hair_texture()
 		return
 	_toggle_box_effect(box)
+
+
+func _is_leg_pose_hover_box(box: Control) -> bool:
+	if box == null:
+		return false
+	var box_name := String(box.name)
+	return box_name == LEFT_LEG_HOVER_BOX_NAME or box_name == RIGHT_LEG_HOVER_BOX_NAME
 
 
 func _is_hair_hover_box(box: Control) -> bool:
@@ -724,26 +766,8 @@ func _cycle_hand_texture(box: Control) -> void:
 	_apply_visibility_state()
 
 
-## Either shoulder box drives a single shared toggle, so clicking one removes or
-## restores both shoulder pads together and keeps the two boxes in sync.
-func _toggle_shoulder_pads() -> void:
-	var new_active := not _are_shoulder_pads_removed()
-	for box_name in SHOULDER_HOVER_BOX_NAMES:
-		var box := _find_hover_box_by_name(box_name)
-		if box != null and box.has_method("set_runtime_active"):
-			box.call("set_runtime_active", new_active)
-	_apply_visibility_state()
-
-
 func _is_shoulder_hover_box(box: Control) -> bool:
 	return box != null and SHOULDER_HOVER_BOX_NAMES.has(String(box.name))
-
-
-func _are_shoulder_pads_removed() -> bool:
-	for box_name in SHOULDER_HOVER_BOX_NAMES:
-		if _is_named_box_effect_active(box_name):
-			return true
-	return false
 
 
 func _toggle_box_effect(box: Control) -> void:
@@ -752,37 +776,38 @@ func _toggle_box_effect(box: Control) -> void:
 	_apply_visibility_state()
 
 
-func _handle_layered_animation_click(box: Control) -> void:
+func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) -> void:
 	if not _box_has_layered_animation(box):
 		_toggle_box_effect(box)
 		return
 
 	if _leg_slight_out_prestage_enabled and _is_leg_prestage_box(box) \
-			and _active_animation_box != box:
+			and not _animation_states.has(box):
 		if not _leg_prestage_active:
 			_enter_leg_prestage()
 			return
 		# Second click: leave the slightly-out pose and lift the leg as usual.
 		_leg_prestage_active = false
 
-	if _active_animation_box != box:
-		_finish_layered_animation(false)
+	if not _animation_states.has(box):
+		# Only one layered animation may run at a time, except in debug mode
+		# where shift-clicking lets the head and pelvis animations coexist.
+		if not (shift_pressed and _debug_mode_enabled()):
+			_finish_layered_animation(false)
 		_prime_layered_animation(box)
 		return
 
-	if _animation_phase == ANIMATION_PHASE_LOOP and _animation_playing:
-		_finish_layered_animation()
+	var state: Dictionary = _animation_states[box]
+	var playing := bool(state.get("playing", false))
+	if String(state.get("phase", "")) == ANIMATION_PHASE_LOOP and playing:
+		_finish_animation_for_box(box)
 		return
 
-	if _animation_playing:
+	if playing:
 		return
 
-	if _animation_phase == ANIMATION_PHASE_NONE:
-		_prime_layered_animation(box)
-		return
-
-	_animation_elapsed = 0.0
-	_animation_playing = true
+	state["elapsed"] = 0.0
+	state["playing"] = true
 	_play_hand_rub_sound()
 	_apply_visibility_state()
 
@@ -802,58 +827,78 @@ func _enter_leg_prestage() -> void:
 
 func _prime_layered_animation(box: Control) -> void:
 	_leg_prestage_active = false
-	_active_animation_box = box
-	_animation_phase = ANIMATION_PHASE_INTRO
-	_animation_playing = false
-	_animation_elapsed = 0.0
+	_animation_states[box] = {
+		"phase": ANIMATION_PHASE_INTRO,
+		"playing": false,
+		"elapsed": 0.0,
+	}
 	if box.has_method("set_runtime_active"):
 		box.call("set_runtime_active", true)
-	_set_animation_frame_for_box(box, _animation_phase, 0)
+	_set_animation_frame_for_box(box, ANIMATION_PHASE_INTRO, 0)
 	_play_wood_creak_sound()
 	_apply_visibility_state()
 
 
-func _advance_animation(delta: float) -> void:
-	if _active_animation_box == null or not is_instance_valid(_active_animation_box):
-		_finish_layered_animation()
+func _advance_animations(delta: float) -> void:
+	for box in _animation_states.keys():
+		if box == null or not is_instance_valid(box):
+			_animation_states.erase(box)
+			_apply_visibility_state()
+			continue
+		_advance_animation_for_box(box, delta)
+
+
+func _advance_animation_for_box(box: Control, delta: float) -> void:
+	var state: Dictionary = _animation_states[box]
+	if not bool(state.get("playing", false)):
 		return
 
-	var fps := maxf(0.1, float(_active_animation_box.get("animation_fps")))
-	_animation_elapsed += delta
-	var frame := int(floor(_animation_elapsed * fps))
-	var frame_count := _get_phase_frame_count(_active_animation_box, _animation_phase)
+	var phase := String(state.get("phase", ANIMATION_PHASE_INTRO))
+	var fps := maxf(0.1, float(box.get("animation_fps")))
+	state["elapsed"] = float(state.get("elapsed", 0.0)) + delta
+	var frame := int(floor(float(state["elapsed"]) * fps))
+	var frame_count := _get_phase_frame_count(box, phase)
 
 	if frame >= frame_count:
-		if _animation_phase == ANIMATION_PHASE_INTRO \
-				and bool(_active_animation_box.get("loop_after_intro")) \
-				and not _get_animation_phase_paths(_active_animation_box, ANIMATION_PHASE_LOOP).is_empty():
-			_animation_phase = ANIMATION_PHASE_LOOP
-			_animation_elapsed = 0.0
-			_set_animation_frame_for_box(_active_animation_box, _animation_phase, 0)
+		if phase == ANIMATION_PHASE_INTRO \
+				and bool(box.get("loop_after_intro")) \
+				and not _get_animation_phase_paths(box, ANIMATION_PHASE_LOOP).is_empty():
+			state["phase"] = ANIMATION_PHASE_LOOP
+			state["elapsed"] = 0.0
+			_set_animation_frame_for_box(box, ANIMATION_PHASE_LOOP, 0)
 			_apply_visibility_state()
 			return
 
-		if _animation_phase == ANIMATION_PHASE_LOOP:
-			_animation_elapsed = 0.0
-			_set_animation_frame_for_box(_active_animation_box, _animation_phase, 0)
+		if phase == ANIMATION_PHASE_LOOP:
+			state["elapsed"] = 0.0
+			_set_animation_frame_for_box(box, phase, 0)
 			_apply_visibility_state()
 			return
 
-		_finish_layered_animation()
+		_finish_animation_for_box(box)
 		return
 
-	_set_animation_frame_for_box(_active_animation_box, _animation_phase, frame)
+	_set_animation_frame_for_box(box, phase, frame)
 
 
+## Ends the layered animation on one hover box, leaving any other running
+## animation (debug dual mode) untouched.
+func _finish_animation_for_box(box: Control, apply_state: bool = true) -> void:
+	_leg_prestage_active = false
+	_animation_states.erase(box)
+	if box != null and is_instance_valid(box) and box.has_method("set_runtime_active"):
+		box.call("set_runtime_active", false)
+	if apply_state:
+		_apply_visibility_state()
+
+
+## Ends every running layered animation.
 func _finish_layered_animation(apply_state: bool = true) -> void:
 	_leg_prestage_active = false
-	if _active_animation_box != null and is_instance_valid(_active_animation_box) \
-			and _active_animation_box.has_method("set_runtime_active"):
-		_active_animation_box.call("set_runtime_active", false)
-	_active_animation_box = null
-	_animation_phase = ANIMATION_PHASE_NONE
-	_animation_playing = false
-	_animation_elapsed = 0.0
+	for box in _animation_states.keys():
+		if box != null and is_instance_valid(box) and box.has_method("set_runtime_active"):
+			box.call("set_runtime_active", false)
+	_animation_states.clear()
 	if apply_state:
 		_apply_visibility_state()
 
@@ -888,8 +933,8 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_squint_eyes_state(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
-	_apply_pelvis_torso_crunch_animation_slot(resolved)
 	_apply_shoulder_pad_state(resolved)
+	_apply_neck_front_state(resolved)
 	_apply_resolved_visibility(resolved)
 	_apply_squint_eyes_offset()
 
@@ -1051,25 +1096,53 @@ func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
 		_apply_paths_available(resolved, RIGHT_GRIP_HAND_PATHS, false)
 
 
-## Resolves the shoulder-pad toggle. When the pads are removed they are hidden
-## and the outlined chest is swapped for the outline-free chest wherever the
-## chest would otherwise show; when the pads are on the outline-free chest stays
-## hidden and the regular chest is left untouched. The head-animation strip
-## mirrors this: its outline column shows with the pads on and its chest-details
-## column shows with the pads off.
+## Resolves the two independent shoulder-pad toggles. For each side: while the
+## pad is on, that side's chest outline shows and its chest details stay hidden;
+## while the pad is removed, the pad is hidden and the details replace the
+## outline. The static overlays follow the static chest, and the matching
+## animation columns follow the head animation the same way.
 func _apply_shoulder_pad_state(resolved: Dictionary) -> void:
-	if not _are_shoulder_pads_removed():
-		resolved[CHEST_NO_OUTLINE_PATH] = false
-		_hide_paths(resolved, ANIM_CHEST_DETAILS_PATHS)
-		return
-	resolved[LEFT_SHOULDER_PAD_PATH] = false
-	resolved[RIGHT_SHOULDER_PAD_PATH] = false
-	if bool(resolved.get(CHEST_PATH, false)):
-		resolved[CHEST_PATH] = false
-		resolved[CHEST_NO_OUTLINE_PATH] = true
+	_apply_side_shoulder_pad_state(
+		resolved,
+		_is_named_box_effect_active(LEFT_SHOULDER_HOVER_BOX_NAME),
+		LEFT_SHOULDER_PAD_PATH,
+		CHEST_OUTLINE_LEFT_PATH,
+		CHEST_DETAILS_LEFT_PATH,
+		ANIM_LEFT_SHOULDER_PAD_PATHS,
+		ANIM_CHEST_OUTLINE_LEFT_PATHS,
+		ANIM_CHEST_DETAILS_LEFT_PATHS
+	)
+	_apply_side_shoulder_pad_state(
+		resolved,
+		_is_named_box_effect_active(RIGHT_SHOULDER_HOVER_BOX_NAME),
+		RIGHT_SHOULDER_PAD_PATH,
+		CHEST_OUTLINE_RIGHT_PATH,
+		CHEST_DETAILS_RIGHT_PATH,
+		ANIM_RIGHT_SHOULDER_PAD_PATHS,
+		ANIM_CHEST_OUTLINE_RIGHT_PATHS,
+		ANIM_CHEST_DETAILS_RIGHT_PATHS
+	)
+
+
+func _apply_side_shoulder_pad_state(
+	resolved: Dictionary,
+	pad_removed: bool,
+	pad_path: NodePath,
+	outline_path: NodePath,
+	details_path: NodePath,
+	anim_pad_paths: Array[NodePath],
+	anim_outline_paths: Array[NodePath],
+	anim_details_paths: Array[NodePath]
+) -> void:
+	var chest_visible := bool(resolved.get(CHEST_PATH, false))
+	resolved[outline_path] = chest_visible and not pad_removed
+	resolved[details_path] = chest_visible and pad_removed
+	if pad_removed:
+		resolved[pad_path] = false
+		_hide_paths(resolved, anim_pad_paths)
+		_hide_paths(resolved, anim_outline_paths)
 	else:
-		resolved[CHEST_NO_OUTLINE_PATH] = false
-	_hide_paths(resolved, ANIM_OUTLINE_PATHS)
+		_hide_paths(resolved, anim_details_paths)
 
 
 func _hide_paths(resolved: Dictionary, paths: Array[NodePath]) -> void:
@@ -1084,88 +1157,15 @@ func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], availa
 		resolved[path] = false
 
 
-func _apply_pelvis_torso_crunch_animation_slot(resolved: Dictionary) -> void:
-	_restore_animation_torso_slots()
-	_restore_raised_legs_order()
-	if _robot_part_count("torso") < 1:
-		return
-	if not _is_named_box_effect_active("PelvisHoverBox"):
-		return
-
-	var head_box := _find_hover_box_by_name("HeadHoverBox")
-	if head_box == null or not _is_box_effect_active(head_box):
-		return
-
-	var phase := _get_visible_animation_phase_for_box(head_box)
-	if phase == ANIMATION_PHASE_NONE:
-		return
-
-	var target_path := LOOP_ANIMATION_TORSO_PATH if phase == ANIMATION_PHASE_LOOP else INTRO_ANIMATION_TORSO_PATH
-	var target := get_node_or_null(target_path) as Sprite2D
-	var source := get_node_or_null(TORSO_CRUNCH_PATH) as TextureRect
-	if target == null or source == null or source.texture == null:
-		return
-
-	_remember_animation_torso_slot(target_path, target)
-	target.texture = source.texture
-	target.region_enabled = false
-	resolved[TORSO_CRUNCH_PATH] = false
-	resolved[target_path] = true
-	_move_raised_legs_above_animation_layers()
-
-
-func _remember_animation_torso_slot(path: NodePath, node: Sprite2D) -> void:
-	var key := String(path)
-	if _animation_torso_restore_state.has(key):
-		return
-	_animation_torso_restore_state[key] = {
-		"texture": node.texture,
-		"region_enabled": node.region_enabled,
-		"region_rect": node.region_rect,
-	}
-
-
-func _restore_animation_torso_slots() -> void:
-	for key in _animation_torso_restore_state:
-		var node := get_node_or_null(NodePath(key)) as Sprite2D
-		if node == null:
-			continue
-		var state: Dictionary = _animation_torso_restore_state[key]
-		node.texture = state.get("texture")
-		node.region_enabled = bool(state.get("region_enabled", false))
-		node.region_rect = state.get("region_rect", Rect2())
-	_animation_torso_restore_state.clear()
-
-
-func _move_raised_legs_above_animation_layers() -> void:
-	var legs := get_node_or_null(LEGS_PATH)
-	var layers := _get_animation_layers()
-	if legs == null or layers == null:
-		return
-	var parent := legs.get_parent()
-	if parent == null or parent != layers.get_parent():
-		return
-	if _raised_legs_restore_index < 0:
-		_raised_legs_restore_index = legs.get_index()
-	var target_index := layers.get_index()
-	if legs.get_index() > layers.get_index():
-		target_index += 1
-	parent.move_child(legs, target_index)
-
-
-func _restore_raised_legs_order() -> void:
-	if _raised_legs_restore_index < 0:
-		return
-	var legs := get_node_or_null(LEGS_PATH)
-	if legs == null:
-		_raised_legs_restore_index = -1
-		return
-	var parent := legs.get_parent()
-	if parent == null:
-		_raised_legs_restore_index = -1
-		return
-	parent.move_child(legs, mini(_raised_legs_restore_index, parent.get_child_count() - 1))
-	_raised_legs_restore_index = -1
+## Shows the neck's front cover while the head is the robot's only remaining
+## part; any other equipped part (or the raised-head animation) hides it.
+func _apply_neck_front_state(resolved: Dictionary) -> void:
+	var head_only := _robot_part_count("torso") < 1 \
+			and _robot_part_count("arm") < 1 \
+			and _robot_part_count("hand") < 1 \
+			and _robot_part_count("leg") < 1
+	resolved[NECK_FRONT_PATH] = head_only \
+			and not _is_named_box_effect_active("HeadHoverBox")
 
 
 func _add_robot_part_managed_paths() -> void:
@@ -1202,6 +1202,10 @@ func _is_hover_box_available(box: Control) -> bool:
 		return _robot_part_count("hand") >= 1
 	if box.name == RIGHT_HAND_HOVER_BOX_NAME:
 		return _robot_part_count("hand") >= 2
+	if box.name == LEFT_LEG_HOVER_BOX_NAME:
+		return _robot_part_count("leg") >= 1
+	if box.name == RIGHT_LEG_HOVER_BOX_NAME:
+		return _robot_part_count("leg") >= 2
 	return true
 
 
@@ -1291,9 +1295,10 @@ func _get_visible_animation_phase_for_box(box: Control) -> String:
 			return ANIMATION_PHASE_INTRO
 		return ANIMATION_PHASE_NONE
 
-	if box != _active_animation_box:
+	var state: Dictionary = _animation_states.get(box, {})
+	if state.is_empty():
 		return ANIMATION_PHASE_NONE
-	return _animation_phase
+	return String(state.get("phase", ANIMATION_PHASE_NONE))
 
 
 func _get_phase_frame_count(box: Control, phase: String) -> int:

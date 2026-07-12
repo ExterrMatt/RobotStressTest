@@ -84,8 +84,8 @@ extends Control
 	^"Torso/BigCoconuts",
 	^"Torso/Nipples",
 	^"Torso/TorsoCrunch",
-	^"AnimationLayers/Torso",
-	^"AnimationLayers/MouthBLoopMedium/Torso",
+	^"AnimationLayers/Chest",
+	^"AnimationLayers/MouthBLoopMedium/Chest",
 ]
 
 @export var face_and_front_hair_shadow_paths: Array[NodePath] = [
