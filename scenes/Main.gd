@@ -22,8 +22,8 @@ extends Control
 
 const LOCATION_RESOURCE_PATHS: Array[String] = [
 	"res://resources/locations/school.tres",
-	"res://resources/locations/work.tres",
 	"res://resources/locations/maintenance.tres",
+	"res://resources/locations/work.tres",
 	"res://resources/locations/store.tres",
 	"res://resources/locations/workshop.tres",
 	"res://resources/locations/stress_test.tres",
