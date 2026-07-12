@@ -185,6 +185,8 @@ var _scene_phase: SchoolPhase = SchoolPhase.LECTURE
 # Running totals applied on finish().
 var _total_suspicion: int = 0
 var _total_ingredients: Dictionary = {}
+## Set when the player takes the steal option; drives the drone-encounter branch.
+var _stole_contraband: bool = false
 
 
 func _ready() -> void:
@@ -212,6 +214,24 @@ func _process(_delta: float) -> void:
 		if child is Button and not (child as Button).disabled:
 			(child as Button).pressed.emit()
 			return
+
+
+## Debug (number-6 key, routed from Main): answer the current question as if the
+## player clicked the correct choice, advancing straight into the feedback
+## dialogue. Only acts while the answer buttons are up. During the intro history
+## question every answer routes to the same feedback, so we click the first
+## available button there.
+func debug_auto_solve() -> void:
+	if _scene_phase != SchoolPhase.QUESTION_CHOICES:
+		return
+	if _is_intro_school_first():
+		for child in choice_grid.get_children():
+			if child is Button and not (child as Button).disabled:
+				(child as Button).pressed.emit()
+				return
+		return
+	var correct_index: int = int(_current_question.get("correct", 0))
+	_on_answer_pressed(correct_index, correct_index)
 
 
 func _pick_teacher_and_question() -> void:
@@ -441,6 +461,7 @@ func _on_leave_pressed() -> void:
 
 func _on_steal_pressed() -> void:
 	_accumulate_reward(REWARD_STEAL)
+	_stole_contraband = true
 	_finish_school()
 
 
@@ -521,7 +542,8 @@ func _show_school_cabinet_background() -> void:
 
 
 func _finish_school() -> void:
-	finish(0, _total_suspicion, 0, _total_ingredients, false)
+	var contraband := "pile of nanobots" if _stole_contraband else ""
+	finish(0, _total_suspicion, 0, _total_ingredients, false, contraband)
 
 
 func _is_intro_school_first() -> bool:

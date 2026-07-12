@@ -75,12 +75,16 @@ func _ensure_entry_input_blocker() -> void:
 
 
 ## Convenience: build a result dict and emit. Subclasses call this when done.
+## `contraband` is the display name of anything the player stole this scene
+## (e.g. "pile of nanobots"); empty means they left clean. The patrol-drone
+## encounter reads it to branch its dialogue.
 func finish(
 	money_delta: int = 0,
 	suspicion_delta: int = 0,
 	anger_delta: int = 0,
 	ingredients: Dictionary = {},
 	skip_advance: bool = false,
+	contraband: String = "",
 ) -> void:
 	if _finished_emitted:
 		return
@@ -91,4 +95,5 @@ func finish(
 		"anger_delta": anger_delta,
 		"ingredients": ingredients,
 		"skip_advance": skip_advance,
+		"contraband": contraband,
 	})

@@ -41,6 +41,7 @@ const SPEAKER_COLORS: Dictionary = {
 	"Robot": "#b7d6d8",
 	"You": "#e4b22d",
 	"Ed": "#6b5f2a",
+	"DRONE": "#e0574a",
 }
 
 # ---- TUNABLES (visible in the editor) -----------------------------------
@@ -104,6 +105,12 @@ var _shift_held: bool = false
 var _advance_held: bool = false
 var _advance_hold_seconds: float = 0.0
 var _hold_skip_timer: float = 0.0
+
+## When true, the next play_pages call skips restoring the debug enter-hold
+## from currently-pressed keys. Set by callers (e.g. the name prompt) that
+## trigger playback from an Enter press which should act as a single click,
+## not seed a debug hold-skip that would eat the first line.
+var _suppress_next_enter_hold: bool = false
 
 ## One-shot font size override consumed by the next play_pages call.
 ## Set by play_pages_autosized so the chosen size survives play_pages'
@@ -491,7 +498,17 @@ func _debug_mode_enabled() -> bool:
 	return settings != null and settings.debug_mode_enabled
 
 
+## Suppress the debug enter-hold carry-over for the next play_pages call. Use
+## this when playback is kicked off by an Enter press that should count as a
+## single "click continue" rather than the start of a held debug skip.
+func suppress_next_enter_hold() -> void:
+	_suppress_next_enter_hold = true
+
+
 func _restore_enter_hold_from_current_input() -> void:
+	if _suppress_next_enter_hold:
+		_suppress_next_enter_hold = false
+		return
 	if not _debug_mode_enabled():
 		return
 	if Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER):

@@ -109,6 +109,16 @@ func _process(delta: float) -> void:
 		_finish_work_timeout()
 
 
+## Debug (number-6 key, routed from Main): drop every shape into its matching
+## slot so the shift completes without manual dragging. Same effect as the
+## held-Enter speedrun, but as a single keypress.
+func debug_auto_solve() -> void:
+	if _scene_phase != WorkPhase.MINIGAME:
+		return
+	if work_inventory != null and not work_inventory.is_complete():
+		work_inventory.auto_solve()
+
+
 func _show_work_minigame() -> void:
 	var main: Node = get_tree().current_scene
 	_scene_phase = WorkPhase.MINIGAME
@@ -439,7 +449,8 @@ func _finish_work(stole: bool) -> void:
 		suspicion += int(REWARD_STEAL.get("suspicion", 0))
 		_merge_ingredients(ingredients, REWARD_STEAL.get("ingredients", {}))
 
-	finish(money, suspicion, 0, ingredients, false)
+	var contraband := "scrap metal" if stole else ""
+	finish(money, suspicion, 0, ingredients, false, contraband)
 
 
 func _finish_work_timeout() -> void:

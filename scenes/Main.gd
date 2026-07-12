@@ -76,6 +76,15 @@ const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryO
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
+## Patrol-drone street inspection that plays after a regular (non-intro) school
+## or work run: a chance the drone stops the player before the day advances. It
+## is loaded like a normal dialogue location (its own LocationData below), so it
+## wipes in from the previous scene and out to the bedroom.
+## NOTE: chance is TEMPORARILY 1.0 (100%) for testing — dial back later.
+const POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE: float = 1.0
+const POST_ACTIVITY_DRONE_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
+const DRONE_ENCOUNTER_LOCATION: LocationData = preload("res://resources/locations/drone_encounter.tres")
+const DRONE_ENCOUNTER_LOCATION_ID: StringName = &"drone_encounter"
 
 ## Default authored size of the framed scene image. Standard 500x125 scene
 ## textures are normalized to STANDARD_SCENE_TEXTURE_SCALE at runtime, and
@@ -210,6 +219,12 @@ var _location_scene_cache: Dictionary = {}
 var _current_location_node: Node = null
 var _current_location_fullscreen: bool = false
 var _current_location_id: StringName = &""
+
+## Roll for the post-school/work patrol-drone encounter, plus the branch inputs
+## stashed for the DroneEncounter scene to read at _ready.
+var _drone_encounter_rng := RandomNumberGenerator.new()
+var _pending_drone_place: String = "work"
+var _pending_drone_contraband: String = ""
 var _default_scene_image: Texture2D
 ## Toggle for the alternate teacher portrait (e.g., Health.png → Health2.png).
 ## Flipped with the X key. Persists across teachers within a session.
@@ -353,6 +368,8 @@ func _ready() -> void:
 	_frame_visual_size_start = _target_frame_visual_size(scene_image.custom_minimum_size, _default_frame_outer_width)
 	_frame_visual_size_target = _frame_visual_size_start
 
+	_drone_encounter_rng.randomize()
+
 	GameState.money_changed.connect(_on_money_changed)
 	GameState.suspicion_changed.connect(_on_suspicion_changed)
 	GameState.anger_changed.connect(_on_anger_changed)
@@ -463,6 +480,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if not debug_mode_active:
+		return
+
+	# 6 auto-solves the current location's minigame: fills the work slots with
+	# their matching shapes, or clicks the correct school answer.
+	if key_event.keycode == KEY_6 or key_event.keycode == KEY_KP_6:
+		_debug_auto_solve_current_location()
+		get_viewport().set_input_as_handled()
 		return
 
 	if _handle_debug_number_shortcut(key_event):
@@ -662,6 +686,16 @@ func _debug_recalibrate_current_location() -> void:
 			and is_instance_valid(_current_location_node) \
 			and _current_location_node.has_method("debug_recalibrate"):
 		_current_location_node.call("debug_recalibrate")
+
+
+## Debug: ask the active location to auto-solve its current minigame beat. Work
+## fills its drop slots; School clicks the correct answer. Locations that don't
+## expose debug_auto_solve() simply ignore the key.
+func _debug_auto_solve_current_location() -> void:
+	if _current_location_node != null \
+			and is_instance_valid(_current_location_node) \
+			and _current_location_node.has_method("debug_auto_solve"):
+		_current_location_node.call("debug_auto_solve")
 
 
 func _debug_number_for_keycode(keycode: Key) -> int:
@@ -2844,8 +2878,45 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 
 	if result.get("skip_advance", false):
 		_show_selection_screen()
+	elif _maybe_show_post_activity_drone_encounter(result):
+		# The drone stopped the player. The encounter advances the phase itself
+		# once dismissed, so we don't advance here.
+		return
 	else:
 		DayCycle.advance_phase()
+
+
+# --- post-school/work patrol-drone encounter ---
+
+## If the just-finished activity was a regular (non-intro) school or work run,
+## maybe wipe into the patrol-drone encounter before the day advances. Returns
+## true when the encounter was loaded (in which case the caller must NOT advance
+## the phase — the drone scene finishes into _on_location_finished, which then
+## advances). `result` carries the "contraband" field the drone branches on.
+func _maybe_show_post_activity_drone_encounter(result: Dictionary) -> bool:
+	if not POST_ACTIVITY_DRONE_LOCATION_IDS.has(_current_location_id):
+		return false
+	if _drone_encounter_rng.randf() >= POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE:
+		return false
+	var packed := _load_location_scene(DRONE_ENCOUNTER_LOCATION)
+	if packed == null:
+		return false  # couldn't load — let the caller advance normally
+
+	_pending_drone_place = "school" if _current_location_id == &"school" else "work"
+	_pending_drone_contraband = String(result.get("contraband", ""))
+	# Wipe away from the finished school/work scene into the drone, using the
+	# same transition the normal location picks use. The drone scene reads its
+	# branch inputs via consume_pending_drone_args().
+	_play_transition_then(_apply_location_pick_swap.bind(DRONE_ENCOUNTER_LOCATION, packed))
+	return true
+
+
+## Consumed by the DroneEncounter scene at _ready to learn which activity it is
+## following and whether the player is carrying stolen contraband.
+func consume_pending_drone_args() -> Dictionary:
+	var args := {"place": _pending_drone_place, "contraband": _pending_drone_contraband}
+	_pending_drone_contraband = ""
+	return args
 
 
 func _apply_skipped_stress_test_penalty(result: Dictionary) -> Dictionary:
@@ -2861,6 +2932,10 @@ func _should_apply_skipped_stress_test_penalty(result: Dictionary) -> bool:
 	if result.get("skip_advance", false):
 		return false
 	if GameState.phase != DayCycle.Phase.NIGHT:
+		return false
+	# The drone cutscene is not an activity choice — it must not read as
+	# "skipped the stress test" when it finishes.
+	if _current_location_id == DRONE_ENCOUNTER_LOCATION_ID:
 		return false
 	return _current_location_id != STRESS_TEST_LOCATION_ID
 
