@@ -586,6 +586,13 @@ centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 250, 350)
 
+[node name="Neck" type="Sprite2D" parent="AnimationLayers" unique_id=182480256]
+visible = false
+texture = ExtResource("24_mouth_b_intro")
+centered = false
+region_enabled = true
+region_rect = Rect2(750, 0, 250, 350)
+
 [node name="Head" type="Sprite2D" parent="AnimationLayers" unique_id=236239304]
 visible = false
 texture = ExtResource("24_mouth_b_intro")
@@ -599,13 +606,6 @@ texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
 region_rect = Rect2(500, 0, 250, 350)
-
-[node name="Neck" type="Sprite2D" parent="AnimationLayers" unique_id=182480256]
-visible = false
-texture = ExtResource("24_mouth_b_intro")
-centered = false
-region_enabled = true
-region_rect = Rect2(750, 0, 250, 350)
 
 [node name="SquintEyes" type="Sprite2D" parent="AnimationLayers" unique_id=245303743]
 visible = false
@@ -686,6 +686,7 @@ region_rect = Rect2(4000, 0, 250, 350)
 
 [node name="Banana" type="Sprite2D" parent="AnimationLayers" unique_id=471092822]
 visible = false
+z_index = 5
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
@@ -881,6 +882,7 @@ region_rect = Rect2(4000, 0, 250, 350)
 
 [node name="Banana" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=871399523]
 visible = false
+z_index = 5
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
