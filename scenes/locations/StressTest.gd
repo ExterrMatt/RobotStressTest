@@ -115,6 +115,21 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export var window_alert_seen_failure_seconds: float = 3.0
 @export var window_alert_indicator_flash_seconds: float = 0.35
 
+## A patrol drone that can be sitting outside the window whenever the player
+## looks up (brings the window into view). Position and scale the Drone node in
+## the scene to place it; these control the timing and odds of the encounter.
+@export_group("Patrol Drone")
+## Chance (0-1) that the drone appears each time the player looks up at the
+## window while no drone is already present.
+@export_range(0.0, 1.0, 0.01) var drone_appear_chance: float = 0.35
+## Seconds the drone simply sits there before it readies its guns.
+@export var drone_idle_seconds: float = 5.0
+## Seconds the drone aims (guns texture) before it fires.
+@export var drone_guns_seconds: float = 3.0
+## Seconds the shot texture shows before the night is failed.
+@export var drone_shot_seconds: float = 0.2
+@export var drone_failure_text: String = "You were caught by a patrol drone. Hit the emergency button to fend it off."
+
 @export_group("Failure Messages")
 @export var gas_high_failure_text: String = "She woke up because you let the gas pressure rise too high."
 @export var gas_low_failure_text: String = "She woke up because you let the gas pressure fall too low."
@@ -162,6 +177,7 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @onready var dark_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/DarkPlaceholder
 @onready var window_light_on: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/WindowLightOn
 @onready var uncle_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/UncleWindow
+@onready var patrol_drone: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/PatrolDrone
 @onready var shed_light: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Light
 @onready var shed_bulb: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Bulb
 @onready var bulb_over_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/BulbOverWindow
@@ -261,6 +277,21 @@ const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
 const WINDOW_ALERT_RED: int = 2
 
+const DRONE_NONE: int = 0
+const DRONE_IDLE: int = 1
+const DRONE_GUNS: int = 2
+const DRONE_SHOT: int = 3
+const DRONE_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/drone.png")
+const DRONE_GUNS_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/guns.png")
+const DRONE_SHOT_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/guns_shot.png")
+
+## Patrol-drone window encounter. The drone only advances once it has appeared;
+## the emergency button clears it. _drone_was_looking_up tracks the look-up edge
+## so the appearance chance is rolled once per glance rather than every frame.
+var _drone_state: int = DRONE_NONE
+var _drone_elapsed: float = 0.0
+var _drone_was_looking_up: bool = false
+
 
 func _ready() -> void:
 	if _is_intro_tutorial_stress_test():
@@ -298,8 +329,10 @@ func _process(delta: float) -> void:
 	_update_generator_power_sound()
 	if speedrun:
 		_suppress_uncle_appearance()
+		_clear_patrol_drone()
 	else:
 		_update_window_alert(delta)
+		_update_patrol_drone(delta)
 	_refresh_stress_hud()
 	_update_hover_box_tooltip()
 
@@ -1401,6 +1434,71 @@ func _is_uncle_exposure_active() -> bool:
 	return not _stress_test_dark or (_electricity_percent > 0.0 and not _emergency_power_shutoff_pressed)
 
 
+## Advances the patrol-drone encounter. While no drone is present, each fresh
+## glance up at the window rolls the appearance chance. Once present, the drone
+## runs its idle -> guns -> shot -> fail timeline on its own clock (the player
+## can only stop it with the emergency button).
+func _update_patrol_drone(delta: float) -> void:
+	var looking_up := _is_window_alert_in_camera_view()
+	if _drone_state == DRONE_NONE:
+		if looking_up and not _drone_was_looking_up:
+			if _rng.randf() < clampf(drone_appear_chance, 0.0, 1.0):
+				_start_patrol_drone()
+		_drone_was_looking_up = looking_up
+		return
+	_drone_was_looking_up = looking_up
+
+	_drone_elapsed += delta
+	match _drone_state:
+		DRONE_IDLE:
+			if _drone_elapsed >= maxf(0.0, drone_idle_seconds):
+				_set_drone_state(DRONE_GUNS)
+		DRONE_GUNS:
+			if _drone_elapsed >= maxf(0.0, drone_guns_seconds):
+				_set_drone_state(DRONE_SHOT)
+		DRONE_SHOT:
+			if _drone_elapsed >= maxf(0.0, drone_shot_seconds):
+				_fail_stress_test(drone_failure_text, false)
+
+
+func _start_patrol_drone() -> void:
+	_set_drone_state(DRONE_IDLE)
+
+
+## Removes the drone and resets its timeline. Safe to call when no drone is
+## present, so the emergency button and speedrun path can call it freely.
+func _clear_patrol_drone() -> void:
+	if _drone_state == DRONE_NONE:
+		_apply_patrol_drone_visual()
+		return
+	_drone_state = DRONE_NONE
+	_drone_elapsed = 0.0
+	_apply_patrol_drone_visual()
+
+
+func _set_drone_state(state: int) -> void:
+	_drone_state = state
+	_drone_elapsed = 0.0
+	_apply_patrol_drone_visual()
+
+
+func _apply_patrol_drone_visual() -> void:
+	if patrol_drone == null:
+		return
+	match _drone_state:
+		DRONE_IDLE:
+			patrol_drone.texture = DRONE_IDLE_TEXTURE
+			patrol_drone.visible = true
+		DRONE_GUNS:
+			patrol_drone.texture = DRONE_GUNS_TEXTURE
+			patrol_drone.visible = true
+		DRONE_SHOT:
+			patrol_drone.texture = DRONE_SHOT_TEXTURE
+			patrol_drone.visible = true
+		_:
+			patrol_drone.visible = false
+
+
 func _random_window_alert_light_duration() -> float:
 	var low := maxf(0.0, minf(window_alert_light_seconds_min, window_alert_light_seconds_max))
 	var high := maxf(low, window_alert_light_seconds_max)
@@ -1483,6 +1581,8 @@ func _initialize_emergency_power_button() -> void:
 func _on_emergency_power_button_pressed() -> void:
 	if _night_finished:
 		return
+	# Hitting the emergency button also scares off a patrol drone at the window.
+	_clear_patrol_drone()
 	_play_emergency_power_button_sound()
 	if _electricity_percent > 0.001:
 		_play_generator_shutting_off_sound()
@@ -1975,6 +2075,7 @@ func _begin_stress_test_summary(
 		registers_completion: bool
 ) -> void:
 	_night_finished = true
+	_clear_patrol_drone()
 	_stop_generator_power_sound()
 	_stop_night_ambient()
 	_hide_mouse_tooltip()

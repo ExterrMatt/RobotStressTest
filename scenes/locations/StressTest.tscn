@@ -67,6 +67,7 @@
 [ext_resource type="Texture2D" uid="uid://cvaclwh4trfat" path="res://assets/textures/backgrounds/stress_test/darkness/dark1.png" id="66_dark1"]
 [ext_resource type="Texture2D" uid="uid://ca68pj836p1h2" path="res://assets/textures/backgrounds/stress_test/darkness/dark2.png" id="67_dark2"]
 [ext_resource type="Texture2D" uid="uid://dnn78kemxu1hk" path="res://assets/textures/backgrounds/stress_test/darkness/dark3.png" id="68_dark3"]
+[ext_resource type="Texture2D" uid="uid://chhxfe0hlshor" path="res://assets/textures/characters/drone/drone.png" id="69_patrol_drone"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -308,6 +309,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("33_uncle_window")
+expand_mode = 1
+
+[node name="PatrolDrone" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420080]
+visible = false
+layout_mode = 1
+anchors_preset = 0
+offset_left = 222.0
+offset_top = 62.0
+offset_right = 258.0
+offset_bottom = 98.0
+mouse_filter = 2
+texture = ExtResource("69_patrol_drone")
 expand_mode = 1
 
 [node name="BulbOverWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=100411321]
