@@ -115,13 +115,16 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export var window_alert_seen_failure_seconds: float = 3.0
 @export var window_alert_indicator_flash_seconds: float = 0.35
 
-## A patrol drone that can be sitting outside the window whenever the player
-## looks up (brings the window into view). Position and scale the Drone node in
-## the scene to place it; these control the timing and odds of the encounter.
+## A patrol drone that appears at the window at random moments through the
+## night, the same way the uncle does. Position and scale the Drone node in the
+## scene to place it; these control the timing of the encounter.
 @export_group("Patrol Drone")
-## Chance (0-1) that the drone appears each time the player looks up at the
-## window while no drone is already present.
-@export_range(0.0, 1.0, 0.01) var drone_appear_chance: float = 0.35
+## Average seconds between drone appearances. Actual gaps vary randomly around
+## this, so the drone shows up roughly once per this many seconds.
+@export var drone_average_interval_seconds: float = 60.0
+## Appearances are never scheduled within this many seconds of the night's
+## start or end.
+@export var drone_edge_exclusion_seconds: float = 5.0
 ## Seconds the drone simply sits there before it readies its guns.
 @export var drone_idle_seconds: float = 5.0
 ## Seconds the drone aims (guns texture) before it fires.
@@ -285,12 +288,13 @@ const DRONE_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/characters/
 const DRONE_GUNS_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/guns.png")
 const DRONE_SHOT_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/guns_shot.png")
 
-## Patrol-drone window encounter. The drone only advances once it has appeared;
-## the emergency button clears it. _drone_was_looking_up tracks the look-up edge
-## so the appearance chance is rolled once per glance rather than every frame.
+## Patrol-drone window encounter. Appearances are scheduled at random times up
+## front (like the uncle); once a drone appears it runs its own timeline and the
+## emergency button clears it.
 var _drone_state: int = DRONE_NONE
 var _drone_elapsed: float = 0.0
-var _drone_was_looking_up: bool = false
+var _drone_event_times: Array[float] = []
+var _drone_event_index: int = 0
 
 
 func _ready() -> void:
@@ -329,7 +333,7 @@ func _process(delta: float) -> void:
 	_update_generator_power_sound()
 	if speedrun:
 		_suppress_uncle_appearance()
-		_clear_patrol_drone()
+		_suppress_patrol_drone()
 	else:
 		_update_window_alert(delta)
 		_update_patrol_drone(delta)
@@ -1217,6 +1221,11 @@ func _initialize_stress_systems() -> void:
 	_gas_optimal_event_times = _evenly_spaced_times(optimal_count, night_duration_seconds)
 	_gas_drift_event_times = _evenly_spaced_times(drift_count, night_duration_seconds)
 	_window_alert_event_times = _random_window_alert_times(alert_count)
+	_drone_state = DRONE_NONE
+	_drone_elapsed = 0.0
+	_drone_event_index = 0
+	_drone_event_times = _random_drone_event_times()
+	_apply_patrol_drone_visual()
 
 	if window_alert_rect != null:
 		window_alert_rect.visible = false
@@ -1434,19 +1443,17 @@ func _is_uncle_exposure_active() -> bool:
 	return not _stress_test_dark or (_electricity_percent > 0.0 and not _emergency_power_shutoff_pressed)
 
 
-## Advances the patrol-drone encounter. While no drone is present, each fresh
-## glance up at the window rolls the appearance chance. Once present, the drone
-## runs its idle -> guns -> shot -> fail timeline on its own clock (the player
-## can only stop it with the emergency button).
+## Advances the patrol-drone encounter. While no drone is present it waits for
+## the next scheduled appearance time; once present the drone runs its
+## idle -> guns -> shot -> fail timeline on its own clock (the player can only
+## stop it with the emergency button).
 func _update_patrol_drone(delta: float) -> void:
-	var looking_up := _is_window_alert_in_camera_view()
 	if _drone_state == DRONE_NONE:
-		if looking_up and not _drone_was_looking_up:
-			if _rng.randf() < clampf(drone_appear_chance, 0.0, 1.0):
-				_start_patrol_drone()
-		_drone_was_looking_up = looking_up
+		if _drone_event_index < _drone_event_times.size() \
+				and _night_elapsed >= _drone_event_times[_drone_event_index]:
+			_drone_event_index += 1
+			_start_patrol_drone()
 		return
-	_drone_was_looking_up = looking_up
 
 	_drone_elapsed += delta
 	match _drone_state:
@@ -1466,14 +1473,53 @@ func _start_patrol_drone() -> void:
 
 
 ## Removes the drone and resets its timeline. Safe to call when no drone is
-## present, so the emergency button and speedrun path can call it freely.
+## present, so the emergency button and night-end path can call it freely.
 func _clear_patrol_drone() -> void:
 	if _drone_state == DRONE_NONE:
 		_apply_patrol_drone_visual()
 		return
 	_drone_state = DRONE_NONE
 	_drone_elapsed = 0.0
+	_skip_elapsed_drone_events()
 	_apply_patrol_drone_visual()
+
+
+## Debug speedrun: keep the drone from appearing and drop any appearances whose
+## scheduled time has already slipped past, so none fire in a burst afterwards.
+func _suppress_patrol_drone() -> void:
+	if _drone_state != DRONE_NONE:
+		_clear_patrol_drone()
+	else:
+		_skip_elapsed_drone_events()
+
+
+func _skip_elapsed_drone_events() -> void:
+	while _drone_event_index < _drone_event_times.size() \
+			and _night_elapsed >= _drone_event_times[_drone_event_index]:
+		_drone_event_index += 1
+
+
+## Builds the random appearance schedule for the night, the same way the uncle
+## does: pick a count so appearances average one per interval across the usable
+## window (the night minus the start/end exclusions), then drop that many at
+## uniformly random times in that window. The fractional part of the expected
+## count is honoured probabilistically so the long-run average stays on target.
+func _random_drone_event_times() -> Array[float]:
+	var times: Array[float] = []
+	var edge := maxf(0.0, drone_edge_exclusion_seconds)
+	var start := edge
+	var end := night_duration_seconds - edge
+	var average := maxf(1.0, drone_average_interval_seconds)
+	if end <= start:
+		return times
+	var expected := (end - start) / average
+	var count := int(floor(expected))
+	if _rng.randf() < expected - floor(expected):
+		count += 1
+	for _i in range(count):
+		times.append(_rng.randf_range(start, end))
+	times.sort()
+	return times
 
 
 func _set_drone_state(state: int) -> void:

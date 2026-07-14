@@ -26,6 +26,10 @@ const CRAFTABLE_PARTS: Dictionary = {
 		"display_name": "Arm",
 		"recipe": {"nuts_bolts": 1},
 	},
+	"torso": {
+		"display_name": "Torso",
+		"recipe": {"synth_skin": 1},
+	},
 }
 
 const INGREDIENT_PATHS: Dictionary = {
