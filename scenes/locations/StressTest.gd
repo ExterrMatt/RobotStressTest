@@ -1253,7 +1253,8 @@ func _initialize_stress_systems() -> void:
 	_drone_state = DRONE_NONE
 	_drone_elapsed = 0.0
 	_drone_event_index = 0
-	_drone_event_times = _random_drone_event_times()
+	# Space the drone appearances around the uncle's so the two never overlap.
+	_drone_event_times = _deconflict_drone_schedule(_random_drone_event_times(), _window_alert_event_times)
 	_apply_patrol_drone_visual()
 
 	if window_alert_rect != null:
@@ -1326,6 +1327,10 @@ func _update_window_alert(delta: float) -> void:
 		if _window_alert_event_index < _window_alert_event_times.size() \
 				and _night_elapsed >= _window_alert_event_times[_window_alert_event_index] \
 				and _night_elapsed >= _window_alert_next_allowed_time:
+			# Never overlap the drone: if it is on screen, hold the uncle back
+			# until it clears rather than have both events run at once.
+			if _drone_state != DRONE_NONE:
+				return
 			_window_alert_event_index += 1
 			_start_window_alert()
 		return
@@ -1480,6 +1485,13 @@ func _update_patrol_drone(delta: float) -> void:
 	if _drone_state == DRONE_NONE:
 		if _drone_event_index < _drone_event_times.size() \
 				and _night_elapsed >= _drone_event_times[_drone_event_index]:
+			# Never overlap the uncle: if he is on screen, hold the drone back
+			# until he clears, but drop this appearance rather than let the wait
+			# push it into the night's end-exclusion window.
+			if _window_alert_state != WINDOW_ALERT_NONE:
+				if _night_elapsed > _latest_drone_start_time():
+					_drone_event_index += 1
+				return
 			_drone_event_index += 1
 			_start_patrol_drone()
 		return
@@ -1561,6 +1573,58 @@ func _random_drone_event_times() -> Array[float]:
 		times.append(_rng.randf_range(start, end))
 	times.sort()
 	return times
+
+
+## Worst-case on-screen duration of one drone encounter, used to reserve room
+## so appearances neither collide with the uncle nor run off the night's end.
+func _drone_reserved_seconds() -> float:
+	return maxf(0.0, drone_idle_seconds) \
+			+ maxf(0.0, drone_guns_seconds) \
+			+ maxf(0.0, drone_shot_seconds) \
+			+ maxf(0.0, drone_zap_seconds)
+
+
+## Latest moment a drone may still appear and finish before the end exclusion.
+func _latest_drone_start_time() -> float:
+	return night_duration_seconds - maxf(0.0, drone_edge_exclusion_seconds) - _drone_reserved_seconds()
+
+
+## Shifts drone appearances so their on-screen windows never overlap an uncle
+## window (or each other), dropping any that no longer fit before the end
+## exclusion. The uncle schedule is treated as fixed, so the drone is the one
+## that yields — and it is only dropped when there is genuinely no room, never
+## pushed into the final seconds of the night.
+func _deconflict_drone_schedule(drone_times: Array[float], uncle_times: Array[float]) -> Array[float]:
+	var result: Array[float] = []
+	var latest_start := _latest_drone_start_time()
+	if latest_start < maxf(0.0, drone_edge_exclusion_seconds):
+		return result
+	var gap := 1.0
+	var drone_dur := _drone_reserved_seconds()
+	var uncle_dur := _window_alert_schedule_duration()
+	for original in drone_times:
+		var t := original
+		var settled := false
+		var guard := 0
+		while not settled and guard < 128:
+			guard += 1
+			settled = true
+			for u in uncle_times:
+				if t < u + uncle_dur + gap and t + drone_dur + gap > u:
+					t = u + uncle_dur + gap
+					settled = false
+					break
+			if not settled:
+				continue
+			for placed in result:
+				if t < placed + drone_dur + gap and t + drone_dur + gap > placed:
+					t = placed + drone_dur + gap
+					settled = false
+					break
+		if settled and t <= latest_start:
+			result.append(t)
+	result.sort()
+	return result
 
 
 func _set_drone_state(state: int) -> void:
