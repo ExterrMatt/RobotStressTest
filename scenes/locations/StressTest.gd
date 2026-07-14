@@ -1569,12 +1569,12 @@ func _set_drone_state(state: int) -> void:
 	_apply_patrol_drone_visual()
 
 
-## Resolves every drone layer for the current state and light level. The four
-## dark overlays sit on top of the drone whenever it is present. With the lights
-## on the lit body (drone.png) shows with the guns/id accessories; with the
-## lights off it is replaced by the darkened silhouette plus the red lens glow,
-## and the guns use their dark variant. During the shot the firing pose draws
-## under the dark overlays and only the dark guns turn off.
+## Resolves every drone layer for the current state and light level. The drone
+## body (drone.png, or the firing pose during the shot) is always present; the
+## four dark overlays sit on top of it whenever it is on-screen. With the lights
+## off the lights-off tint and the red lens glow are layered on as well, and the
+## guns use their dark variant. During the shot the firing pose draws under the
+## dark overlays and only the dark guns turn off.
 func _apply_patrol_drone_visual() -> void:
 	if patrol_drone == null:
 		return
@@ -1590,6 +1590,8 @@ func _apply_patrol_drone_visual() -> void:
 	if not present:
 		return
 
+	# The drone body is always drawn; lights-off just adds the tint and glow.
+	patrol_drone.visible = true
 	var dark := _stress_test_dark
 	if dark:
 		_show_node(patrol_drone_lights_off)
@@ -1600,23 +1602,15 @@ func _apply_patrol_drone_visual() -> void:
 			# Firing pose sits under the dark overlays; the dark guns turn off
 			# but every other dark layer stays on.
 			patrol_drone.texture = DRONE_SHOT_TEXTURE
-			patrol_drone.visible = true
 		DRONE_GUNS:
 			if dark:
 				_show_node(patrol_drone_guns_dark)
 			else:
-				patrol_drone.visible = true
 				_show_accessory(DRONE_GUNS_TEXTURE)
 		DRONE_ZAP:
-			# The silhouette (dark) or lit body hosts the id electrocution
-			# placeholder overlay.
-			patrol_drone.visible = true
-			if dark:
-				patrol_drone.texture = null
 			_show_accessory(DRONE_ID_TEXTURE)
 		_:  # DRONE_IDLE
-			if not dark:
-				patrol_drone.visible = true
+			pass
 
 
 func _set_dark_overlays_visible(value: bool) -> void:
