@@ -12,6 +12,7 @@ signal ended()
 ## defaults to having its visible art centred in the assembly area.
 @export var head_assembly_offset: Vector2 = Vector2.ZERO
 @export var arm_assembly_offset: Vector2 = Vector2.ZERO
+@export var torso_assembly_offset: Vector2 = Vector2.ZERO
 
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
@@ -102,6 +103,24 @@ const ARM_SEGMENT_IDS: Array[StringName] = [
 ## Arm segments whose "_outline" is part of the final art and must keep drawing
 ## after the piece is placed (rather than acting as a pick-up-only drag hint).
 const ARM_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"elbow_inner_gears"]
+
+const TORSO_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso"
+const TORSO_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
+## Back-to-front draw order for the assembled torso. Godot draws later Control
+## siblings on top, so this is the reverse of the Aseprite layer stack (taken
+## bottom-to-top straight from workshop_torso.ase). The "_outline" layers are not
+## listed here — each is loaded as its base piece's outline (drawn behind the
+## base, dragged with it, hidden once placed).
+const TORSO_SEGMENT_IDS: Array[StringName] = [
+	&"top_torso",
+	&"belly_button",
+	&"gut",
+	&"pelvis",
+	&"left_torso",
+	&"right_torso",
+	&"left_socket",
+	&"right_socket",
+]
 const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"scrap_metal":   "res://assets/textures/icons/scrap_metal_shadow.png",
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts_shadow.png",
@@ -127,6 +146,7 @@ var _active_assembly_slot_ids: Array[StringName] = []
 var _head_slot_placement_offsets: Dictionary = {}
 var _head_assembly: Control = null
 var _arm_assembly: Control = null
+var _torso_assembly: Control = null
 
 var _active_drag_segment: WorkshopSegment = null
 var _passenger_segments: Array = []
@@ -159,6 +179,7 @@ func _ready() -> void:
 
 	_setup_head_assembly()
 	_setup_arm_assembly()
+	_setup_torso_assembly()
 	_configure_assembly_for_part("")
 
 	# Set up global shadow rendering layer (drawn entirely behind pieces)
@@ -999,7 +1020,7 @@ func _refit_segment_bounds(segment: WorkshopSegment) -> void:
 
 
 func _clear_placed_part_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
-	if _crafted_part_id != "head" and _crafted_part_id != "arm":
+	if _crafted_part_id != "head" and _crafted_part_id != "arm" and _crafted_part_id != "torso":
 		return
 
 	for child in segment.get_children():
@@ -1318,6 +1339,73 @@ func _load_arm_outline(segment_id: StringName) -> Texture2D:
 	return _load_texture("%s/%s_outline.png" % [ARM_TEXTURE_DIR, segment_id])
 
 
+func _setup_torso_assembly() -> void:
+	if _torso_assembly != null:
+		return
+	_torso_assembly = Control.new()
+	_torso_assembly.name = "AssemblyTorso"
+	_torso_assembly.size = TORSO_ASSEMBLY_SIZE
+	_torso_assembly.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_torso_assembly.visible = false
+
+	var content_bounds: Rect2 = Rect2()
+	var found_any: bool = false
+
+	for segment_id in TORSO_SEGMENT_IDS:
+		var tex: Texture2D = _load_torso_layer(segment_id)
+		if tex == null:
+			push_warning("Workshop: missing torso layer '%s' in %s." % [segment_id, TORSO_TEXTURE_DIR])
+			continue
+
+		var used_rect: Rect2 = _used_rect_for_texture(tex)
+		if used_rect.size.x > 0.0 and used_rect.size.y > 0.0:
+			if not found_any:
+				content_bounds = used_rect
+				found_any = true
+			else:
+				content_bounds = content_bounds.merge(used_rect)
+
+		var slot := WorkshopAssemblySlot.new()
+		slot.name = "%sSlot" % String(segment_id).capitalize().replace(" ", "")
+		slot.accepts_segment_id = segment_id
+		slot.position = Vector2.ZERO
+		slot.size = TORSO_ASSEMBLY_SIZE
+		slot.hitbox_rect = used_rect
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var placed_callable := Callable(self, "_on_slot_placed")
+		if not slot.placed.is_connected(placed_callable):
+			slot.placed.connect(placed_callable)
+		_torso_assembly.add_child(slot)
+		_assembly_slots[segment_id] = slot
+		_segments[segment_id] = {
+			"pieces": [
+				{
+					"id": segment_id,
+					"texture": tex,
+					"outline": _load_torso_outline(segment_id),
+					"shadow": null,
+				}
+			]
+		}
+
+	if not found_any:
+		content_bounds = Rect2(Vector2.ZERO, TORSO_ASSEMBLY_SIZE)
+	# Centre the torso's visible art (not the whole canvas, whose content may sit
+	# off-centre) in the assembly area, then apply the editor nudge.
+	var content_center: Vector2 = content_bounds.position + content_bounds.size * 0.5
+	_torso_assembly.position = assembly.size * 0.5 - content_center + torso_assembly_offset
+
+	assembly.add_child.call_deferred(_torso_assembly)
+
+
+func _load_torso_layer(segment_id: StringName) -> Texture2D:
+	return _load_texture("%s/%s.png" % [TORSO_TEXTURE_DIR, segment_id])
+
+
+func _load_torso_outline(segment_id: StringName) -> Texture2D:
+	return _load_texture("%s/%s_outline.png" % [TORSO_TEXTURE_DIR, segment_id])
+
+
 func _load_texture(path: String) -> Texture2D:
 	if not ResourceLoader.exists(path):
 		return null
@@ -1369,6 +1457,8 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		_head_assembly.visible = part_id == "head"
 	if _arm_assembly != null:
 		_arm_assembly.visible = part_id == "arm"
+	if _torso_assembly != null:
+		_torso_assembly.visible = part_id == "torso"
 
 	_active_assembly_slot_ids.clear()
 	if part_id == "head":
@@ -1377,6 +1467,10 @@ func _configure_assembly_for_part(part_id: String) -> void:
 				_active_assembly_slot_ids.append(id)
 	elif part_id == "arm":
 		for id in ARM_SEGMENT_IDS:
+			if _assembly_slots.has(id):
+				_active_assembly_slot_ids.append(id)
+	elif part_id == "torso":
+		for id in TORSO_SEGMENT_IDS:
 			if _assembly_slots.has(id):
 				_active_assembly_slot_ids.append(id)
 	elif part_id == "leg":
