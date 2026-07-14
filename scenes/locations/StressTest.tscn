@@ -71,7 +71,7 @@
 [ext_resource type="Texture2D" uid="uid://c4ct1o0wcdup6" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_lights_off.png" id="70_drone_lights_off"]
 [ext_resource type="Texture2D" uid="uid://c6b3wuykwt17v" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_guns.png" id="71_drone_guns_dark"]
 [ext_resource type="Texture2D" uid="uid://cmvla7av3iohi" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_1.png" id="72_drone_dark_1"]
-[ext_resource type="Texture2D" uid="uid://ctbig97fysvn1" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_glow.png" id="73_drone_glow"]
+[ext_resource type="Texture2D" uid="uid://ctbiha7fysvn1" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_glow.png" id="73_drone_glow"]
 [ext_resource type="Texture2D" uid="uid://dl20u1itkh3vd" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_2.png" id="74_drone_dark_2"]
 [ext_resource type="Texture2D" uid="uid://bp2molap737b5" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_3.png" id="75_drone_dark_3"]
 [ext_resource type="Texture2D" uid="uid://dy6y46e5jyaii" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_4.png" id="76_drone_dark_4"]
@@ -319,6 +319,7 @@ texture = ExtResource("33_uncle_window")
 expand_mode = 1
 
 [node name="PatrolDrone" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420080]
+visible = false
 layout_mode = 1
 offset_left = 164.0
 offset_top = -36.0
