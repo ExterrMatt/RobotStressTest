@@ -2,3 +2,6 @@ res://scenes/locations/StressTest.gd
 res://scenes/locations/WorkshopMinigame.gd
 res://scenes/locations/StressTest.tscn
 res://themes/main_theme.tres
+res://scenes/Main.gd
+res://scenes/locations/StressTestRobot.gd
+res://scenes/locations/StressTestRobotShadow.gd
