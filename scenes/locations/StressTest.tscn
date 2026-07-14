@@ -312,13 +312,11 @@ texture = ExtResource("33_uncle_window")
 expand_mode = 1
 
 [node name="PatrolDrone" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420080]
-visible = false
 layout_mode = 1
-anchors_preset = 0
-offset_left = 222.0
-offset_top = 62.0
-offset_right = 258.0
-offset_bottom = 98.0
+offset_left = 164.0
+offset_top = -36.0
+offset_right = 420.0
+offset_bottom = 220.0
 mouse_filter = 2
 texture = ExtResource("69_patrol_drone")
 expand_mode = 1

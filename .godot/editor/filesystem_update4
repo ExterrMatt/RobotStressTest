@@ -1,1 +1,4 @@
 res://scenes/locations/StressTest.gd
+res://scenes/locations/WorkshopMinigame.gd
+res://scenes/locations/StressTest.tscn
+res://themes/main_theme.tres
