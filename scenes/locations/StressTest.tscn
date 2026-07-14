@@ -68,6 +68,10 @@
 [ext_resource type="Texture2D" uid="uid://ca68pj836p1h2" path="res://assets/textures/backgrounds/stress_test/darkness/dark2.png" id="67_dark2"]
 [ext_resource type="Texture2D" uid="uid://dnn78kemxu1hk" path="res://assets/textures/backgrounds/stress_test/darkness/dark3.png" id="68_dark3"]
 [ext_resource type="Texture2D" uid="uid://chhxfe0hlshor" path="res://assets/textures/characters/drone/drone.png" id="69_patrol_drone"]
+[ext_resource type="Texture2D" uid="uid://c4ct1o0wcdup6" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_lights_off.png" id="70_drone_lights_off"]
+[ext_resource type="Texture2D" uid="uid://c6b3wuykwt17v" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_guns.png" id="71_drone_guns_dark"]
+[ext_resource type="Texture2D" uid="uid://cmvla7av3iohi" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_1.png" id="72_drone_shadow"]
+[ext_resource type="Texture2D" uid="uid://ctbig97fysvn1" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_glow.png" id="73_drone_glow"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -311,6 +315,30 @@ mouse_filter = 2
 texture = ExtResource("33_uncle_window")
 expand_mode = 1
 
+[node name="DroneLightsOff" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420082]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("70_drone_lights_off")
+expand_mode = 1
+
+[node name="DroneGuns" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420083]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("71_drone_guns_dark")
+expand_mode = 1
+
 [node name="PatrolDrone" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420080]
 layout_mode = 1
 offset_left = 164.0
@@ -330,6 +358,30 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+expand_mode = 1
+
+[node name="DroneShadow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420084]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("72_drone_shadow")
+expand_mode = 1
+
+[node name="DroneGlow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420085]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("73_drone_glow")
 expand_mode = 1
 
 [node name="BulbOverWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=100411321]

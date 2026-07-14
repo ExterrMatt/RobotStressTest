@@ -134,6 +134,9 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 ## Seconds the drone shows the electrocution placeholder (id texture) after the
 ## emergency button drives it off, before it disappears.
 @export var drone_zap_seconds: float = 0.3
+## Frames per second of the shadow overlay that animates over the lit drone
+## while the lights are on.
+@export var drone_shadow_fps: float = 8.0
 @export var drone_failure_text: String = "You were caught by a patrol drone. Hit the emergency button to fend it off."
 
 @export_group("Failure Messages")
@@ -185,6 +188,10 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @onready var uncle_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/UncleWindow
 @onready var patrol_drone: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/PatrolDrone
 @onready var patrol_drone_accessory: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/PatrolDrone/Accessory
+@onready var patrol_drone_lights_off: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/DroneLightsOff
+@onready var patrol_drone_guns_dark: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/DroneGuns
+@onready var patrol_drone_shadow: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/DroneShadow
+@onready var patrol_drone_glow: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/DroneGlow
 @onready var shed_light: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Light
 @onready var shed_bulb: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Bulb
 @onready var bulb_over_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/BulbOverWindow
@@ -299,6 +306,20 @@ const DRONE_GUNS_TEXTURE: Texture2D = preload("res://assets/textures/characters/
 ## drives the drone off with the emergency button.
 const DRONE_ID_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/id.png")
 
+## Lights-off drone art. When the lights are off the lit body is swapped for the
+## darkened silhouette (plus the red lens glow) instead of being dimmed with a
+## modulate, and the guns get their own dark variant. The four shadow frames
+## animate over the lit body while the lights are on.
+const DRONE_LIGHTS_OFF_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/stress_test/darkness/dark_drone_lights_off.png")
+const DRONE_GLOW_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/stress_test/darkness/dark_drone_glow.png")
+const DRONE_GUNS_DARK_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/stress_test/darkness/dark_drone_guns.png")
+const DRONE_SHADOW_TEXTURES: Array[Texture2D] = [
+	preload("res://assets/textures/backgrounds/stress_test/darkness/dark_drone_1.png"),
+	preload("res://assets/textures/backgrounds/stress_test/darkness/dark_drone_2.png"),
+	preload("res://assets/textures/backgrounds/stress_test/darkness/dark_drone_3.png"),
+	preload("res://assets/textures/backgrounds/stress_test/darkness/dark_drone_4.png"),
+]
+
 ## Patrol-drone window encounter. Appearances are scheduled at random times up
 ## front (like the uncle); once a drone appears it runs its own timeline and the
 ## emergency button clears it.
@@ -306,6 +327,8 @@ var _drone_state: int = DRONE_NONE
 var _drone_elapsed: float = 0.0
 var _drone_event_times: Array[float] = []
 var _drone_event_index: int = 0
+var _drone_shadow_elapsed: float = 0.0
+var _drone_shadow_frame: int = 0
 
 
 func _ready() -> void:
@@ -348,6 +371,7 @@ func _process(delta: float) -> void:
 	else:
 		_update_window_alert(delta)
 		_update_patrol_drone(delta)
+		_animate_drone_shadow(delta)
 	_refresh_stress_hud()
 	_update_hover_box_tooltip()
 
@@ -881,6 +905,7 @@ func _set_stress_test_dark(value: bool) -> void:
 	_stress_test_dark = value
 	_apply_background_light_state()
 	_apply_lights_off_modulate()
+	_apply_patrol_drone_visual()
 	if stress_test_robot != null and _stress_test_dark and not was_dark and stress_test_robot.has_method("reset_interactions_to_default"):
 		stress_test_robot.call("reset_interactions_to_default")
 	_apply_screw_repair_light_state()
@@ -896,10 +921,8 @@ func _apply_lights_off_modulate() -> void:
 		electrical_cord.modulate = lights_modulate
 	if emergency_power_button != null:
 		emergency_power_button.modulate = lights_modulate
-	# The drone body's modulate cascades to its accessory overlay child, so the
-	# whole drone dims with the rest of the scene when the lights are off.
-	if patrol_drone != null:
-		patrol_drone.modulate = lights_modulate
+	# The drone is not dimmed by modulate: it swaps to dedicated lights-off art
+	# (silhouette + lens glow) instead, handled in _apply_patrol_drone_visual.
 
 
 func _apply_background_light_state() -> void:
@@ -1555,36 +1578,82 @@ func _set_drone_state(state: int) -> void:
 	_apply_patrol_drone_visual()
 
 
-## Resolves the drone body and its accessory overlay. Guns and the
-## electrocution placeholder (id) layer on top of the idle body; the shot
-## texture replaces the body outright.
+## Resolves every drone layer for the current state and light level. With the
+## lights on the lit body (drone.png) shows with an animated shadow overlay and
+## the guns/id accessories; with the lights off it is replaced by the darkened
+## silhouette plus the red lens glow, and the guns use their dark variant. The
+## shot flash has no dark variant, so it shows the lit flash either way.
 func _apply_patrol_drone_visual() -> void:
 	if patrol_drone == null:
 		return
-	match _drone_state:
-		DRONE_IDLE:
-			_set_drone_textures(DRONE_IDLE_TEXTURE, null)
-		DRONE_GUNS:
-			_set_drone_textures(DRONE_IDLE_TEXTURE, DRONE_GUNS_TEXTURE)
-		DRONE_SHOT:
-			_set_drone_textures(DRONE_SHOT_TEXTURE, null)
-		DRONE_ZAP:
-			_set_drone_textures(DRONE_IDLE_TEXTURE, DRONE_ID_TEXTURE)
-		_:
-			patrol_drone.visible = false
-			if patrol_drone_accessory != null:
-				patrol_drone_accessory.visible = false
+	# Hide everything, then light up only the layers this state needs.
+	patrol_drone.visible = false
+	patrol_drone.texture = DRONE_IDLE_TEXTURE
+	_hide_node(patrol_drone_accessory)
+	_hide_node(patrol_drone_shadow)
+	_hide_node(patrol_drone_lights_off)
+	_hide_node(patrol_drone_guns_dark)
+	_hide_node(patrol_drone_glow)
+	if _drone_state == DRONE_NONE:
+		return
 
+	if _drone_state == DRONE_SHOT:
+		# The muzzle flash replaces the whole drone and has no dark variant.
+		patrol_drone.texture = DRONE_SHOT_TEXTURE
+		patrol_drone.visible = true
+		return
 
-## Sets the drone body texture and, when supplied, an accessory overlay drawn on
-## top of it. Pass a null accessory to show the body alone.
-func _set_drone_textures(body: Texture2D, accessory: Texture2D) -> void:
-	patrol_drone.texture = body
+	if _stress_test_dark:
+		_show_node(patrol_drone_lights_off)
+		_show_node(patrol_drone_glow)
+		if _drone_state == DRONE_GUNS:
+			_show_node(patrol_drone_guns_dark)
+		elif _drone_state == DRONE_ZAP:
+			# Host the id overlay with no body of its own; the silhouette below
+			# provides the drone, and the accessory draws on top of it.
+			patrol_drone.texture = null
+			patrol_drone.visible = true
+			_show_accessory(DRONE_ID_TEXTURE)
+		return
+
+	# Lights on: lit body with the animated shadow, plus any accessory.
 	patrol_drone.visible = true
+	_show_node(patrol_drone_shadow)
+	if _drone_state == DRONE_GUNS:
+		_show_accessory(DRONE_GUNS_TEXTURE)
+	elif _drone_state == DRONE_ZAP:
+		_show_accessory(DRONE_ID_TEXTURE)
+
+
+func _show_accessory(texture: Texture2D) -> void:
 	if patrol_drone_accessory == null:
 		return
-	patrol_drone_accessory.texture = accessory
-	patrol_drone_accessory.visible = accessory != null
+	patrol_drone_accessory.texture = texture
+	patrol_drone_accessory.visible = true
+
+
+func _hide_node(node: CanvasItem) -> void:
+	if node != null:
+		node.visible = false
+
+
+func _show_node(node: CanvasItem) -> void:
+	if node != null:
+		node.visible = true
+
+
+## Cycles the shadow overlay's frames while it is on-screen (lit drone only).
+func _animate_drone_shadow(_delta: float) -> void:
+	if patrol_drone_shadow == null or not patrol_drone_shadow.visible:
+		return
+	if DRONE_SHADOW_TEXTURES.is_empty():
+		return
+	_drone_shadow_elapsed += _delta
+	var fps := maxf(0.1, drone_shadow_fps)
+	var frame := int(floor(_drone_shadow_elapsed * fps)) % DRONE_SHADOW_TEXTURES.size()
+	if frame != _drone_shadow_frame or patrol_drone_shadow.texture == null:
+		_drone_shadow_frame = frame
+		patrol_drone_shadow.texture = DRONE_SHADOW_TEXTURES[frame]
 
 
 func _random_window_alert_light_duration() -> float:
