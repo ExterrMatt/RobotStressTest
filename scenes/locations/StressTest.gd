@@ -130,7 +130,10 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 ## Seconds the drone aims (guns texture) before it fires.
 @export var drone_guns_seconds: float = 3.0
 ## Seconds the shot texture shows before the night is failed.
-@export var drone_shot_seconds: float = 0.2
+@export var drone_shot_seconds: float = 0.05
+## Seconds the drone shows the electrocution placeholder (id texture) after the
+## emergency button drives it off, before it disappears.
+@export var drone_zap_seconds: float = 0.3
 @export var drone_failure_text: String = "You were caught by a patrol drone. Hit the emergency button to fend it off."
 
 @export_group("Failure Messages")
@@ -181,6 +184,7 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @onready var window_light_on: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/WindowLightOn
 @onready var uncle_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/UncleWindow
 @onready var patrol_drone: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/PatrolDrone
+@onready var patrol_drone_accessory: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/PatrolDrone/Accessory
 @onready var shed_light: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Light
 @onready var shed_bulb: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Bulb
 @onready var bulb_over_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/BulbOverWindow
@@ -284,9 +288,16 @@ const DRONE_NONE: int = 0
 const DRONE_IDLE: int = 1
 const DRONE_GUNS: int = 2
 const DRONE_SHOT: int = 3
+const DRONE_ZAP: int = 4
+## Base drone body. Some textures fully replace it (guns_shot); others are
+## accessories layered on top of the body (guns, id) so the drone stays visible
+## underneath.
 const DRONE_IDLE_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/drone.png")
-const DRONE_GUNS_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/guns.png")
 const DRONE_SHOT_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/guns_shot.png")
+const DRONE_GUNS_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/guns.png")
+## Placeholder for the eventual electrocution animation shown when the player
+## drives the drone off with the emergency button.
+const DRONE_ID_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/id.png")
 
 ## Patrol-drone window encounter. Appearances are scheduled at random times up
 ## front (like the uncle); once a drone appears it runs its own timeline and the
@@ -885,6 +896,10 @@ func _apply_lights_off_modulate() -> void:
 		electrical_cord.modulate = lights_modulate
 	if emergency_power_button != null:
 		emergency_power_button.modulate = lights_modulate
+	# The drone body's modulate cascades to its accessory overlay child, so the
+	# whole drone dims with the rest of the scene when the lights are off.
+	if patrol_drone != null:
+		patrol_drone.modulate = lights_modulate
 
 
 func _apply_background_light_state() -> void:
@@ -1466,10 +1481,22 @@ func _update_patrol_drone(delta: float) -> void:
 		DRONE_SHOT:
 			if _drone_elapsed >= maxf(0.0, drone_shot_seconds):
 				_fail_stress_test(drone_failure_text, false)
+		DRONE_ZAP:
+			if _drone_elapsed >= maxf(0.0, drone_zap_seconds):
+				_clear_patrol_drone()
 
 
 func _start_patrol_drone() -> void:
 	_set_drone_state(DRONE_IDLE)
+
+
+## Emergency-button response: if a drone is present (and not already being
+## driven off), show the electrocution placeholder for a moment before it
+## vanishes instead of clearing it instantly.
+func _zap_patrol_drone_if_active() -> void:
+	if _drone_state == DRONE_NONE or _drone_state == DRONE_ZAP:
+		return
+	_set_drone_state(DRONE_ZAP)
 
 
 ## Removes the drone and resets its timeline. Safe to call when no drone is
@@ -1528,21 +1555,36 @@ func _set_drone_state(state: int) -> void:
 	_apply_patrol_drone_visual()
 
 
+## Resolves the drone body and its accessory overlay. Guns and the
+## electrocution placeholder (id) layer on top of the idle body; the shot
+## texture replaces the body outright.
 func _apply_patrol_drone_visual() -> void:
 	if patrol_drone == null:
 		return
 	match _drone_state:
 		DRONE_IDLE:
-			patrol_drone.texture = DRONE_IDLE_TEXTURE
-			patrol_drone.visible = true
+			_set_drone_textures(DRONE_IDLE_TEXTURE, null)
 		DRONE_GUNS:
-			patrol_drone.texture = DRONE_GUNS_TEXTURE
-			patrol_drone.visible = true
+			_set_drone_textures(DRONE_IDLE_TEXTURE, DRONE_GUNS_TEXTURE)
 		DRONE_SHOT:
-			patrol_drone.texture = DRONE_SHOT_TEXTURE
-			patrol_drone.visible = true
+			_set_drone_textures(DRONE_SHOT_TEXTURE, null)
+		DRONE_ZAP:
+			_set_drone_textures(DRONE_IDLE_TEXTURE, DRONE_ID_TEXTURE)
 		_:
 			patrol_drone.visible = false
+			if patrol_drone_accessory != null:
+				patrol_drone_accessory.visible = false
+
+
+## Sets the drone body texture and, when supplied, an accessory overlay drawn on
+## top of it. Pass a null accessory to show the body alone.
+func _set_drone_textures(body: Texture2D, accessory: Texture2D) -> void:
+	patrol_drone.texture = body
+	patrol_drone.visible = true
+	if patrol_drone_accessory == null:
+		return
+	patrol_drone_accessory.texture = accessory
+	patrol_drone_accessory.visible = accessory != null
 
 
 func _random_window_alert_light_duration() -> float:
@@ -1627,8 +1669,9 @@ func _initialize_emergency_power_button() -> void:
 func _on_emergency_power_button_pressed() -> void:
 	if _night_finished:
 		return
-	# Hitting the emergency button also scares off a patrol drone at the window.
-	_clear_patrol_drone()
+	# Hitting the emergency button drives off a patrol drone at the window,
+	# flashing the electrocution placeholder before it vanishes.
+	_zap_patrol_drone_if_active()
 	_play_emergency_power_button_sound()
 	if _electricity_percent > 0.001:
 		_play_generator_shutting_off_sound()

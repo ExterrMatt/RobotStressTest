@@ -323,6 +323,17 @@ mouse_filter = 2
 texture = ExtResource("69_patrol_drone")
 expand_mode = 1
 
+[node name="Accessory" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/PatrolDrone" unique_id=1671420081]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+
 [node name="BulbOverWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=100411321]
 layout_mode = 1
 anchors_preset = 15
