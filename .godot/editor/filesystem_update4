@@ -5,3 +5,4 @@ res://themes/main_theme.tres
 res://scenes/Main.gd
 res://scenes/locations/StressTestRobot.gd
 res://scenes/locations/StressTestRobotShadow.gd
+res://scenes/ui/InventoryOverlay.gd
