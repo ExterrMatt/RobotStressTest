@@ -8,6 +8,8 @@ const FIRST_ZOOM_SCALE: Vector2 = Vector2(2.0, 2.0)
 const SECOND_ZOOM_SCALE: Vector2 = Vector2(3.0, 3.0)
 const ZOOMED_OUT_SCALE: Vector2 = Vector2.ONE
 const BASE_SCENE_SIZE: Vector2 = Vector2(800.0, 600.0)
+## How much the debug speedrun accelerates the night.
+const DEBUG_SPEEDRUN_TIME_SCALE: float = 10.0
 const PAN_DURATION: float = 0.35
 const PAN_TRANS: int = Tween.TRANS_SINE
 const PAN_EASE: int = Tween.EASE_IN_OUT
@@ -340,29 +342,38 @@ func _process(delta: float) -> void:
 		_hide_mouse_tooltip()
 		return
 
-	# Debug speedrun: a held Enter freezes the electricity drain, runs the night
-	# clock at 10x, and keeps the uncle from ever appearing, so the player can
-	# ride the stress test out without releasing Enter or risking a fail.
-	var speedrun := debug_enter_held()
+	# Debug speedrun (held Enter). Two flavours:
+	# - Enter alone: real time acceleration. Every delta-driven system runs at
+	#   the sped-up rate, so the whole simulation - electricity, gas, uncle and
+	#   drone events - plays out faster but at its normal in-game pacing.
+	# - Shift+Enter: the original "skip" mode. Only the night clock is wound
+	#   forward; electricity is frozen and the uncle/drone are suppressed, so the
+	#   player can ride the night out without managing anything.
+	var enter_held := debug_enter_held()
+	var timer_only_speedrun := enter_held and _debug_shift_held()
+	var real_speedrun := enter_held and not timer_only_speedrun
+	var time_scale := DEBUG_SPEEDRUN_TIME_SCALE if enter_held else 1.0
+	# Delta handed to the general simulation: accelerated only in real speedrun.
+	var sim_delta := delta * (DEBUG_SPEEDRUN_TIME_SCALE if real_speedrun else 1.0)
 
 	var previous_elapsed := _night_elapsed
-	_night_elapsed += delta * (10.0 if speedrun else 1.0)
+	_night_elapsed += delta * time_scale
 	_update_intro_head_interaction_gate()
-	if not speedrun:
-		_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * delta)
+	if not timer_only_speedrun:
+		_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * sim_delta)
 	if _electricity_percent <= 0.0 and _emergency_power_shutoff_pressed:
 		_set_emergency_power_shutoff_pressed(false)
 	_update_electricity_summary_time(_night_elapsed - previous_elapsed)
 	_update_screw_batches()
 	_apply_scheduled_meter_events()
-	_update_emergency_power_gas_equalization(delta)
+	_update_emergency_power_gas_equalization(sim_delta)
 	_update_generator_power_sound()
-	if speedrun:
+	if timer_only_speedrun:
 		_suppress_uncle_appearance()
 		_suppress_patrol_drone()
 	else:
-		_update_window_alert(delta)
-		_update_patrol_drone(delta)
+		_update_window_alert(sim_delta)
+		_update_patrol_drone(sim_delta)
 	_refresh_stress_hud()
 	_update_hover_box_tooltip()
 
@@ -1817,6 +1828,11 @@ func _update_emergency_power_gas_equalization(delta: float) -> void:
 func _debug_mode_enabled() -> bool:
 	var state := get_node_or_null("/root/GameState")
 	return state != null and bool(state.debug_mode_enabled)
+
+
+## Whether a Shift key is held, used to pick the timer-only debug speedrun.
+func _debug_shift_held() -> bool:
+	return Input.is_key_pressed(KEY_SHIFT)
 
 
 ## Debug speedrun: keep the uncle from ever appearing while Enter is held.
