@@ -126,7 +126,7 @@ var _suspicion: int = 0
 var _anger: int = 0
 
 # --- robot config ---
-const ROBOT_PART_IDS: Array[String] = ["leg", "arm", "torso", "head", "hand"]
+const ROBOT_PART_IDS: Array[String] = ["leg", "arm", "torso", "chest", "head", "hand"]
 
 ## Kept for older scene logic that only understood legs. Mirrors
 ## robot_parts["leg"].
@@ -136,6 +136,7 @@ var robot_parts: Dictionary = {
 	"leg": 0,
 	"arm": 0,
 	"torso": 0,
+	"chest": 0,
 	"head": 0,
 	"hand": 0,
 }

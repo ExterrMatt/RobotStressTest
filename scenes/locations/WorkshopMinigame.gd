@@ -13,6 +13,7 @@ signal ended()
 @export var head_assembly_offset: Vector2 = Vector2.ZERO
 @export var arm_assembly_offset: Vector2 = Vector2.ZERO
 @export var torso_assembly_offset: Vector2 = Vector2.ZERO
+@export var chest_assembly_offset: Vector2 = Vector2.ZERO
 
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
@@ -30,6 +31,10 @@ const CRAFTABLE_PARTS: Dictionary = {
 	"torso": {
 		"display_name": "Torso",
 		"recipe": {"synth_skin": 1},
+	},
+	"chest": {
+		"display_name": "Chest",
+		"recipe": {"electronics": 1},
 	},
 }
 
@@ -104,13 +109,17 @@ const ARM_SEGMENT_IDS: Array[StringName] = [
 ## after the piece is placed (rather than acting as a pick-up-only drag hint).
 const ARM_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"elbow_inner_gears"]
 
+## Torso and chest are built with `unified_outline` enabled: their "_outline"
+## layers are authored as one contiguous block *behind* every base layer, so a
+## placed piece keeps its outline (repainted behind all bases by a unified outline
+## layer) instead of the arm/head behaviour where a placed outline is dropped.
 const TORSO_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso"
 const TORSO_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
 ## Back-to-front draw order for the assembled torso. Godot draws later Control
 ## siblings on top, so this is the reverse of the Aseprite layer stack (taken
 ## bottom-to-top straight from workshop_torso.ase). The "_outline" layers are not
-## listed here — each is loaded as its base piece's outline (drawn behind the
-## base, dragged with it, hidden once placed).
+## listed here — each is loaded as its base piece's outline, kept visible behind
+## all bases once placed.
 const TORSO_SEGMENT_IDS: Array[StringName] = [
 	&"top_torso",
 	&"belly_button",
@@ -120,6 +129,25 @@ const TORSO_SEGMENT_IDS: Array[StringName] = [
 	&"right_torso",
 	&"left_socket",
 	&"right_socket",
+]
+
+const CHEST_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot body/chest"
+const CHEST_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
+## Back-to-front draw order for the assembled chest — reverse of the chest group's
+## Aseprite layer stack. Only some segments ship an "_outline" layer (collars,
+## shoulders and neck do not); the loader returns null for the rest, which is fine.
+const CHEST_SEGMENT_IDS: Array[StringName] = [
+	&"left_chest",
+	&"right_chest",
+	&"right_collar",
+	&"left_collar",
+	&"mid_chest",
+	&"left_hole",
+	&"right_hole",
+	&"left_shoulder",
+	&"right_shoulder",
+	&"turtle",
+	&"neck",
 ]
 const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"scrap_metal":   "res://assets/textures/icons/scrap_metal_shadow.png",
@@ -147,6 +175,15 @@ var _head_slot_placement_offsets: Dictionary = {}
 var _head_assembly: Control = null
 var _arm_assembly: Control = null
 var _torso_assembly: Control = null
+var _chest_assembly: Control = null
+## Slot ids actually built for the procedural torso/chest assemblies. Chest keys
+## are namespaced (see the key_prefix in _build_segmented_assembly) so a shared
+## segment name like "neck" can't collide with the head's slot.
+var _torso_assembly_slot_ids: Array[StringName] = []
+var _chest_assembly_slot_ids: Array[StringName] = []
+## Back outline layers (one per unified-outline assembly) that repaint every
+## placed piece's outline behind all base art.
+var _unified_outline_layers: Array = []
 
 var _active_drag_segment: WorkshopSegment = null
 var _passenger_segments: Array = []
@@ -179,7 +216,12 @@ func _ready() -> void:
 
 	_setup_head_assembly()
 	_setup_arm_assembly()
-	_setup_torso_assembly()
+	_torso_assembly = _build_segmented_assembly(
+		"AssemblyTorso", TORSO_TEXTURE_DIR, TORSO_SEGMENT_IDS, TORSO_ASSEMBLY_SIZE,
+		torso_assembly_offset, true, "", _torso_assembly_slot_ids)
+	_chest_assembly = _build_segmented_assembly(
+		"AssemblyChest", CHEST_TEXTURE_DIR, CHEST_SEGMENT_IDS, CHEST_ASSEMBLY_SIZE,
+		chest_assembly_offset, true, "chest_", _chest_assembly_slot_ids)
 	_configure_assembly_for_part("")
 
 	# Set up global shadow rendering layer (drawn entirely behind pieces)
@@ -1020,7 +1062,9 @@ func _refit_segment_bounds(segment: WorkshopSegment) -> void:
 
 
 func _clear_placed_part_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
-	if _crafted_part_id != "head" and _crafted_part_id != "arm" and _crafted_part_id != "torso":
+	# Unified-outline parts (torso, chest) keep their outline art after placement
+	# — a back layer repaints it behind all bases — so never strip it here.
+	if _crafted_part_id != "head" and _crafted_part_id != "arm":
 		return
 
 	for child in segment.get_children():
@@ -1339,23 +1383,49 @@ func _load_arm_outline(segment_id: StringName) -> Texture2D:
 	return _load_texture("%s/%s_outline.png" % [ARM_TEXTURE_DIR, segment_id])
 
 
-func _setup_torso_assembly() -> void:
-	if _torso_assembly != null:
-		return
-	_torso_assembly = Control.new()
-	_torso_assembly.name = "AssemblyTorso"
-	_torso_assembly.size = TORSO_ASSEMBLY_SIZE
-	_torso_assembly.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_torso_assembly.visible = false
+## Builds a procedurally-assembled body part (torso, chest) from a directory of
+## per-segment PNGs, mirroring the arm setup. Each segment is one draggable piece
+## with its "<id>_outline.png" loaded alongside. When `unified_outline` is true an
+## OutlineLayer is inserted behind every slot so placed pieces' outlines render as
+## one block behind all the base art (matching the authored Aseprite layering).
+func _build_segmented_assembly(
+	assembly_name: String,
+	texture_dir: String,
+	segment_ids: Array[StringName],
+	assembly_size: Vector2,
+	offset: Vector2,
+	unified_outline: bool,
+	key_prefix: String,
+	out_slot_ids: Array[StringName],
+) -> Control:
+	var node := Control.new()
+	node.name = assembly_name
+	node.size = assembly_size
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	node.visible = false
+
+	if unified_outline:
+		var outline_layer := Control.new()
+		outline_layer.name = "OutlineLayer"
+		outline_layer.size = assembly_size
+		outline_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# First child -> drawn behind every slot's base art.
+		node.add_child(outline_layer)
+		outline_layer.draw.connect(_draw_unified_outline_layer.bind(outline_layer, node))
+		_unified_outline_layers.append(outline_layer)
 
 	var content_bounds: Rect2 = Rect2()
 	var found_any: bool = false
 
-	for segment_id in TORSO_SEGMENT_IDS:
-		var tex: Texture2D = _load_torso_layer(segment_id)
+	for segment_id in segment_ids:
+		# Textures load from the bare segment name; the dictionary/slot key is
+		# namespaced so shared names (e.g. "neck") don't collide across parts.
+		var tex: Texture2D = _load_texture("%s/%s.png" % [texture_dir, segment_id])
 		if tex == null:
-			push_warning("Workshop: missing torso layer '%s' in %s." % [segment_id, TORSO_TEXTURE_DIR])
+			push_warning("Workshop: missing %s layer '%s' in %s." % [assembly_name, segment_id, texture_dir])
 			continue
+
+		var seg_key: StringName = StringName(key_prefix + String(segment_id)) if key_prefix != "" else segment_id
 
 		var used_rect: Rect2 = _used_rect_for_texture(tex)
 		if used_rect.size.x > 0.0 and used_rect.size.y > 0.0:
@@ -1366,44 +1436,76 @@ func _setup_torso_assembly() -> void:
 				content_bounds = content_bounds.merge(used_rect)
 
 		var slot := WorkshopAssemblySlot.new()
-		slot.name = "%sSlot" % String(segment_id).capitalize().replace(" ", "")
-		slot.accepts_segment_id = segment_id
+		slot.name = "%sSlot" % String(seg_key).capitalize().replace(" ", "")
+		slot.accepts_segment_id = seg_key
 		slot.position = Vector2.ZERO
-		slot.size = TORSO_ASSEMBLY_SIZE
+		slot.size = assembly_size
 		slot.hitbox_rect = used_rect
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var placed_callable := Callable(self, "_on_slot_placed")
 		if not slot.placed.is_connected(placed_callable):
 			slot.placed.connect(placed_callable)
-		_torso_assembly.add_child(slot)
-		_assembly_slots[segment_id] = slot
-		_segments[segment_id] = {
+		node.add_child(slot)
+		_assembly_slots[seg_key] = slot
+		out_slot_ids.append(seg_key)
+		_segments[seg_key] = {
 			"pieces": [
 				{
-					"id": segment_id,
+					"id": seg_key,
 					"texture": tex,
-					"outline": _load_torso_outline(segment_id),
+					"outline": _load_texture("%s/%s_outline.png" % [texture_dir, segment_id]),
 					"shadow": null,
+					"unified_outline": unified_outline,
 				}
 			]
 		}
 
 	if not found_any:
-		content_bounds = Rect2(Vector2.ZERO, TORSO_ASSEMBLY_SIZE)
-	# Centre the torso's visible art (not the whole canvas, whose content may sit
+		content_bounds = Rect2(Vector2.ZERO, assembly_size)
+	# Centre the part's visible art (not the whole canvas, whose content may sit
 	# off-centre) in the assembly area, then apply the editor nudge.
 	var content_center: Vector2 = content_bounds.position + content_bounds.size * 0.5
-	_torso_assembly.position = assembly.size * 0.5 - content_center + torso_assembly_offset
+	node.position = assembly.size * 0.5 - content_center + offset
 
-	assembly.add_child.call_deferred(_torso_assembly)
-
-
-func _load_torso_layer(segment_id: StringName) -> Texture2D:
-	return _load_texture("%s/%s.png" % [TORSO_TEXTURE_DIR, segment_id])
+	assembly.add_child.call_deferred(node)
+	return node
 
 
-func _load_torso_outline(segment_id: StringName) -> Texture2D:
-	return _load_texture("%s/%s_outline.png" % [TORSO_TEXTURE_DIR, segment_id])
+## Repaints every placed (locked) unified-outline piece's outline behind all the
+## base art. Walks the owning assembly and draws each piece's outline at the
+## piece's global transform, so the result matches the authored "all outlines
+## below all bases" layering regardless of per-slot nesting.
+func _draw_unified_outline_layer(outline_layer: Control, assembly_node: Control) -> void:
+	if outline_layer == null or assembly_node == null:
+		return
+	var inv: Transform2D = outline_layer.get_global_transform().affine_inverse()
+	_draw_locked_outlines_recursive(outline_layer, inv, assembly_node)
+	outline_layer.draw_set_transform_matrix(Transform2D())
+
+
+func _draw_locked_outlines_recursive(outline_layer: Control, inv: Transform2D, node: Node) -> void:
+	for child in node.get_children():
+		if child == outline_layer:
+			continue
+		if child is WorkshopPiece:
+			var piece := child as WorkshopPiece
+			if piece.unified_outline and piece.locked and piece.outline_texture != null and piece.is_visible_in_tree():
+				outline_layer.draw_set_transform_matrix(inv * piece.get_global_transform())
+				outline_layer.draw_texture_rect(
+					piece.outline_texture,
+					Rect2(
+						piece.texture_draw_position(piece.outline_texture),
+						piece.texture_draw_size(piece.outline_texture)
+					),
+					false
+				)
+		_draw_locked_outlines_recursive(outline_layer, inv, child)
+
+
+func _queue_unified_outline_redraw() -> void:
+	for layer in _unified_outline_layers:
+		if layer is Control and is_instance_valid(layer):
+			layer.queue_redraw()
 
 
 func _load_texture(path: String) -> Texture2D:
@@ -1459,6 +1561,8 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		_arm_assembly.visible = part_id == "arm"
 	if _torso_assembly != null:
 		_torso_assembly.visible = part_id == "torso"
+	if _chest_assembly != null:
+		_chest_assembly.visible = part_id == "chest"
 
 	_active_assembly_slot_ids.clear()
 	if part_id == "head":
@@ -1470,11 +1574,13 @@ func _configure_assembly_for_part(part_id: String) -> void:
 			if _assembly_slots.has(id):
 				_active_assembly_slot_ids.append(id)
 	elif part_id == "torso":
-		for id in TORSO_SEGMENT_IDS:
-			if _assembly_slots.has(id):
-				_active_assembly_slot_ids.append(id)
+		_active_assembly_slot_ids.assign(_torso_assembly_slot_ids)
+	elif part_id == "chest":
+		_active_assembly_slot_ids.assign(_chest_assembly_slot_ids)
 	elif part_id == "leg":
 		_active_assembly_slot_ids.assign(_leg_assembly_slot_ids)
+
+	_queue_unified_outline_redraw()
 
 
 # --- craft ---
@@ -1797,6 +1903,7 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 	piece.shadow_texture = piece_def.get("shadow")
 	piece.outline_texture = piece_def.get("outline")
 	piece.persistent_outline = ARM_PERSISTENT_OUTLINE_IDS.has(seg_id)
+	piece.unified_outline = bool(piece_def.get("unified_outline", false))
 
 	piece.piece_offset = Vector2.ZERO
 	piece.visual_offset = Vector2.ZERO
@@ -1884,3 +1991,4 @@ func _collect_slots_recursive(node: Node) -> void:
 
 func _on_slot_placed(_slot: WorkshopAssemblySlot) -> void:
 	_refresh_collect_button()
+	_queue_unified_outline_redraw()

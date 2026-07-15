@@ -35,6 +35,16 @@ const CENTER_ON_GRAB_DURATION: float = 0.05
 		persistent_outline = value
 		queue_redraw()
 
+## When true, the piece belongs to a part whose outlines are authored as one
+## contiguous block *behind* every base layer (torso, chest). While the piece is
+## still loose/being dragged it paints its own outline like normal, but once it
+## locks into place the minigame's unified outline layer repaints it behind all
+## the base art, so the piece stops self-drawing to avoid wrong interior seams.
+@export var unified_outline: bool = false:
+	set(value):
+		unified_outline = value
+		queue_redraw()
+
 @export_group("Offsets & Drawing")
 @export var visual_offset: Vector2 = Vector2.ZERO:
 	set(value):
@@ -189,6 +199,10 @@ func is_dragging() -> bool:
 
 
 func _should_draw_outline() -> bool:
+	if unified_outline:
+		# Loose/dragging -> self-draw (on top, like a normal piece). Once locked,
+		# the unified outline layer draws it behind all bases, so stop here.
+		return not locked
 	if persistent_outline:
 		return true
 	if locked:
