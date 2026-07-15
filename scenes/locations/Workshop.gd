@@ -258,6 +258,8 @@ func _on_pan_complete() -> void:
 		_minigame.collected.connect(_on_minigame_collected)
 	if _minigame.has_signal("ended"):
 		_minigame.ended.connect(_on_end_button_pressed)
+	if _minigame.has_signal("easy_mode_offered"):
+		_minigame.easy_mode_offered.connect(_on_easy_mode_offered)
 	_configure_minigame_end_button()
 	if main and main.has_method("show_scene_overlay"):
 		main.show_scene_overlay(_minigame, true)
@@ -295,6 +297,25 @@ func _on_end_button_pressed() -> void:
 	if _intro_workshop:
 		return
 	finish(0, 0, 0, {}, false)
+
+
+## The minigame reports the player has been struggling for a while. Offer Easy
+## Workshop Mode via a bottom-left button, symmetric to the END button. Never
+## during the guided intro.
+func _on_easy_mode_offered() -> void:
+	if _intro_workshop:
+		return
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("show_large_scene_left_button"):
+		main.call("show_large_scene_left_button", "HINT", Callable(self, "_on_easy_mode_button_pressed"))
+
+
+func _on_easy_mode_button_pressed() -> void:
+	if get_node_or_null("/root/GameState") != null:
+		GameState.easy_workshop_enabled = true
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("hide_large_scene_left_button"):
+		main.call("hide_large_scene_left_button")
 
 
 ## Debug (number-4 give-items): forward the recalibration to the live minigame
