@@ -251,10 +251,42 @@ const LEG_PRESTAGE_HIDDEN_PATHS: Array[NodePath] = [^"Legs/LeftLeg", ^"Legs/Righ
 const LEG_PRESTAGE_SHOWN_PATHS: Array[NodePath] = [^"Legs/LeftLegSlightlyOut", ^"Legs/RightLegSlightlyOut"]
 const LEG_PRESTAGE_BOX_NAME: String = "PelvisHoverBox"
 
-## Per-leg spread toggles beneath the pelvis hover box: clicking a leg swaps it
-## between the standing pose and the slightly-out pose for that side only.
+## Per-leg pose cycle beneath the pelvis hover box: each click on a leg advances
+## it one step through standing -> slightly-out -> raised (locked to the pelvis
+## animation's first frame) -> standing, for that side only.
 const LEFT_LEG_HOVER_BOX_NAME: String = "LeftLegHoverBox"
 const RIGHT_LEG_HOVER_BOX_NAME: String = "RightLegHoverBox"
+
+## Per-leg pose steps. RAISED matches frame 0 of the pelvis (vegetable-mission)
+## animation, so the static raised leg hands off seamlessly once the pelvis
+## animation begins.
+const LEG_POSE_DEFAULT: int = 0
+const LEG_POSE_SLIGHTLY_OUT: int = 1
+const LEG_POSE_RAISED: int = 2
+const LEG_POSE_COUNT: int = 3
+
+## Static leg sprites shown for each per-side pose step. The pose selection owns
+## these while the pelvis animation is not running; a missing leg still hides
+## them all through the part-availability pass.
+const LEFT_LEG_POSE_DEFAULT_PATHS: Array[NodePath] = [^"Legs/LeftLeg"]
+const LEFT_LEG_POSE_SLIGHTLY_OUT_PATHS: Array[NodePath] = [^"Legs/LeftLegSlightlyOut"]
+const LEFT_LEG_POSE_RAISED_PATHS: Array[NodePath] = [^"Legs/LeftLegUpThigh", ^"Legs/LeftLegUpShin"]
+const RIGHT_LEG_POSE_DEFAULT_PATHS: Array[NodePath] = [^"Legs/RightLeg"]
+const RIGHT_LEG_POSE_SLIGHTLY_OUT_PATHS: Array[NodePath] = [^"Legs/RightLegSlightlyOut"]
+const RIGHT_LEG_POSE_RAISED_PATHS: Array[NodePath] = [^"Legs/RightLegUpThigh", ^"Legs/RightLegUpShin"]
+
+## Cosmetic chest overlays whose leg-animation columns must not play while the
+## chest cover is still equipped: the cover hides the chest, so the vegetables
+## painted onto the raised-leg animation would show through it otherwise.
+const CHEST_COVER_PATH: NodePath = ^"ChestCover"
+const CHEST_COVER_GATED_ANIM_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/BigCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
+	^"AnimationLayers/VegetableMissionLoopMedium/BigCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/Pepperonis",
+]
 
 ## The vegetable-mission strips carry both hand grips as separate columns.
 ## Only one grip is shown at a time; the H key flips between them in debug mode.
@@ -324,6 +356,10 @@ var _leg_prestage_active: bool = false
 ## Currently selected hand-pose option per side (index into the option lists).
 var _left_hand_texture_index: int = 0
 var _right_hand_texture_index: int = 0
+## Current per-side leg pose step (LEG_POSE_*). The pelvis animation may only
+## begin once both sides reach LEG_POSE_RAISED.
+var _left_leg_pose: int = LEG_POSE_DEFAULT
+var _right_leg_pose: int = LEG_POSE_DEFAULT
 ## Currently selected hair-front style (index into the hair option lists).
 var _hair_texture_index: int = HAIR_DEFAULT_INDEX
 ## Currently selected head style (index into the head option lists).
@@ -522,6 +558,8 @@ func set_interaction_enabled(value: bool) -> void:
 func reset_interactions_to_default() -> void:
 	_animation_states.clear()
 	_leg_prestage_active = false
+	_left_leg_pose = LEG_POSE_DEFAULT
+	_right_leg_pose = LEG_POSE_DEFAULT
 	_left_hand_texture_index = 0
 	_right_hand_texture_index = 0
 	_hair_texture_index = HAIR_DEFAULT_INDEX
@@ -543,6 +581,8 @@ func is_in_default_pose() -> bool:
 	if not _animation_states.is_empty():
 		return false
 	if _leg_prestage_active:
+		return false
+	if _left_leg_pose != LEG_POSE_DEFAULT or _right_leg_pose != LEG_POSE_DEFAULT:
 		return false
 	if _left_hand_texture_index != 0 or _right_hand_texture_index != 0:
 		return false
@@ -575,7 +615,10 @@ func hovered_hover_box_description() -> String:
 		if _box_has_layered_animation(box):
 			var pelvis_state: Dictionary = _animation_states.get(box, {})
 			if pelvis_state.is_empty():
-				return "Raise Legs"
+				# In the stress test the legs are raised individually beforehand,
+				# so the pelvis only begins the animation; the Sleep pre-stage
+				# still raises the legs itself.
+				return "Raise Legs" if _leg_slight_out_prestage_enabled else "Animate Legs"
 			if String(pelvis_state.get("phase", "")) == ANIMATION_PHASE_INTRO and not bool(pelvis_state.get("playing", false)):
 				return "Animate Legs"
 			return "Lower Legs"
@@ -585,7 +628,13 @@ func hovered_hover_box_description() -> String:
 	if _is_shoulder_hover_box(box):
 		return "Equip Shoulder Pad" if _is_box_effect_active(box) else "Remove Shoulder Pad"
 	if _is_leg_pose_hover_box(box):
-		return "Straighten Leg" if _is_box_effect_active(box) else "Spread Leg"
+		match _leg_pose_for_box(box):
+			LEG_POSE_DEFAULT:
+				return "Spread Leg"
+			LEG_POSE_SLIGHTLY_OUT:
+				return "Raise Leg"
+			_:
+				return "Lower Leg"
 	if _is_hand_hover_box(box):
 		return "Switch Hand"
 	if _is_hair_hover_box(box):
@@ -778,6 +827,9 @@ func _handle_hover_box_click(box: Control, shift_pressed: bool = false) -> void:
 	if _is_hair_hover_box(box):
 		_cycle_hair_texture()
 		return
+	if _is_leg_pose_hover_box(box):
+		_cycle_leg_pose(box)
+		return
 	_toggle_box_effect(box)
 
 
@@ -786,6 +838,40 @@ func _is_leg_pose_hover_box(box: Control) -> bool:
 		return false
 	var box_name := String(box.name)
 	return box_name == LEFT_LEG_HOVER_BOX_NAME or box_name == RIGHT_LEG_HOVER_BOX_NAME
+
+
+## Advances the clicked leg one step through its pose cycle
+## (standing -> slightly-out -> raised -> standing). The box's runtime-active
+## flag mirrors "moved from standing" so the screw controllers still treat a
+## moved leg as busy, exactly like the pelvis animation.
+func _cycle_leg_pose(box: Control) -> void:
+	var pose := _next_leg_pose(_leg_pose_for_box(box))
+	_set_leg_pose_for_box(box, pose)
+	if box.has_method("set_runtime_active"):
+		box.call("set_runtime_active", pose != LEG_POSE_DEFAULT)
+	_play_wood_creak_sound()
+	_apply_visibility_state()
+
+
+func _next_leg_pose(pose: int) -> int:
+	return (pose + 1) % LEG_POSE_COUNT
+
+
+func _leg_pose_for_box(box: Control) -> int:
+	if box != null and String(box.name) == LEFT_LEG_HOVER_BOX_NAME:
+		return _left_leg_pose
+	return _right_leg_pose
+
+
+func _set_leg_pose_for_box(box: Control, pose: int) -> void:
+	if box != null and String(box.name) == LEFT_LEG_HOVER_BOX_NAME:
+		_left_leg_pose = pose
+	else:
+		_right_leg_pose = pose
+
+
+func _both_legs_raised() -> bool:
+	return _left_leg_pose == LEG_POSE_RAISED and _right_leg_pose == LEG_POSE_RAISED
 
 
 func _is_hair_hover_box(box: Control) -> bool:
@@ -980,12 +1066,14 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_animation_parent_visibility(resolved)
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_leg_prestage_visibility(resolved)
+	_apply_leg_pose_selection(resolved)
 	_apply_hand_texture_selection(resolved)
 	_apply_hair_texture_selection(resolved)
 	_apply_head_texture_selection(resolved)
 	_apply_squint_eyes_state(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_cosmetic_item_availability_to_dictionary(resolved)
+	_apply_chest_cover_gated_animations(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_shoulder_pad_state(resolved)
 	_apply_neck_front_state(resolved)
@@ -1050,6 +1138,61 @@ func _apply_leg_prestage_visibility(resolved: Dictionary) -> void:
 		resolved[path] = false
 	for path in LEG_PRESTAGE_SHOWN_PATHS:
 		resolved[path] = true
+
+
+## Resolves the static legs to their current per-side pose. The pelvis animation
+## and the Sleep pre-stage both own the legs while active, so this defers to them
+## and only drives the static legs when neither is running. Runs before the
+## part-availability pass so a removed leg still hides every pose sprite.
+func _apply_leg_pose_selection(resolved: Dictionary) -> void:
+	# In the editor the leg boxes' own preview paths drive the slightly-out pose;
+	# the runtime pose cycle only exists in game.
+	if Engine.is_editor_hint():
+		return
+	if _leg_prestage_active:
+		return
+	if _is_named_box_effect_active("PelvisHoverBox"):
+		return
+	_apply_single_leg_pose(
+		resolved,
+		_left_leg_pose,
+		LEFT_LEG_POSE_DEFAULT_PATHS,
+		LEFT_LEG_POSE_SLIGHTLY_OUT_PATHS,
+		LEFT_LEG_POSE_RAISED_PATHS
+	)
+	_apply_single_leg_pose(
+		resolved,
+		_right_leg_pose,
+		RIGHT_LEG_POSE_DEFAULT_PATHS,
+		RIGHT_LEG_POSE_SLIGHTLY_OUT_PATHS,
+		RIGHT_LEG_POSE_RAISED_PATHS
+	)
+
+
+func _apply_single_leg_pose(
+	resolved: Dictionary,
+	pose: int,
+	default_paths: Array[NodePath],
+	slightly_out_paths: Array[NodePath],
+	raised_paths: Array[NodePath]
+) -> void:
+	_set_paths_visible(resolved, default_paths, pose == LEG_POSE_DEFAULT)
+	_set_paths_visible(resolved, slightly_out_paths, pose == LEG_POSE_SLIGHTLY_OUT)
+	_set_paths_visible(resolved, raised_paths, pose == LEG_POSE_RAISED)
+
+
+func _set_paths_visible(resolved: Dictionary, paths: Array[NodePath], value: bool) -> void:
+	for path in paths:
+		resolved[path] = value
+
+
+## Keeps the cosmetic vegetable columns of the raised-leg animation from playing
+## while the chest cover is still equipped (visible). The cover conceals the
+## chest, so the coconuts/pepperonis painted onto the animation must stay hidden.
+func _apply_chest_cover_gated_animations(resolved: Dictionary) -> void:
+	if not bool(resolved.get(CHEST_COVER_PATH, false)):
+		return
+	_hide_paths(resolved, CHEST_COVER_GATED_ANIM_PATHS)
 
 
 ## Shows the selected pose per hand and hides the other options. Runs before the
@@ -1281,10 +1424,19 @@ func _is_hover_box_available(box: Control) -> bool:
 		return false
 	if _is_hover_box_blocked_by_repair(box):
 		return false
-	# Pelvis (leg-spread) needs a stomach; the chest cover and shoulder pads sit
-	# on the chest, so they need a chest.
+	# Pelvis (leg animation) needs a stomach; the chest cover and shoulder pads
+	# sit on the chest, so they need a chest.
 	if box.name == "PelvisHoverBox":
-		return _robot_part_count("stomach") >= 1
+		if _robot_part_count("stomach") < 1:
+			return false
+		# The Sleep pre-stage keeps the old behaviour where the pelvis itself
+		# raises the legs; the stress test instead requires both legs to already
+		# be raised individually before the pelvis can begin the animation. Once
+		# the animation is running the box stays available so it can be advanced
+		# or stopped.
+		if _leg_slight_out_prestage_enabled or _animation_states.has(box):
+			return true
+		return _both_legs_raised()
 	if box.name == "ChestCoverHoverBox" or _is_shoulder_hover_box(box):
 		return _robot_part_count("chest") >= 1
 	if box.name == LEFT_HAND_HOVER_BOX_NAME:
