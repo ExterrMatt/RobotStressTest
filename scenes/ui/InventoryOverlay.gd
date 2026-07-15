@@ -30,7 +30,7 @@ const TEXTURE_PATHS: Dictionary = {
 	"stomach": "res://assets/textures/icons/torso.png",
 	"chest": "res://assets/textures/icons/chest.png",
 	"head": "res://assets/textures/icons/head.png",
-	"hand": "res://assets/textures/icons/placeholder_item.png",
+	"hand": "res://assets/textures/icons/hand.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
