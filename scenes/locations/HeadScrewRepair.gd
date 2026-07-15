@@ -227,7 +227,7 @@ func set_repair_gate(gate: Callable) -> void:
 func _can_begin_repair(index: int) -> bool:
 	if not _repair_gate.is_valid():
 		return true
-	return bool(_repair_gate.call(side_for_screw(index)))
+	return bool(_repair_gate.call(hand_side_for_screw(index)))
 
 
 ## The body side ("left"/"right"/"") a screw belongs to. Head, torso and chest
@@ -238,6 +238,38 @@ func side_for_screw(index: int) -> String:
 	if index >= 0 and index < screw_nodes.size():
 		screw_name = String(screw_nodes[index])
 	return _side_from_text(screw_name, String(name))
+
+
+## The physical hand ("left"/"right"/"") that drives a screw. This is what gates
+## concurrency: two screws can only be driven at once when they use different
+## hands.
+##
+## Head/torso/chest screws name their own side, and that side is always the hand
+## that drives them — their flipped art is purely a visual orientation. Limb
+## screws (arm/leg) share the single side taken from the controller name, so
+## there a flipped screwdriver image means the OPPOSITE hand has to reach across
+## to drive it — a flipped limb screw therefore counts as the opposite hand.
+func hand_side_for_screw(index: int) -> String:
+	var screw_name := ""
+	if index >= 0 and index < screw_nodes.size():
+		screw_name = String(screw_nodes[index])
+	var screw_own_side := _side_in(screw_name)
+	if screw_own_side != "":
+		return screw_own_side
+	var body_side := _side_in(String(name))
+	if _is_screwdriver_flipped(index):
+		return _opposite_side(body_side)
+	return body_side
+
+
+func _opposite_side(side: String) -> String:
+	match side:
+		"left":
+			return "right"
+		"right":
+			return "left"
+		_:
+			return side
 
 
 ## Any side currently being driven, or "" when idle. Prefer is_side_repairing
@@ -356,7 +388,10 @@ func interrupt_repair() -> bool:
 
 
 func _start_repair_animation(screw_index: int) -> void:
-	var side := side_for_screw(screw_index)
+	# Key the repair by the driving HAND, not the body side, so a limb's flipped
+	# screws occupy the opposite hand and can run alongside a same-limb screw
+	# driven by the other hand.
+	var side := hand_side_for_screw(screw_index)
 	if _active_repairs.is_empty():
 		_start_screw_repair_sound_loop()
 	_active_repairs[side] = {"index": screw_index, "elapsed": 0.0}

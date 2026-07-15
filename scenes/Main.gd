@@ -275,6 +275,9 @@ var _large_scene_work_timer_label: Label = null
 ## frame (mirroring the right corner panel, but slotted to the bottom-right
 ## corner). Locations mount it via show_large_scene_end_button().
 var _large_scene_end_button: Button = null
+## Bottom-LEFT action button, symmetric to the END button. Used by the Workshop
+## for its "EASY MODE" offer. Mounted via show_large_scene_left_button().
+var _large_scene_left_button: Button = null
 var _work_hud_active: bool = false
 var _large_scene_timer_running: bool = false
 var _work_hud_elapsed_seconds: float = 0.0
@@ -568,6 +571,7 @@ func _open_runtime_settings_overlay() -> void:
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("BRIGHTNESS", GameState.brightness_value, _on_runtime_brightness_changed)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("VOLUME", GameState.volume_value, _on_runtime_volume_changed)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled)))
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("EASY WORKSHOP", GameState.easy_workshop_enabled, _on_runtime_easy_workshop_toggled)))
 
 	var button_row := HBoxContainer.new()
 	button_row.alignment = BoxContainer.ALIGNMENT_END
@@ -662,6 +666,10 @@ func _on_runtime_volume_changed(value: float) -> void:
 
 func _on_runtime_scanlines_toggled(enabled: bool) -> void:
 	GameState.scanlines_enabled = enabled
+
+
+func _on_runtime_easy_workshop_toggled(enabled: bool) -> void:
+	GameState.easy_workshop_enabled = enabled
 
 
 func _on_runtime_window_mode_selected(index: int) -> void:
@@ -1348,6 +1356,10 @@ func _create_large_scene_hud() -> void:
 	_large_scene_hud_layer.add_child(_large_scene_end_button)
 	_apply_large_scene_end_button_size(_large_scene_end_button)
 
+	_large_scene_left_button = _make_large_scene_left_button()
+	_large_scene_hud_layer.add_child(_large_scene_left_button)
+	_apply_large_scene_end_button_size(_large_scene_left_button)
+
 	_refresh_hud()
 
 
@@ -1501,6 +1513,51 @@ func hide_large_scene_end_button() -> void:
 	_large_scene_end_button.visible = false
 
 
+## Bottom-left twin of the END button, growing up/right from the bottom-left
+## anchor so it mirrors the END button across the frame.
+func _make_large_scene_left_button() -> Button:
+	var btn := Button.new()
+	btn.name = "LargeSceneLeftButton"
+	btn.visible = false
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	btn.anchor_left = 0.0
+	btn.anchor_top = 1.0
+	btn.anchor_right = 0.0
+	btn.anchor_bottom = 1.0
+	btn.grow_horizontal = Control.GROW_DIRECTION_END
+	btn.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.add_theme_font_size_override(
+		"font_size", int(round(LARGE_SCENE_HUD_FONT_SIZE * LARGE_SCENE_END_BUTTON_SIZE_SCALE))
+	)
+	return btn
+
+
+## Mount a bottom-left margin action button, symmetric to the END button. Safe to
+## call only once the large-scene HUD exists; no-ops otherwise.
+func show_large_scene_left_button(label: String, on_pressed: Callable) -> void:
+	if _large_scene_left_button == null:
+		return
+	for conn in _large_scene_left_button.pressed.get_connections():
+		_large_scene_left_button.pressed.disconnect(conn["callable"])
+	_large_scene_left_button.text = label
+	if on_pressed.is_valid():
+		_large_scene_left_button.pressed.connect(on_pressed)
+	_large_scene_left_button.disabled = false
+	_large_scene_left_button.visible = true
+	_position_large_scene_hud_panels()
+
+
+func hide_large_scene_left_button() -> void:
+	if _large_scene_left_button == null:
+		return
+	for conn in _large_scene_left_button.pressed.get_connections():
+		_large_scene_left_button.pressed.disconnect(conn["callable"])
+	_large_scene_left_button.visible = false
+
+
 func _update_large_scene_hud_visibility() -> void:
 	if hud_bar == null:
 		return
@@ -1576,6 +1633,14 @@ func _position_large_scene_hud_panels() -> void:
 		_large_scene_end_button.offset_bottom = -LARGE_SCENE_HUD_MARGIN.y
 		_large_scene_end_button.offset_left = -right_outer_gap
 		_large_scene_end_button.offset_top = -LARGE_SCENE_HUD_MARGIN.y
+
+	# The bottom-left twin mirrors the END button across the frame, using the
+	# left panel's gap from the left edge and the same bottom margin.
+	if _large_scene_left_button != null:
+		_large_scene_left_button.offset_left = left_outer_gap
+		_large_scene_left_button.offset_bottom = -LARGE_SCENE_HUD_MARGIN.y
+		_large_scene_left_button.offset_right = left_outer_gap
+		_large_scene_left_button.offset_top = -LARGE_SCENE_HUD_MARGIN.y
 
 
 func _large_scene_hud_outer_gap(side_space: float) -> float:
@@ -1848,6 +1913,7 @@ func _prepare_selection_screen_layout_for_shrink() -> void:
 	hide_teacher_portrait()
 	hide_corner_button()
 	hide_large_scene_end_button()
+	hide_large_scene_left_button()
 	hide_scene_overlay()
 	hide_inventory_overlay()
 	_apply_scene_presentation_mode()
@@ -2268,6 +2334,7 @@ func _clear_current_location() -> void:
 	hide_scene_overlay()
 	hide_inventory_overlay()
 	hide_large_scene_end_button()
+	hide_large_scene_left_button()
 	if _current_location_node and is_instance_valid(_current_location_node):
 		_current_location_node.queue_free()
 		_current_location_node = null

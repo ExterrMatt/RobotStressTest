@@ -3,6 +3,13 @@ class_name WorkshopMinigame
 
 signal collected(part_id: String)
 signal ended()
+## Emitted once, after the player has spent EASY_MODE_OFFER_SECONDS in a normal
+## (non-tutorial) workshop with Easy Workshop Mode still off, so the location can
+## offer to switch it on.
+signal easy_mode_offered()
+
+## How long the player struggles before the Easy Workshop Mode offer appears.
+const EASY_MODE_OFFER_SECONDS: float = 60.0
 
 @export var forced_part_id: String = ""
 
@@ -229,6 +236,10 @@ var _placement_hint_layer: Control = null
 var _placement_hint_sprite: TextureRect = null
 var _pending_hint_entries: Array = []
 var _placement_hint_elapsed: float = 0.0
+## Wall-clock time spent in this workshop session, used to time the Easy Workshop
+## Mode offer. The offer fires once when it crosses EASY_MODE_OFFER_SECONDS.
+var _workshop_elapsed: float = 0.0
+var _easy_mode_offer_made: bool = false
 
 
 func _enter_tree() -> void:
@@ -315,8 +326,37 @@ func _process(_delta: float) -> void:
 		_shadow_drawer.queue_redraw()
 	_sync_passenger_segments_to_active_drag()
 	_update_placement_hint_flash(_delta)
+	_update_easy_mode_offer(_delta)
 	if _debug_mode_enabled() and _enter_held():
 		_auto_progress_with_enter()
+
+
+## Time the workshop session and, once the player has been at it for a while with
+## Easy Workshop Mode still off (and outside the guided intro), offer it once.
+func _update_easy_mode_offer(delta: float) -> void:
+	if _easy_mode_offer_made or _is_tutorial_workshop() or _easy_workshop_enabled():
+		return
+	_workshop_elapsed += delta
+	if _workshop_elapsed >= EASY_MODE_OFFER_SECONDS:
+		_easy_mode_offer_made = true
+		easy_mode_offered.emit()
+
+
+## The intro/tutorial workshop keeps its guiding hints on regardless of the Easy
+## Workshop Mode setting; it is the one forced-part run.
+func _is_tutorial_workshop() -> bool:
+	return not forced_part_id.strip_edges().is_empty()
+
+
+func _easy_workshop_enabled() -> bool:
+	var settings := get_node_or_null("/root/GameState")
+	return settings != null and settings.easy_workshop_enabled
+
+
+## Placement hints only flash in Easy Workshop Mode (or the guided intro). When
+## off, no hint is shown.
+func _hints_active() -> bool:
+	return _easy_workshop_enabled() or _is_tutorial_workshop()
 
 
 func _on_shadow_drawer_draw() -> void:
@@ -441,12 +481,16 @@ func _clear_placement_hints() -> void:
 
 func _show_piece_placement_hint(piece: WorkshopPiece, target_global_position: Vector2) -> void:
 	_clear_placement_hints()
+	if not _hints_active():
+		return
 	_add_piece_hint(piece, target_global_position)
 	_show_placement_hint_layer()
 
 
 func _show_segment_placement_hints(segments: Array) -> void:
 	_clear_placement_hints()
+	if not _hints_active():
+		return
 	for segment in segments:
 		if not (segment is WorkshopSegment):
 			continue

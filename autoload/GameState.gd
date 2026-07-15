@@ -17,6 +17,7 @@ signal brightness_changed(new_value: float)
 signal volume_changed(new_value: float)
 signal scanlines_enabled_changed(enabled: bool)
 signal debug_mode_changed(enabled: bool)
+signal easy_workshop_changed(enabled: bool)
 ## Emitted when the display/window mode setting changes. WindowManager listens
 ## and applies the change via DisplayServer. Value is a WindowMode entry.
 signal window_mode_changed(mode: int)
@@ -58,6 +59,7 @@ var _brightness_value: float = 50.0
 var _volume_value: float = 100.0
 var _scanlines_enabled: bool = true
 var _debug_mode_enabled: bool = false
+var _easy_workshop_enabled: bool = false
 var _window_mode: int = WindowMode.WINDOWED
 var player_name: String = ""
 var intro_active: bool = true
@@ -126,6 +128,17 @@ var debug_mode_enabled: bool:
 			return
 		_debug_mode_enabled = value
 		debug_mode_changed.emit(_debug_mode_enabled)
+
+## Easy Workshop Mode: when on, the workshop flashes a hint showing where each
+## piece belongs. Off by default; the player can turn it on in Settings, or via
+## the button the workshop offers once they have been struggling for a while.
+var easy_workshop_enabled: bool:
+	get: return _easy_workshop_enabled
+	set(value):
+		if value == _easy_workshop_enabled:
+			return
+		_easy_workshop_enabled = value
+		easy_workshop_changed.emit(_easy_workshop_enabled)
 
 var window_mode: int:
 	get: return _window_mode
@@ -221,6 +234,7 @@ func _emit_initial_state() -> void:
 	volume_changed.emit(_volume_value)
 	scanlines_enabled_changed.emit(_scanlines_enabled)
 	debug_mode_changed.emit(_debug_mode_enabled)
+	easy_workshop_changed.emit(_easy_workshop_enabled)
 	window_mode_changed.emit(_window_mode)
 	purchased_today_changed.emit(purchased_today)
 	robot_parts_changed.emit(robot_parts.duplicate())
@@ -560,6 +574,7 @@ func to_dict() -> Dictionary:
 		"debug_mode_enabled": _debug_mode_enabled,
 		"window_mode": _window_mode,
 		"volume_value": _volume_value,
+		"easy_workshop_enabled": _easy_workshop_enabled,
 	}
 
 
@@ -610,4 +625,5 @@ func from_dict(data: Dictionary) -> void:
 	_window_mode = clampi(int(data.get("window_mode", WindowMode.WINDOWED)), WindowMode.WINDOWED, WindowMode.FULLSCREEN)
 	_volume_value = clampf(float(data.get("volume_value", 100.0)), 0.0, 100.0)
 	_apply_volume()
+	_easy_workshop_enabled = bool(data.get("easy_workshop_enabled", false))
 	_emit_initial_state()

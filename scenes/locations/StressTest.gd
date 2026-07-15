@@ -134,8 +134,9 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 ## Seconds the shot texture shows before the night is failed.
 @export var drone_shot_seconds: float = 0.1
 ## Seconds the drone shows the electrocution placeholder (id texture) after the
-## emergency button drives it off, before it disappears.
-@export var drone_zap_seconds: float = 0.3
+## emergency button drives it off, before it disappears. Halved so the zap plays
+## twice as fast and lasts half as long.
+@export var drone_zap_seconds: float = 0.15
 @export var drone_failure_text: String = "You were caught by a patrol drone. Hit the emergency button to fend it off."
 
 @export_group("Failure Messages")
@@ -2153,9 +2154,16 @@ func _on_screw_repaired(index: int, repair: Node) -> void:
 func _set_repair_hand_hidden_for_screw(repair: Node, index: int, hidden: bool) -> void:
 	if stress_test_robot == null or not stress_test_robot.has_method("set_repair_hand_hidden"):
 		return
-	if repair == null or not repair.has_method("side_for_screw"):
+	if repair == null:
 		return
-	var side := String(repair.call("side_for_screw", index))
+	# Hide the hand that actually drives the screw. For flipped limb screws that
+	# is the opposite hand, so prefer the hand-side query when the controller
+	# exposes it, falling back to the plain body side otherwise.
+	var side := ""
+	if repair.has_method("hand_side_for_screw"):
+		side = String(repair.call("hand_side_for_screw", index))
+	elif repair.has_method("side_for_screw"):
+		side = String(repair.call("side_for_screw", index))
 	if side.is_empty():
 		return
 	stress_test_robot.call("set_repair_hand_hidden", side, hidden)

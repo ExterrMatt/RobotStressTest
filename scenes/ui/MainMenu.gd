@@ -971,6 +971,7 @@ func _build_settings_panel() -> Control:
 	content.add_child(_wrap_in_gold_panel(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed)))
 	content.add_child(_wrap_in_gold_panel(_build_slider_row("VOLUME", _current_volume_value(), _on_volume_changed)))
 	content.add_child(_wrap_in_gold_panel(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled)))
+	content.add_child(_wrap_in_gold_panel(_build_toggle_row("EASY WORKSHOP", _current_easy_workshop_enabled(), _on_easy_workshop_toggled)))
 	content.add_child(_wrap_in_gold_panel(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled)))
 
 	var apply_row := HBoxContainer.new()
@@ -1115,6 +1116,17 @@ func _on_scanlines_toggled(enabled: bool) -> void:
 	var settings := get_node_or_null("/root/GameState")
 	if settings:
 		settings.scanlines_enabled = enabled
+
+
+func _current_easy_workshop_enabled() -> bool:
+	var settings := get_node_or_null("/root/GameState")
+	return settings.easy_workshop_enabled if settings else false
+
+
+func _on_easy_workshop_toggled(enabled: bool) -> void:
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		settings.easy_workshop_enabled = enabled
 
 
 func _on_window_mode_selected(index: int) -> void:
