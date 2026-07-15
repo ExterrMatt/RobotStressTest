@@ -427,6 +427,7 @@ func _process(_delta: float) -> void:
 	if _large_scene_hud_layer != null and _large_scene_hud_layer.visible:
 		_position_large_scene_hud_panels()
 	if _fullbleed_active and _bedroom_pill_layer != null and _bedroom_pill_layer.visible:
+		_snap_bedroom_pills_to_min()
 		_position_bedroom_pills()
 
 
@@ -1176,6 +1177,29 @@ func _refresh_bedroom_pills() -> void:
 		_bedroom_anger_label.text = "ANGER [color=%s]%d[/color]" % [
 			PILL_ANGER_BBCODE_COLOR, GameState.anger
 		]
+	_fit_bedroom_pills()
+
+
+## The pill segments are fit_content RichTextLabels, which don't reliably shrink
+## their reported minimum size when the text gets shorter (e.g. EVENING -> NIGHT),
+## and the pills are hand-positioned so nothing else shrinks their box. Force each
+## label to recompute, then snap each pill back down to its true content size so
+## the ornate panel always hugs the current text.
+func _fit_bedroom_pills() -> void:
+	for label in [
+		_bedroom_day_label, _bedroom_phase_label, _bedroom_money_label,
+		_bedroom_suspicion_label, _bedroom_anger_label,
+	]:
+		if label != null and is_instance_valid(label):
+			label.fit_content = false
+			label.fit_content = true
+	_snap_bedroom_pills_to_min()
+
+
+func _snap_bedroom_pills_to_min() -> void:
+	for pill in [_bedroom_left_pill, _bedroom_right_pill]:
+		if pill != null and is_instance_valid(pill):
+			pill.reset_size()
 
 
 ## Two floating corner pills over the full-bleed scene image, mirroring the

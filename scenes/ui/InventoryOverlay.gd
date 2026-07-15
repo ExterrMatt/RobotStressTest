@@ -8,8 +8,10 @@ class_name InventoryOverlay
 ##   - Tools the player owns (excluding the defaults "mouth" and "hand"
 ##     which everyone always has — they'd just be noise).
 ##
-## Items render as Minecraft-style hotbar tiles anchored to the bottom-right
-## of the viewport: sprite + count badge per tile.
+## Items render as Minecraft-style tiles (sprite + count badge) in a centered
+## grid that wraps into as many rows as needed so nothing runs off screen.
+##
+## Debug: shift + left-click a tile wipes that item from the inventory entirely.
 
 ## Where to find a sprite for each item id. If not in this map (or the file
 ## doesn't exist on disk), the placeholder is used.
@@ -77,7 +79,7 @@ const BOTTOM_MARGIN: int = 24
 
 
 @onready var dim_background: ColorRect = $DimBackground
-@onready var tile_row: HBoxContainer = $TileRow
+@onready var tile_row: GridContainer = $TileArea/TileRow
 @onready var title_label: Label = $TitleLabel
 @onready var empty_label: Label = $EmptyLabel
 
@@ -124,8 +126,22 @@ func _refresh() -> void:
 	var entries: Array = _collect_entries()
 	empty_label.visible = entries.is_empty()
 
+	# Wrap the tiles into as many rows as needed so nothing runs off screen.
+	# Columns = however many tiles fit across the viewport, capped at the item
+	# count so a short inventory still forms a single tidy row.
+	tile_row.columns = maxi(1, mini(entries.size(), _max_columns_for_viewport()))
+
 	for entry in entries:
 		tile_row.add_child(_build_tile(entry))
+
+
+## How many TILE_SIZE tiles fit across the usable width (viewport minus the
+## left/right margins the TileArea reserves).
+func _max_columns_for_viewport() -> int:
+	var viewport_width: float = get_viewport().get_visible_rect().size.x
+	var usable: float = maxf(viewport_width - 48.0, TILE_SIZE.x)
+	var per_tile: float = TILE_SIZE.x + float(TILE_SEPARATION)
+	return maxi(1, int(floor((usable + float(TILE_SEPARATION)) / per_tile)))
 
 
 ## Returns an Array of {id, name, count, texture} dicts to display.
@@ -172,6 +188,36 @@ func _collect_entries() -> Array:
 	return out
 
 
+## Debug-only: shift + left-click on a tile removes that item from the inventory
+## entirely — every copy of it, not just one (so a stack of 99 drops to 0).
+func _on_tile_gui_input(event: InputEvent, entry: Dictionary) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	var mb := event as InputEventMouseButton
+	if not (mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and mb.shift_pressed):
+		return
+	if not GameState.debug_mode_enabled:
+		return
+	get_viewport().set_input_as_handled()
+	_debug_remove_entry(entry)
+
+
+func _debug_remove_entry(entry: Dictionary) -> void:
+	var id: String = String(entry.get("id", ""))
+	if id == "":
+		return
+	match String(entry.get("kind", "")):
+		"ingredient":
+			if GameState.ingredients.has(id):
+				GameState.ingredients[id] = 0
+		"robot_part":
+			GameState.set_robot_part_count(id, 0)
+		"tool":
+			GameState.owned_tools.erase(id)
+			GameState.tool_counts.erase(id)
+	_refresh()
+
+
 func _display_name(id: String) -> String:
 	if DISPLAY_NAMES.has(id):
 		return DISPLAY_NAMES[id]
@@ -193,6 +239,9 @@ func _build_tile(entry: Dictionary) -> Panel:
 	var tile := Panel.new()
 	tile.custom_minimum_size = TILE_SIZE
 	tile.tooltip_text = entry["name"]
+	# Debug: shift-click a tile to wipe that item from the inventory entirely.
+	tile.mouse_filter = Control.MOUSE_FILTER_STOP
+	tile.gui_input.connect(_on_tile_gui_input.bind(entry))
 	var is_head_segments: bool = String(entry.get("id", "")) == "head_segments"
 
 	# Sprite.
