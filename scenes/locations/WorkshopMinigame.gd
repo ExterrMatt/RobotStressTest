@@ -106,11 +106,13 @@ const ARM_SEGMENT_IDS: Array[StringName] = [
 ## same arm art directory. Back-to-front draw order, same convention as the arm.
 const HAND_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot arm"
 const HAND_ASSEMBLY_SIZE: Vector2 = Vector2(350, 350)
+## hand_right (the upper/right palm) is drawn before hand_left so the left palm's
+## texture sits on top of it — see HAND_PERSISTENT_OUTLINE_IDS.
 const HAND_SEGMENT_IDS: Array[StringName] = [
 	&"thumb_base",
 	&"thumb_tip",
-	&"hand_left",
 	&"hand_right",
+	&"hand_left",
 	&"pinky_base",
 	&"pinky_tip",
 	&"ring_tip",
@@ -120,6 +122,10 @@ const HAND_SEGMENT_IDS: Array[StringName] = [
 	&"pointer_tip",
 	&"pointer_base",
 ]
+## Hand segments whose "_outline" is part of the final art and must keep drawing
+## after placement. hand_right's seam outline is kept; it draws under hand_left
+## (see the order above) so the left palm texture stays on top of it.
+const HAND_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"hand_right"]
 ## Arm segments whose "_outline" is part of the final art and must keep drawing
 ## after the piece is placed (rather than acting as a pick-up-only drag hint).
 const ARM_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"elbow_inner_gears"]
@@ -239,7 +245,8 @@ func _ready() -> void:
 	_setup_arm_assembly()
 	_hand_assembly = _build_segmented_assembly(
 		"AssemblyHand", HAND_TEXTURE_DIR, HAND_SEGMENT_IDS, HAND_ASSEMBLY_SIZE,
-		hand_assembly_offset, false, "hand_", _hand_assembly_slot_ids)
+		hand_assembly_offset, false, "hand_", _hand_assembly_slot_ids,
+		HAND_PERSISTENT_OUTLINE_IDS)
 	_stomach_assembly = _build_segmented_assembly(
 		"AssemblyStomach", STOMACH_TEXTURE_DIR, STOMACH_SEGMENT_IDS, STOMACH_ASSEMBLY_SIZE,
 		stomach_assembly_offset, true, "", _stomach_assembly_slot_ids)
@@ -1434,6 +1441,7 @@ func _build_segmented_assembly(
 	unified_outline: bool,
 	key_prefix: String,
 	out_slot_ids: Array[StringName],
+	persistent_outline_ids: Array[StringName] = [],
 ) -> Control:
 	var node := Control.new()
 	node.name = assembly_name
@@ -1493,6 +1501,7 @@ func _build_segmented_assembly(
 					"outline": _load_texture("%s/%s_outline.png" % [texture_dir, segment_id]),
 					"shadow": null,
 					"unified_outline": unified_outline,
+					"persistent_outline": persistent_outline_ids.has(segment_id),
 				}
 			]
 		}
@@ -1943,7 +1952,8 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 	piece.texture = tex
 	piece.shadow_texture = piece_def.get("shadow")
 	piece.outline_texture = piece_def.get("outline")
-	piece.persistent_outline = ARM_PERSISTENT_OUTLINE_IDS.has(seg_id)
+	piece.persistent_outline = bool(piece_def.get("persistent_outline", false)) \
+		or ARM_PERSISTENT_OUTLINE_IDS.has(seg_id)
 	piece.unified_outline = bool(piece_def.get("unified_outline", false))
 
 	piece.piece_offset = Vector2.ZERO
