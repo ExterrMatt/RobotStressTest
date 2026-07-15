@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://hwn7drsujm5g" path="res://assets/textures/characters/robot/personalitytest/right_leg.png" id="5_rightleg"]
 [ext_resource type="Texture2D" uid="uid://c86k127dlo2am" path="res://assets/textures/characters/robot/personalitytest/left foot.png" id="6_leftfoot"]
 [ext_resource type="Texture2D" uid="uid://oqu6u838c38a" path="res://assets/textures/characters/robot/personalitytest/right_foot.png" id="7_rightfoot"]
-[ext_resource type="Texture2D" uid="uid://r4xes7opji10" path="res://assets/textures/characters/robot/personalitytest/boobs.png" id="8_boobs"]
+[ext_resource type="Texture2D" uid="uid://r4xes7opji10" path="res://assets/textures/characters/robot/personalitytest/coconuts.png" id="8_coconuts"]
 [ext_resource type="Texture2D" uid="uid://bcuxbytivviov" path="res://assets/textures/characters/robot/personalitytest/pepperonis.png" id="9_pepperonis"]
 [ext_resource type="Texture2D" uid="uid://mxms36i6fk0n" path="res://assets/textures/characters/robot/personalitytest/body.png" id="10_body"]
 [ext_resource type="Texture2D" uid="uid://dgj4orchkkxl6" path="res://assets/textures/characters/robot/personalitytest/chest_cover.png" id="11_chestcover"]
@@ -145,7 +145,7 @@ mouse_filter = 2
 texture = ExtResource("7_rightfoot")
 expand_mode = 1
 
-[node name="Boobs" type="TextureRect" parent="." unique_id=2117479230]
+[node name="Coconuts" type="TextureRect" parent="." unique_id=2117479230]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -153,7 +153,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("8_boobs")
+texture = ExtResource("8_coconuts")
 expand_mode = 1
 
 [node name="Pepperonis" type="TextureRect" parent="." unique_id=883653380]
