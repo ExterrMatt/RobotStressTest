@@ -27,7 +27,7 @@ const TEXTURE_PATHS: Dictionary = {
 	"leg": "res://assets/textures/icons/leg.png",
 	"arm": "res://assets/textures/icons/arm.png",
 	"torso": "res://assets/textures/icons/torso.png",
-	"chest": "res://assets/textures/icons/placeholder_item.png",
+	"chest": "res://assets/textures/icons/chest.png",
 	"head": "res://assets/textures/icons/head.png",
 	"hand": "res://assets/textures/icons/placeholder_item.png",
 	# Tools
