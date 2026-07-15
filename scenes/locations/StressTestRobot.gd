@@ -132,6 +132,7 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"Torso/ChestOutlineLeft",
 	^"Torso/ChestOutlineRight",
 	^"Torso/BigCoconuts",
+	^"Torso/SmallCoconuts",
 	^"Torso/Pepperonis",
 	^"ChestCover",
 	^"AnimationLayers/Chest",
@@ -144,6 +145,45 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/ChestDetailsRight",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineLeft",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineRight",
+	# The leg/vegetable animation now carries its own chest-region columns, so
+	# they are gated on owning a chest just like the static and head-animation
+	# chest sprites.
+	^"AnimationLayers/VegetableMissionIntro/Chest",
+	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/BigCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
+	^"AnimationLayers/VegetableMissionLoopMedium/Chest",
+	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/BigCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/Pepperonis",
+]
+
+## Cosmetic chest overlays gated on owning the matching GameState cosmetic item
+## (in addition to the chest-part gate above). Each list covers the static
+## sprite and both leg-animation columns for that item.
+const BIG_COCONUTS_ITEM_PATHS: Array[NodePath] = [
+	^"Torso/BigCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/BigCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/BigCoconuts",
+]
+const SMALL_COCONUTS_ITEM_PATHS: Array[NodePath] = [
+	^"Torso/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
+]
+const CHEST_COVER_ITEM_PATHS: Array[NodePath] = [
+	^"ChestCover",
+]
+
+## The chest sprite is shared when the head and pelvis animations run together:
+## the head half draws the top of the cell, the pelvis half the bottom.
+const HEAD_CHEST_ANIM_PATHS: Array[NodePath] = [
+	^"AnimationLayers/Chest",
+	^"AnimationLayers/MouthBLoopMedium/Chest",
+]
+const PELVIS_CHEST_ANIM_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/Chest",
+	^"AnimationLayers/VegetableMissionLoopMedium/Chest",
 ]
 const STOMACH_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoNeckBack",
@@ -566,6 +606,9 @@ func _connect_robot_part_state() -> void:
 	var changed_callable := Callable(self, "_on_robot_parts_changed")
 	if not state.is_connected("robot_parts_changed", changed_callable):
 		state.connect("robot_parts_changed", changed_callable)
+	if state.has_signal("cosmetic_items_changed") \
+			and not state.is_connected("cosmetic_items_changed", changed_callable):
+		state.connect("cosmetic_items_changed", changed_callable)
 
 
 func _on_robot_parts_changed(_parts: Dictionary) -> void:
@@ -843,6 +886,7 @@ func _prime_layered_animation(box: Control) -> void:
 	if box.has_method("set_runtime_active"):
 		box.call("set_runtime_active", true)
 	_set_animation_frame_for_box(box, ANIMATION_PHASE_INTRO, 0)
+	_refresh_active_animation_frames()
 	_play_wood_creak_sound()
 	_apply_visibility_state()
 
@@ -897,6 +941,7 @@ func _finish_animation_for_box(box: Control, apply_state: bool = true) -> void:
 	if box != null and is_instance_valid(box) and box.has_method("set_runtime_active"):
 		box.call("set_runtime_active", false)
 	if apply_state:
+		_refresh_active_animation_frames()
 		_apply_visibility_state()
 
 
@@ -940,6 +985,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_head_texture_selection(resolved)
 	_apply_squint_eyes_state(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
+	_apply_cosmetic_item_availability_to_dictionary(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_shoulder_pad_state(resolved)
 	_apply_neck_front_state(resolved)
@@ -1096,6 +1142,24 @@ func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 	var leg_count := _robot_part_count("leg")
 	_apply_paths_available(resolved, LEFT_LEG_PART_PATHS, leg_count >= 1)
 	_apply_paths_available(resolved, RIGHT_LEG_PART_PATHS, leg_count >= 2)
+
+
+## Hides each cosmetic chest overlay whose GameState item the player does not
+## own. Runs after the chest-part pass, so an unowned item hides even when a
+## chest is present, and a removed chest still hides everything above.
+func _apply_cosmetic_item_availability_to_dictionary(resolved: Dictionary) -> void:
+	_apply_paths_available(resolved, BIG_COCONUTS_ITEM_PATHS, _cosmetic_item_owned("big_coconuts"))
+	_apply_paths_available(resolved, SMALL_COCONUTS_ITEM_PATHS, _cosmetic_item_owned("small_coconuts"))
+	_apply_paths_available(resolved, CHEST_COVER_ITEM_PATHS, _cosmetic_item_owned("chest_cover"))
+
+
+func _cosmetic_item_owned(id: String) -> bool:
+	var state := get_node_or_null("/root/GameState")
+	if state != null and state.has_method("has_cosmetic_item"):
+		return bool(state.call("has_cosmetic_item", id))
+	# Editor / no GameState: mirror the shipped defaults so the scene preview
+	# matches a fresh game (big coconuts + chest cover on, small coconuts off).
+	return id != "small_coconuts"
 
 
 func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
@@ -1272,20 +1336,66 @@ func _set_canvas_item_visible(path: NodePath, value: bool) -> void:
 	node.visible = value
 
 
+## Re-applies each running animation's current frame. Called when the set of
+## active animations changes so the chest-split state is re-evaluated for every
+## running box (e.g. the pelvis chest drops to its bottom half the moment the
+## head animation joins in, even while paused on a frame).
+func _refresh_active_animation_frames() -> void:
+	for box in _animation_states.keys():
+		if box == null or not is_instance_valid(box):
+			continue
+		var state: Dictionary = _animation_states[box]
+		var phase := String(state.get("phase", ANIMATION_PHASE_INTRO))
+		var fps := maxf(0.1, float(box.get("animation_fps")))
+		var frame_count := _get_phase_frame_count(box, phase)
+		var frame := clampi(int(floor(float(state.get("elapsed", 0.0)) * fps)), 0, maxi(0, frame_count - 1))
+		_set_animation_frame_for_box(box, phase, frame)
+
+
+## True while the head and pelvis layered animations are both running and the
+## robot has a chest, so their shared chest sprite must be split top/bottom.
+func _chest_split_active() -> bool:
+	if Engine.is_editor_hint():
+		return false
+	var head := _find_hover_box_by_name("HeadHoverBox")
+	var pelvis := _find_hover_box_by_name("PelvisHoverBox")
+	if head == null or pelvis == null:
+		return false
+	if not (_animation_states.has(head) and _animation_states.has(pelvis)):
+		return false
+	return _robot_part_count("chest") >= 1
+
+
 func _set_animation_frame_for_box(box: Control, phase: String, frame: int) -> void:
 	var frame_size: Vector2i = box.get("animation_frame_size")
 	if frame_size.x <= 0 or frame_size.y <= 0:
 		frame_size = DEFAULT_FRAME_SIZE
 
+	var split := _chest_split_active()
+	var half_height := int(frame_size.y / 2)
 	var paths := _get_animation_phase_paths(box, phase)
 	for column in range(paths.size()):
-		var node := get_node_or_null(NodePath(String(paths[column]))) as Sprite2D
+		var path := NodePath(String(paths[column]))
+		var node := get_node_or_null(path) as Sprite2D
 		if node == null:
 			continue
-		node.region_rect = Rect2(
-			Vector2(column * frame_size.x, frame * frame_size.y),
-			frame_size
-		)
+		var rx := float(column * frame_size.x)
+		var ry := float(frame * frame_size.y)
+		var rw := float(frame_size.x)
+		var rh := float(frame_size.y)
+		var offset_y := 0.0
+		# While the head and pelvis animations run together the chest cell is
+		# split down the middle: the head keeps the top half, the pelvis draws
+		# its bottom half shifted down so the two halves meet in the middle.
+		if split:
+			if HEAD_CHEST_ANIM_PATHS.has(path):
+				rh = float(half_height)
+			elif PELVIS_CHEST_ANIM_PATHS.has(path):
+				ry += float(half_height)
+				rh = float(half_height)
+				offset_y = float(half_height)
+		node.region_rect = Rect2(rx, ry, rw, rh)
+		node.offset = Vector2(node.offset.x, offset_y)
 	visual_state_changed.emit()
 
 

@@ -1005,6 +1005,8 @@ func _debug_give_all_items() -> void:
 		GameState.ingredients[id] = 99
 
 	GameState.set_all_robot_parts(99)
+	for cosmetic_id in GameState.COSMETIC_ITEM_IDS:
+		GameState.set_cosmetic_item(cosmetic_id, 1)
 	GameState.unlock_tool("taser")
 	GameState.unlock_tool("screwdriver")
 	# Grant both screwdrivers so the two-handed (one-per-side) screwing is usable.
@@ -1082,6 +1084,7 @@ func _refresh_debug_info() -> void:
 	if GameState.intro_active and not GameState.intro_completed:
 		lines.append("Intro step: %s" % GameState.intro_step)
 	lines.append("Parts: %s" % _debug_parts_summary())
+	lines.append("Cosmetics: %s" % _debug_cosmetics_summary())
 	lines.append("Tools: %s" % _debug_tools_summary())
 	lines.append("")
 	lines.append("[b]DEBUG KEYS[/b]")
@@ -1107,6 +1110,14 @@ func _debug_parts_summary() -> String:
 	return "none" if parts.is_empty() else "   ".join(parts)
 
 
+func _debug_cosmetics_summary() -> String:
+	var owned: Array[String] = []
+	for id in GameState.COSMETIC_ITEM_IDS:
+		if GameState.has_cosmetic_item(String(id)):
+			owned.append(String(id))
+	return "none" if owned.is_empty() else "   ".join(owned)
+
+
 func _debug_tools_summary() -> String:
 	var tools: Array[String] = []
 	for tool_id in GameState.owned_tools:
@@ -1130,6 +1141,8 @@ func _debug_clear_inventory() -> void:
 	GameState.set_all_robot_parts(0)
 	if head_count > 0:
 		GameState.set_robot_part_count("head", head_count)
+	for cosmetic_id in GameState.COSMETIC_ITEM_IDS:
+		GameState.set_cosmetic_item(cosmetic_id, 0)
 	GameState.owned_tools = ["mouth", "hand"]
 	GameState.tool_counts.clear()
 	GameState.purchased_today.clear()

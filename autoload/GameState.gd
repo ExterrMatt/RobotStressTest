@@ -25,6 +25,9 @@ signal window_mode_changed(mode: int)
 ## to this so the per-day-purchase markers stay in sync without polling.
 signal purchased_today_changed(purchased_ids: Array)
 signal robot_parts_changed(parts: Dictionary)
+## Emitted when the set of owned cosmetic chest items changes, so the robot
+## visuals re-resolve without polling.
+signal cosmetic_items_changed(items: Dictionary)
 signal intro_changed(active: bool, step: String)
 
 ## Display/window fit options, exposed in the settings menu. Persisted as an
@@ -175,6 +178,21 @@ var robot_parts: Dictionary = {
 	"hand": 0,
 }
 
+# --- cosmetic chest items ---
+## Optional chest overlays the robot can wear. Unlike robot_parts these are
+## purely cosmetic: they gate the matching chest-region sprites (static and in
+## the leg/vegetable animation) but never affect part counts. Owning big
+## coconuts and the chest cover is the default look; small coconuts is an
+## alternative that starts unowned.
+const COSMETIC_ITEM_IDS: Array[String] = ["big_coconuts", "small_coconuts", "chest_cover"]
+const COSMETIC_ITEM_DEFAULTS: Dictionary = {
+	"big_coconuts": 1,
+	"small_coconuts": 0,
+	"chest_cover": 1,
+}
+
+var cosmetic_items: Dictionary = COSMETIC_ITEM_DEFAULTS.duplicate()
+
 # --- inventory (stubbed - list of ingredient string IDs for now) ---
 var ingredients: Dictionary = {
 	"scrap_metal": 0,
@@ -238,6 +256,7 @@ func _emit_initial_state() -> void:
 	window_mode_changed.emit(_window_mode)
 	purchased_today_changed.emit(purchased_today)
 	robot_parts_changed.emit(robot_parts.duplicate())
+	cosmetic_items_changed.emit(cosmetic_items.duplicate())
 	intro_changed.emit(intro_active, intro_step)
 
 
@@ -253,6 +272,7 @@ func reset_for_new_game() -> void:
 
 	for id in robot_parts.keys():
 		robot_parts[id] = 0
+	cosmetic_items = COSMETIC_ITEM_DEFAULTS.duplicate()
 	for id in ingredients.keys():
 		ingredients[id] = 0
 	skills.clear()
@@ -411,6 +431,37 @@ func _sync_legacy_limb_count() -> void:
 	equipped_limbs = get_robot_part_count("leg")
 
 
+# --- cosmetic chest items ---
+
+func is_cosmetic_item_id(id: String) -> bool:
+	return id in COSMETIC_ITEM_IDS
+
+
+func get_cosmetic_item_count(id: String) -> int:
+	if not is_cosmetic_item_id(id):
+		return 0
+	return int(cosmetic_items.get(id, 0))
+
+
+func has_cosmetic_item(id: String) -> bool:
+	return get_cosmetic_item_count(id) >= 1
+
+
+func set_cosmetic_item(id: String, amount: int) -> void:
+	if not is_cosmetic_item_id(id):
+		push_warning("Unknown cosmetic item id: %s" % id)
+		return
+	var clamped: int = max(0, amount)
+	if int(cosmetic_items.get(id, 0)) == clamped:
+		return
+	cosmetic_items[id] = clamped
+	cosmetic_items_changed.emit(cosmetic_items.duplicate())
+
+
+func add_cosmetic_item(id: String, amount: int = 1) -> void:
+	set_cosmetic_item(id, get_cosmetic_item_count(id) + amount)
+
+
 # --- skills ---
 
 func has_skill(skill_id: String) -> bool:
@@ -559,6 +610,7 @@ func to_dict() -> Dictionary:
 		"anger": _anger,
 		"equipped_limbs": equipped_limbs,
 		"robot_parts": robot_parts.duplicate(),
+		"cosmetic_items": cosmetic_items.duplicate(),
 		"ingredients": ingredients.duplicate(),
 		"skills": skills.duplicate(),
 		"owned_tools": owned_tools.duplicate(),
@@ -602,6 +654,13 @@ func from_dict(data: Dictionary) -> void:
 	if get_robot_part_count("leg") == 0 and equipped_limbs > 0:
 		robot_parts["leg"] = equipped_limbs
 	_sync_legacy_limb_count()
+	# Cosmetic chest items: seed from defaults, then apply saved values so older
+	# saves (which lack the key) keep the default look.
+	var loaded_cosmetics: Dictionary = data.get("cosmetic_items", {})
+	cosmetic_items = COSMETIC_ITEM_DEFAULTS.duplicate()
+	for id in COSMETIC_ITEM_IDS:
+		if loaded_cosmetics.has(id):
+			cosmetic_items[id] = max(0, int(loaded_cosmetics[id]))
 	ingredients = data.get("ingredients", {}).duplicate()
 	for id in ["scrap_metal", "synth_skin", "nuts_bolts", "electronics", "nanobots", "head_segments", "oil"]:
 		ingredients[id] = max(0, int(ingredients.get(id, 0)))
