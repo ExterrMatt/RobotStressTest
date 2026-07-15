@@ -9,3 +9,10 @@ res://scenes/ui/InventoryOverlay.gd
 res://autoload/GameState.gd
 res://scenes/locations/WorkshopPiece.gd
 res://scenes/ui/InventoryOverlay.tscn
+res://scenes/locations/DroneEncounter.gd
+res://scenes/ui/MainMenu.gd
+res://scenes/locations/DroneEncounter.tscn
+res://data/dialogue/dialogue_bundle.tres
+res://scenes/locations/HeadScrewRepair.gd
+res://scenes/locations/Workshop.gd
+res://scenes/locations/WorkshopMinigame.tscn

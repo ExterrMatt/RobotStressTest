@@ -1,9 +1,9 @@
-[gd_scene format=3 uid="uid://bdroneenctscn"]
+[gd_scene format=3 uid="uid://c7ue7fcx2s6l0"]
 
 [ext_resource type="Script" uid="uid://ccujr5nfd0mwk" path="res://scenes/locations/DroneEncounter.gd" id="1"]
 [ext_resource type="PackedScene" uid="uid://b8dlgbox4dlg0" path="res://scenes/ui/DialogueBox.tscn" id="2"]
 
-[node name="DroneEncounter" type="Control"]
+[node name="DroneEncounter" type="Control" unique_id=237893193]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,8 +11,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
+drone_scale = 1.2400000000000002
+drone_offset = Vector2(0, 25)
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1958389099]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -24,14 +26,14 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 12
 
-[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBox" type="VBoxContainer" parent="MarginContainer" unique_id=1916199787]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="DialogueBox" parent="MarginContainer/VBox" instance=ExtResource("2")]
+[node name="DialogueBox" parent="MarginContainer/VBox" unique_id=923974662 instance=ExtResource("2")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Spacer" type="Control" parent="MarginContainer/VBox"]
+[node name="Spacer" type="Control" parent="MarginContainer/VBox" unique_id=1442060661]
 layout_mode = 2
 size_flags_vertical = 3

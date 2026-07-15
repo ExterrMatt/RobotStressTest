@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="DialogueBundle" format=3]
+[gd_resource type="Resource" script_class="DialogueBundle" format=3 uid="uid://wk5dqeeqerx0"]
 
-[ext_resource type="Script" path="res://data/dialogue/DialogueBundle.gd" id="1_dlgbndl"]
+[ext_resource type="Script" uid="uid://bsmsh85841wdm" path="res://data/dialogue/DialogueBundle.gd" id="1_dlgbndl"]
 
 [resource]
 script = ExtResource("1_dlgbndl")
