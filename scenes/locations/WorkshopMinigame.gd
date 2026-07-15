@@ -481,6 +481,17 @@ func _show_placement_hint_layer() -> void:
 func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
 	if _placement_hint_layer == null or piece == null or piece.texture == null:
 		return
+	# When the piece's outline is part of the final art (chest/stomach unified
+	# outlines, or any persistent outline) bake it behind the base so the hint
+	# matches how the piece looks once placed. Both textures share the piece's
+	# draw origin, so they use the same target position; adding the outline first
+	# keeps it behind the base in the composite.
+	if piece.outline_texture != null and (piece.unified_outline or piece.persistent_outline):
+		_pending_hint_entries.append({
+			"texture": piece.outline_texture,
+			"position": target_texture_global_position,
+			"size": piece.texture_draw_size(piece.outline_texture),
+		})
 	# Queue the piece's real art for baking. Entries are added back-to-front by
 	# the caller, so when they are composited into one texture the cap lands on
 	# top of the axle and the fade never reveals the pixels hidden behind it.
