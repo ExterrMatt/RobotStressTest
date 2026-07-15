@@ -20,10 +20,10 @@
 [ext_resource type="Texture2D" uid="uid://d3fht6umtfbpg" path="res://assets/textures/backgrounds/sleep/bed/pillow_indented.png" id="18_pillow_indented"]
 [ext_resource type="Texture2D" uid="uid://bakyutktw30kr" path="res://assets/textures/backgrounds/sleep/bed/pillow_slightly_indented.png" id="19_pillow_slightly_indented"]
 [ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="21_stress_test_robot"]
-[ext_resource type="Script" uid="uid://cvbl2j3xth0hm" path="res://scenes/locations/StressTestRobotShadow.gd" id="25_bot_shadow_script"]
 [ext_resource type="Texture2D" uid="uid://dr8ugk2gassrm" path="res://assets/textures/backgrounds/sleep/bed/blanket.png" id="22_blanket"]
 [ext_resource type="Texture2D" uid="uid://bjo7rj73fkj3w" path="res://assets/textures/backgrounds/sleep/bed/blanket_bump.png" id="23_blanket_bump"]
 [ext_resource type="Texture2D" uid="uid://ufmxbsfwbwlw" path="res://assets/textures/backgrounds/sleep/darkness.png" id="24_2grgb"]
+[ext_resource type="Script" uid="uid://cvbl2j3xth0hm" path="res://scenes/locations/StressTestRobotShadow.gd" id="25_bot_shadow_script"]
 
 [node name="Sleep" type="Control" unique_id=1825695232]
 layout_mode = 3
@@ -299,53 +299,51 @@ texture = ExtResource("19_pillow_slightly_indented")
 expand_mode = 1
 
 [node name="BotShadowLight" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=1565086679]
-visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -257.00003
-offset_top = -422.66663
-offset_right = -7.0
-offset_bottom = -72.666626
+offset_left = -282.0
+offset_top = -404.66663
+offset_right = -32.0
+offset_bottom = -54.666626
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(2.134936, 2.134936)
+scale = Vector2(2.335, 2.135)
 mouse_filter = 2
 script = ExtResource("25_bot_shadow_script")
-full_body_edge_y_stretch = 0.14
-full_body_shadow_frame_size = Vector2(250, 350)
+full_body_edge_y_stretch = 0.11
 full_body_top_erase_px = 0.0
-flattened_shadow_color = Color(0.16862746, 0, 0.31372549, 0.27058824)
+flattened_shadow_color = Color(0.16862746, 0, 0.3137255, 0.27058825)
 source_robot_path = NodePath("../BotPlaceholder")
 
 [node name="ShadowComposite" type="CanvasGroup" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/BotShadowLight" unique_id=1565086680]
-modulate = Color(0.16862746, 0, 0.31372549, 0.27058824)
+modulate = Color(0.16862746, 0, 0.3137255, 0.27058825)
+fit_margin = 0.0
+clear_margin = 0.0
 
 [node name="ShadowRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed/BotShadowLight/ShadowComposite" unique_id=1565086681 instance=ExtResource("21_stress_test_robot")]
 process_mode = 4
 
 [node name="BotShadowHeavy" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bed" unique_id=222425575]
-visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -257.00003
-offset_top = -430.66663
-offset_right = -7.0
-offset_bottom = -80.666626
+offset_left = -268.00003
+offset_top = -416.66663
+offset_right = -18.0
+offset_bottom = -66.666626
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(2.134936, 2.134936)
+scale = Vector2(2.225, 2.135)
 mouse_filter = 2
 script = ExtResource("25_bot_shadow_script")
 full_body_edge_y_stretch = 0.06
-full_body_shadow_frame_size = Vector2(250, 350)
 full_body_top_erase_px = 0.0
 flattened_shadow_color = Color(0.10980392, 0, 0.18431373, 0.4)
 source_robot_path = NodePath("../BotPlaceholder")
