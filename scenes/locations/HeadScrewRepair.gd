@@ -240,36 +240,16 @@ func side_for_screw(index: int) -> String:
 	return _side_from_text(screw_name, String(name))
 
 
-## The physical hand ("left"/"right"/"") that drives a screw. This is what gates
+## The physical hand ("left"/"right") that drives a screw. This is what gates
 ## concurrency: two screws can only be driven at once when they use different
-## hands.
+## hands, and every screw that needs a given hand is unavailable while that hand
+## is busy.
 ##
-## Head/torso/chest screws name their own side, and that side is always the hand
-## that drives them — their flipped art is purely a visual orientation. Limb
-## screws (arm/leg) share the single side taken from the controller name, so
-## there a flipped screwdriver image means the OPPOSITE hand has to reach across
-## to drive it — a flipped limb screw therefore counts as the opposite hand.
+## The hand is decided purely by which way the screwdriver/hand points — it is
+## held on the side OPPOSITE the tip. The base art points left, so it is held by
+## the RIGHT hand; a flipped screw points right and is held by the LEFT hand.
 func hand_side_for_screw(index: int) -> String:
-	var screw_name := ""
-	if index >= 0 and index < screw_nodes.size():
-		screw_name = String(screw_nodes[index])
-	var screw_own_side := _side_in(screw_name)
-	if screw_own_side != "":
-		return screw_own_side
-	var body_side := _side_in(String(name))
-	if _is_screwdriver_flipped(index):
-		return _opposite_side(body_side)
-	return body_side
-
-
-func _opposite_side(side: String) -> String:
-	match side:
-		"left":
-			return "right"
-		"right":
-			return "left"
-		_:
-			return side
+	return "left" if _is_screwdriver_flipped(index) else "right"
 
 
 ## Any side currently being driven, or "" when idle. Prefer is_side_repairing

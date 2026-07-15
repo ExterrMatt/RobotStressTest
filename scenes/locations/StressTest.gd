@@ -1674,7 +1674,7 @@ func _apply_patrol_drone_visual() -> void:
 	_hide_node(patrol_drone_lights_off)
 	_hide_node(patrol_drone_guns_dark)
 	_hide_node(patrol_drone_glow)
-	# While zapping, the drone is lit only by the arc: use just dark_drone 1 and 4
+	# While zapping, the drone is lit only by the arc: use dark_drone 1, 2 and 4
 	# (no lights-off tint or glow), whatever the light level was before.
 	if zapping:
 		_apply_zap_dark_overlays()
@@ -1706,14 +1706,14 @@ func _apply_patrol_drone_visual() -> void:
 			pass
 
 
-## During a zap, only dark_drone 1 and 4 stay lit (indices 0 and last); the
-## middle two frames turn off along with the lights-off tint and glow.
+## During a zap, dark_drone 1, 2 and 4 stay lit (indices 0, 1 and last); only
+## dark_drone 3 turns off, along with the lights-off tint and glow.
 func _apply_zap_dark_overlays() -> void:
 	var last := patrol_drone_darks.size() - 1
 	for i in patrol_drone_darks.size():
 		var node := patrol_drone_darks[i]
 		if node != null:
-			node.visible = i == 0 or i == last
+			node.visible = i == 0 or i == 1 or i == last
 
 
 ## The zap frame for the current elapsed time: three frames, each shown for a

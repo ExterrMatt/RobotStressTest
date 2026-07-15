@@ -3,12 +3,9 @@ class_name WorkshopMinigame
 
 signal collected(part_id: String)
 signal ended()
-## Emitted once, after the player has spent EASY_MODE_OFFER_SECONDS in a normal
-## (non-tutorial) workshop with Easy Workshop Mode still off, so the location can
-## offer to switch it on.
-signal easy_mode_offered()
 
-## How long the player struggles before the Easy Workshop Mode offer appears.
+## How long the player struggles before the HINT button (which turns on Easy
+## Workshop Mode) appears.
 const EASY_MODE_OFFER_SECONDS: float = 60.0
 
 @export var forced_part_id: String = ""
@@ -198,6 +195,9 @@ const WORKSHOP_PIECE_SCRIPT_PATH: String = "res://scenes/locations/WorkshopPiece
 @onready var assembly: Control = %AssemblyArea
 @onready var collect_button: Button = %CollectButton
 @onready var end_button: Button = %EndButton
+## Bottom-left button offering Easy Workshop Mode ("HINT"). Authored in the scene
+## so its position/size can be edited in the editor; hidden until offered.
+@onready var hint_button: Button = get_node_or_null("%HintButton") as Button
 
 var _segments: Dictionary = {}
 var _assembly_slots: Dictionary = {}
@@ -314,6 +314,10 @@ func _ready() -> void:
 	collect_button.visible = false
 	collect_button.text = "COLLECT"
 	end_button.pressed.connect(_on_end_button_pressed)
+	if hint_button != null:
+		hint_button.visible = false
+		hint_button.text = "HINT"
+		hint_button.pressed.connect(_on_hint_button_pressed)
 
 
 func _on_end_button_pressed() -> void:
@@ -332,14 +336,31 @@ func _process(_delta: float) -> void:
 
 
 ## Time the workshop session and, once the player has been at it for a while with
-## Easy Workshop Mode still off (and outside the guided intro), offer it once.
+## Easy Workshop Mode still off (and outside the guided intro), reveal the HINT
+## button that turns the mode on.
 func _update_easy_mode_offer(delta: float) -> void:
-	if _easy_mode_offer_made or _is_tutorial_workshop() or _easy_workshop_enabled():
+	if hint_button == null:
+		return
+	# Once Easy Workshop Mode is on (via the button or the settings menu), or in
+	# the guided intro, the offer is moot — keep the button hidden.
+	if _is_tutorial_workshop() or _easy_workshop_enabled():
+		if hint_button.visible:
+			hint_button.visible = false
+		return
+	if _easy_mode_offer_made:
 		return
 	_workshop_elapsed += delta
 	if _workshop_elapsed >= EASY_MODE_OFFER_SECONDS:
 		_easy_mode_offer_made = true
-		easy_mode_offered.emit()
+		hint_button.visible = true
+
+
+func _on_hint_button_pressed() -> void:
+	var settings := get_node_or_null("/root/GameState")
+	if settings != null:
+		settings.easy_workshop_enabled = true
+	if hint_button != null:
+		hint_button.visible = false
 
 
 ## The intro/tutorial workshop keeps its guiding hints on regardless of the Easy
