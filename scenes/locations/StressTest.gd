@@ -309,6 +309,13 @@ const DRONE_GUNS_TEXTURE: Texture2D = preload("res://assets/textures/characters/
 ## Placeholder for the eventual electrocution animation shown when the player
 ## drives the drone off with the emergency button.
 const DRONE_ID_TEXTURE: Texture2D = preload("res://assets/textures/characters/drone/id.png")
+## Electrocution animation played over the drone while it is being zapped: the
+## three frames each show for a third of drone_zap_seconds, in order 1 -> 2 -> 3.
+const DRONE_ZAP_TEXTURES: Array[Texture2D] = [
+	preload("res://assets/textures/characters/drone/zap_1.png"),
+	preload("res://assets/textures/characters/drone/zap_2.png"),
+	preload("res://assets/textures/characters/drone/zap_3.png"),
+]
 
 ## Lights-off drone art (assigned to the scene's dark overlay nodes). When the
 ## lights are off the lit body is swapped for the darkened silhouette plus the
@@ -1010,7 +1017,8 @@ func _apply_robot_head_only_position() -> void:
 
 
 func _is_head_only_robot() -> bool:
-	return _robot_part_count("torso") <= 0 \
+	return _robot_part_count("chest") <= 0 \
+			and _robot_part_count("stomach") <= 0 \
 			and _robot_part_count("arm") <= 0 \
 			and _robot_part_count("hand") <= 0 \
 			and _robot_part_count("leg") <= 0
@@ -1521,6 +1529,9 @@ func _update_patrol_drone(delta: float) -> void:
 		DRONE_ZAP:
 			if _drone_elapsed >= maxf(0.0, drone_zap_seconds):
 				_clear_patrol_drone()
+			else:
+				# Advance the arc animation (frame 1 -> 2 -> 3) as time passes.
+				_show_accessory(_current_zap_texture())
 
 
 func _start_patrol_drone() -> void:
@@ -1654,6 +1665,7 @@ func _apply_patrol_drone_visual() -> void:
 	if patrol_drone == null:
 		return
 	var present := _drone_state != DRONE_NONE
+	var zapping := _drone_state == DRONE_ZAP
 	# Hide the per-state layers first; the dark overlays follow "present".
 	patrol_drone.visible = false
 	patrol_drone.texture = DRONE_IDLE_TEXTURE
@@ -1661,14 +1673,19 @@ func _apply_patrol_drone_visual() -> void:
 	_hide_node(patrol_drone_lights_off)
 	_hide_node(patrol_drone_guns_dark)
 	_hide_node(patrol_drone_glow)
-	_set_dark_overlays_visible(present)
+	# While zapping, the drone is lit only by the arc: use just dark_drone 1 and 4
+	# (no lights-off tint or glow), whatever the light level was before.
+	if zapping:
+		_apply_zap_dark_overlays()
+	else:
+		_set_dark_overlays_visible(present)
 	if not present:
 		return
 
 	# The drone body is always drawn; lights-off just adds the tint and glow.
 	patrol_drone.visible = true
 	var dark := _stress_test_dark
-	if dark:
+	if dark and not zapping:
 		_show_node(patrol_drone_lights_off)
 		_show_node(patrol_drone_glow)
 
@@ -1683,9 +1700,30 @@ func _apply_patrol_drone_visual() -> void:
 			else:
 				_show_accessory(DRONE_GUNS_TEXTURE)
 		DRONE_ZAP:
-			_show_accessory(DRONE_ID_TEXTURE)
+			_show_accessory(_current_zap_texture())
 		_:  # DRONE_IDLE
 			pass
+
+
+## During a zap, only dark_drone 1 and 4 stay lit (indices 0 and last); the
+## middle two frames turn off along with the lights-off tint and glow.
+func _apply_zap_dark_overlays() -> void:
+	var last := patrol_drone_darks.size() - 1
+	for i in patrol_drone_darks.size():
+		var node := patrol_drone_darks[i]
+		if node != null:
+			node.visible = i == 0 or i == last
+
+
+## The zap frame for the current elapsed time: three frames, each shown for a
+## third of drone_zap_seconds, in order 1 -> 2 -> 3.
+func _current_zap_texture() -> Texture2D:
+	if DRONE_ZAP_TEXTURES.is_empty():
+		return DRONE_ID_TEXTURE
+	var total := maxf(0.0001, drone_zap_seconds)
+	var fraction := clampf(_drone_elapsed / total, 0.0, 0.99999)
+	var index := clampi(int(fraction * DRONE_ZAP_TEXTURES.size()), 0, DRONE_ZAP_TEXTURES.size() - 1)
+	return DRONE_ZAP_TEXTURES[index]
 
 
 func _set_dark_overlays_visible(value: bool) -> void:
@@ -1960,10 +1998,15 @@ func _apply_body_part_screw_availability() -> void:
 	var arm_count := _robot_part_count("arm")
 	_set_screw_repair_available(left_arm_screw_repair, arm_count >= 1)
 	_set_screw_repair_available(right_arm_screw_repair, arm_count >= 2)
-	_set_screw_repair_available(torso_screw_repair, _robot_part_count("torso") >= 1)
+	# The torso screw plate spans both mid-body parts, so it is reachable if
+	# either the chest or the stomach is attached. The two waist screws sit on the
+	# stomach, so they additionally require it (and stay hidden under an arm).
+	var chest_count := _robot_part_count("chest")
+	var stomach_count := _robot_part_count("stomach")
+	_set_screw_repair_available(torso_screw_repair, chest_count >= 1 or stomach_count >= 1)
 	if torso_screw_repair != null and torso_screw_repair.has_method("set_screw_available"):
-		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_LEFT_WAIST, arm_count < 1)
-		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_RIGHT_WAIST, arm_count < 2)
+		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_LEFT_WAIST, stomach_count >= 1 and arm_count < 1)
+		torso_screw_repair.call("set_screw_available", TORSO_SCREW_INDEX_RIGHT_WAIST, stomach_count >= 1 and arm_count < 2)
 	var leg_count := _robot_part_count("leg")
 	_set_screw_repair_available(left_leg_screw_repair, leg_count >= 1)
 	_set_screw_repair_available(right_leg_screw_repair, leg_count >= 2)

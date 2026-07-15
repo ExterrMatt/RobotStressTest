@@ -68,7 +68,7 @@ const ANIM_CHEST_DETAILS_RIGHT_PATHS: Array[NodePath] = [
 ]
 
 ## Front cover for the neck, shown only while the head is the robot's sole
-## remaining part (no torso, arms, hands, or legs). The texture is loaded at
+## remaining part (no chest, stomach, arms, hands, or legs). The texture is loaded at
 ## runtime so the scene keeps working until the art file is added.
 const NECK_FRONT_PATH: NodePath = ^"Torso/NeckFront"
 const NECK_FRONT_TEXTURE_PATH: String = "res://assets/textures/characters/robot/stresstest/head/neck_front.png"
@@ -122,9 +122,10 @@ const HAIR_LOOP_ANIM_OPTIONS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/HairFrontBangs",
 ]
 
-const TORSO_PART_PATHS: Array[NodePath] = [
-	^"Torso/TorsoNeckBack",
-	^"Torso/TorsoBase",
+# The old single "torso" part is split into two independently-gated parts:
+# the chest (chest plates/outlines/details, coconuts, nipples, boob cover) and
+# the stomach (the base body silhouette, crunch/abs, neck backing).
+const CHEST_PART_PATHS: Array[NodePath] = [
 	^"Torso/Chest",
 	^"Torso/ChestDetailsLeft",
 	^"Torso/ChestDetailsRight",
@@ -132,7 +133,6 @@ const TORSO_PART_PATHS: Array[NodePath] = [
 	^"Torso/ChestOutlineRight",
 	^"Torso/BigCoconuts",
 	^"Torso/Nipples",
-	^"Torso/TorsoCrunch",
 	^"BoobCover",
 	^"AnimationLayers/Chest",
 	^"AnimationLayers/ChestDetailsLeft",
@@ -144,6 +144,11 @@ const TORSO_PART_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/ChestDetailsRight",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineLeft",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineRight",
+]
+const STOMACH_PART_PATHS: Array[NodePath] = [
+	^"Torso/TorsoNeckBack",
+	^"Torso/TorsoBase",
+	^"Torso/TorsoCrunch",
 ]
 const LEFT_ARM_PART_PATHS: Array[NodePath] = [
 	^"Arms/LeftArm",
@@ -1077,7 +1082,8 @@ func _apply_squint_eyes_offset() -> void:
 
 
 func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
-	_apply_paths_available(resolved, TORSO_PART_PATHS, _robot_part_count("torso") >= 1)
+	_apply_paths_available(resolved, CHEST_PART_PATHS, _robot_part_count("chest") >= 1)
+	_apply_paths_available(resolved, STOMACH_PART_PATHS, _robot_part_count("stomach") >= 1)
 
 	var arm_count := _robot_part_count("arm")
 	_apply_paths_available(resolved, LEFT_ARM_PART_PATHS, arm_count >= 1)
@@ -1163,7 +1169,8 @@ func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], availa
 ## Shows the neck's front cover while the head is the robot's only remaining
 ## part; any other equipped part (or the raised-head animation) hides it.
 func _apply_neck_front_state(resolved: Dictionary) -> void:
-	var head_only := _robot_part_count("torso") < 1 \
+	var head_only := _robot_part_count("chest") < 1 \
+			and _robot_part_count("stomach") < 1 \
 			and _robot_part_count("arm") < 1 \
 			and _robot_part_count("hand") < 1 \
 			and _robot_part_count("leg") < 1
@@ -1182,7 +1189,8 @@ func _initialize_neck_front_texture() -> void:
 
 
 func _add_robot_part_managed_paths() -> void:
-	_add_managed_paths(TORSO_PART_PATHS)
+	_add_managed_paths(CHEST_PART_PATHS)
+	_add_managed_paths(STOMACH_PART_PATHS)
 	_add_managed_paths(LEFT_ARM_PART_PATHS)
 	_add_managed_paths(RIGHT_ARM_PART_PATHS)
 	_add_managed_paths(LEFT_HAND_PART_PATHS)
@@ -1209,8 +1217,12 @@ func _is_hover_box_available(box: Control) -> bool:
 		return false
 	if _is_hover_box_blocked_by_repair(box):
 		return false
-	if box.name == "PelvisHoverBox" or box.name == "BoobCoverHoverBox" or _is_shoulder_hover_box(box):
-		return _robot_part_count("torso") >= 1
+	# Pelvis (leg-spread) needs a stomach; the chest cover and shoulder pads sit
+	# on the chest, so they need a chest.
+	if box.name == "PelvisHoverBox":
+		return _robot_part_count("stomach") >= 1
+	if box.name == "BoobCoverHoverBox" or _is_shoulder_hover_box(box):
+		return _robot_part_count("chest") >= 1
 	if box.name == LEFT_HAND_HOVER_BOX_NAME:
 		return _robot_part_count("hand") >= 1
 	if box.name == RIGHT_HAND_HOVER_BOX_NAME:
