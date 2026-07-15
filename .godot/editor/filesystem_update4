@@ -8,3 +8,4 @@ res://scenes/locations/StressTestRobotShadow.gd
 res://scenes/ui/InventoryOverlay.gd
 res://autoload/GameState.gd
 res://scenes/locations/WorkshopPiece.gd
+res://scenes/ui/InventoryOverlay.tscn
