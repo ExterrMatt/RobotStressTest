@@ -26,7 +26,8 @@ const TEXTURE_PATHS: Dictionary = {
 	"sneaky_shoes": "res://assets/textures/icons/sneaky_shoes.png",
 	"leg": "res://assets/textures/icons/leg.png",
 	"arm": "res://assets/textures/icons/arm.png",
-	"torso": "res://assets/textures/icons/torso.png",
+	# The stomach's icon art still lives in the legacy torso.png file.
+	"stomach": "res://assets/textures/icons/torso.png",
 	"chest": "res://assets/textures/icons/chest.png",
 	"head": "res://assets/textures/icons/head.png",
 	"hand": "res://assets/textures/icons/placeholder_item.png",
@@ -58,7 +59,7 @@ const DISPLAY_NAMES: Dictionary = {
 	"sneaky_shoes": "Sneaky Shoes",
 	"leg": "Leg",
 	"arm": "Arm",
-	"torso": "Torso",
+	"stomach": "Stomach",
 	"chest": "Chest",
 	"head": "Head",
 	"hand": "Hand",

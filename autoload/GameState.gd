@@ -126,7 +126,7 @@ var _suspicion: int = 0
 var _anger: int = 0
 
 # --- robot config ---
-const ROBOT_PART_IDS: Array[String] = ["leg", "arm", "torso", "chest", "head", "hand"]
+const ROBOT_PART_IDS: Array[String] = ["leg", "arm", "stomach", "chest", "head", "hand"]
 
 ## Kept for older scene logic that only understood legs. Mirrors
 ## robot_parts["leg"].
@@ -135,7 +135,7 @@ var equipped_limbs: int = 0
 var robot_parts: Dictionary = {
 	"leg": 0,
 	"arm": 0,
-	"torso": 0,
+	"stomach": 0,
 	"chest": 0,
 	"head": 0,
 	"hand": 0,
@@ -313,6 +313,14 @@ func get_robot_part_count(id: String) -> int:
 
 func has_robot_part(id: String, amount: int = 1) -> bool:
 	return get_robot_part_count(id) >= amount
+
+
+## "Torso" is not an item of its own — it is shorthand for the mid-body as a
+## whole, i.e. having both the chest and the stomach. Kept so any logic that used
+## to treat the old single "torso" part as one thing still has a concept to ask
+## for; most callers should check "chest" or "stomach" specifically instead.
+func has_torso() -> bool:
+	return has_robot_part("chest") and has_robot_part("stomach")
 
 
 func set_all_robot_parts(amount: int) -> void:
@@ -499,6 +507,14 @@ func from_dict(data: Dictionary) -> void:
 	var loaded_parts: Dictionary = data.get("robot_parts", {}).duplicate()
 	for id in ROBOT_PART_IDS:
 		robot_parts[id] = max(0, int(loaded_parts.get(id, 0)))
+	# Legacy saves stored a single "torso" part; it is now split into chest and
+	# stomach, so seed both from the old value when they weren't saved separately.
+	var legacy_torso: int = int(loaded_parts.get("torso", 0))
+	if legacy_torso > 0:
+		if int(robot_parts.get("chest", 0)) == 0:
+			robot_parts["chest"] = legacy_torso
+		if int(robot_parts.get("stomach", 0)) == 0:
+			robot_parts["stomach"] = legacy_torso
 	if get_robot_part_count("leg") == 0 and equipped_limbs > 0:
 		robot_parts["leg"] = equipped_limbs
 	_sync_legacy_limb_count()

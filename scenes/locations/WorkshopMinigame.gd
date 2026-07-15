@@ -12,7 +12,8 @@ signal ended()
 ## defaults to having its visible art centred in the assembly area.
 @export var head_assembly_offset: Vector2 = Vector2.ZERO
 @export var arm_assembly_offset: Vector2 = Vector2.ZERO
-@export var torso_assembly_offset: Vector2 = Vector2.ZERO
+@export var hand_assembly_offset: Vector2 = Vector2.ZERO
+@export var stomach_assembly_offset: Vector2 = Vector2.ZERO
 @export var chest_assembly_offset: Vector2 = Vector2.ZERO
 
 const CRAFTABLE_PARTS: Dictionary = {
@@ -28,8 +29,12 @@ const CRAFTABLE_PARTS: Dictionary = {
 		"display_name": "Arm",
 		"recipe": {"nuts_bolts": 1},
 	},
-	"torso": {
-		"display_name": "Torso",
+	"hand": {
+		"display_name": "Hand",
+		"recipe": {"nanobots": 1},
+	},
+	"stomach": {
+		"display_name": "Stomach",
 		"recipe": {"synth_skin": 1},
 	},
 	"chest": {
@@ -79,19 +84,11 @@ const ARM_ASSEMBLY_SIZE: Vector2 = Vector2(350, 350)
 ## siblings on top, so this is the reverse of the Aseprite layer stack. The
 ## "_outline" layers are not listed here — each is loaded as its base piece's
 ## outline (drawn behind the base, dragged with it, hidden once placed).
+##
+## The hand (fingers, palm, thumb) is now its own craftable part — see
+## HAND_SEGMENT_IDS — so it is no longer part of the arm and its segments are not
+## handed out when crafting an arm. The arm runs shoulder -> forearm -> wrist.
 const ARM_SEGMENT_IDS: Array[StringName] = [
-	&"thumb_base",
-	&"thumb_tip",
-	&"hand_left",
-	&"hand_right",
-	&"pinky_base",
-	&"pinky_tip",
-	&"ring_tip",
-	&"ring_base",
-	&"middle_base",
-	&"middle_tip",
-	&"pointer_tip",
-	&"pointer_base",
 	&"wrist",
 	&"elbow_inner_gears",
 	&"forearm_lower",
@@ -105,22 +102,44 @@ const ARM_SEGMENT_IDS: Array[StringName] = [
 	&"shoulder_pad",
 	&"shoulder_joint",
 ]
+## The hand is grafted separately (recipe: nanobots). Its segments live in the
+## same arm art directory. Back-to-front draw order, same convention as the arm.
+const HAND_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot arm"
+const HAND_ASSEMBLY_SIZE: Vector2 = Vector2(350, 350)
+const HAND_SEGMENT_IDS: Array[StringName] = [
+	&"thumb_base",
+	&"thumb_tip",
+	&"hand_left",
+	&"hand_right",
+	&"pinky_base",
+	&"pinky_tip",
+	&"ring_tip",
+	&"ring_base",
+	&"middle_base",
+	&"middle_tip",
+	&"pointer_tip",
+	&"pointer_base",
+]
 ## Arm segments whose "_outline" is part of the final art and must keep drawing
 ## after the piece is placed (rather than acting as a pick-up-only drag hint).
 const ARM_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"elbow_inner_gears"]
 
-## Torso and chest are built with `unified_outline` enabled: their "_outline"
-## layers are authored as one contiguous block *behind* every base layer, so a
-## placed piece keeps its outline (repainted behind all bases by a unified outline
-## layer) instead of the arm/head behaviour where a placed outline is dropped.
-const TORSO_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso"
-const TORSO_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
-## Back-to-front draw order for the assembled torso. Godot draws later Control
+## The stomach and chest are built with `unified_outline` enabled: their
+## "_outline" layers are authored as one contiguous block *behind* every base
+## layer, so a placed piece keeps its outline (repainted behind all bases by a
+## unified outline layer) instead of the arm/head behaviour where a placed
+## outline is dropped.
+##
+## (The stomach art still lives under the legacy "workshop robot body/torso"
+## folder; the segment names below are its texture filenames.)
+const STOMACH_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso"
+const STOMACH_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
+## Back-to-front draw order for the assembled stomach. Godot draws later Control
 ## siblings on top, so this is the reverse of the Aseprite layer stack (taken
-## bottom-to-top straight from workshop_torso.ase). The "_outline" layers are not
+## bottom-to-top straight from the source .ase). The "_outline" layers are not
 ## listed here — each is loaded as its base piece's outline, kept visible behind
 ## all bases once placed.
-const TORSO_SEGMENT_IDS: Array[StringName] = [
+const STOMACH_SEGMENT_IDS: Array[StringName] = [
 	&"top_torso",
 	&"belly_button",
 	&"gut",
@@ -174,12 +193,14 @@ var _active_assembly_slot_ids: Array[StringName] = []
 var _head_slot_placement_offsets: Dictionary = {}
 var _head_assembly: Control = null
 var _arm_assembly: Control = null
-var _torso_assembly: Control = null
+var _hand_assembly: Control = null
+var _stomach_assembly: Control = null
 var _chest_assembly: Control = null
-## Slot ids actually built for the procedural torso/chest assemblies. Chest keys
-## are namespaced (see the key_prefix in _build_segmented_assembly) so a shared
-## segment name like "neck" can't collide with the head's slot.
-var _torso_assembly_slot_ids: Array[StringName] = []
+## Slot ids actually built for the procedural hand/stomach/chest assemblies.
+## Chest keys are namespaced (see the key_prefix in _build_segmented_assembly) so
+## a shared segment name like "neck" can't collide with the head's slot.
+var _hand_assembly_slot_ids: Array[StringName] = []
+var _stomach_assembly_slot_ids: Array[StringName] = []
 var _chest_assembly_slot_ids: Array[StringName] = []
 ## Back outline layers (one per unified-outline assembly) that repaint every
 ## placed piece's outline behind all base art.
@@ -216,9 +237,12 @@ func _ready() -> void:
 
 	_setup_head_assembly()
 	_setup_arm_assembly()
-	_torso_assembly = _build_segmented_assembly(
-		"AssemblyTorso", TORSO_TEXTURE_DIR, TORSO_SEGMENT_IDS, TORSO_ASSEMBLY_SIZE,
-		torso_assembly_offset, true, "", _torso_assembly_slot_ids)
+	_hand_assembly = _build_segmented_assembly(
+		"AssemblyHand", HAND_TEXTURE_DIR, HAND_SEGMENT_IDS, HAND_ASSEMBLY_SIZE,
+		hand_assembly_offset, false, "hand_", _hand_assembly_slot_ids)
+	_stomach_assembly = _build_segmented_assembly(
+		"AssemblyStomach", STOMACH_TEXTURE_DIR, STOMACH_SEGMENT_IDS, STOMACH_ASSEMBLY_SIZE,
+		stomach_assembly_offset, true, "", _stomach_assembly_slot_ids)
 	_chest_assembly = _build_segmented_assembly(
 		"AssemblyChest", CHEST_TEXTURE_DIR, CHEST_SEGMENT_IDS, CHEST_ASSEMBLY_SIZE,
 		chest_assembly_offset, true, "chest_", _chest_assembly_slot_ids)
@@ -1062,9 +1086,10 @@ func _refit_segment_bounds(segment: WorkshopSegment) -> void:
 
 
 func _clear_placed_part_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
-	# Unified-outline parts (torso, chest) keep their outline art after placement
-	# — a back layer repaints it behind all bases — so never strip it here.
-	if _crafted_part_id != "head" and _crafted_part_id != "arm":
+	# Unified-outline parts (stomach, chest) keep their outline art after placement
+	# — a back layer repaints it behind all bases — so never strip it here. The
+	# hand shares the arm art convention: its outlines are pick-up-only hints.
+	if _crafted_part_id != "head" and _crafted_part_id != "arm" and _crafted_part_id != "hand":
 		return
 
 	for child in segment.get_children():
@@ -1383,8 +1408,9 @@ func _load_arm_outline(segment_id: StringName) -> Texture2D:
 	return _load_texture("%s/%s_outline.png" % [ARM_TEXTURE_DIR, segment_id])
 
 
-## Builds a procedurally-assembled body part (torso, chest) from a directory of
-## per-segment PNGs, mirroring the arm setup. Each segment is one draggable piece
+## Builds a procedurally-assembled body part (hand, stomach, chest) from a
+## directory of per-segment PNGs, mirroring the arm setup. Each segment is one
+## draggable piece
 ## with its "<id>_outline.png" loaded alongside. When `unified_outline` is true an
 ## OutlineLayer is inserted behind every slot so placed pieces' outlines render as
 ## one block behind all the base art (matching the authored Aseprite layering).
@@ -1559,8 +1585,10 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		_head_assembly.visible = part_id == "head"
 	if _arm_assembly != null:
 		_arm_assembly.visible = part_id == "arm"
-	if _torso_assembly != null:
-		_torso_assembly.visible = part_id == "torso"
+	if _hand_assembly != null:
+		_hand_assembly.visible = part_id == "hand"
+	if _stomach_assembly != null:
+		_stomach_assembly.visible = part_id == "stomach"
 	if _chest_assembly != null:
 		_chest_assembly.visible = part_id == "chest"
 
@@ -1573,8 +1601,10 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		for id in ARM_SEGMENT_IDS:
 			if _assembly_slots.has(id):
 				_active_assembly_slot_ids.append(id)
-	elif part_id == "torso":
-		_active_assembly_slot_ids.assign(_torso_assembly_slot_ids)
+	elif part_id == "hand":
+		_active_assembly_slot_ids.assign(_hand_assembly_slot_ids)
+	elif part_id == "stomach":
+		_active_assembly_slot_ids.assign(_stomach_assembly_slot_ids)
 	elif part_id == "chest":
 		_active_assembly_slot_ids.assign(_chest_assembly_slot_ids)
 	elif part_id == "leg":
