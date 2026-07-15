@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dgj4orchkkxl6"
-path="res://.godot/imported/boob_cover.png-56b58be415a1d6b954334f418e86b7b2.ctex"
+path="res://.godot/imported/chest_cover.png-9f87ce7b9a0bde9ab4995dd70cb13ba4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/robot/personalitytest/boob_cover.png"
-dest_files=["res://.godot/imported/boob_cover.png-56b58be415a1d6b954334f418e86b7b2.ctex"]
+source_file="res://assets/textures/characters/robot/personalitytest/chest_cover.png"
+dest_files=["res://.godot/imported/chest_cover.png-9f87ce7b9a0bde9ab4995dd70cb13ba4.ctex"]
 
 [params]
 

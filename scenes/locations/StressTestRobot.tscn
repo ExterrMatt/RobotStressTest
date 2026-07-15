@@ -15,7 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://c7v7w41qtcsis" path="res://assets/textures/characters/robot/stresstest/legs/right_leg_up_shin.png" id="8_right_leg_up_shin"]
 [ext_resource type="Texture2D" uid="uid://nkkq7dx3k1vj" path="res://assets/textures/characters/robot/stresstest/torso/big_coconuts.png" id="9_big_coconuts"]
 [ext_resource type="Texture2D" uid="uid://bdbmnhqa4ihdi" path="res://assets/textures/characters/robot/stresstest/legs/left_leg_up_thigh.png" id="9_left_leg_up_thigh"]
-[ext_resource type="Texture2D" uid="uid://bcwbycge67oxy" path="res://assets/textures/characters/robot/stresstest/torso/nipples.png" id="9_nipples"]
+[ext_resource type="Texture2D" uid="uid://bcwbycge67oxy" path="res://assets/textures/characters/robot/stresstest/torso/pepperonis.png" id="9_pepperonis"]
 [ext_resource type="Texture2D" uid="uid://xb2lrxbotlhf" path="res://assets/textures/characters/robot/stresstest/legs/left_leg_up_shin.png" id="10_left_leg_up_shin"]
 [ext_resource type="Texture2D" uid="uid://irx4u0huje1d" path="res://assets/textures/characters/robot/stresstest/head/neck.png" id="10_neck"]
 [ext_resource type="Texture2D" uid="uid://8jdtyfjuk6hf" path="res://assets/textures/characters/robot/stresstest/torso/torso_crunch.png" id="10_torso_crunch"]
@@ -31,7 +31,7 @@
 [ext_resource type="Texture2D" uid="uid://d1f54h5u1n5xv" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_open_fingers.png" id="20_right_open_fingers"]
 [ext_resource type="Texture2D" uid="uid://bxesi2kdev4ne" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_flexed_fingers.png" id="21_left_flexed_fingers"]
 [ext_resource type="Texture2D" uid="uid://5sgu57censnv" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_flexed_fingers.png" id="22_right_flexed_fingers"]
-[ext_resource type="Texture2D" uid="uid://dnrw61gxy34nv" path="res://assets/textures/characters/robot/stresstest/boob_cover.png" id="23_boob_cover"]
+[ext_resource type="Texture2D" uid="uid://dnrw61gxy34nv" path="res://assets/textures/characters/robot/stresstest/chest_cover.png" id="23_chest_cover"]
 [ext_resource type="Texture2D" uid="uid://cpksrgmqudgb6" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png" id="24_mouth_b_intro"]
 [ext_resource type="Texture2D" uid="uid://belnxxgc3k8qa" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png" id="25_mouth_b_loop_medium"]
 [ext_resource type="Texture2D" uid="uid://c71qt80w3mb1h" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/vegetable_mssion_intro.png" id="26_vegetable_mission_intro"]
@@ -193,7 +193,7 @@ mouse_filter = 2
 texture = ExtResource("9_big_coconuts")
 expand_mode = 1
 
-[node name="Nipples" type="TextureRect" parent="Torso" unique_id=266794297]
+[node name="Pepperonis" type="TextureRect" parent="Torso" unique_id=266794297]
 z_index = 3
 layout_mode = 1
 anchors_preset = 15
@@ -202,7 +202,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("9_nipples")
+texture = ExtResource("9_pepperonis")
 expand_mode = 1
 
 [node name="TorsoCrunch" type="TextureRect" parent="Torso" unique_id=830633776]
@@ -997,7 +997,7 @@ centered = false
 region_enabled = true
 region_rect = Rect2(2750, 0, 250, 350)
 
-[node name="BoobCover" type="TextureRect" parent="." unique_id=931354332]
+[node name="ChestCover" type="TextureRect" parent="." unique_id=931354332]
 z_index = 4
 layout_mode = 1
 anchors_preset = 15
@@ -1006,7 +1006,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("23_boob_cover")
+texture = ExtResource("23_chest_cover")
 expand_mode = 1
 
 [node name="HeadHoverBox" type="Control" parent="." unique_id=1361736466]
@@ -1059,13 +1059,13 @@ priority = 20
 click_action = 1
 hover_description = "Raise Legs"
 hidden_while_active_image_paths = Array[NodePath]([NodePath("Legs/RightLeg"), NodePath("Legs/LeftLeg"), NodePath("Legs/RightLegSlightlyOut"), NodePath("Legs/LeftLegSlightlyOut"), NodePath("Legs/RightLegUpThigh"), NodePath("Legs/RightLegUpShin"), NodePath("Legs/LeftLegUpThigh"), NodePath("Legs/LeftLegUpShin"), NodePath("Torso/TorsoBase"), NodePath("AnimationLayers/Chest"), NodePath("AnimationLayers/ChestDetailsLeft"), NodePath("AnimationLayers/ChestDetailsRight"), NodePath("AnimationLayers/ChestOutlineLeft"), NodePath("AnimationLayers/ChestOutlineRight"), NodePath("AnimationLayers/MouthBLoopMedium/Chest"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineRight")])
-shown_while_active_image_paths = Array[NodePath]([NodePath("Torso/Chest"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Nipples")])
+shown_while_active_image_paths = Array[NodePath]([NodePath("Torso/Chest"), NodePath("Torso/BigCoconuts"), NodePath("Torso/Pepperonis")])
 intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionIntro/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionIntro/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionIntro/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionIntro/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/Vegetable")])
 loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionLoopMedium/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Vegetable"), NodePath("AnimationLayers/VegetableMissionLoopMedium/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionLoopMedium/VegetableFolds")])
 intro_frame_count = 16
 loop_frame_count = 8
 
-[node name="BoobCoverHoverBox" type="Control" parent="." unique_id=1489784484]
+[node name="ChestCoverHoverBox" type="Control" parent="." unique_id=1489784484]
 z_index = 1000
 z_as_relative = false
 anchors_preset = 0
@@ -1078,7 +1078,7 @@ mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 30
 hover_description = "Remove Chest Cover"
-hidden_while_active_image_paths = Array[NodePath]([NodePath("BoobCover")])
+hidden_while_active_image_paths = Array[NodePath]([NodePath("ChestCover")])
 
 [node name="LeftShoulderHoverBox" type="Control" parent="." unique_id=1489784485]
 z_index = 1000

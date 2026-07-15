@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnrw61gxy34nv"
-path="res://.godot/imported/boob_cover.png-ec77a9c265291e260a62d4aa2083080a.ctex"
+uid="uid://bcwbycge67oxy"
+path="res://.godot/imported/pepperonis.png-b0e4cd943d8c878c7ace5c9ebf658c19.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/robot/stresstest/boob_cover.png"
-dest_files=["res://.godot/imported/boob_cover.png-ec77a9c265291e260a62d4aa2083080a.ctex"]
+source_file="res://assets/textures/characters/robot/stresstest/torso/pepperonis.png"
+dest_files=["res://.godot/imported/pepperonis.png-b0e4cd943d8c878c7ace5c9ebf658c19.ctex"]
 
 [params]
 

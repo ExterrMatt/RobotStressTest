@@ -82,7 +82,7 @@ extends Control
 	^"Torso/TorsoBase",
 	^"Torso/Chest",
 	^"Torso/BigCoconuts",
-	^"Torso/Nipples",
+	^"Torso/Pepperonis",
 	^"Torso/TorsoCrunch",
 	^"AnimationLayers/Chest",
 	^"AnimationLayers/MouthBLoopMedium/Chest",
@@ -114,7 +114,7 @@ extends Control
 @export var hidden_shadow_paths: Array[NodePath] = [
 	^"HeadHoverBox",
 	^"PelvisHoverBox",
-	^"BoobCoverHoverBox",
+	^"ChestCoverHoverBox",
 ]
 
 var _shadow_material: ShaderMaterial

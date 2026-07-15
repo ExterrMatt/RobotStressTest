@@ -8,9 +8,9 @@
 [ext_resource type="Texture2D" uid="uid://c86k127dlo2am" path="res://assets/textures/characters/robot/personalitytest/left foot.png" id="6_leftfoot"]
 [ext_resource type="Texture2D" uid="uid://oqu6u838c38a" path="res://assets/textures/characters/robot/personalitytest/right_foot.png" id="7_rightfoot"]
 [ext_resource type="Texture2D" uid="uid://r4xes7opji10" path="res://assets/textures/characters/robot/personalitytest/boobs.png" id="8_boobs"]
-[ext_resource type="Texture2D" uid="uid://bcuxbytivviov" path="res://assets/textures/characters/robot/personalitytest/nipples.png" id="9_nipples"]
+[ext_resource type="Texture2D" uid="uid://bcuxbytivviov" path="res://assets/textures/characters/robot/personalitytest/pepperonis.png" id="9_pepperonis"]
 [ext_resource type="Texture2D" uid="uid://mxms36i6fk0n" path="res://assets/textures/characters/robot/personalitytest/body.png" id="10_body"]
-[ext_resource type="Texture2D" uid="uid://dgj4orchkkxl6" path="res://assets/textures/characters/robot/personalitytest/boob_cover.png" id="11_boobcover"]
+[ext_resource type="Texture2D" uid="uid://dgj4orchkkxl6" path="res://assets/textures/characters/robot/personalitytest/chest_cover.png" id="11_chestcover"]
 [ext_resource type="Texture2D" uid="uid://dtvgpcx1fcekx" path="res://assets/textures/characters/robot/personalitytest/left_arm.png" id="12_leftarm"]
 [ext_resource type="Texture2D" uid="uid://bfru2s2nv4oqe" path="res://assets/textures/characters/robot/personalitytest/right_arm.png" id="13_rightarm"]
 [ext_resource type="Texture2D" uid="uid://cy3nlwdmpbv4g" path="res://assets/textures/characters/robot/personalitytest/neck.png" id="14_neck"]
@@ -156,7 +156,7 @@ mouse_filter = 2
 texture = ExtResource("8_boobs")
 expand_mode = 1
 
-[node name="Nipples" type="TextureRect" parent="." unique_id=883653380]
+[node name="Pepperonis" type="TextureRect" parent="." unique_id=883653380]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -164,10 +164,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("9_nipples")
+texture = ExtResource("9_pepperonis")
 expand_mode = 1
 
-[node name="BoobCover" type="TextureRect" parent="." unique_id=1098004856]
+[node name="ChestCover" type="TextureRect" parent="." unique_id=1098004856]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -175,7 +175,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("11_boobcover")
+texture = ExtResource("11_chestcover")
 expand_mode = 1
 
 [node name="Neck" type="TextureRect" parent="." unique_id=587239954]

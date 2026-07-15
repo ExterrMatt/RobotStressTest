@@ -123,7 +123,7 @@ const HAIR_LOOP_ANIM_OPTIONS: Array[NodePath] = [
 ]
 
 # The old single "torso" part is split into two independently-gated parts:
-# the chest (chest plates/outlines/details, coconuts, nipples, boob cover) and
+# the chest (chest plates/outlines/details, coconuts, pepperonis, chest cover) and
 # the stomach (the base body silhouette, crunch/abs, neck backing).
 const CHEST_PART_PATHS: Array[NodePath] = [
 	^"Torso/Chest",
@@ -132,8 +132,8 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"Torso/ChestOutlineLeft",
 	^"Torso/ChestOutlineRight",
 	^"Torso/BigCoconuts",
-	^"Torso/Nipples",
-	^"BoobCover",
+	^"Torso/Pepperonis",
+	^"ChestCover",
 	^"AnimationLayers/Chest",
 	^"AnimationLayers/ChestDetailsLeft",
 	^"AnimationLayers/ChestDetailsRight",
@@ -248,7 +248,7 @@ const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"BoobCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox", ^"LeftLegHoverBox", ^"RightLegHoverBox"]:
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"ChestCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox", ^"LeftLegHoverBox", ^"RightLegHoverBox"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()
@@ -540,8 +540,8 @@ func hovered_hover_box_description() -> String:
 				return "Animate Legs"
 			return "Lower Legs"
 		return "Lower Legs" if _is_box_effect_active(box) else "Raise Legs"
-	if String(box.name) == "BoobCoverHoverBox":
-		return "Remove Chest Cover" if _is_boob_cover_visible() else "Equip Chest Cover"
+	if String(box.name) == "ChestCoverHoverBox":
+		return "Remove Chest Cover" if _is_chest_cover_visible() else "Equip Chest Cover"
 	if _is_shoulder_hover_box(box):
 		return "Equip Shoulder Pad" if _is_box_effect_active(box) else "Remove Shoulder Pad"
 	if _is_leg_pose_hover_box(box):
@@ -1221,7 +1221,7 @@ func _is_hover_box_available(box: Control) -> bool:
 	# on the chest, so they need a chest.
 	if box.name == "PelvisHoverBox":
 		return _robot_part_count("stomach") >= 1
-	if box.name == "BoobCoverHoverBox" or _is_shoulder_hover_box(box):
+	if box.name == "ChestCoverHoverBox" or _is_shoulder_hover_box(box):
 		return _robot_part_count("chest") >= 1
 	if box.name == LEFT_HAND_HOVER_BOX_NAME:
 		return _robot_part_count("hand") >= 1
@@ -1355,8 +1355,8 @@ func _is_named_box_effect_active(box_name: String) -> bool:
 	return box != null and _is_box_effect_active(box)
 
 
-func _is_boob_cover_visible() -> bool:
-	var cover := get_node_or_null(^"BoobCover") as CanvasItem
+func _is_chest_cover_visible() -> bool:
+	var cover := get_node_or_null(^"ChestCover") as CanvasItem
 	return cover != null and cover.visible
 
 
