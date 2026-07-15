@@ -969,6 +969,7 @@ func _build_settings_panel() -> Control:
 	content.add_child(_wrap_in_gold_panel(_build_option_row("DISPLAY MODE", \
 		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], _window_mode, _on_window_mode_selected)))
 	content.add_child(_wrap_in_gold_panel(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed)))
+	content.add_child(_wrap_in_gold_panel(_build_slider_row("VOLUME", _current_volume_value(), _on_volume_changed)))
 	content.add_child(_wrap_in_gold_panel(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled)))
 	content.add_child(_wrap_in_gold_panel(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled)))
 
@@ -1096,6 +1097,17 @@ func _on_brightness_changed(value: float) -> void:
 	_apply_brightness()
 	if show_flicker:
 		_start_flicker()
+
+
+func _current_volume_value() -> float:
+	var settings := get_node_or_null("/root/GameState")
+	return settings.volume_value if settings else 100.0
+
+
+func _on_volume_changed(value: float) -> void:
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		settings.volume_value = value
 
 
 func _on_scanlines_toggled(enabled: bool) -> void:

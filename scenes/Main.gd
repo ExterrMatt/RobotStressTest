@@ -80,8 +80,8 @@ const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 ## or work run: a chance the drone stops the player before the day advances. It
 ## is loaded like a normal dialogue location (its own LocationData below), so it
 ## wipes in from the previous scene and out to the bedroom.
-## NOTE: chance is TEMPORARILY 1.0 (100%) for testing — dial back later.
-const POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE: float = 1.0
+## Only a small fraction of school/work runs are interrupted by the drone.
+const POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE: float = 0.05
 const POST_ACTIVITY_DRONE_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
 const DRONE_ENCOUNTER_LOCATION: LocationData = preload("res://resources/locations/drone_encounter.tres")
 const DRONE_ENCOUNTER_LOCATION_ID: StringName = &"drone_encounter"
@@ -537,22 +537,23 @@ func _open_runtime_settings_overlay() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	back.add_child(center)
 
+	# Double golden border to match the main-menu SETTINGS panel: an
+	# OrnateFrameOuter shell (dark fill + gold border) wrapping an
+	# OrnateFrameInner (inner gold hairline). The inner frame already carries
+	# generous content margins, so the VBox is parented straight into it.
 	var panel := PanelContainer.new()
-	panel.theme_type_variation = &"HUDPanel"
+	panel.theme_type_variation = &"OrnateFrameOuter"
 	panel.custom_minimum_size = Vector2(560, 0)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	center.add_child(panel)
 
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 28)
-	margin.add_theme_constant_override("margin_top", 24)
-	margin.add_theme_constant_override("margin_right", 28)
-	margin.add_theme_constant_override("margin_bottom", 24)
-	panel.add_child(margin)
+	var inner_frame := PanelContainer.new()
+	inner_frame.theme_type_variation = &"OrnateFrameInner"
+	panel.add_child(inner_frame)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)
-	margin.add_child(vbox)
+	inner_frame.add_child(vbox)
 
 	var title := Label.new()
 	title.text = "SETTINGS"
@@ -561,23 +562,39 @@ func _open_runtime_settings_overlay() -> void:
 	# Display mode is a player-facing comfort setting, not a debug toggle, so it
 	# belongs in the mid-game menu just like it does in the main menu. (DEBUG MODE
 	# is deliberately kept out of the runtime menu so it can't be toggled mid-run.)
-	vbox.add_child(_build_runtime_option_row("DISPLAY MODE", \
-		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], GameState.window_mode, _on_runtime_window_mode_selected))
-	vbox.add_child(_build_runtime_slider_row("BRIGHTNESS", GameState.brightness_value, _on_runtime_brightness_changed))
-	vbox.add_child(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled))
+	# Each row gets its own single golden border, mirroring the main menu.
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_option_row("DISPLAY MODE", \
+		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], GameState.window_mode, _on_runtime_window_mode_selected)))
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("BRIGHTNESS", GameState.brightness_value, _on_runtime_brightness_changed)))
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("VOLUME", GameState.volume_value, _on_runtime_volume_changed)))
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled)))
 
 	var button_row := HBoxContainer.new()
 	button_row.alignment = BoxContainer.ALIGNMENT_END
 	button_row.add_theme_constant_override("separation", 12)
 	var close_btn := Button.new()
 	close_btn.text = "CLOSE"
+	# Gold-bordered buttons to match the LEAVE / END buttons used across the game.
+	close_btn.theme_type_variation = &"GoldHudButton"
 	close_btn.pressed.connect(_close_runtime_settings_overlay)
 	button_row.add_child(close_btn)
 	var quit_btn := Button.new()
 	quit_btn.text = "QUIT"
+	quit_btn.theme_type_variation = &"GoldHudButton"
 	quit_btn.pressed.connect(_quit_game)
 	button_row.add_child(quit_btn)
 	vbox.add_child(button_row)
+
+
+## Wrap a runtime settings control in a single-gold-border panel so each row
+## reads as its own framed element inside the double-bordered settings shell,
+## exactly like the main-menu settings panel.
+func _wrap_runtime_setting_in_gold_panel(inner: Control) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"GoldPanel"
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_child(inner)
+	return panel
 
 
 func _close_runtime_settings_overlay() -> void:
@@ -637,6 +654,10 @@ func _build_runtime_option_row(label_text: String, options: Array, selected_inde
 
 func _on_runtime_brightness_changed(value: float) -> void:
 	GameState.brightness_value = value
+
+
+func _on_runtime_volume_changed(value: float) -> void:
+	GameState.volume_value = value
 
 
 func _on_runtime_scanlines_toggled(enabled: bool) -> void:
@@ -1162,7 +1183,7 @@ func _refresh_hud() -> void:
 func _refresh_bedroom_pills() -> void:
 	var phase_name := DayCycle.phase_name(GameState.phase).to_upper()
 	if _bedroom_day_label != null:
-		_bedroom_day_label.text = "DAY %02d" % GameState.day
+		_bedroom_day_label.text = "DAY %d" % GameState.day
 	if _bedroom_phase_label != null:
 		_bedroom_phase_label.text = phase_name
 	if _bedroom_money_label != null:

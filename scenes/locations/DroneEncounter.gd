@@ -35,8 +35,32 @@ const LIGHT_PHASE_2: float = 0.2
 ## 256x192. We then scale that window to fill the scene image top-to-bottom
 ## (like the Ms. Vey portrait), keeping aspect, anchored centre-bottom.
 const DRONE_CROP_RECT: Rect2 = Rect2(0.0, 64.0, 256.0, 192.0)
-## Drone height as a fraction of the scene-image height (1.0 = fills top to bottom).
-const DRONE_FILL_SCALE: float = 1.0
+
+# --- drone placement (editor-tweakable) --------------------------------------
+# Select the DroneEncounter root in the scene and edit these in the Inspector to
+# move and resize the drone over the framed scene image, the same way the
+# StressTest scene exposes its own drone. The defaults reproduce the original
+# centre-bottom, full-height placement, so leaving them alone changes nothing.
+@export_group("Drone Placement")
+## Drone height as a fraction of the scene-image height (1.0 = fills top to
+## bottom). The width follows from the art's 256x192 aspect, so this is the
+## drone's overall size dial.
+@export_range(0.1, 3.0, 0.01) var drone_scale: float = 1.0:
+	set(value):
+		drone_scale = value
+		_layout_drone()
+## Where inside the scene image the drone is anchored, as fractions of the image
+## (0,0 = top-left, 1,1 = bottom-right). The default (0.5, 1.0) pins the drone
+## centre-bottom.
+@export var drone_anchor: Vector2 = Vector2(0.5, 1.0):
+	set(value):
+		drone_anchor = value
+		_layout_drone()
+## Extra pixel nudge applied after the fractional placement (post-scale).
+@export var drone_offset: Vector2 = Vector2.ZERO:
+	set(value):
+		drone_offset = value
+		_layout_drone()
 
 # Suspicion thresholds that colour the drone's clean-scan sign-off line.
 const SUSPICION_CRIMINAL: int = 50
@@ -146,9 +170,10 @@ func _layout_drone() -> void:
 	var sz: Vector2 = _overlay_root.size
 	if sz.x <= 0.0 or sz.y <= 0.0:
 		return
-	var h: float = sz.y * DRONE_FILL_SCALE
+	var h: float = sz.y * drone_scale
 	var w: float = h * (DRONE_CROP_RECT.size.x / DRONE_CROP_RECT.size.y)
-	_drone_stage.position = Vector2((sz.x - w) * 0.5, sz.y - h)
+	# Anchor point 0..1 maps onto the free space so 0.5,1.0 == centre-bottom.
+	_drone_stage.position = Vector2((sz.x - w) * drone_anchor.x, (sz.y - h) * drone_anchor.y) + drone_offset
 	_drone_stage.size = Vector2(w, h)
 
 
@@ -172,6 +197,9 @@ func _start() -> void:
 	if stole:
 		GameState.drone_ever_caught = true
 		GameState.drone_caught_last_inspection = true
+		# Being flagged as a criminal is a special occasion: it permanently
+		# raises the suspicion floor by 5 and adds 15 temporary suspicion on top.
+		GameState.add_suspicion(15, 5)
 	else:
 		GameState.drone_caught_last_inspection = false
 

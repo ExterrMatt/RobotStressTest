@@ -282,6 +282,12 @@ border_color = Color(0.353, 0.29, 0.149, 1)
 [sub_resource type="StyleBoxFlat" id="sb_divider"]
 bg_color = Color(0.725, 0.604, 0.306, 1)
 
+[sub_resource type="StyleBoxEmpty" id="sb_toggle_clear"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
 [resource]
 default_font = ExtResource("1_rjgu6")
 default_font_size = 24
@@ -296,6 +302,18 @@ Button/styles/focus = SubResource("sb_btn_focus")
 Button/styles/hover = SubResource("sb_btn_hover")
 Button/styles/normal = SubResource("sb_btn_normal")
 Button/styles/pressed = SubResource("sb_btn_pressed")
+CheckButton/colors/font_color = Color(0.941, 0.894, 0.753, 1)
+CheckButton/colors/font_hover_color = Color(1, 1, 1, 1)
+CheckButton/colors/font_pressed_color = Color(1, 1, 1, 1)
+CheckButton/colors/icon_hover_color = Color(0.91, 0.784, 0.471, 1)
+CheckButton/colors/icon_hover_pressed_color = Color(0.941, 0.831, 0.549, 1)
+CheckButton/colors/icon_normal_color = Color(0.725, 0.604, 0.306, 1)
+CheckButton/colors/icon_pressed_color = Color(0.941, 0.831, 0.549, 1)
+CheckButton/styles/disabled = SubResource("sb_toggle_clear")
+CheckButton/styles/focus = SubResource("sb_gold_btn_focus")
+CheckButton/styles/hover = SubResource("sb_toggle_clear")
+CheckButton/styles/normal = SubResource("sb_toggle_clear")
+CheckButton/styles/pressed = SubResource("sb_toggle_clear")
 ChoiceButton/base_type = &"Button"
 ChoiceButton/styles/disabled = SubResource("sb_choice_normal")
 ChoiceButton/styles/focus = SubResource("sb_choice_focus")
@@ -332,6 +350,16 @@ Label/font_sizes/font_size = 22
 Narration/base_type = &"Label"
 Narration/colors/font_color = Color(0.953, 0.925, 0.847, 1)
 Narration/font_sizes/font_size = 40
+OptionButton/colors/font_color = Color(0.941, 0.894, 0.753, 1)
+OptionButton/colors/font_focus_color = Color(1, 1, 1, 1)
+OptionButton/colors/font_hover_color = Color(1, 1, 1, 1)
+OptionButton/colors/font_pressed_color = Color(1, 1, 1, 1)
+OptionButton/font_sizes/font_size = 24
+OptionButton/styles/disabled = SubResource("sb_gold_btn_disabled")
+OptionButton/styles/focus = SubResource("sb_gold_btn_focus")
+OptionButton/styles/hover = SubResource("sb_gold_btn_hover")
+OptionButton/styles/normal = SubResource("sb_gold_btn_normal")
+OptionButton/styles/pressed = SubResource("sb_gold_btn_pressed")
 OrnateFrameInner/base_type = &"PanelContainer"
 OrnateFrameInner/styles/panel = SubResource("sb_ornate_inner")
 OrnateFrameInnerCompact/base_type = &"PanelContainer"

@@ -14,6 +14,7 @@ signal day_changed(new_day: int)
 signal phase_changed(new_phase: int)
 signal arrested()
 signal brightness_changed(new_value: float)
+signal volume_changed(new_value: float)
 signal scanlines_enabled_changed(enabled: bool)
 signal debug_mode_changed(enabled: bool)
 ## Emitted when the display/window mode setting changes. WindowManager listens
@@ -54,6 +55,7 @@ var day: int:
 var _phase: int = 0
 var _money: int = 0
 var _brightness_value: float = 50.0
+var _volume_value: float = 100.0
 var _scanlines_enabled: bool = true
 var _debug_mode_enabled: bool = false
 var _window_mode: int = WindowMode.WINDOWED
@@ -97,6 +99,18 @@ var brightness_value: float:
 		_brightness_value = clamped
 		brightness_changed.emit(_brightness_value)
 
+## Master audio volume as a 0-100 percentage. Applied to the master audio bus
+## immediately on change (and on startup) so the setting takes effect everywhere.
+var volume_value: float:
+	get: return _volume_value
+	set(value):
+		var clamped: float = clampf(value, 0.0, 100.0)
+		if is_equal_approx(clamped, _volume_value):
+			return
+		_volume_value = clamped
+		_apply_volume()
+		volume_changed.emit(_volume_value)
+
 var scanlines_enabled: bool:
 	get: return _scanlines_enabled
 	set(value):
@@ -122,7 +136,14 @@ var window_mode: int:
 		_window_mode = clamped
 		window_mode_changed.emit(_window_mode)
 
-var _suspicion: int = 0
+# Suspicion is tracked in two pools whose sum is the value shown to the player.
+#   * permanent — a floor the total can never drop below. Only special events
+#     raise it (e.g. the patrol drone flagging you as a criminal); it is never
+#     lost.
+#   * temporary — the ordinary, losable part. add_suspicion() adds here by
+#     default, and reductions only ever eat into this pool.
+var _suspicion_permanent: int = 0
+var _suspicion_temp: int = 0
 var _anger: int = 0
 
 # --- robot config ---
@@ -172,18 +193,32 @@ var purchased_today: Array[String] = []
 
 
 func _ready() -> void:
+	# Apply the persisted audio volume up front so startup sounds honour it.
+	_apply_volume()
 	# Emit initial values so any listeners attached at startup get a value.
 	# Deferred so listeners in other autoloads / Main have time to connect.
 	call_deferred("_emit_initial_state")
 
 
+## Push the current volume onto the master audio bus. 0% fully mutes the bus;
+## anything above maps linearly (0-1) to decibels.
+func _apply_volume() -> void:
+	var master_bus: int = 0
+	if _volume_value <= 0.0:
+		AudioServer.set_bus_mute(master_bus, true)
+		return
+	AudioServer.set_bus_mute(master_bus, false)
+	AudioServer.set_bus_volume_db(master_bus, linear_to_db(_volume_value / 100.0))
+
+
 func _emit_initial_state() -> void:
 	money_changed.emit(_money)
-	suspicion_changed.emit(_suspicion)
+	suspicion_changed.emit(_total_suspicion())
 	anger_changed.emit(_anger)
 	day_changed.emit(_day)
 	phase_changed.emit(_phase)
 	brightness_changed.emit(_brightness_value)
+	volume_changed.emit(_volume_value)
 	scanlines_enabled_changed.emit(_scanlines_enabled)
 	debug_mode_changed.emit(_debug_mode_enabled)
 	window_mode_changed.emit(_window_mode)
@@ -196,7 +231,8 @@ func reset_for_new_game() -> void:
 	_day = 1
 	_phase = 0
 	_money = 0
-	_suspicion = 0
+	_suspicion_permanent = 0
+	_suspicion_temp = 0
 	_anger = 0
 	player_name = ""
 	equipped_limbs = 0
@@ -240,20 +276,47 @@ func spend_money(cost: int) -> bool:
 
 # --- suspicion ---
 
+## Total suspicion shown to the player: permanent floor plus temporary, clamped.
 var suspicion: int:
-	get: return _suspicion
+	get: return _total_suspicion()
+	# Setting the total directly adjusts the temporary pool, leaving the
+	# permanent floor untouched. Used by debug helpers.
 	set(value):
-		var clamped: int = clampi(value, 0, MAX_SUSPICION)
-		if clamped == _suspicion:
-			return
-		_suspicion = clamped
-		suspicion_changed.emit(_suspicion)
-		if _suspicion >= ARREST_THRESHOLD:
-			arrested.emit()
+		var old_total: int = _total_suspicion()
+		var target: int = clampi(value, 0, MAX_SUSPICION)
+		_suspicion_temp = maxi(0, target - _suspicion_permanent)
+		_notify_suspicion_changed(old_total)
+
+## The permanent (unlosable) portion of suspicion.
+var suspicion_permanent: int:
+	get: return _suspicion_permanent
 
 
-func add_suspicion(delta: int) -> void:
-	suspicion = _suspicion + delta
+func _total_suspicion() -> int:
+	return clampi(_suspicion_permanent + _suspicion_temp, 0, MAX_SUSPICION)
+
+
+func _notify_suspicion_changed(old_total: int) -> void:
+	var new_total: int = _total_suspicion()
+	if new_total == old_total:
+		return
+	suspicion_changed.emit(new_total)
+	if new_total >= ARREST_THRESHOLD:
+		arrested.emit()
+
+
+## Raise (or lower) suspicion. `amount` goes to the temporary pool by default —
+## it can be negative to lose temporary suspicion, but never drops the total
+## below the permanent floor. Pass a non-zero `permanent` for special occasions
+## that also raise the permanent floor, which can never be lost again.
+func add_suspicion(amount: int, permanent: int = 0) -> void:
+	var old_total: int = _total_suspicion()
+	if permanent != 0:
+		_suspicion_permanent = clampi(_suspicion_permanent + permanent, 0, MAX_SUSPICION)
+	# Keep the temp pool from hiding slack past the display cap, so reductions
+	# take effect immediately instead of burning through invisible headroom.
+	_suspicion_temp = clampi(_suspicion_temp + amount, 0, MAX_SUSPICION - _suspicion_permanent)
+	_notify_suspicion_changed(old_total)
 
 
 # --- anger ---
@@ -476,7 +539,9 @@ func to_dict() -> Dictionary:
 		"day": _day,
 		"phase": _phase,
 		"money": _money,
-		"suspicion": _suspicion,
+		"suspicion": _total_suspicion(),
+		"suspicion_permanent": _suspicion_permanent,
+		"suspicion_temp": _suspicion_temp,
 		"anger": _anger,
 		"equipped_limbs": equipped_limbs,
 		"robot_parts": robot_parts.duplicate(),
@@ -494,6 +559,7 @@ func to_dict() -> Dictionary:
 		"drone_caught_last_inspection": drone_caught_last_inspection,
 		"debug_mode_enabled": _debug_mode_enabled,
 		"window_mode": _window_mode,
+		"volume_value": _volume_value,
 	}
 
 
@@ -501,7 +567,10 @@ func from_dict(data: Dictionary) -> void:
 	_day = data.get("day", 1)
 	_phase = data.get("phase", 0)  # 0 = MORNING
 	_money = data.get("money", 0)
-	_suspicion = data.get("suspicion", 0)
+	# Newer saves store the split; older saves only had a single "suspicion"
+	# total, which is treated as entirely temporary (no permanent floor).
+	_suspicion_permanent = clampi(int(data.get("suspicion_permanent", 0)), 0, MAX_SUSPICION)
+	_suspicion_temp = maxi(0, int(data.get("suspicion_temp", data.get("suspicion", 0))))
 	_anger = data.get("anger", 0)
 	equipped_limbs = data.get("equipped_limbs", 0)
 	var loaded_parts: Dictionary = data.get("robot_parts", {}).duplicate()
@@ -539,4 +608,6 @@ func from_dict(data: Dictionary) -> void:
 	drone_caught_last_inspection = bool(data.get("drone_caught_last_inspection", false))
 	_debug_mode_enabled = bool(data.get("debug_mode_enabled", false))
 	_window_mode = clampi(int(data.get("window_mode", WindowMode.WINDOWED)), WindowMode.WINDOWED, WindowMode.FULLSCREEN)
+	_volume_value = clampf(float(data.get("volume_value", 100.0)), 0.0, 100.0)
+	_apply_volume()
 	_emit_initial_state()
