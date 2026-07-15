@@ -31,6 +31,10 @@ const TEXTURE_PATHS: Dictionary = {
 	"chest": "res://assets/textures/icons/chest.png",
 	"head": "res://assets/textures/icons/head.png",
 	"hand": "res://assets/textures/icons/hand.png",
+	# Cosmetic chest items — placeholder icons reuse the torso overlay art for now.
+	"big_coconuts": "res://assets/textures/characters/robot/stresstest/torso/big_coconuts.png",
+	"small_coconuts": "res://assets/textures/characters/robot/stresstest/torso/small_coconuts.png",
+	"chest_cover": "res://assets/textures/characters/robot/stresstest/chest_cover.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
@@ -63,6 +67,9 @@ const DISPLAY_NAMES: Dictionary = {
 	"chest": "Chest",
 	"head": "Head",
 	"hand": "Hand",
+	"big_coconuts": "Big Coconuts",
+	"small_coconuts": "Small Coconuts",
+	"chest_cover": "Chest Cover",
 	"screwdriver": "Screwdriver",
 	"crank": "Crank",
 	"electric_prod": "Taser",
@@ -175,6 +182,17 @@ func _collect_entries() -> Array:
 			"kind": "robot_part",
 		})
 
+	for id in GameState.COSMETIC_ITEM_IDS:
+		if GameState.get_cosmetic_item_count(String(id)) <= 0:
+			continue
+		out.append({
+			"id": id,
+			"name": _display_name(id),
+			"count": GameState.get_cosmetic_item_count(String(id)),
+			"texture": _load_texture_for(id),
+			"kind": "cosmetic_item",
+		})
+
 	for id in GameState.owned_tools:
 		if id in HIDDEN_TOOLS:
 			continue
@@ -213,6 +231,8 @@ func _debug_remove_entry(entry: Dictionary) -> void:
 				GameState.ingredients[id] = 0
 		"robot_part":
 			GameState.set_robot_part_count(id, 0)
+		"cosmetic_item":
+			GameState.set_cosmetic_item(id, 0)
 		"tool":
 			GameState.owned_tools.erase(id)
 			GameState.tool_counts.erase(id)
@@ -277,7 +297,8 @@ func _build_tile(entry: Dictionary) -> Panel:
 	# Hidden when count is 1 AND the entry is a tool (looks cleaner that way),
 	# but we still show "1" for ingredients in case the player has exactly one.
 	var count: int = int(entry.get("count", 1))
-	if count > 1 or String(entry.get("kind", "")) != "tool":
+	var kind: String = String(entry.get("kind", ""))
+	if count > 1 or (kind != "tool" and kind != "cosmetic_item"):
 		var badge := Label.new()
 		badge.text = str(count)
 		badge.anchor_left = 1.0
