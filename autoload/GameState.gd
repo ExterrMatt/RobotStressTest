@@ -182,13 +182,15 @@ var robot_parts: Dictionary = {
 ## Optional chest overlays the robot can wear. Unlike robot_parts these are
 ## purely cosmetic: they gate the matching chest-region sprites (static and in
 ## the leg/vegetable animation) but never affect part counts. Owning big
-## coconuts and the chest cover is the default look; small coconuts is an
-## alternative that starts unowned.
-const COSMETIC_ITEM_IDS: Array[String] = ["big_coconuts", "small_coconuts", "chest_cover"]
+## coconuts and the big chest cover is the default look; small coconuts is an
+## alternative that starts unowned. The big chest cover is contoured for big
+## coconuts specifically (a separate small chest cover is planned for the small
+## coconuts).
+const COSMETIC_ITEM_IDS: Array[String] = ["big_coconuts", "small_coconuts", "big_chest_cover"]
 const COSMETIC_ITEM_DEFAULTS: Dictionary = {
 	"big_coconuts": 1,
 	"small_coconuts": 0,
-	"chest_cover": 1,
+	"big_chest_cover": 1,
 }
 
 var cosmetic_items: Dictionary = COSMETIC_ITEM_DEFAULTS.duplicate()

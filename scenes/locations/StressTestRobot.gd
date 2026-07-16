@@ -276,14 +276,14 @@ const RIGHT_LEG_POSE_SLIGHTLY_OUT_PATHS: Array[NodePath] = [^"Legs/RightLegSligh
 const RIGHT_LEG_POSE_RAISED_PATHS: Array[NodePath] = [^"Legs/RightLegUpThigh", ^"Legs/RightLegUpShin"]
 
 ## Cosmetic chest overlays whose leg-animation columns must not play while the
-## chest cover is still equipped: the cover hides the chest, so the vegetables
-## painted onto the raised-leg animation would show through it otherwise.
+## big chest cover is still equipped. The cover is contoured for the big
+## coconuts, so those stay visible underneath it; only the overlays it is not
+## shaped for (small coconuts, pepperonis) are hidden so they don't clash with
+## the cover during the raised-leg animation.
 const CHEST_COVER_PATH: NodePath = ^"ChestCover"
 const CHEST_COVER_GATED_ANIM_PATHS: Array[NodePath] = [
-	^"AnimationLayers/VegetableMissionIntro/BigCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
-	^"AnimationLayers/VegetableMissionLoopMedium/BigCoconuts",
 	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionLoopMedium/Pepperonis",
 ]
@@ -624,7 +624,7 @@ func hovered_hover_box_description() -> String:
 			return "Lower Legs"
 		return "Lower Legs" if _is_box_effect_active(box) else "Raise Legs"
 	if String(box.name) == "ChestCoverHoverBox":
-		return "Remove Chest Cover" if _is_chest_cover_visible() else "Equip Chest Cover"
+		return "Remove Big Chest Cover" if _is_chest_cover_visible() else "Equip Big Chest Cover"
 	if _is_shoulder_hover_box(box):
 		return "Equip Shoulder Pad" if _is_box_effect_active(box) else "Remove Shoulder Pad"
 	if _is_leg_pose_hover_box(box):
@@ -1186,9 +1186,10 @@ func _set_paths_visible(resolved: Dictionary, paths: Array[NodePath], value: boo
 		resolved[path] = value
 
 
-## Keeps the cosmetic vegetable columns of the raised-leg animation from playing
-## while the chest cover is still equipped (visible). The cover conceals the
-## chest, so the coconuts/pepperonis painted onto the animation must stay hidden.
+## Hides the overlays the big chest cover is not shaped for (small coconuts,
+## pepperonis) while it is equipped (visible), so they don't clash with the cover
+## during the raised-leg animation. The big coconuts are contoured to the cover
+## and stay visible underneath it.
 func _apply_chest_cover_gated_animations(resolved: Dictionary) -> void:
 	if not bool(resolved.get(CHEST_COVER_PATH, false)):
 		return
@@ -1293,7 +1294,7 @@ func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 func _apply_cosmetic_item_availability_to_dictionary(resolved: Dictionary) -> void:
 	_apply_paths_available(resolved, BIG_COCONUTS_ITEM_PATHS, _cosmetic_item_owned("big_coconuts"))
 	_apply_paths_available(resolved, SMALL_COCONUTS_ITEM_PATHS, _cosmetic_item_owned("small_coconuts"))
-	_apply_paths_available(resolved, CHEST_COVER_ITEM_PATHS, _cosmetic_item_owned("chest_cover"))
+	_apply_paths_available(resolved, CHEST_COVER_ITEM_PATHS, _cosmetic_item_owned("big_chest_cover"))
 
 
 func _cosmetic_item_owned(id: String) -> bool:
@@ -1301,7 +1302,7 @@ func _cosmetic_item_owned(id: String) -> bool:
 	if state != null and state.has_method("has_cosmetic_item"):
 		return bool(state.call("has_cosmetic_item", id))
 	# Editor / no GameState: mirror the shipped defaults so the scene preview
-	# matches a fresh game (big coconuts + chest cover on, small coconuts off).
+	# matches a fresh game (big coconuts + big chest cover on, small coconuts off).
 	return id != "small_coconuts"
 
 

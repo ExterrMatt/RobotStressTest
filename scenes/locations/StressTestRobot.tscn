@@ -1162,7 +1162,7 @@ scale = Vector2(0.9, 0.74)
 mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 30
-hover_description = "Remove Chest Cover"
+hover_description = "Remove Big Chest Cover"
 hidden_while_active_image_paths = Array[NodePath]([NodePath("ChestCover")])
 
 [node name="LeftShoulderHoverBox" type="Control" parent="." unique_id=1489784485]
