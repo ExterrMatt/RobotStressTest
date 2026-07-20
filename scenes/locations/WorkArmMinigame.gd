@@ -33,8 +33,8 @@ const CONTAINER_BOTTOM_MARGIN: float = 72.0
 # (scale + rotation) when grabbed; the reverse plays when dropped back in a bin.
 const POSE_SCALE_OVERSHOOT: float = 0.06
 const POSE_ROT_OVERSHOOT_DEG: float = 5.0
-const POSE_ANIM_OUT: float = 0.18
-const POSE_ANIM_SETTLE: float = 0.10
+const POSE_ANIM_OUT: float = 0.12
+const POSE_ANIM_SETTLE: float = 0.08
 
 @onready var furniture: Control = $Furniture
 ## The assembled arm — an authored node with the arm's slots/pieces as children.
