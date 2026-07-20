@@ -36,12 +36,21 @@ func is_valid_drop(item: DraggableItem) -> bool:
 	return get_global_rect().has_point(item_center)
 
 
-func fill_with(item: DraggableItem) -> void:
+func fill_with(item: DraggableItem, on_settled: Callable = Callable()) -> void:
 	filled_by = item
-	item.place_in(self)
-	item.visible = false
-	if revealed_sprite:
-		revealed_sprite.visible = true
+	# Ease the shape from the drop point to the slot centre; only once it has
+	# settled do we hide it and light up the filled-state panel art. `on_settled`
+	# (optional) lets the caller react after the glide — e.g. announce completion.
+	var on_glide_done := func() -> void:
+		if filled_by != item:
+			return
+		item.visible = false
+		if revealed_sprite:
+			revealed_sprite.visible = true
+		queue_redraw()
+		if on_settled.is_valid():
+			on_settled.call()
+	item.animate_into(self, on_glide_done)
 	queue_redraw()
 
 

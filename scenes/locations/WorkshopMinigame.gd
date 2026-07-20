@@ -324,6 +324,9 @@ func _process(_delta: float) -> void:
 	# Force shadow drawer to redraw every frame so shadows follow smoothly while dragging
 	if is_instance_valid(_shadow_drawer):
 		_shadow_drawer.queue_redraw()
+	# Keep unified outlines (stomach/chest) tracking their pieces every frame so a
+	# placed piece's outline follows it while it eases into its slot.
+	_queue_unified_outline_redraw()
 	_sync_passenger_segments_to_active_drag()
 	_update_placement_hint_flash(_delta)
 	_update_easy_mode_offer(_delta)
@@ -1073,13 +1076,28 @@ func _sync_passenger_segments_to_active_drag() -> void:
 			passenger.position = master_pos + _passenger_offsets.get(passenger, Vector2.ZERO)
 
 
+## Ease-in-out glide from the drop point to the settled slot position when a
+## segment lands on its assembly goal (crafting-bin drops are handled elsewhere
+## and don't get this — they have no settled location).
+const SEGMENT_PLACE_DURATION: float = 0.18
+
+
 func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
 	if segment == null or slot == null:
 		return
 	_apply_socket_art_for_segment(segment, slot)
 	_clear_placed_part_outline(segment, slot)
+	# Remember where the piece is at release so we can ease it to its settled spot.
+	var from_global: Vector2 = segment.global_position
 	slot.accept_segment(segment)
-	segment.position = _placement_offset_for_slot(segment, slot)
+	var target_pos: Vector2 = _placement_offset_for_slot(segment, slot)
+	# Re-anchor to the drop location (converted into the slot's space) and tween
+	# to the settled offset. Segments carry no per-node scale/rotation here, so
+	# only the position needs to glide.
+	segment.global_position = from_global
+	var tween: Tween = segment.create_tween()
+	tween.tween_property(segment, "position", target_pos, SEGMENT_PLACE_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _apply_socket_art_for_segment(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:

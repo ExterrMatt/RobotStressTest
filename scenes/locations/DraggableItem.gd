@@ -25,6 +25,8 @@ class_name DraggableItem
 @export var item_id: StringName = &""
 
 const CENTER_ON_GRAB_DURATION: float = 0.05
+## Ease-in-out glide from the drop point to the slot centre on a valid drop.
+const PLACE_DURATION: float = 0.18
 
 ## Emitted when the player clicks-and-holds this item. The WorkInventory
 ## listens so it knows which item is currently being dragged.
@@ -47,6 +49,7 @@ var _dragging: bool = false
 ## center itself under the cursor.
 var _grab_offset: Vector2 = Vector2.ZERO
 var _grab_offset_tween: Tween = null
+var _place_tween: Tween = null
 
 
 func _ready() -> void:
@@ -101,6 +104,7 @@ func is_dragging() -> bool:
 func start_drag() -> void:
 	if _dragging:
 		return
+	_kill_place_tween()
 	_dragging = true
 	# Remember where on the sprite the player grabbed.
 	_grab_offset = get_local_mouse_position()
@@ -114,6 +118,7 @@ func snap_home() -> void:
 		return
 	_dragging = false
 	_kill_grab_offset_tween()
+	_kill_place_tween()
 	var target: Vector2 = _target_position_in(home_slot)
 	# Reparent under the home slot if we got moved during the drag.
 	if get_parent() != home_slot:
@@ -128,9 +133,43 @@ func snap_home() -> void:
 func place_in(slot: Control) -> void:
 	_dragging = false
 	_kill_grab_offset_tween()
+	_kill_place_tween()
 	if get_parent() != slot:
 		_reparent_keeping_global(slot)
 	position = _target_position_in(slot)
+
+
+## Ease the item from where it currently sits (the drop point) to the slot's
+## centre, then snap it home into the slot and fire `on_done`. We glide in our
+## own parent's space (scale 1, matching the drag) rather than reparenting into
+## the slot first — the drop slots are scaled, so parenting mid-glide would pop
+## the item's size. The final reparent happens once the item is hidden by
+## `on_done`, so that size change is never seen.
+func animate_into(slot: Control, on_done: Callable) -> void:
+	_dragging = false
+	_kill_grab_offset_tween()
+	_kill_place_tween()
+
+	var slot_center_global: Vector2 = slot.get_global_transform() * (slot.size * 0.5)
+	var target: Vector2 = slot_center_global - size * 0.5
+	var parent := get_parent() as Control
+	if parent != null:
+		target = parent.get_global_transform().affine_inverse() * slot_center_global - size * 0.5
+
+	_place_tween = create_tween()
+	_place_tween.tween_property(self, "position", target, PLACE_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var finish := func() -> void:
+		place_in(slot)
+		if on_done.is_valid():
+			on_done.call()
+	_place_tween.finished.connect(finish)
+
+
+func _kill_place_tween() -> void:
+	if _place_tween and _place_tween.is_valid():
+		_place_tween.kill()
+	_place_tween = null
 
 
 # --- Internals ------------------------------------------------------------

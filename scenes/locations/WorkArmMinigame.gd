@@ -35,6 +35,9 @@ const POSE_SCALE_OVERSHOOT: float = 0.06
 const POSE_ROT_OVERSHOOT_DEG: float = 5.0
 const POSE_ANIM_OUT: float = 0.12
 const POSE_ANIM_SETTLE: float = 0.08
+## Ease-in-out glide from the drop point to the settled slot position on a
+## successful placement.
+const PLACE_SETTLE_DURATION: float = 0.18
 
 @onready var furniture: Control = $Furniture
 ## The assembled arm — an authored node with the arm's slots/pieces as children.
@@ -134,8 +137,10 @@ func _handle_left_release(global_pos: Vector2) -> void:
 
 	var slot: WorkshopAssemblySlot = _best_segment_drop_target(seg, global_pos)
 	if slot != null:
+		# Completion is checked when the glide finishes (see the tween in
+		# _accept_segment_into_slot) so the final piece's ease is seen before the
+		# completion screen takes over.
 		_accept_segment_into_slot(seg, slot)
-		_refresh_complete()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -332,13 +337,28 @@ func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblyS
 		return
 	_kill_pose_tween(segment)
 	_clear_placed_part_outline(segment)
+	# Where the piece's centre is at the moment of release, so we can ease it from
+	# there to its settled slot position instead of snapping.
+	var from_center_global: Vector2 = segment.get_global_transform() * segment.pivot_offset
 	slot.accept_segment(segment)
 	# The slot lives under the scaled + rotated assembly, which now provides the
 	# arm's transform, so reset the loose-segment scale/rotation to avoid
 	# compounding it. (The grabbed piece already matched this pose, so no pop.)
 	segment.scale = Vector2.ONE
 	segment.rotation = 0.0
-	segment.position = segment.placement_offset
+	# Start from the drop location (in the slot's local space) and ease in/out to
+	# the settled placement offset. Scale/rotation are already correct, so only the
+	# position glides.
+	var slot_xform: Transform2D = slot.get_global_transform()
+	var start_pos: Vector2 = slot_xform.affine_inverse() * from_center_global - segment.pivot_offset
+	segment.position = start_pos
+	var tween: Tween = segment.create_tween()
+	tween.tween_property(segment, "position", segment.placement_offset, PLACE_SETTLE_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# Check for completion only once the piece has settled, so the last glide is
+	# seen before the completion screen.
+	tween.finished.connect(_refresh_complete)
+	_pose_tweens[segment] = tween
 
 
 ## Drop the pick-up-only outline once a piece is placed, keeping any outline that

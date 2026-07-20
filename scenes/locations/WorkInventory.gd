@@ -151,8 +151,9 @@ func _on_drag_released(item: DraggableItem, _release_pos: Vector2) -> void:
 	# Find the first drop slot that accepts this item and contains its center.
 	for slot in drop_slots:
 		if slot.is_valid_drop(item):
-			slot.fill_with(item)
-			slots_changed.emit(_filled_count())
+			# Announce the fill only after the shape has eased into the slot, so
+			# the completion beat waits for the final glide to finish.
+			slot.fill_with(item, func() -> void: slots_changed.emit(_filled_count()))
 			return
 	# No valid drop — fly home.
 	item.snap_home()
