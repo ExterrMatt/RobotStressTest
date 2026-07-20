@@ -1,6 +1,6 @@
-[gd_scene load_steps=15 format=3 uid="uid://c0warmminigame1"]
+[gd_scene format=3 uid="uid://df1d4156mubqo"]
 
-[ext_resource type="Script" path="res://scenes/locations/WorkArmMinigame.gd" id="1"]
+[ext_resource type="Script" uid="uid://c0veb3mmq1goq" path="res://scenes/locations/WorkArmMinigame.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://4sq4i7qirh41" path="res://assets/textures/icons/empty_table.png" id="2"]
 [ext_resource type="Script" uid="uid://cg01f011fwtyo" path="res://scenes/locations/WorkshopAssemblySlot.gd" id="3"]
 [ext_resource type="Script" uid="uid://48i7jx7w0l7j" path="res://scenes/locations/WorkshopPiece.gd" id="4"]
@@ -15,7 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://dhrbnpa5glwv1" path="res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_pad.png" id="13"]
 [ext_resource type="Texture2D" uid="uid://3vcvu5yyi6xy" path="res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_joint.png" id="14"]
 
-[node name="WorkArmMinigame" type="Control"]
+[node name="WorkArmMinigame" type="Control" unique_id=290501483]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,7 +25,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1")
 
-[node name="Furniture" type="Control" parent="."]
+[node name="Furniture" type="Control" parent="." unique_id=1991960389]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -34,7 +34,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="EmptyTable" type="TextureRect" parent="Furniture"]
+[node name="EmptyTable" type="TextureRect" parent="Furniture" unique_id=1175421940]
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 7
@@ -51,18 +51,20 @@ size_flags_horizontal = 4
 mouse_filter = 2
 texture = ExtResource("2")
 
-[node name="ArmAssembly" type="Control" parent="Furniture"]
+[node name="ArmAssembly" type="Control" parent="Furniture" unique_id=1538436983]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 1
 anchors_preset = 0
-offset_left = 294.0
-offset_top = 208.0
-offset_right = 644.0
-offset_bottom = 558.0
+offset_left = 329.00006
+offset_top = 387.99997
+offset_right = 679.00006
+offset_bottom = 738.0
+rotation = -1.5707964
+scale = Vector2(1.6, 1.6)
 pivot_offset = Vector2(106, 122)
 mouse_filter = 2
 
-[node name="ElbowInnerGearsSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="ElbowInnerGearsSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=804835331]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -71,7 +73,7 @@ script = ExtResource("3")
 accepts_segment_id = &"elbow_inner_gears"
 hitbox_rect = Rect2(64, 176, 66, 62)
 
-[node name="elbow_inner_gears" type="Control" parent="Furniture/ArmAssembly/ElbowInnerGearsSlot"]
+[node name="elbow_inner_gears" type="Control" parent="Furniture/ArmAssembly/ElbowInnerGearsSlot" unique_id=1776443873]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -82,7 +84,7 @@ texture = ExtResource("5")
 outline_texture = ExtResource("6")
 persistent_outline = true
 
-[node name="ElbowJointSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="ElbowJointSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=299101645]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -91,7 +93,7 @@ script = ExtResource("3")
 accepts_segment_id = &"elbow_joint"
 hitbox_rect = Rect2(79, 181, 32, 32)
 
-[node name="elbow_joint" type="Control" parent="Furniture/ArmAssembly/ElbowJointSlot"]
+[node name="elbow_joint" type="Control" parent="Furniture/ArmAssembly/ElbowJointSlot" unique_id=463490757]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -100,7 +102,7 @@ script = ExtResource("4")
 item_id = &"elbow_joint"
 texture = ExtResource("7")
 
-[node name="ElbowCapSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="ElbowCapSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=1844122323]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -109,7 +111,7 @@ script = ExtResource("3")
 accepts_segment_id = &"elbow_cap"
 hitbox_rect = Rect2(60, 194, 43, 44)
 
-[node name="elbow_cap" type="Control" parent="Furniture/ArmAssembly/ElbowCapSlot"]
+[node name="elbow_cap" type="Control" parent="Furniture/ArmAssembly/ElbowCapSlot" unique_id=1089583116]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -118,7 +120,7 @@ script = ExtResource("4")
 item_id = &"elbow_cap"
 texture = ExtResource("8")
 
-[node name="UpperArmPlateLowerSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="UpperArmPlateLowerSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=459711010]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -127,7 +129,7 @@ script = ExtResource("3")
 accepts_segment_id = &"upper_arm_plate_lower"
 hitbox_rect = Rect2(64, 120, 54, 69)
 
-[node name="upper_arm_plate_lower" type="Control" parent="Furniture/ArmAssembly/UpperArmPlateLowerSlot"]
+[node name="upper_arm_plate_lower" type="Control" parent="Furniture/ArmAssembly/UpperArmPlateLowerSlot" unique_id=2065993319]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -136,7 +138,7 @@ script = ExtResource("4")
 item_id = &"upper_arm_plate_lower"
 texture = ExtResource("9")
 
-[node name="UpperArmPlateSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="UpperArmPlateSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=900383870]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -145,7 +147,7 @@ script = ExtResource("3")
 accepts_segment_id = &"upper_arm_plate"
 hitbox_rect = Rect2(69, 70, 74, 54)
 
-[node name="upper_arm_plate" type="Control" parent="Furniture/ArmAssembly/UpperArmPlateSlot"]
+[node name="upper_arm_plate" type="Control" parent="Furniture/ArmAssembly/UpperArmPlateSlot" unique_id=1914536930]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -154,7 +156,7 @@ script = ExtResource("4")
 item_id = &"upper_arm_plate"
 texture = ExtResource("10")
 
-[node name="BicepSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="BicepSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=996913650]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -163,7 +165,7 @@ script = ExtResource("3")
 accepts_segment_id = &"bicep"
 hitbox_rect = Rect2(103, 80, 41, 98)
 
-[node name="bicep" type="Control" parent="Furniture/ArmAssembly/BicepSlot"]
+[node name="bicep" type="Control" parent="Furniture/ArmAssembly/BicepSlot" unique_id=1089209746]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -172,7 +174,7 @@ script = ExtResource("4")
 item_id = &"bicep"
 texture = ExtResource("11")
 
-[node name="TricepSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="TricepSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=1664075517]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -181,7 +183,7 @@ script = ExtResource("3")
 accepts_segment_id = &"tricep"
 hitbox_rect = Rect2(63, 85, 29, 91)
 
-[node name="tricep" type="Control" parent="Furniture/ArmAssembly/TricepSlot"]
+[node name="tricep" type="Control" parent="Furniture/ArmAssembly/TricepSlot" unique_id=1513453474]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -190,7 +192,7 @@ script = ExtResource("4")
 item_id = &"tricep"
 texture = ExtResource("12")
 
-[node name="ShoulderPadSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="ShoulderPadSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=1677190164]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -199,7 +201,7 @@ script = ExtResource("3")
 accepts_segment_id = &"shoulder_pad"
 hitbox_rect = Rect2(66, 6, 87, 88)
 
-[node name="shoulder_pad" type="Control" parent="Furniture/ArmAssembly/ShoulderPadSlot"]
+[node name="shoulder_pad" type="Control" parent="Furniture/ArmAssembly/ShoulderPadSlot" unique_id=1732627384]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -208,7 +210,7 @@ script = ExtResource("4")
 item_id = &"shoulder_pad"
 texture = ExtResource("13")
 
-[node name="ShoulderJointSlot" type="Control" parent="Furniture/ArmAssembly"]
+[node name="ShoulderJointSlot" type="Control" parent="Furniture/ArmAssembly" unique_id=2062996309]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -217,7 +219,7 @@ script = ExtResource("3")
 accepts_segment_id = &"shoulder_joint"
 hitbox_rect = Rect2(126, 37, 25, 38)
 
-[node name="shoulder_joint" type="Control" parent="Furniture/ArmAssembly/ShoulderJointSlot"]
+[node name="shoulder_joint" type="Control" parent="Furniture/ArmAssembly/ShoulderJointSlot" unique_id=1956870805]
 anchors_preset = 0
 offset_right = 350.0
 offset_bottom = 350.0
@@ -226,7 +228,7 @@ script = ExtResource("4")
 item_id = &"shoulder_joint"
 texture = ExtResource("14")
 
-[node name="SideContainers" type="Control" parent="."]
+[node name="SideContainers" type="Control" parent="." unique_id=1136718354]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -235,9 +237,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="LeftContainer" type="PanelContainer" parent="SideContainers"]
+[node name="LeftContainer" type="PanelContainer" parent="SideContainers" unique_id=980574141]
 layout_mode = 1
-anchors_preset = 0
 offset_left = 32.0
 offset_top = 218.0
 offset_right = 188.0
@@ -245,11 +246,11 @@ offset_bottom = 648.0
 mouse_filter = 2
 theme_type_variation = &"GoldPanel"
 
-[node name="Holder" type="Control" parent="SideContainers/LeftContainer"]
+[node name="Holder" type="Control" parent="SideContainers/LeftContainer" unique_id=2008114552]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="RightContainer" type="PanelContainer" parent="SideContainers"]
+[node name="RightContainer" type="PanelContainer" parent="SideContainers" unique_id=460971317]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -262,6 +263,6 @@ grow_horizontal = 0
 mouse_filter = 2
 theme_type_variation = &"GoldPanel"
 
-[node name="Holder" type="Control" parent="SideContainers/RightContainer"]
+[node name="Holder" type="Control" parent="SideContainers/RightContainer" unique_id=1105260626]
 layout_mode = 2
 mouse_filter = 2

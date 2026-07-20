@@ -1,0 +1,6 @@
+res://autoload/GameState.gd
+res://scenes/locations/StressTestRobot.gd
+res://scenes/ui/InventoryOverlay.gd
+res://scenes/locations/WorkArmMinigame.gd
+res://scenes/locations/WorkArmMinigame.tscn
+res://themes/main_theme.tres
