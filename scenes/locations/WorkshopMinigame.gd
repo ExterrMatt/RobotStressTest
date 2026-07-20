@@ -190,6 +190,10 @@ const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"oil":           "res://assets/textures/icons/oil_shadow.png",
 }
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
+## Single-pulse reveal shown once when a part is crafted, so the player gets one
+## glimpse of every segment's target — regardless of the Easy Workshop setting.
+const HINT_PULSE_DURATION: float = 0.65
+const HINT_PULSE_PEAK_ALPHA: float = 0.85
 const WORKSHOP_PIECE_SCRIPT_PATH: String = "res://scenes/locations/WorkshopPiece.gd"
 
 @onready var ingredients_tray: Control = %IngredientsTray
@@ -236,6 +240,10 @@ var _placement_hint_layer: Control = null
 var _placement_hint_sprite: TextureRect = null
 var _pending_hint_entries: Array = []
 var _placement_hint_elapsed: float = 0.0
+## When true the hint layer plays a single in-out pulse (the on-craft "here's
+## where everything goes" reveal) and then clears itself, instead of the
+## continuous drag-time flash.
+var _hint_pulse_once: bool = false
 ## Wall-clock time spent in this workshop session, used to time the Easy Workshop
 ## Mode offer. The offer fires once when it crosses EASY_MODE_OFFER_SECONDS.
 var _workshop_elapsed: float = 0.0
@@ -465,8 +473,17 @@ func _update_placement_hint_flash(delta: float) -> void:
 	if _placement_hint_sprite == null or not is_instance_valid(_placement_hint_sprite):
 		return
 	_placement_hint_elapsed += delta
-	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
 	var color := _placement_hint_sprite.modulate
+	if _hint_pulse_once:
+		# One rise-and-fall over HINT_PULSE_DURATION, then clear.
+		var t: float = _placement_hint_elapsed / HINT_PULSE_DURATION
+		if t >= 1.0:
+			_clear_placement_hints()
+			return
+		color.a = sin(t * PI) * HINT_PULSE_PEAK_ALPHA
+		_placement_hint_sprite.modulate = color
+		return
+	var wave := (sin(_placement_hint_elapsed * TAU * 1.45) + 1.0) * 0.5
 	color.a = lerpf(0.2, 0.85, wave)
 	_placement_hint_sprite.modulate = color
 
@@ -480,6 +497,7 @@ func _clear_placement_hints() -> void:
 	_pending_hint_entries.clear()
 	_placement_hint_layer.visible = false
 	_placement_hint_elapsed = 0.0
+	_hint_pulse_once = false
 
 
 func _show_piece_placement_hint(piece: WorkshopPiece, target_global_position: Vector2) -> void:
@@ -516,6 +534,54 @@ func _show_segment_placement_hints(segments: Array) -> void:
 					)
 					_add_piece_hint(piece, texture_global_position)
 	_show_placement_hint_layer()
+
+
+## One-shot reveal fired the moment a part is crafted: flash every freshly-spawned
+## segment at its target slot a single time, so the player sees the whole layout
+## once even with Easy Workshop off. Iterates the canonical slot order so the
+## baked preview overlaps back-to-front like the finished part.
+func _flash_all_placement_hints_once() -> void:
+	_clear_placement_hints()
+	var used: Dictionary = {}
+	for slot_id in _active_assembly_slot_ids:
+		var slot: WorkshopAssemblySlot = _assembly_slots.get(slot_id)
+		if slot == null or slot.filled:
+			continue
+		var segment: WorkshopSegment = _find_bin_segment_for_slot(slot, used)
+		if segment == null:
+			continue
+		used[segment] = true
+		var slot_xform: Transform2D = slot.get_global_transform()
+		var target_placement_offset: Vector2 = _placement_offset_for_slot(segment, slot)
+		for child in segment.get_children():
+			if child is WorkshopPiece:
+				var piece := child as WorkshopPiece
+				var texture_global_position: Vector2 = slot_xform * (
+					target_placement_offset
+					+ piece.position
+					+ _piece_texture_draw_position(piece)
+				)
+				_add_piece_hint(piece, texture_global_position)
+	_show_placement_hint_layer()
+	if _placement_hint_sprite != null and is_instance_valid(_placement_hint_sprite):
+		# Start dark so the single pulse rises from nothing rather than popping in.
+		_placement_hint_sprite.modulate.a = 0.0
+		move_child(_placement_hint_layer, get_child_count() - 1)
+	_hint_pulse_once = true
+	_placement_hint_elapsed = 0.0
+
+
+## Find an as-yet-unused segment sitting in the craft bin that this slot accepts.
+func _find_bin_segment_for_slot(slot: WorkshopAssemblySlot, used: Dictionary) -> WorkshopSegment:
+	for child in craft_bin.get_children():
+		if not (child is WorkshopSegment):
+			continue
+		var segment := child as WorkshopSegment
+		if used.has(segment) or segment.locked:
+			continue
+		if _slot_accepts_segment(slot, segment):
+			return segment
+	return null
 
 
 func _show_placement_hint_layer() -> void:
@@ -1760,6 +1826,12 @@ func _on_craft_pressed() -> void:
 	craft_button.text = "CRAFTED %s" % _part_display_name(_crafted_part_id).to_upper()
 	collect_button.visible = true
 	collect_button.text = "COLLECT %s" % _part_display_name(_crafted_part_id).to_upper()
+
+	# Flash every segment's target once so the player isn't placing blind — a
+	# single pulse regardless of the Easy Workshop setting. Deferred so the
+	# freshly-spawned segments have settled into the bin (and their global
+	# transforms are valid) before we read them.
+	call_deferred("_flash_all_placement_hints_once")
 
 
 func _consume_recipe_pieces(recipe: Dictionary) -> void:
