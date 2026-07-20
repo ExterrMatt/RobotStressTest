@@ -47,6 +47,12 @@ func _ready() -> void:
 	# not block clicks on UI behind us.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	# Shuffle which shape starts in which pocket so the puzzle isn't the same
+	# every shift. The drop targets stay fixed (each accepts its own shape) —
+	# only the starting pocket changes. Done before home_slot is recorded below
+	# so each item remembers the pocket it was randomly dealt into.
+	_randomize_item_slots()
+
 	# Wire up every draggable. Each item's home_slot is set to its current
 	# parent (the inventory pocket it was authored under in the .tscn).
 	for item in draggables:
@@ -54,6 +60,55 @@ func _ready() -> void:
 		item.home_slot = parent_slot
 		item.drag_started.connect(_on_drag_started)
 		item.drag_released.connect(_on_drag_released)
+
+
+## Randomly deal the four shape items into the four inventory pockets. The
+## pockets (GearSlot/ArcSlot in LeftColumn, TriSlot/TessSlot in RightColumn) are
+## fixed; we just shuffle which item sits in which. Items keep their item_id and
+## texture, so the fixed drop targets still only accept their matching shape.
+func _randomize_item_slots() -> void:
+	var slots: Array = []
+	for column_name in ["LeftColumn", "RightColumn"]:
+		var column: Node = get_node_or_null(column_name)
+		if column == null:
+			continue
+		for child in column.get_children():
+			if child is Panel:
+				slots.append(child)
+
+	var items: Array = []
+	for slot in slots:
+		for child in slot.get_children():
+			if child is DraggableItem:
+				items.append(child)
+
+	if items.is_empty() or items.size() != slots.size():
+		return
+
+	# Fisher-Yates with a freshly-seeded RNG so we don't perturb the global one.
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for i in range(items.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = items[i]
+		items[i] = items[j]
+		items[j] = tmp
+
+	for i in slots.size():
+		var slot: Control = slots[i]
+		var item: DraggableItem = items[i]
+		if item.get_parent() != slot:
+			item.get_parent().remove_child(item)
+			slot.add_child(item)
+		# Re-center inside the pocket, matching the authored anchoring.
+		item.anchor_left = 0.5
+		item.anchor_top = 0.5
+		item.anchor_right = 0.5
+		item.anchor_bottom = 0.5
+		item.offset_left = -32.0
+		item.offset_top = -32.0
+		item.offset_right = 32.0
+		item.offset_bottom = 32.0
 
 
 func _input(event: InputEvent) -> void:

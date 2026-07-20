@@ -39,6 +39,10 @@ const WORK_FRAME_OUTER_WIDTH: float = 800.0
 const INTRO_HEAD_BOX_LOOK_PAGE_INDEX: int = 4
 const WORK_TIME_LIMIT_SECONDS: float = 60.0
 
+## Second Work minigame: assemble the robot's upper arm instead of sorting
+## shapes. A normal (non-intro) shift randomly runs one or the other.
+const ARM_MINIGAME_SCENE: PackedScene = preload("res://scenes/locations/WorkArmMinigame.tscn")
+
 ## Two-phase scene flow. The minigame runs in MINIGAME; the completion
 ## screen lives in COMPLETION_PROMPT (typing the gold question) and
 ## COMPLETION_CHOICES (buttons up, waiting on the player).
@@ -67,6 +71,10 @@ var _intro_work: bool = false
 var _intro_box_open_visual_applied: bool = false
 var _work_elapsed_seconds: float = 0.0
 var _work_timed_out: bool = false
+## When true, this shift runs the upper-arm assembly minigame instead of the
+## shape-sorting one. Only ever set for a normal (non-intro) shift.
+var _arm_variant: bool = false
+var _arm_minigame: WorkArmMinigame = null
 
 
 func _ready() -> void:
@@ -91,16 +99,23 @@ func _ready() -> void:
 		_enter_intro_job()
 		return
 
+	# A normal shift randomly runs either the shape-sorting minigame or the
+	# upper-arm assembly minigame. The intro shift always uses the shapes.
+	_arm_variant = randi() % 2 == 0
 	_show_work_minigame()
 
 
 func _process(delta: float) -> void:
 	if _scene_phase != WorkPhase.MINIGAME or _work_timed_out:
 		return
-	# Debug speedrun: a held Enter fills every slot with its matching shape so
+	# Debug speedrun: a held Enter fills every slot with its matching piece so
 	# the shift completes without manual dragging.
-	if debug_enter_held() and work_inventory != null and not work_inventory.is_complete():
-		work_inventory.auto_solve()
+	if debug_enter_held():
+		if _arm_variant:
+			if _arm_minigame != null and is_instance_valid(_arm_minigame):
+				_arm_minigame.debug_auto_solve()
+		elif work_inventory != null and not work_inventory.is_complete():
+			work_inventory.auto_solve()
 	_work_elapsed_seconds += delta
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("set_work_hud_elapsed_seconds"):
@@ -115,11 +130,19 @@ func _process(delta: float) -> void:
 func debug_auto_solve() -> void:
 	if _scene_phase != WorkPhase.MINIGAME:
 		return
+	if _arm_variant:
+		if _arm_minigame != null and is_instance_valid(_arm_minigame):
+			_arm_minigame.debug_auto_solve()
+		return
 	if work_inventory != null and not work_inventory.is_complete():
 		work_inventory.auto_solve()
 
 
 func _show_work_minigame() -> void:
+	if _arm_variant:
+		_show_arm_work_minigame()
+		return
+
 	var main: Node = get_tree().current_scene
 	_scene_phase = WorkPhase.MINIGAME
 	_work_timed_out = false
@@ -152,6 +175,56 @@ func _show_work_minigame() -> void:
 	if work_inventory:
 		work_inventory.slots_changed.connect(_on_slots_changed)
 	set_process(true)
+
+
+## Upper-arm variant of the shift. Same Work chrome (factory background, frame,
+## HUD timer) but the shape-sorting furniture/inventory are left hidden; instead
+## a WorkArmMinigame supplies a table-top assembly area and two tall side
+## containers of arm segments. Finishing routes to the same completion screen.
+func _show_arm_work_minigame() -> void:
+	var main: Node = get_tree().current_scene
+	_scene_phase = WorkPhase.MINIGAME
+	_work_timed_out = false
+	_work_elapsed_seconds = 0.0
+	_set_node_visible(color_background, true)
+	# The shape-sorting furniture and inventory stay hidden this shift.
+	_set_node_visible(furniture_layer, false)
+	_set_node_visible(work_inventory, false)
+
+	if main != null:
+		if main.has_method("set_work_hud_timer_active"):
+			main.set_work_hud_timer_active(true)
+		if main.has_method("set_work_hud_elapsed_seconds"):
+			main.set_work_hud_elapsed_seconds(0.0)
+		_set_main_scene_image_and_frame(
+			WORK_BACKGROUND_TEXTURE_PATH,
+			WORK_FRAME_SIZE,
+			WORK_FRAME_OUTER_WIDTH
+		)
+		call_deferred("_refresh_work_minigame_scene_image")
+
+	_arm_minigame = ARM_MINIGAME_SCENE.instantiate() as WorkArmMinigame
+	add_child(_arm_minigame)
+	_arm_minigame.completed.connect(_on_arm_minigame_completed)
+
+	# The table + assembly go on the framed picture; the two side containers go
+	# in the strips beside it (like the shape minigame's inventory columns).
+	if main != null and main.has_method("show_scene_overlay"):
+		main.show_scene_overlay(_arm_minigame.furniture, true)
+	if main != null and main.has_method("show_inventory_overlay"):
+		main.show_inventory_overlay(_arm_minigame.side_containers)
+	_arm_minigame.begin()
+
+	set_process(true)
+
+
+func _on_arm_minigame_completed() -> void:
+	if _scene_phase != WorkPhase.MINIGAME:
+		return
+	if _arm_minigame != null and is_instance_valid(_arm_minigame):
+		_arm_minigame.set_process(false)
+		_arm_minigame.set_process_input(false)
+	_enter_completion_screen()
 
 
 func _enter_intro_job() -> void:
@@ -313,6 +386,12 @@ func _apply_completion_screen() -> void:
 		main.hide_inventory_overlay()
 	if main and main.has_method("hide_corner_button"):
 		main.hide_corner_button()
+
+	# The arm minigame's furniture/side-container subtrees were freed by the
+	# hide_* calls above; drop the now-empty controller node too.
+	if _arm_minigame != null and is_instance_valid(_arm_minigame):
+		_arm_minigame.queue_free()
+	_arm_minigame = null
 
 	# Drop the opaque grey backdrop so the completion screen matches School's
 	# starfield-on-dark look. The minigame uses it to focus attention on the

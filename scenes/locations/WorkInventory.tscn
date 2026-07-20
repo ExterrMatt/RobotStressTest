@@ -37,6 +37,7 @@ offset_right = 52.0
 offset_bottom = 380.5
 grow_horizontal = 2
 mouse_filter = 2
+theme_type_variation = &"GoldPanel"
 
 [node name="GearItem" type="TextureRect" parent="LeftColumn/GearSlot" unique_id=91771003]
 texture_filter = 1
@@ -67,6 +68,7 @@ offset_right = 52.0
 offset_bottom = 613.5
 grow_horizontal = 2
 mouse_filter = 2
+theme_type_variation = &"GoldPanel"
 
 [node name="ArcItem" type="TextureRect" parent="LeftColumn/ArcSlot" unique_id=2066396485]
 texture_filter = 1
@@ -109,6 +111,7 @@ offset_right = 52.0
 offset_bottom = 380.5
 grow_horizontal = 2
 mouse_filter = 2
+theme_type_variation = &"GoldPanel"
 
 [node name="TriItem" type="TextureRect" parent="RightColumn/TriSlot" unique_id=1111418910]
 texture_filter = 1
@@ -139,6 +142,7 @@ offset_right = 52.0
 offset_bottom = 613.5
 grow_horizontal = 2
 mouse_filter = 2
+theme_type_variation = &"GoldPanel"
 
 [node name="TessItem" type="TextureRect" parent="RightColumn/TessSlot" unique_id=893369315]
 texture_filter = 1
