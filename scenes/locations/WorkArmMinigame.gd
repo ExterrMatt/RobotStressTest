@@ -49,8 +49,14 @@ const CONTAINER_TOP_GAP: float = 16.0
 ## Space left below the container for the bottom-corner action buttons.
 const CONTAINER_BOTTOM_MARGIN: float = 72.0
 
-## Editor / caller nudge for the assembled arm inside the assembly area.
-@export var assembly_offset: Vector2 = Vector2(0.0, 40.0)
+@export_group("Assembled arm")
+## Nudges the assembled arm's centre within the table assembly area. Editable in
+## the editor: open WorkArmMinigame.tscn and select the root node.
+@export var arm_position_offset: Vector2 = Vector2(0.0, 40.0)
+## Uniform scale of the assembled arm. The loose draggable segments are scaled to
+## match, so a piece is the same size while dragged as it is once placed. 1.0 is
+## the original art size. Editable in the editor alongside arm_position_offset.
+@export var arm_scale: float = 1.0
 
 @onready var furniture: Control = $Furniture
 @onready var assembly_area: Control = $Furniture/AssemblyArea
@@ -136,8 +142,8 @@ func _handle_left_release(global_pos: Vector2) -> void:
 	if slot != null:
 		_accept_segment_into_slot(seg, slot)
 		_refresh_complete()
-	else:
-		_return_segment_home(seg)
+	# Otherwise the segment simply stays where it was released (it is already
+	# parented to the top overlay at its dropped position) — no snap-back.
 	get_viewport().set_input_as_handled()
 
 
@@ -152,6 +158,9 @@ func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
 	side_containers.move_child(segment, side_containers.get_child_count() - 1)
 
 	_active_drag_segment = segment
+	# Once grabbed, a segment is never auto-pinned back to its container slot —
+	# it stays wherever the player releases it.
+	segment.set_meta("moved", true)
 	segment.start_drag(global_pos)
 
 	_show_segment_placement_hints([segment])
@@ -159,16 +168,6 @@ func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
 	if _placement_hint_layer != null and _placement_hint_layer.visible:
 		side_containers.move_child(_placement_hint_layer, side_containers.get_child_count() - 1)
 		side_containers.move_child(segment, side_containers.get_child_count() - 1)
-
-
-func _return_segment_home(segment: WorkshopSegment) -> void:
-	var holder: Control = segment.get_meta("home_holder", null)
-	if holder == null or not is_instance_valid(holder):
-		return
-	if segment.get_parent() != holder:
-		segment.get_parent().remove_child(segment)
-		holder.add_child(segment)
-	# Position is re-pinned to its home slot next frame by _pin_resting_segments.
 
 
 # --- hit testing -----------------------------------------------------------
@@ -243,6 +242,9 @@ func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblyS
 		return
 	_clear_placed_part_outline(segment)
 	slot.accept_segment(segment)
+	# The slot lives under the scaled assembly, which now provides the arm scale,
+	# so drop the loose-segment scale to avoid compounding it.
+	segment.scale = Vector2.ONE
 	segment.position = segment.placement_offset
 
 
@@ -304,10 +306,18 @@ func _setup_arm_assembly() -> void:
 	if not found_any:
 		content_bounds = Rect2(Vector2.ZERO, ARM_ASSEMBLY_SIZE)
 	# Centre the visible cluster (not the whole 350x350 canvas) in the assembly
-	# area, then apply the nudge.
+	# area, then apply the editor position/scale. The pivot is set to the cluster
+	# centre so scaling keeps the arm centred on the same spot on the table.
 	var content_center: Vector2 = content_bounds.position + content_bounds.size * 0.5
-	_arm_assembly.position = ARM_ASSEMBLY_SIZE * 0.5 - content_center + assembly_offset
+	_arm_assembly.pivot_offset = content_center
+	_arm_assembly.scale = Vector2(_effective_scale(), _effective_scale())
+	_arm_assembly.position = ARM_ASSEMBLY_SIZE * 0.5 - content_center + arm_position_offset
 	assembly_area.add_child(_arm_assembly)
+
+
+## Clamped uniform scale for the assembled arm and the loose segments.
+func _effective_scale() -> float:
+	return maxf(0.05, arm_scale)
 
 
 func _spawn_segments() -> void:
@@ -316,11 +326,21 @@ func _spawn_segments() -> void:
 		if segment != null:
 			_all_segments.append(segment)
 
-	# Split as evenly as possible between the two containers (5 / 4 for 9 pieces).
-	var total: int = _all_segments.size()
+	# Shuffle so the pieces aren't in the same container slots every shift, then
+	# split as evenly as possible between the two containers (5 / 4 for 9 pieces).
+	var shuffled: Array = _all_segments.duplicate()
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for i in range(shuffled.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var tmp = shuffled[i]
+		shuffled[i] = shuffled[j]
+		shuffled[j] = tmp
+
+	var total: int = shuffled.size()
 	var left_count: int = int(ceil(float(total) / 2.0))
-	var left_segments: Array = _all_segments.slice(0, left_count)
-	var right_segments: Array = _all_segments.slice(left_count, total)
+	var left_segments: Array = shuffled.slice(0, left_count)
+	var right_segments: Array = shuffled.slice(left_count, total)
 	_assign_to_holder(left_holder, left_segments)
 	_assign_to_holder(right_holder, right_segments)
 
@@ -347,6 +367,10 @@ func _build_segment(segment_id: StringName) -> WorkshopSegment:
 	segment.size = bounds.size
 	segment.placement_offset = bounds.position
 	segment.auto_fit_grab_hitbox = true
+	# Match the assembled arm's scale so a loose piece is the same size while
+	# dragged as it is once placed. Reset to 1 on placement (the assembly node
+	# then provides the scale — see _accept_segment_into_slot).
+	segment.scale = Vector2(_effective_scale(), _effective_scale())
 	return segment
 
 
@@ -374,14 +398,17 @@ func _assign_to_holder(holder: Control, segments: Array) -> void:
 		segment.set_meta("home_count", count)
 
 
-## Keep every un-dragged, un-placed segment pinned to its evenly-spaced slot in
-## its home container. Cheap, and it self-corrects after the containers get
-## repositioned or the window resizes.
+## Keep every never-grabbed segment pinned to its evenly-spaced slot in its home
+## container, so the untouched bin self-corrects after the containers get
+## repositioned or the window resizes. Once a segment has been picked up (its
+## "moved" meta is set) it is left wherever the player dropped it — no snap-back.
 func _pin_resting_segments() -> void:
 	for segment in _all_segments:
 		if not is_instance_valid(segment):
 			continue
 		if segment == _active_drag_segment or segment.locked:
+			continue
+		if bool(segment.get_meta("moved", false)):
 			continue
 		var holder: Control = segment.get_meta("home_holder", null)
 		if holder == null or not is_instance_valid(holder) or segment.get_parent() != holder:
@@ -391,10 +418,13 @@ func _pin_resting_segments() -> void:
 		var hs: Vector2 = holder.size
 		if hs.x <= 0.0 or hs.y <= 0.0:
 			continue
+		var scale_value: float = _effective_scale()
 		var target_center := Vector2(hs.x * 0.5, hs.y * (float(index) + 0.5) / float(count))
 		var hb: Rect2 = segment.grab_hitbox_rect
 		var hb_center: Vector2 = hb.position + hb.size * 0.5 if hb.size.x > 0.0 else segment.size * 0.5
-		segment.position = target_center - hb_center
+		# The segment carries the arm scale, so its art centre sits scale*hb_center
+		# from its top-left; offset by that so the visible piece lands centred.
+		segment.position = target_center - hb_center * scale_value
 
 
 # --- side-container positioning --------------------------------------------
@@ -519,7 +549,7 @@ func _show_segment_placement_hints(segments: Array) -> void:
 						+ piece.position
 						+ piece.texture_draw_position()
 					)
-					_add_piece_hint(piece, texture_global_position)
+					_add_piece_hint(piece, texture_global_position, _effective_scale())
 	_show_placement_hint_layer()
 
 
@@ -532,19 +562,21 @@ func _slots_for_segment(segment: WorkshopSegment) -> Array:
 	return slots
 
 
-func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2) -> void:
+func _add_piece_hint(piece: WorkshopPiece, target_texture_global_position: Vector2, draw_scale: float = 1.0) -> void:
 	if _placement_hint_layer == null or piece == null or piece.texture == null:
 		return
+	# Sizes are multiplied by the arm scale so the flashing hint matches the size
+	# the piece renders at once placed under the scaled assembly.
 	if piece.outline_texture != null and piece.persistent_outline:
 		_pending_hint_entries.append({
 			"texture": piece.outline_texture,
 			"position": target_texture_global_position,
-			"size": piece.texture_draw_size(piece.outline_texture),
+			"size": piece.texture_draw_size(piece.outline_texture) * draw_scale,
 		})
 	_pending_hint_entries.append({
 		"texture": piece.texture,
 		"position": target_texture_global_position,
-		"size": piece.texture_draw_size(),
+		"size": piece.texture_draw_size() * draw_scale,
 	})
 
 
