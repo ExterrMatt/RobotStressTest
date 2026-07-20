@@ -28,6 +28,14 @@ const CONTAINER_TOP_GAP: float = 16.0
 ## Space left below the container for the bottom-corner action buttons.
 const CONTAINER_BOTTOM_MARGIN: float = 72.0
 
+# --- Pick-up / put-back pose animation. A segment rests in the container at its
+# original look (scale 1, upright) and springs to the assembled arm's pose
+# (scale + rotation) when grabbed; the reverse plays when dropped back in a bin.
+const POSE_SCALE_OVERSHOOT: float = 0.06
+const POSE_ROT_OVERSHOOT_DEG: float = 5.0
+const POSE_ANIM_OUT: float = 0.18
+const POSE_ANIM_SETTLE: float = 0.10
+
 @onready var furniture: Control = $Furniture
 ## The assembled arm — an authored node with the arm's slots/pieces as children.
 ## It shows the full arm in the editor; select it to move / rotate / scale the
@@ -46,6 +54,14 @@ var _active_slot_ids: Array[StringName] = []
 var _all_segments: Array = []
 
 var _active_drag_segment: WorkshopSegment = null
+## Latest cursor position for the active drag (global). We position the segment
+## ourselves (rather than via WorkshopSegment.update_drag) because the piece is
+## scaled/rotated mid-drag and a Control's pivot — not its origin — is the point
+## that stays fixed under scale/rotation, so pivot-based placement avoids drift.
+var _drag_cursor: Vector2 = Vector2.ZERO
+## Per-segment pose tweens (scale/rotation), so a new grab/put-back cancels any
+## in-flight animation on that segment.
+var _pose_tweens: Dictionary = {}
 
 var _placement_hint_layer: Control = null
 var _placement_hint_sprite: TextureRect = null
@@ -76,6 +92,11 @@ func _process(_delta: float) -> void:
 		return
 	_position_side_containers()
 	_pin_resting_segments()
+	# Re-solve the dragged piece's position every frame so the grab/put-back pose
+	# animation (which changes scale/rotation without mouse motion) keeps the
+	# piece's centre glued to the cursor.
+	if _active_drag_segment != null:
+		_update_drag_position()
 	_update_placement_hint_flash(_delta)
 
 
@@ -90,7 +111,8 @@ func _input(event: InputEvent) -> void:
 		else:
 			_handle_left_release(event.global_position)
 	elif event is InputEventMouseMotion and _active_drag_segment != null:
-		_active_drag_segment.update_drag(event.global_position)
+		_drag_cursor = event.global_position
+		_update_drag_position()
 		get_viewport().set_input_as_handled()
 
 
@@ -109,14 +131,24 @@ func _handle_left_release(global_pos: Vector2) -> void:
 	var seg: WorkshopSegment = _active_drag_segment
 	_active_drag_segment = null
 	_clear_placement_hints()
-	seg.end_drag()
 
 	var slot: WorkshopAssemblySlot = _best_segment_drop_target(seg, global_pos)
 	if slot != null:
 		_accept_segment_into_slot(seg, slot)
 		_refresh_complete()
-	# Otherwise the segment simply stays where it was released (it is already
-	# parented to the top overlay at its dropped position) — no snap-back.
+		get_viewport().set_input_as_handled()
+		return
+
+	var holder: Control = _container_holder_at(global_pos)
+	if holder != null:
+		# Dropped back into a bin: reparent there and reverse the pose animation
+		# so it shrinks and un-rotates back to the original container look.
+		_return_segment_to_container(seg, holder)
+		get_viewport().set_input_as_handled()
+		return
+
+	# Dropped loose on the table: it keeps its big, rotated look right where it
+	# was released — no snap-back.
 	get_viewport().set_input_as_handled()
 
 
@@ -134,13 +166,98 @@ func _pick_up_segment(segment: WorkshopSegment, global_pos: Vector2) -> void:
 	# Once grabbed, a segment is never auto-pinned back to its container slot —
 	# it stays wherever the player releases it.
 	segment.set_meta("moved", true)
-	segment.start_drag(global_pos)
+	_drag_cursor = global_pos
+	_update_drag_position()
+	# Spring from the container's original look (small, upright) to the assembled
+	# arm's pose (scaled + rotated), so the dragged piece matches its destination.
+	_animate_pose(segment, _effective_scale(), _target_rotation())
 
 	_show_segment_placement_hints([segment])
 	# Keep the dragged piece above the hint sprite.
 	if _placement_hint_layer != null and _placement_hint_layer.visible:
 		side_containers.move_child(_placement_hint_layer, side_containers.get_child_count() - 1)
 		side_containers.move_child(segment, side_containers.get_child_count() - 1)
+
+
+# --- drag positioning ------------------------------------------------------
+
+## Place the dragged segment so its centre (pivot) sits under the cursor. A
+## Control's pivot maps to `position + pivot_offset` in its parent's space
+## regardless of the node's scale/rotation, so writing `position` keeps the
+## centre glued to the cursor even while the pose animation scales and rotates it.
+func _update_drag_position() -> void:
+	var seg := _active_drag_segment
+	if seg == null or not is_instance_valid(seg):
+		return
+	var local_cursor := _drag_cursor
+	var parent := seg.get_parent() as Control
+	if parent != null:
+		local_cursor = parent.get_global_transform().affine_inverse() * _drag_cursor
+	seg.position = local_cursor - seg.pivot_offset
+
+
+# --- pose animation (small/upright <-> arm scale/rotation) ------------------
+
+## Tween a segment's scale and rotation to a target pose with an ease-out
+## overshoot and an ease-in-out settle, giving a little spring. Each segment is
+## pivoted on its own centre (see _build_segment) so scaling/rotating never
+## nudges it off the cursor.
+func _animate_pose(segment: WorkshopSegment, to_scale: float, to_rotation: float) -> void:
+	if segment == null or not is_instance_valid(segment):
+		return
+	_kill_pose_tween(segment)
+
+	var from_rotation: float = segment.rotation
+	var from_scale: float = segment.scale.x
+	var rot_overshoot: float = to_rotation + signf(to_rotation - from_rotation) * deg_to_rad(POSE_ROT_OVERSHOOT_DEG)
+	var scale_overshoot: float = to_scale + signf(to_scale - from_scale) * POSE_SCALE_OVERSHOOT
+
+	var tween: Tween = segment.create_tween()
+	tween.tween_property(segment, "rotation", rot_overshoot, POSE_ANIM_OUT) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(segment, "scale", Vector2(scale_overshoot, scale_overshoot), POSE_ANIM_OUT) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(segment, "rotation", to_rotation, POSE_ANIM_SETTLE) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(segment, "scale", Vector2(to_scale, to_scale), POSE_ANIM_SETTLE) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_pose_tweens[segment] = tween
+
+
+func _kill_pose_tween(segment: WorkshopSegment) -> void:
+	var existing = _pose_tweens.get(segment)
+	if existing != null and is_instance_valid(existing) and existing.is_valid():
+		existing.kill()
+	_pose_tweens.erase(segment)
+
+
+## The assembled arm's pose, read from the authored ArmAssembly node so the
+## dragged piece matches how it will look once placed.
+func _target_rotation() -> float:
+	if arm_assembly == null:
+		return 0.0
+	return arm_assembly.rotation
+
+
+## The holder of whichever side container contains this point, or null.
+func _container_holder_at(global_pos: Vector2) -> Control:
+	if left_container != null and left_container.get_global_rect().has_point(global_pos):
+		return left_holder
+	if right_container != null and right_container.get_global_rect().has_point(global_pos):
+		return right_holder
+	return null
+
+
+func _return_segment_to_container(segment: WorkshopSegment, holder: Control) -> void:
+	if segment.get_parent() != holder:
+		var gp: Vector2 = segment.global_position
+		segment.get_parent().remove_child(segment)
+		holder.add_child(segment)
+		segment.global_position = gp
+	# Reverse the pose so it shrinks and un-rotates back to the container look. It
+	# stays where the player dropped it inside the bin (pivoted on its centre, so
+	# it shrinks in place) rather than snapping to a slot.
+	_animate_pose(segment, 1.0, 0.0)
 
 
 # --- hit testing -----------------------------------------------------------
@@ -213,11 +330,14 @@ func _rect_overlap_area(a: Rect2, b: Rect2) -> float:
 func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
 	if segment == null or slot == null:
 		return
+	_kill_pose_tween(segment)
 	_clear_placed_part_outline(segment)
 	slot.accept_segment(segment)
-	# The slot lives under the scaled assembly, which now provides the arm scale,
-	# so drop the loose-segment scale to avoid compounding it.
+	# The slot lives under the scaled + rotated assembly, which now provides the
+	# arm's transform, so reset the loose-segment scale/rotation to avoid
+	# compounding it. (The grabbed piece already matched this pose, so no pop.)
 	segment.scale = Vector2.ONE
+	segment.rotation = 0.0
 	segment.position = segment.placement_offset
 
 
@@ -330,10 +450,10 @@ func _build_segment(segment_id: StringName) -> WorkshopSegment:
 	segment.size = bounds.size
 	segment.placement_offset = bounds.position
 	segment.auto_fit_grab_hitbox = true
-	# Match the assembled arm's scale so a loose piece is the same size while
-	# dragged as it is once placed. Reset to 1 on placement (the assembly node
-	# then provides the scale — see _accept_segment_into_slot).
-	segment.scale = Vector2(_effective_scale(), _effective_scale())
+	# Pivot on the piece's centre so the grab spring (scale + rotation) turns
+	# about the centre and never nudges the piece off the cursor. Rest pose is the
+	# original look: scale 1, upright — small and vertical in the container.
+	segment.pivot_offset = segment.size * 0.5
 	return segment
 
 
@@ -381,13 +501,12 @@ func _pin_resting_segments() -> void:
 		var hs: Vector2 = holder.size
 		if hs.x <= 0.0 or hs.y <= 0.0:
 			continue
-		var scale_value: float = _effective_scale()
 		var target_center := Vector2(hs.x * 0.5, hs.y * (float(index) + 0.5) / float(count))
 		var hb: Rect2 = segment.grab_hitbox_rect
 		var hb_center: Vector2 = hb.position + hb.size * 0.5 if hb.size.x > 0.0 else segment.size * 0.5
-		# The segment carries the arm scale, so its art centre sits scale*hb_center
-		# from its top-left; offset by that so the visible piece lands centred.
-		segment.position = target_center - hb_center * scale_value
+		# Rest pose is scale 1 / upright, and the segment pivots on this centre, so
+		# offsetting the top-left by the centre lands the piece centred in its slot.
+		segment.position = target_center - hb_center
 
 
 # --- side-container positioning --------------------------------------------
