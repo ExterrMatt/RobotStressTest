@@ -37,7 +37,7 @@ const POSE_ANIM_OUT: float = 0.12
 const POSE_ANIM_SETTLE: float = 0.08
 ## Ease-in-out glide from the drop point to the settled slot position on a
 ## successful placement.
-const PLACE_SETTLE_DURATION: float = 0.18
+const PLACE_SETTLE_DURATION: float = 0.2
 
 @onready var furniture: Control = $Furniture
 ## The assembled arm — an authored node with the arm's slots/pieces as children.

@@ -1079,7 +1079,7 @@ func _sync_passenger_segments_to_active_drag() -> void:
 ## Ease-in-out glide from the drop point to the settled slot position when a
 ## segment lands on its assembly goal (crafting-bin drops are handled elsewhere
 ## and don't get this — they have no settled location).
-const SEGMENT_PLACE_DURATION: float = 0.18
+const SEGMENT_PLACE_DURATION: float = 0.1
 
 
 func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
