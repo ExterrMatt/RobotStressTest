@@ -1,7 +1,19 @@
-[gd_scene load_steps=3 format=3 uid="uid://c0warmminigame1"]
+[gd_scene load_steps=15 format=3 uid="uid://c0warmminigame1"]
 
 [ext_resource type="Script" path="res://scenes/locations/WorkArmMinigame.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://4sq4i7qirh41" path="res://assets/textures/icons/empty_table.png" id="2"]
+[ext_resource type="Script" uid="uid://cg01f011fwtyo" path="res://scenes/locations/WorkshopAssemblySlot.gd" id="3"]
+[ext_resource type="Script" uid="uid://48i7jx7w0l7j" path="res://scenes/locations/WorkshopPiece.gd" id="4"]
+[ext_resource type="Texture2D" uid="uid://cx2htstj66avq" path="res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_inner_gears.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://gp5w7cokjnqw" path="res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_inner_gears_outline.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://c2mma777tshu" path="res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_joint.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://bi8r64g7vxv2e" path="res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_cap.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://ddx87g0h11wh7" path="res://assets/textures/characters/robot/workshop/workshop robot arm/upper_arm_plate_lower.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://dd0jtlko3pv2y" path="res://assets/textures/characters/robot/workshop/workshop robot arm/upper_arm_plate.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://c2s1603v1nlh1" path="res://assets/textures/characters/robot/workshop/workshop robot arm/bicep.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://bmippgcdq4eas" path="res://assets/textures/characters/robot/workshop/workshop robot arm/tricep.png" id="12"]
+[ext_resource type="Texture2D" uid="uid://dhrbnpa5glwv1" path="res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_pad.png" id="13"]
+[ext_resource type="Texture2D" uid="uid://3vcvu5yyi6xy" path="res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_joint.png" id="14"]
 
 [node name="WorkArmMinigame" type="Control"]
 layout_mode = 3
@@ -39,21 +51,180 @@ size_flags_horizontal = 4
 mouse_filter = 2
 texture = ExtResource("2")
 
-[node name="AssemblyArea" type="Control" parent="Furniture"]
+[node name="ArmAssembly" type="Control" parent="Furniture"]
 custom_minimum_size = Vector2(350, 350)
 layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -175.0
-offset_top = -490.0
-offset_right = 175.0
-offset_bottom = -140.0
-grow_horizontal = 2
-grow_vertical = 0
+anchors_preset = 0
+offset_left = 294.0
+offset_top = 208.0
+offset_right = 644.0
+offset_bottom = 558.0
+pivot_offset = Vector2(106, 122)
 mouse_filter = 2
+
+[node name="ElbowInnerGearsSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"elbow_inner_gears"
+hitbox_rect = Rect2(64, 176, 66, 62)
+
+[node name="elbow_inner_gears" type="Control" parent="Furniture/ArmAssembly/ElbowInnerGearsSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"elbow_inner_gears"
+texture = ExtResource("5")
+outline_texture = ExtResource("6")
+persistent_outline = true
+
+[node name="ElbowJointSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"elbow_joint"
+hitbox_rect = Rect2(79, 181, 32, 32)
+
+[node name="elbow_joint" type="Control" parent="Furniture/ArmAssembly/ElbowJointSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"elbow_joint"
+texture = ExtResource("7")
+
+[node name="ElbowCapSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"elbow_cap"
+hitbox_rect = Rect2(60, 194, 43, 44)
+
+[node name="elbow_cap" type="Control" parent="Furniture/ArmAssembly/ElbowCapSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"elbow_cap"
+texture = ExtResource("8")
+
+[node name="UpperArmPlateLowerSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"upper_arm_plate_lower"
+hitbox_rect = Rect2(64, 120, 54, 69)
+
+[node name="upper_arm_plate_lower" type="Control" parent="Furniture/ArmAssembly/UpperArmPlateLowerSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"upper_arm_plate_lower"
+texture = ExtResource("9")
+
+[node name="UpperArmPlateSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"upper_arm_plate"
+hitbox_rect = Rect2(69, 70, 74, 54)
+
+[node name="upper_arm_plate" type="Control" parent="Furniture/ArmAssembly/UpperArmPlateSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"upper_arm_plate"
+texture = ExtResource("10")
+
+[node name="BicepSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"bicep"
+hitbox_rect = Rect2(103, 80, 41, 98)
+
+[node name="bicep" type="Control" parent="Furniture/ArmAssembly/BicepSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"bicep"
+texture = ExtResource("11")
+
+[node name="TricepSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"tricep"
+hitbox_rect = Rect2(63, 85, 29, 91)
+
+[node name="tricep" type="Control" parent="Furniture/ArmAssembly/TricepSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"tricep"
+texture = ExtResource("12")
+
+[node name="ShoulderPadSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"shoulder_pad"
+hitbox_rect = Rect2(66, 6, 87, 88)
+
+[node name="shoulder_pad" type="Control" parent="Furniture/ArmAssembly/ShoulderPadSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"shoulder_pad"
+texture = ExtResource("13")
+
+[node name="ShoulderJointSlot" type="Control" parent="Furniture/ArmAssembly"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("3")
+accepts_segment_id = &"shoulder_joint"
+hitbox_rect = Rect2(126, 37, 25, 38)
+
+[node name="shoulder_joint" type="Control" parent="Furniture/ArmAssembly/ShoulderJointSlot"]
+anchors_preset = 0
+offset_right = 350.0
+offset_bottom = 350.0
+mouse_filter = 2
+script = ExtResource("4")
+item_id = &"shoulder_joint"
+texture = ExtResource("14")
 
 [node name="SideContainers" type="Control" parent="."]
 layout_mode = 1

@@ -17,27 +17,6 @@ class_name WorkArmMinigame
 ## Emitted once every assembly slot is filled.
 signal completed()
 
-const ARM_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot arm"
-const ARM_ASSEMBLY_SIZE: Vector2 = Vector2(350, 350)
-
-## The upper-arm subset (shoulder + upper arm plates/muscles + elbow). The
-## forearm, wrist and hand segments are intentionally excluded — those belong to
-## other parts of the arm build.
-const UPPER_ARM_SEGMENT_IDS: Array[StringName] = [
-	&"shoulder_joint",
-	&"shoulder_pad",
-	&"tricep",
-	&"bicep",
-	&"upper_arm_plate",
-	&"upper_arm_plate_lower",
-	&"elbow_cap",
-	&"elbow_joint",
-	&"elbow_inner_gears",
-]
-## Segments whose "_outline" art is part of the final look and must keep drawing
-## after placement (rather than being a pick-up-only drag hint).
-const PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"elbow_inner_gears"]
-
 # --- Side-container geometry, mirrored from Main's large-scene HUD panels so the
 # two containers read as the same gilded frames stacked below the DAY / SUS
 # panels: same width, same gap from the viewport edge. ---
@@ -49,17 +28,12 @@ const CONTAINER_TOP_GAP: float = 16.0
 ## Space left below the container for the bottom-corner action buttons.
 const CONTAINER_BOTTOM_MARGIN: float = 72.0
 
-@export_group("Assembled arm")
-## Nudges the assembled arm's centre within the table assembly area. Editable in
-## the editor: open WorkArmMinigame.tscn and select the root node.
-@export var arm_position_offset: Vector2 = Vector2(0.0, 40.0)
-## Uniform scale of the assembled arm. The loose draggable segments are scaled to
-## match, so a piece is the same size while dragged as it is once placed. 1.0 is
-## the original art size. Editable in the editor alongside arm_position_offset.
-@export var arm_scale: float = 1.0
-
 @onready var furniture: Control = $Furniture
-@onready var assembly_area: Control = $Furniture/AssemblyArea
+## The assembled arm — an authored node with the arm's slots/pieces as children.
+## It shows the full arm in the editor; select it to move / rotate / scale the
+## whole limb. At runtime the pieces are pulled out into draggable segments and
+## the slots become the goal targets, so the arm re-forms as the player builds it.
+@onready var arm_assembly: Control = $Furniture/ArmAssembly
 @onready var side_containers: Control = $SideContainers
 @onready var left_container: PanelContainer = $SideContainers/LeftContainer
 @onready var right_container: PanelContainer = $SideContainers/RightContainer
@@ -69,7 +43,6 @@ const CONTAINER_BOTTOM_MARGIN: float = 72.0
 var _assembly_slots: Dictionary = {}
 var _segment_defs: Dictionary = {}
 var _active_slot_ids: Array[StringName] = []
-var _arm_assembly: Control = null
 var _all_segments: Array = []
 
 var _active_drag_segment: WorkshopSegment = null
@@ -85,7 +58,7 @@ var _started: bool = false
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_setup_arm_assembly()
+	_collect_authored_arm_assembly()
 	_spawn_segments()
 	_setup_placement_hint_layer()
 
@@ -263,61 +236,51 @@ func _clear_placed_part_outline(segment: WorkshopSegment) -> void:
 
 # --- assembly setup --------------------------------------------------------
 
-func _setup_arm_assembly() -> void:
-	_arm_assembly = Control.new()
-	_arm_assembly.name = "AssemblyArm"
-	_arm_assembly.size = ARM_ASSEMBLY_SIZE
-	_arm_assembly.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var content_bounds: Rect2 = Rect2()
-	var found_any: bool = false
-
-	for segment_id in UPPER_ARM_SEGMENT_IDS:
-		var tex: Texture2D = _load_arm_layer(segment_id)
-		if tex == null:
-			push_warning("WorkArmMinigame: missing arm layer '%s' in %s." % [segment_id, ARM_TEXTURE_DIR])
+## Harvest the authored ArmAssembly: record each slot as a goal target and pull
+## its template piece out into a segment def, then free the template so the slot
+## starts empty. The arm re-forms only as the player drops segments in. Mirrors
+## how the Workshop turns its authored leg into draggable pieces.
+func _collect_authored_arm_assembly() -> void:
+	if arm_assembly == null:
+		return
+	# Preserve the authored back-to-front child order so placed pieces overlap
+	# the same way they do in the editor preview.
+	for child in arm_assembly.get_children():
+		if not (child is WorkshopAssemblySlot):
 			continue
-
-		var used_rect: Rect2 = _used_rect_for_texture(tex)
-		if used_rect.size.x > 0.0 and used_rect.size.y > 0.0:
-			if not found_any:
-				content_bounds = used_rect
-				found_any = true
-			else:
-				content_bounds = content_bounds.merge(used_rect)
-
-		var slot := WorkshopAssemblySlot.new()
-		slot.name = "%sSlot" % String(segment_id).capitalize().replace(" ", "")
-		slot.accepts_segment_id = segment_id
-		slot.position = Vector2.ZERO
-		slot.size = ARM_ASSEMBLY_SIZE
-		slot.hitbox_rect = used_rect
+		var slot := child as WorkshopAssemblySlot
+		var segment_id: StringName = slot.accepts_segment_id
+		var piece: WorkshopPiece = _first_piece_child(slot)
+		if piece == null:
+			push_warning("WorkArmMinigame: slot '%s' has no WorkshopPiece child." % slot.name)
+			continue
+		_segment_defs[segment_id] = {
+			"id": piece.item_id,
+			"texture": piece.texture,
+			"outline": piece.outline_texture,
+			"persistent_outline": piece.persistent_outline,
+		}
+		slot.remove_child(piece)
+		piece.queue_free()
+		slot.filled = false
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_arm_assembly.add_child(slot)
 		_assembly_slots[segment_id] = slot
 		_active_slot_ids.append(segment_id)
-		_segment_defs[segment_id] = {
-			"id": segment_id,
-			"texture": tex,
-			"outline": _load_arm_outline(segment_id),
-			"persistent_outline": PERSISTENT_OUTLINE_IDS.has(segment_id),
-		}
-
-	if not found_any:
-		content_bounds = Rect2(Vector2.ZERO, ARM_ASSEMBLY_SIZE)
-	# Centre the visible cluster (not the whole 350x350 canvas) in the assembly
-	# area, then apply the editor position/scale. The pivot is set to the cluster
-	# centre so scaling keeps the arm centred on the same spot on the table.
-	var content_center: Vector2 = content_bounds.position + content_bounds.size * 0.5
-	_arm_assembly.pivot_offset = content_center
-	_arm_assembly.scale = Vector2(_effective_scale(), _effective_scale())
-	_arm_assembly.position = ARM_ASSEMBLY_SIZE * 0.5 - content_center + arm_position_offset
-	assembly_area.add_child(_arm_assembly)
 
 
-## Clamped uniform scale for the assembled arm and the loose segments.
+func _first_piece_child(node: Node) -> WorkshopPiece:
+	for child in node.get_children():
+		if child is WorkshopPiece:
+			return child as WorkshopPiece
+	return null
+
+
+## Uniform scale matching the assembled arm, read from the authored node so the
+## loose draggable segments are the same size while dragged as once placed.
 func _effective_scale() -> float:
-	return maxf(0.05, arm_scale)
+	if arm_assembly == null:
+		return 1.0
+	return maxf(0.05, arm_assembly.scale.x)
 
 
 func _spawn_segments() -> void:
@@ -362,7 +325,7 @@ func _build_segment(segment_id: StringName) -> WorkshopSegment:
 
 	var bounds: Rect2 = _piece_visible_rect(piece)
 	if bounds.size.x <= 0.0 or bounds.size.y <= 0.0:
-		bounds = Rect2(Vector2.ZERO, ARM_ASSEMBLY_SIZE)
+		bounds = Rect2(Vector2.ZERO, tex.get_size())
 	piece.position -= bounds.position
 	segment.size = bounds.size
 	segment.placement_offset = bounds.position
@@ -668,32 +631,6 @@ func _clear_placement_hints() -> void:
 
 
 # --- texture helpers -------------------------------------------------------
-
-func _load_arm_layer(segment_id: StringName) -> Texture2D:
-	return _load_texture("%s/%s.png" % [ARM_TEXTURE_DIR, segment_id])
-
-
-func _load_arm_outline(segment_id: StringName) -> Texture2D:
-	return _load_texture("%s/%s_outline.png" % [ARM_TEXTURE_DIR, segment_id])
-
-
-func _load_texture(path: String) -> Texture2D:
-	if not ResourceLoader.exists(path):
-		return null
-	return load(path) as Texture2D
-
-
-func _used_rect_for_texture(tex: Texture2D) -> Rect2:
-	if tex == null:
-		return Rect2(Vector2.ZERO, ARM_ASSEMBLY_SIZE)
-	var img: Image = tex.get_image()
-	if img == null:
-		return Rect2(Vector2.ZERO, tex.get_size())
-	var used: Rect2i = img.get_used_rect()
-	if used.size.x <= 0 or used.size.y <= 0:
-		return Rect2(Vector2.ZERO, tex.get_size())
-	return Rect2(Vector2(used.position), Vector2(used.size))
-
 
 func _piece_visible_rect(piece: WorkshopPiece) -> Rect2:
 	if piece == null or piece.texture == null:
