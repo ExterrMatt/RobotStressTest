@@ -70,6 +70,11 @@ var intro_completed: bool = false
 var intro_step: String = "exposition"
 
 # --- patrol drone encounter tracking ---
+## True once the player has sat down for the uncle's hang-out (drinking) event at
+## least once. The first hang-out is meant to play a longer, lore-heavy version;
+## every one after that plays the short version. Only the short version exists
+## today, so nothing branches on this yet — see UncleHangout.gd's _start().
+var uncle_hangout_seen: bool = false
 ## True once the player has been stopped by the patrol drone at least once
 ## (used to play the closing "that was stressful" thought only the first time).
 var drone_encounter_seen: bool = false
@@ -286,6 +291,7 @@ func reset_for_new_game() -> void:
 	intro_completed = false
 	intro_step = "exposition"
 
+	uncle_hangout_seen = false
 	drone_encounter_seen = false
 	drone_ever_caught = false
 	drone_caught_last_inspection = false
@@ -622,6 +628,7 @@ func to_dict() -> Dictionary:
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
 		"intro_step": intro_step,
+		"uncle_hangout_seen": uncle_hangout_seen,
 		"drone_encounter_seen": drone_encounter_seen,
 		"drone_ever_caught": drone_ever_caught,
 		"drone_caught_last_inspection": drone_caught_last_inspection,
@@ -679,6 +686,7 @@ func from_dict(data: Dictionary) -> void:
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))
+	uncle_hangout_seen = bool(data.get("uncle_hangout_seen", false))
 	drone_encounter_seen = bool(data.get("drone_encounter_seen", false))
 	drone_ever_caught = bool(data.get("drone_ever_caught", false))
 	drone_caught_last_inspection = bool(data.get("drone_caught_last_inspection", false))

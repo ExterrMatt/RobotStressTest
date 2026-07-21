@@ -33,6 +33,10 @@ const FAIL_PENALTY_CAP: int = 50
 ## not about persistent character state.
 var nightly_wakes: int = 0
 var nightly_stress_test_completed: bool = false
+## Set true by the uncle hang-out event: he drank too much and turned in early,
+## so he won't peek out the window to check on the player during tonight's stress
+## test. Cleared at day rollover, like the other nightly state.
+var uncle_out_for_the_night: bool = false
 
 
 func _ready() -> void:
@@ -43,6 +47,7 @@ func _ready() -> void:
 func reset_for_new_game() -> void:
 	nightly_wakes = 0
 	nightly_stress_test_completed = false
+	uncle_out_for_the_night = false
 
 
 ## Returns the human-readable name of a phase enum value.
@@ -73,6 +78,7 @@ func end_day() -> void:
 
 	nightly_wakes = 0
 	nightly_stress_test_completed = false
+	uncle_out_for_the_night = false
 	# Wipe the per-day store-purchase ledger so the player can buy each
 	# item again tomorrow.
 	GameState.reset_daily_purchases()

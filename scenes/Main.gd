@@ -86,6 +86,15 @@ const POST_ACTIVITY_DRONE_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
 const DRONE_ENCOUNTER_LOCATION: LocationData = preload("res://resources/locations/drone_encounter.tres")
 const DRONE_ENCOUNTER_LOCATION_ID: StringName = &"drone_encounter"
 
+## Optional hang-out with the uncle on the way into Night: he shares some drinks,
+## overdoes it and turns in early, so he won't check the window during that
+## night's stress test. Loaded like the drone encounter (its own LocationData).
+## NOTE: 100% while debugging — drop this to ~0.05 (5%) for real play so most
+## nights the uncle still might bother the player.
+const NIGHT_UNCLE_HANGOUT_CHANCE: float = 1.0
+const UNCLE_HANGOUT_LOCATION: LocationData = preload("res://resources/locations/uncle_hangout.tres")
+const UNCLE_HANGOUT_LOCATION_ID: StringName = &"uncle_hangout"
+
 ## Default authored size of the framed scene image. Standard 500x125 scene
 ## textures are normalized to STANDARD_SCENE_TEXTURE_SCALE at runtime, and
 ## locations with taller source art can override via LocationData.frame_size.
@@ -3007,6 +3016,10 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 		# The drone stopped the player. The encounter advances the phase itself
 		# once dismissed, so we don't advance here.
 		return
+	elif _maybe_show_night_hangout_event():
+		# The uncle pulled the player in for drinks on the way into Night. The
+		# hang-out advances the phase itself once it finishes, so don't here.
+		return
 	else:
 		DayCycle.advance_phase()
 
@@ -3033,6 +3046,28 @@ func _maybe_show_post_activity_drone_encounter(result: Dictionary) -> bool:
 	# same transition the normal location picks use. The drone scene reads its
 	# branch inputs via consume_pending_drone_args().
 	_play_transition_then(_apply_location_pick_swap.bind(DRONE_ENCOUNTER_LOCATION, packed))
+	return true
+
+
+# --- pre-night uncle hang-out event ------------------------------------------
+
+## Called as the player finishes their Evening activity and the day would roll
+## into Night. Rolls for the uncle hang-out; if it hits, wipes into the hang-out
+## scene (which sets DayCycle.uncle_out_for_the_night and, on finish, advances the
+## phase). Returns true when the scene was loaded so the caller does NOT advance.
+func _maybe_show_night_hangout_event() -> bool:
+	# Only on the Evening -> Night transition (phase hasn't advanced yet here).
+	if GameState.phase != DayCycle.Phase.EVENING:
+		return false
+	# Don't re-trigger off the hang-out's own finish, and never during the intro.
+	if _current_location_id == UNCLE_HANGOUT_LOCATION_ID or _intro_sequence_enabled:
+		return false
+	if _drone_encounter_rng.randf() >= NIGHT_UNCLE_HANGOUT_CHANCE:
+		return false
+	var packed := _load_location_scene(UNCLE_HANGOUT_LOCATION)
+	if packed == null:
+		return false  # couldn't load — let the caller advance normally
+	_play_transition_then(_apply_location_pick_swap.bind(UNCLE_HANGOUT_LOCATION, packed))
 	return true
 
 

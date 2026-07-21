@@ -1267,6 +1267,10 @@ func _initialize_stress_systems() -> void:
 	var optimal_count := _random_event_count(gas_optimal_event_count_min, gas_optimal_event_count_max)
 	var drift_count := _random_event_count(gas_drift_event_count_min, gas_drift_event_count_max)
 	var alert_count := _random_event_count(window_alert_event_count_min, window_alert_event_count_max)
+	# If the uncle drank himself to sleep during the hang-out event, he never
+	# checks the window tonight — no uncle window alerts at all.
+	if DayCycle.uncle_out_for_the_night:
+		alert_count = 0
 	_gas_optimal_event_times = _evenly_spaced_times(optimal_count, night_duration_seconds)
 	_gas_drift_event_times = _evenly_spaced_times(drift_count, night_duration_seconds)
 	_window_alert_event_times = _random_window_alert_times(alert_count)

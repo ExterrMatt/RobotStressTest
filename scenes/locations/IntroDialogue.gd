@@ -1,9 +1,5 @@
 extends LocationBase
 
-const BLUE_SHIRT_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/blue_shirt_uncle1.png"
-const BLUE_SHIRT_ALT_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/blue_shirt_uncle2.png"
-const HAWAIIAN_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/hawaiian_uncle1.png"
-const HAWAIIAN_ALT_UNCLE_TEXTURE_PATH := "res://assets/textures/characters/uncle/hawaiian_uncle2.png"
 const ED_SHOP_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/ed_shop.png"
 const LIVING_ROOM_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/living_room_evening.png"
 const ROBOT_EYES_SHUT_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/robot_eyes_shut.png"
@@ -11,10 +7,10 @@ const ROBOT_EYES_OPEN_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrou
 const UNCLE_PORTRAIT_SCALE: float = 1.1
 const STORE_OUTRO_HOME_PAGE_INDEX: int = 2
 const ROBOT_FIRST_TALK_HELLO_PAGE_INDEX: int = 3
-const UNCLE_DIALOGUE_STEPS: Dictionary = {
-	"exposition": BLUE_SHIRT_ALT_UNCLE_TEXTURE_PATH,
-	"evening_room": BLUE_SHIRT_UNCLE_TEXTURE_PATH,
-}
+## Intro steps that show the uncle at home in his blue shirt (a random one of the
+## two blue-shirt variants is picked each time — see _apply_intro_visuals). The
+## living-room store_outro scene uses the Hawaiian outfit instead.
+const BLUE_SHIRT_UNCLE_STEPS: Array[String] = ["exposition", "evening_room"]
 
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
@@ -170,19 +166,22 @@ func _apply_intro_visuals(key: String) -> void:
 		if main.has_method("hide_teacher_portrait"):
 			main.hide_teacher_portrait()
 		return
-	if UNCLE_DIALOGUE_STEPS.has(key):
-		_show_uncle_portrait(String(UNCLE_DIALOGUE_STEPS[key]))
+	if BLUE_SHIRT_UNCLE_STEPS.has(key):
+		# First time we see the uncle (home, morning/evening): blue shirt, one of
+		# the two variants picked at random.
+		_show_uncle_portrait(UncleWardrobe.random_texture(UncleWardrobe.BLUE_SHIRT))
 		return
 	if main.has_method("hide_teacher_portrait"):
 		main.hide_teacher_portrait()
 
 
 func _show_store_outro_home_visuals() -> void:
+	# The living-room scene later in the intro: Hawaiian outfit, random variant.
 	_set_scene_image(LIVING_ROOM_BACKGROUND_TEXTURE_PATH)
-	_show_uncle_portrait(HAWAIIAN_UNCLE_TEXTURE_PATH)
+	_show_uncle_portrait(UncleWardrobe.random_texture(UncleWardrobe.HAWAIIAN))
 
 
-func _show_uncle_portrait(texture_path: String = BLUE_SHIRT_UNCLE_TEXTURE_PATH) -> void:
+func _show_uncle_portrait(texture_path: String) -> void:
 	var main := get_tree().current_scene
 	if main == null:
 		return
