@@ -1338,18 +1338,18 @@ func _apply_single_hand_texture_selection(resolved: Dictionary, options: Array[N
 		resolved[options[i]] = (i == selected)
 
 
-## Shows the selected hair-front style and hides the others. The static head hair
-## is only shown while the head is lowered (the head animation supplies its own
-## hair strip); the animation hair columns keep only the selected style visible.
+## Shows the selected hair-front style and hides the others. The chosen style is
+## the same static sprite whether the head is lowered or mid-animation (the head
+## animation sheets carry no per-style hair), so the hairstyle stays consistent
+## across the whole talk cycle. The static hair is z-boosted above the animated
+## head so it still frames the face while raised. Any leftover animation hair
+## columns are always hidden.
 func _apply_hair_texture_selection(resolved: Dictionary) -> void:
 	if HAIR_STATIC_OPTIONS.is_empty():
 		return
 	var selected := _hair_texture_index % HAIR_STATIC_OPTIONS.size()
-	var head_active := _is_named_box_effect_active("HeadHoverBox")
 	for i in range(HAIR_STATIC_OPTIONS.size()):
-		resolved[HAIR_STATIC_OPTIONS[i]] = (not head_active) and (i == selected)
-		if i == selected:
-			continue
+		resolved[HAIR_STATIC_OPTIONS[i]] = (i == selected)
 		if i < HAIR_INTRO_ANIM_OPTIONS.size():
 			resolved[HAIR_INTRO_ANIM_OPTIONS[i]] = false
 		if i < HAIR_LOOP_ANIM_OPTIONS.size():

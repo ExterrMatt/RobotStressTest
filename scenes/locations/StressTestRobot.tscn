@@ -333,6 +333,7 @@ expand_mode = 1
 
 [node name="HairFrontNormal" type="TextureRect" parent="Head" unique_id=1845867497]
 visible = false
+z_index = 6
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -344,6 +345,7 @@ texture = ExtResource("13_hair_front_normal")
 expand_mode = 1
 
 [node name="HairFrontSwing" type="TextureRect" parent="Head" unique_id=1845867498]
+z_index = 6
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -356,6 +358,7 @@ expand_mode = 1
 
 [node name="HairFrontBangs" type="TextureRect" parent="Head" unique_id=1071634240]
 visible = false
+z_index = 6
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -1673,12 +1676,12 @@ script = ExtResource("2_hover_box")
 priority = 10
 click_action = 1
 hover_description = "Raise Head"
-hidden_while_active_image_paths = Array[NodePath]([NodePath("Torso/Neck"), NodePath("Torso/NeckFront"), NodePath("Head/HeadBase"), NodePath("Head/Head2"), NodePath("Head/SquintEyes"), NodePath("Head/HairFrontNormal"), NodePath("Head/HairFrontSwing"), NodePath("Head/HairFrontBangs"), NodePath("Torso/Chest"), NodePath("Torso/ChestDetailsLeft"), NodePath("Torso/ChestDetailsRight"), NodePath("Torso/ChestOutlineLeft"), NodePath("Torso/ChestOutlineRight"), NodePath("Arms/RightArm"), NodePath("Arms/LeftArm")])
+hidden_while_active_image_paths = Array[NodePath]([NodePath("Torso/Neck"), NodePath("Torso/NeckFront"), NodePath("Head/HeadBase"), NodePath("Head/Head2"), NodePath("Head/SquintEyes")])
 shown_while_active_image_paths = Array[NodePath]([NodePath("AnimationLayers")])
-intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/Head"), NodePath("AnimationLayers/Head2"), NodePath("AnimationLayers/Neck"), NodePath("AnimationLayers/SquintEyes"), NodePath("AnimationArmLayers/RightArm"), NodePath("AnimationArmLayers/LeftArm"), NodePath("AnimationLayers/Chest"), NodePath("AnimationLayers/ChestDetailsLeft"), NodePath("AnimationLayers/ChestDetailsRight"), NodePath("AnimationLayers/ChestOutlineLeft"), NodePath("AnimationLayers/ChestOutlineRight"), NodePath("AnimationLayers/HairFrontNormal"), NodePath("AnimationLayers/HairFrontSwing"), NodePath("AnimationLayers/HairFrontBangs"), NodePath("AnimationLayers/Banana")])
-loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBLoopMedium/Neck"), NodePath("AnimationLayers/MouthBLoopMedium/Head"), NodePath("AnimationLayers/MouthBLoopMedium/Head2"), NodePath("AnimationLayers/MouthBLoopMedium/SquintEyes"), NodePath("AnimationArmLayers/MouthBLoopMedium/RightArm"), NodePath("AnimationArmLayers/MouthBLoopMedium/LeftArm"), NodePath("AnimationLayers/MouthBLoopMedium/Chest"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineRight"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontNormal"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontSwing"), NodePath("AnimationLayers/MouthBLoopMedium/HairFrontBangs"), NodePath("AnimationLayers/MouthBLoopMedium/Banana")])
-pre_outro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBPreOutro/Neck"), NodePath("AnimationLayers/MouthBPreOutro/Head"), NodePath("AnimationLayers/MouthBPreOutro/Head2"), NodePath("AnimationLayers/MouthBPreOutro/SquintEyes"), NodePath("AnimationArmLayers/MouthBPreOutro/RightArm"), NodePath("AnimationArmLayers/MouthBPreOutro/LeftArm"), NodePath("AnimationLayers/MouthBPreOutro/Chest"), NodePath("AnimationLayers/MouthBPreOutro/ChestDetailsLeft"), NodePath("AnimationLayers/MouthBPreOutro/ChestDetailsRight"), NodePath("AnimationLayers/MouthBPreOutro/ChestOutlineLeft"), NodePath("AnimationLayers/MouthBPreOutro/ChestOutlineRight"), NodePath("AnimationLayers/MouthBPreOutro/HairFrontNormal"), NodePath("AnimationLayers/MouthBPreOutro/HairFrontSwing"), NodePath("AnimationLayers/MouthBPreOutro/HairFrontBangs"), NodePath("AnimationLayers/MouthBPreOutro/Banana")])
-outro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBOutro/Neck"), NodePath("AnimationLayers/MouthBOutro/Head"), NodePath("AnimationLayers/MouthBOutro/Head2"), NodePath("AnimationLayers/MouthBOutro/SquintEyes"), NodePath("AnimationArmLayers/MouthBOutro/RightArm"), NodePath("AnimationArmLayers/MouthBOutro/LeftArm"), NodePath("AnimationLayers/MouthBOutro/Chest"), NodePath("AnimationLayers/MouthBOutro/ChestDetailsLeft"), NodePath("AnimationLayers/MouthBOutro/ChestDetailsRight"), NodePath("AnimationLayers/MouthBOutro/ChestOutlineLeft"), NodePath("AnimationLayers/MouthBOutro/ChestOutlineRight"), NodePath("AnimationLayers/MouthBOutro/HairFrontNormal"), NodePath("AnimationLayers/MouthBOutro/HairFrontSwing"), NodePath("AnimationLayers/MouthBOutro/HairFrontBangs"), NodePath("AnimationLayers/MouthBOutro/Banana"), NodePath("AnimationLayers/MouthBOutro/Syrup")])
+intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/Head"), NodePath("AnimationLayers/Head2"), NodePath("AnimationLayers/Neck"), NodePath("AnimationLayers/SquintEyes"), NodePath("AnimationLayers/Banana")])
+loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBLoopMedium/Neck"), NodePath("AnimationLayers/MouthBLoopMedium/Head"), NodePath("AnimationLayers/MouthBLoopMedium/Head2"), NodePath("AnimationLayers/MouthBLoopMedium/SquintEyes"), NodePath("AnimationLayers/MouthBLoopMedium/Banana")])
+pre_outro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBPreOutro/Neck"), NodePath("AnimationLayers/MouthBPreOutro/Head"), NodePath("AnimationLayers/MouthBPreOutro/Head2"), NodePath("AnimationLayers/MouthBPreOutro/SquintEyes"), NodePath("AnimationLayers/MouthBPreOutro/Banana")])
+outro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/MouthBOutro/Neck"), NodePath("AnimationLayers/MouthBOutro/Head"), NodePath("AnimationLayers/MouthBOutro/Head2"), NodePath("AnimationLayers/MouthBOutro/SquintEyes"), NodePath("AnimationLayers/MouthBOutro/Banana"), NodePath("AnimationLayers/MouthBOutro/Syrup")])
 intro_frame_count = 16
 loop_frame_count = 8
 pre_outro_frame_count = 7
