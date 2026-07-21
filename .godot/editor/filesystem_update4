@@ -14,3 +14,6 @@ res://autoload/DayCycle.gd
 res://scenes/Main.gd
 res://scenes/locations/StressTest.gd
 res://resources/locations/uncle_hangout.tres
+res://scenes/locations/UncleHangout.tscn
+res://scenes/locations/DroneEncounter.gd
+res://scenes/locations/UncleHangout.gd

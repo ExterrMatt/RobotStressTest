@@ -89,8 +89,8 @@ const DRONE_ENCOUNTER_LOCATION_ID: StringName = &"drone_encounter"
 ## Optional hang-out with the uncle on the way into Night: he shares some drinks,
 ## overdoes it and turns in early, so he won't check the window during that
 ## night's stress test. Loaded like the drone encounter (its own LocationData).
-## ~5% of nights the uncle pulls the player in for drinks and turns in early.
-const NIGHT_UNCLE_HANGOUT_CHANCE: float = 0.05
+## ~13% of nights the uncle pulls the player in for drinks and turns in early.
+const NIGHT_UNCLE_HANGOUT_CHANCE: float = 0.13
 const UNCLE_HANGOUT_LOCATION: LocationData = preload("res://resources/locations/uncle_hangout.tres")
 const UNCLE_HANGOUT_LOCATION_ID: StringName = &"uncle_hangout"
 
