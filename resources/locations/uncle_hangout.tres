@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="LocationData" load_steps=3 format=3 uid="uid://cunclehangouttres"]
+[gd_resource type="Resource" script_class="LocationData" format=3 uid="uid://bcxdwsgddikx7"]
 
 [ext_resource type="Script" uid="uid://d370vjofljuj2" path="res://resources/LocationData.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://jk2e5guv1u7f" path="res://assets/textures/backgrounds/living_room_evening.png" id="2"]

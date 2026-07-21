@@ -10,3 +10,7 @@ res://scenes/locations/WorkInventory.gd
 res://scenes/locations/WorkshopMinigame.gd
 res://scenes/locations/LocationBase.gd
 res://scenes/locations/Work.gd
+res://autoload/DayCycle.gd
+res://scenes/Main.gd
+res://scenes/locations/StressTest.gd
+res://resources/locations/uncle_hangout.tres
