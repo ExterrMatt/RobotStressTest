@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b7uxdmx3dw47g"
-path="res://.godot/imported/blue_shirt_uncle1.png-a606a6bdc0e8f08dc61999aa53ea1433.ctex"
+uid="uid://n4tguqum4e31"
+path="res://.godot/imported/blue_tanktop_uncle_2.png-e3f2fe928e2a74edf5314fecf4788802.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/uncle/blue_shirt_uncle1.png"
-dest_files=["res://.godot/imported/blue_shirt_uncle1.png-a606a6bdc0e8f08dc61999aa53ea1433.ctex"]
+source_file="res://assets/textures/characters/uncle/blue_tanktop_uncle_2.png"
+dest_files=["res://.godot/imported/blue_tanktop_uncle_2.png-e3f2fe928e2a74edf5314fecf4788802.ctex"]
 
 [params]
 

@@ -8,3 +8,5 @@ res://scenes/locations/DraggableItem.gd
 res://scenes/locations/DropSlot.gd
 res://scenes/locations/WorkInventory.gd
 res://scenes/locations/WorkshopMinigame.gd
+res://scenes/locations/LocationBase.gd
+res://scenes/locations/Work.gd
