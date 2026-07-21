@@ -1717,7 +1717,11 @@ func _set_animation_frame_for_box(box: Control, phase: String, frame: int) -> vo
 		var node := get_node_or_null(path) as Sprite2D
 		if node == null:
 			continue
-		var rx := float(column * frame_size.x)
+		# Each sprite's sheet column is authored on its own region_rect.x, so the
+		# node order in the box's path list is independent of the packing order.
+		# This lets sheets pack parts in any column (and reuse a column for more
+		# than one node, e.g. the hair-style variants) without reshuffling lists.
+		var rx := node.region_rect.position.x
 		var ry := float(frame * frame_size.y)
 		var rw := float(frame_size.x)
 		var rh := float(frame_size.y)
