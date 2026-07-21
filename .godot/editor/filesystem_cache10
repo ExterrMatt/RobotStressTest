@@ -44,8 +44,8 @@ wood_creak.mp3::AudioStreamMP3::6436080713433057192::1782705557::1782787467::1::
 wood_creak_long.mp3::AudioStreamMP3::9164911732870077280::1782705557::1782787467::1::::<><><>0<>0<>318a435b59f777e83587efe69c31b636<>res://.godot/imported/wood_creak_long.mp3-ca283cf1618fda0f6b33ff16eafa10ce.mp3str::
 wood_creak_slight.mp3::AudioStreamMP3::5467906602112351266::1782705557::1782787467::1::::<><><>0<>0<>b04a43249c97a58366019faf7e814b35<>res://.godot/imported/wood_creak_slight.mp3-a8099a5329956b99e1efc5eb1beed913.mp3str::
 ::res://assets/textures/::1779326126
-::res://assets/textures/asepritefiles/::1784676898
-(Bed, StressTest) Robot Mouth-B Pre-Done.png::CompressedTexture2D::6428487675829564269::1784665652::1784665697::1::::<><><>0<>0<>469423b5b89dc666ffaa210812bc0fc0<>res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex::
+::res://assets/textures/asepritefiles/::1784677693
+(Bed, StressTest) Robot Mouth-B Pre-Done.png::CompressedTexture2D::6428487675829564269::1784677774::1784665697::1::::<><><>0<>0<>469423b5b89dc666ffaa210812bc0fc0<>res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex::
 (Bed, StressTest) Robot Vegetable-Mission Medium Loop.png::CompressedTexture2D::4407109698332461170::1784677293::1784677693::1::::<><><>0<>0<>a8fb40a55342d40f67e3b696589a9323<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission Medium Loop.png-ad7e9b7ed8c8a13ce6f7f7974510d887.ctex::
 (Bed, StressTest) Robot Vegetable-Mission-Intro.png::CompressedTexture2D::5300773249546261467::1782705557::1782787471::1::::<><><>0<>0<>87416b7bccd73139cf24ac912c5abf0b<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission-Intro.png-876f771cdf25f3e28257b0fff1171054.ctex::
 electrical_generator.png::CompressedTexture2D::4121821759869020902::1782705557::1782787471::1::::<><><>0<>0<>43da6ba6f0374a466cdf94054559abf0<>res://.godot/imported/electrical_generator.png-00f25902e94020199c50b795694d17d8.ctex::
@@ -187,19 +187,19 @@ stress_test_bot_full2.png::CompressedTexture2D::1572027802881034747::1782705557:
 stress_test_bot_full.png::CompressedTexture2D::4130082471108196362::1779326181::1782787472::1::::<><><>0<>0<>bedb8aba5591feb17aa4e77cef519add<>res://.godot/imported/stress_test_bot_full.png-2730ed9951efe32fba279a49cae51286.ctex::
 ::res://assets/textures/characters/robot/stresstest/animations/::1782705557
 ::res://assets/textures/characters/robot/stresstest/animations/head/::1784622373
-::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/::1784676899
+::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/::1784677696
 mouth_b_Intro.png::CompressedTexture2D::7154524262003792004::1784677416::1784677696::1::::<><><>0<>0<>e035c688380244ea86f3e07c857aec80<>res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex::
 ::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/::1784665652
 mouth_b_loop_medium.png::CompressedTexture2D::2690715825140264564::1784665652::1784662858::1::::<><><>0<>0<>273ccf79f34b66fb818558d18fee9a08<>res://.godot/imported/mouth_b_loop_medium.png-5fb6407195719ce02a3e84f34df8dc3d.ctex::
-::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Outro/::1784665652
+::res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Outro/::1784677692
 mouth_b_outro.png::CompressedTexture2D::8534039490030212241::1784665652::1784662859::1::::<><><>0<>0<>1baa58d8fa9fabc4a02290881b9e562d<>res://.godot/imported/mouth_b_outro.png-79674b72e3f02af21a8405b1c5156d51.ctex::
-mouth_b_pre_outro.png::CompressedTexture2D::8439146381570161679::1784677329::1784677692::1::::<><><>0<>0<>cb120987b1d5afb0912483c70700356e<>res://.godot/imported/mouth_b_pre_outro.png-09d1c34f8342b635dff36d126c50bb0e.ctex::
+mouth_b_pre_outro.png::CompressedTexture2D::8439146381570161679::1784677785::1784677789::1::::<><><>0<>0<>cb120987b1d5afb0912483c70700356e<>res://.godot/imported/mouth_b_pre_outro.png-09d1c34f8342b635dff36d126c50bb0e.ctex::
 ::res://assets/textures/characters/robot/stresstest/animations/legs/::1784665652
-::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/::1784676900
+::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/::1784677695
 vegetable_mssion_intro.png::CompressedTexture2D::7073565360305384607::1784677261::1784677695::1::::<><><>0<>0<>9bfa96392fa7c300510af936cc9b24b2<>res://.godot/imported/vegetable_mssion_intro.png-20d76ada59998ec641325a2341ae9bdc.ctex::
-::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/::1784676899
+::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/::1784677693
 vegetable_mission_loop_medium.png::CompressedTexture2D::4100442452743852075::1784677306::1784677693::1::::<><><>0<>0<>4140f29d2edd3542d7540e8a3dcdb5a4<>res://.godot/imported/vegetable_mission_loop_medium.png-4582bc7c74b466fa7d9f0c346005e0f5.ctex::
-::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Outro/::1784677517
+::res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Outro/::1784677694
 vegetable_mission_outro.png::CompressedTexture2D::2616073393519804244::1784677562::1784677693::1::::<><><>0<>0<>a8594f13ccea1f79357031127ff12540<>res://.godot/imported/vegetable_mission_outro.png-e35890a9b5110dc9c83eb97a639ce87d.ctex::
 vegetable_mission_pre_outro.png::CompressedTexture2D::744082874782034939::1784677540::1784677694::1::::<><><>0<>0<>f8f8634f0284ce4ef19d7b6a1f999d9b<>res://.godot/imported/vegetable_mission_pre_outro.png-f2859bd0e10447e894f3b85d5c935986.ctex::
 ::res://assets/textures/characters/robot/stresstest/arms/::1784622400
@@ -299,7 +299,7 @@ screw_right_inner_knee.png::CompressedTexture2D::1812543339254651375::1784621563
 screw_right_inner_knee_slightly_out.png::CompressedTexture2D::649827964324253898::1784622373::1784622399::1::::<><><>0<>0<>a4cd05a0585c95641bb5eb7528d254fc<>res://.godot/imported/screw_right_inner_knee_slightly_out.png-cf3c446682955b429403080d6e669e0c.ctex::
 screw_right_outer_knee.png::CompressedTexture2D::8087597936651810302::1784621563::1783401508::1::::<><><>0<>0<>ae9dba4c734cd96d41746392dfc9205b<>res://.godot/imported/screw_right_outer_knee.png-c85e6088a0ac75eb9969c902c10ea0e6.ctex::
 screw_right_outer_knee_slightly_out.png::CompressedTexture2D::5171896612205701315::1784622373::1784622399::1::::<><><>0<>0<>a49758e4cb3fee8911eb9398da1fc1ce<>res://.godot/imported/screw_right_outer_knee_slightly_out.png-3661d1aebbdc9796664c00a953d2aa3f.ctex::
-::res://assets/textures/characters/robot/stresstest/torso/::1784677490
+::res://assets/textures/characters/robot/stresstest/torso/::1784677693
 balloons.png::CompressedTexture2D::1947343761574645726::1784677490::1784677693::1::::<><><>0<>0<>e92456fa10b3dad7f10cb50e0deaa9d7<>res://.godot/imported/balloons.png-1914f3d0989396f95b4c6e029d4a6409.ctex::
 big_coconuts.png::CompressedTexture2D::933736173929635563::1784622373::1784616871::1::::<><><>0<>0<>9af323b41ab7e6ee0dd8e5c4e463c609<>res://.godot/imported/big_coconuts.png-aaf444f7a32bc096b5bfdff8ec358d5c.ctex::
 chest.png::CompressedTexture2D::8425014457167243712::1784622373::1784622219::1::::<><><>0<>0<>35b897655c2bf41af29911ae59a44b69<>res://.godot/imported/chest.png-6076e50b740f2f7492233870017c2aaf.ctex::
