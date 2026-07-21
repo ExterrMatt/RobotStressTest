@@ -492,6 +492,10 @@ func _on_dialogue_finished() -> void:
 func _exit_tree() -> void:
 	_disable_work_hud_timer()
 	var main: Node = get_tree().current_scene
+	# If the next location already loaded (e.g. the drone encounter after a
+	# shift), it owns the overlays now — don't wipe them on our deferred exit.
+	if superseded_by_new_location(main):
+		return
 	if main and main.has_method("hide_scene_overlay"):
 		main.hide_scene_overlay()
 	if main and main.has_method("hide_inventory_overlay"):

@@ -42,6 +42,22 @@ func debug_enter_held() -> bool:
 		and (Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER))
 
 
+## True when a DIFFERENT location has already become Main's active location —
+## meaning the shared scene/inventory overlays now belong to it. Location swaps
+## queue_free the outgoing node, so its _exit_tree can run a frame LATER, after
+## the incoming location's _ready has already installed its own overlay. A
+## location's _exit_tree teardown of the shared overlays must therefore bail when
+## this returns true, or it wipes the incoming scene's art — this is what
+## occasionally left the patrol drone invisible after a work/store run. Main
+## always clears the outgoing overlay centrally before loading the next location,
+## so skipping here never leaks.
+func superseded_by_new_location(main: Node) -> bool:
+	if main == null or not ("_current_location_node" in main):
+		return false
+	var current: Object = main._current_location_node
+	return current != null and is_instance_valid(current) and current != self
+
+
 func lock_entry_input(seconds: float = DEFAULT_ENTRY_INPUT_LOCK_SECONDS) -> void:
 	if seconds <= 0.0:
 		return

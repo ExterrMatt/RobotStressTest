@@ -181,6 +181,11 @@ func _enter_store_ui() -> void:
 
 func _exit_tree() -> void:
 	var main: Node = get_tree().current_scene
+	# If the next location already loaded, it owns the shared scene overlay now —
+	# tearing it down here (on our deferred exit) would wipe the incoming scene's
+	# art. Main clears our overlay centrally before loading the next location.
+	if superseded_by_new_location(main):
+		return
 	if main and main.has_method("hide_corner_button"):
 		main.hide_corner_button()
 	if main and main.has_method("hide_large_scene_end_button"):
