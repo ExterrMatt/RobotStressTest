@@ -1,0 +1,25 @@
+# Uncle pre-night hang-out (drinking) dialogue.
+# Format: see data/dialogue/school.dlg. One line = one page (click to advance).
+#
+# UncleHangout.gd picks one of the three [open_*] sections at random, then plays
+# [closing]. There is no long/lore version yet — see the TODO in
+# UncleHangout._start(). When you write it, add a [long] section here and branch
+# on it in that script the first time (GameState.uncle_hangout_seen).
+
+[open_1]
+Uncle: Hey Kid, have a drink with me.
+
+[open_2]
+You hear a clinking come from the kitchen. Looking over, you see it's your uncle.
+Uncle: Hey Kid, have a few beers with me.
+
+[open_3]
+You see your uncle opening up a bottle of whiskey.
+Uncle: Get over here kid, have some with me.
+
+[closing]
+You both talk for a while... He drinks quite a bit.
+Uncle: That's it, I'm callin' it a night.
+He stands and stumbles in place.
+Uncle: I'm exhausted... Seeya Kid.
+Thoughts: He'll be out like a light for sure. I won't have to worry about him checking on me tonight.

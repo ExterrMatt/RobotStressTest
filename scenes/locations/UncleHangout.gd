@@ -17,6 +17,7 @@ const UNCLE_PORTRAIT_SCALE: float = 1.1
 
 
 func _ready() -> void:
+	Dialogue.load_file("uncle_hangout", "res://data/dialogue/uncle_hangout.dlg")
 	var main := get_tree().current_scene
 	if main != null and main.has_method("hide_teacher_portrait"):
 		main.hide_teacher_portrait()
@@ -28,48 +29,27 @@ func _ready() -> void:
 	_start()
 
 
+const SHORT_OPENERS: Array[String] = ["open_1", "open_2", "open_3"]
+
+
 func _start() -> void:
 	# He's turning in early tonight — the stress test will skip his window checks.
 	DayCycle.uncle_out_for_the_night = true
 	GameState.uncle_hangout_seen = true
 
-	# --- Dialogue --------------------------------------------------------------
+	# Text lives in data/dialogue/uncle_hangout.dlg. A random short opener, then
+	# the shared closing.
 	# TODO(long version): the first-ever hang-out is meant to play a longer,
 	# lore-heavy conversation; every one after that plays a short version. Only
-	# the short version exists today. To add the long version, branch on
-	# `GameState.uncle_hangout_seen` BEFORE _start() flips it true (or capture it
-	# first), and build the longer page list when it's the player's first time.
-	var pages: Array = _short_opening_pages()
-	_append_shared_closing(pages)
+	# the short version exists today. To add it, write a [long] section in
+	# uncle_hangout.dlg and, when it's the player's first time (capture
+	# GameState.uncle_hangout_seen BEFORE the line above flips it true), play
+	# [long] instead of the random short opener.
+	var opener: String = SHORT_OPENERS[randi() % SHORT_OPENERS.size()]
+	var pages: Array = []
+	pages.append_array(Dialogue.get_pages("uncle_hangout", opener))
+	pages.append_array(Dialogue.get_pages("uncle_hangout", "closing"))
 	dialogue_box.play_pages(pages)
-
-
-## One of three short openers, picked at random, so repeat nights vary.
-func _short_opening_pages() -> Array:
-	var openers: Array = [
-		[
-			["Uncle: Hey Kid, have a drink with me."],
-		],
-		[
-			["You hear a clinking come from the kitchen. Looking over, you see it's your uncle."],
-			["Uncle: Hey Kid, have a few beers with me."],
-		],
-		[
-			["You see your uncle opening up a bottle of whiskey."],
-			["Uncle: Get over here kid, have some with me."],
-		],
-	]
-	return openers[randi() % openers.size()]
-
-
-## The tail every version shares: they drink, he gets too drunk and calls it a
-## night, and the player realises they're free of his window checks tonight.
-func _append_shared_closing(pages: Array) -> void:
-	pages.append(["You both talk for a while... He drinks quite a bit."])
-	pages.append(["Uncle: That's it, I'm callin' it a night."])
-	pages.append(["He stands and stumbles in place."])
-	pages.append(["Uncle: I'm exhausted... Seeya Kid."])
-	pages.append(["Thoughts: He'll be out like a light for sure. I won't have to worry about him checking on me tonight."])
 
 
 func _show_living_room() -> void:

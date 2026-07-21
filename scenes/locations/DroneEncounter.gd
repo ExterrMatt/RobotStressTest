@@ -88,6 +88,7 @@ var _light_serial: int = 0
 
 
 func _ready() -> void:
+	Dialogue.load_file("drone", "res://data/dialogue/drone.dlg")
 	var main := get_tree().current_scene
 	if main != null and main.has_method("consume_pending_drone_args"):
 		var args: Dictionary = main.consume_pending_drone_args()
@@ -181,18 +182,58 @@ func _layout_drone() -> void:
 
 func _start() -> void:
 	var stole := not _contraband.is_empty()
+	# First encounter plays the full conversation; every one after is the short
+	# version, so the player isn't made to sit through the whole bit each time.
 	var first_time := not GameState.drone_encounter_seen
+
+	# Text lives in data/dialogue/drone.dlg; only the drone's layer changes stay
+	# here, mapped to the page index within each section. The sign-off/contraband
+	# text is substituted in. _clean_signoff() is read now, before the flags below
+	# update, so it reflects the record as it stood coming into this inspection.
+	var fmt := {
+		"place": _place,
+		"name": GameState.get_player_name(),
+		"contraband": _contraband,
+		"signoff": _clean_signoff(),
+	}
 
 	var pages: Array = []
 	_page_actions.clear()
-	_append_opening(pages)
-	if stole:
-		_append_caught_branch(pages)
+	if first_time:
+		# The drone drops in on the opening's first DRONE line.
+		_append_section(pages, "opening", fmt, {1: _set_base.bind(true)})
+		if stole:
+			_append_section(pages, "caught", fmt, {
+				0: _set_id.bind(true),     # claw takes the ID as it eyes the lump
+				5: _set_gun.bind(true),    # weapon drawn, stays drawn until it leaves
+				8: _play_light_animation,  # photo snap
+				9: _set_id.bind(false),    # drops the ID back
+				11: _hide_drone,           # flies away — hide gun and all
+			})
+		else:
+			_append_section(pages, "clean", fmt, {
+				0: _play_light_animation,  # camera sweep
+				2: _set_id.bind(true),     # ID handed over
+				4: _hide_drone,            # flies off
+			})
 	else:
-		_append_clean_branch(pages, first_time)
+		_append_section(pages, "opening_short", fmt, {1: _set_base.bind(true)})
+		if stole:
+			_append_section(pages, "caught_short", fmt, {
+				0: _set_id.bind(true),
+				1: _set_gun.bind(true),
+				3: _play_light_animation,
+				4: _set_id.bind(false),
+				6: _hide_drone,
+			})
+		else:
+			_append_section(pages, "clean_short", fmt, {
+				0: _play_light_animation,
+				1: _set_id.bind(true),
+				3: _hide_drone,
+			})
 
-	# Record that the encounter happened / how this inspection went. The clean
-	# branch already read the pre-existing flags when picking its sign-off.
+	# Record that the encounter happened / how this inspection went.
 	GameState.drone_encounter_seen = true
 	if stole:
 		GameState.drone_ever_caught = true
@@ -206,69 +247,14 @@ func _start() -> void:
 	dialogue_box.play_pages(pages)
 
 
-# _add_page keeps _page_actions aligned 1:1 with the pages array so
-# _on_page_advanced can run the layer change for the page just shown.
-func _add_page(pages: Array, lines: Array, action: Callable = Callable()) -> void:
-	pages.append(lines)
-	_page_actions.append(action)
-
-
-func _append_opening(pages: Array) -> void:
-	_add_page(pages, ["[i]The walk home is nice. It's a breath of fresh air after %s.[/i]" % _place])
-	# The drone drops in as it hails the player.
-	_add_page(pages, ["DRONE: HELLO CITIZEN. IDENTIFY YOURSELF."], _set_base.bind(true))
-	_add_page(pages, ["You: Uh.. Hi. I'm %s." % GameState.get_player_name()])
-	_add_page(pages, ["DRONE: PROVIDE IDENTIFICATION."])
-	_add_page(pages, ["[i]The drone's camera locks onto your hand as you reach into your pocket.[/i]"])
-
-
-func _append_caught_branch(pages: Array) -> void:
-	# The player presents their ID (claw takes it) as the drone eyes the lump.
-	_add_page(pages,
-		["[i]As you reach your hand out to present your ID, you notice that the drone's camera is still pointed at a large lump in your pocket.[/i]"],
-		_set_id.bind(true))
-	_add_page(pages, ["DRONE: WHAT IS THAT IN YOUR POCKET? SHOW ME."])
-	_add_page(pages, ["You: It's uhh... it's my... penis."])
-	_add_page(pages, ["DRONE: ..."])
-	_add_page(pages, ["You: ..."])
-	# The drone draws its weapon — and keeps it drawn until it leaves.
-	_add_page(pages,
-		["DRONE: YOU HAVE THREE SECONDS TO IDENTIFY THE ITEM IN YOUR POCKET. 3... 2..."],
-		_set_gun.bind(true))
-	_add_page(pages, ["[i]You rip the %s out of your pocket and present it to the drone.[/i]" % _contraband])
-	_add_page(pages, ["DRONE: THIS IS ILLEGAL CONTRABAND."])
-	# Photo snap: the camera light blinks.
-	_add_page(pages,
-		["DRONE: YOU WILL BE FINED AND THIS INCIDENT WILL BE CATALOGUED IN YOUR RECORD."],
-		_play_light_animation)
-	# The drone drops the ID back — claw empties.
-	_add_page(pages,
-		["[i]It drops your id at your feet on the sidewalk.[/i]"],
-		_set_id.bind(false))
-	_add_page(pages, ["DRONE: THANK YOU FOR YOUR COOPERATION, CRIMINAL."])
-	# The drone leaves — hide it entirely (gun and all).
-	_add_page(pages, ["[i]The drone flies away.[/i]"], _hide_drone)
-	_add_page(pages, ["Thoughts: ...Damn."])
-
-
-func _append_clean_branch(pages: Array, first_time: bool) -> void:
-	# Camera sweeps the player — light blinks as it scans.
-	_add_page(pages,
-		["[i]As you reach for your wallet, you notice the drone's camera scanning you up and down.[/i]"],
-		_play_light_animation)
-	_add_page(pages, ["Thoughts: I shouldn't have any contraband on me... I think I'm safe."])
-	# ID handed over.
-	_add_page(pages,
-		["[i]You hold out the id to the Patrol Drone.[/i]"],
-		_set_id.bind(true))
-	_add_page(pages, ["DRONE: EVERYTHING APPEARS TO BE IN ORDER. %s" % _clean_signoff()])
-	# The drone returns the ID and departs — hide the whole drone.
-	_add_page(pages,
-		["[i]It flies off.[/i]"],
-		_hide_drone)
-	# The reflective beat only ever plays on the very first drone encounter.
-	if first_time:
-		_add_page(pages, ["Thoughts: That was stressful... Good thing I didn't steal anything."])
+## Append a drone.dlg section's pages, keeping _page_actions aligned 1:1 so
+## _on_page_advanced runs the right layer change for each page. `actions` maps a
+## page index WITHIN the section to the callable to run when it is shown.
+func _append_section(pages: Array, section_key: String, fmt: Dictionary, actions: Dictionary) -> void:
+	var section_pages: Array = Dialogue.get_pages("drone", section_key, fmt)
+	for i in section_pages.size():
+		pages.append(section_pages[i])
+		_page_actions.append(actions.get(i, Callable()))
 
 
 ## The drone's clean-scan sign-off, escalating with the player's record. Read

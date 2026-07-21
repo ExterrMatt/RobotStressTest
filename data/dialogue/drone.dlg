@@ -1,0 +1,61 @@
+# Patrol-drone street encounter dialogue.
+# Format: see data/dialogue/school.dlg. One line = one page (click to advance).
+# Placeholders {place} {name} {contraband} {signoff} are filled in by
+# DroneEncounter.gd via Dialogue.get_pages(..., fmt).
+#
+# The drone layer changes (it drops in, draws its gun, blinks its camera, flies
+# off) are NOT authored here — they live in DroneEncounter.gd, mapped to the
+# page index within each section. If you add or remove a line in a section,
+# update the matching action indices in DroneEncounter._start().
+#
+# First encounter plays the full [opening] + [caught]/[clean]. Every encounter
+# after that plays the shorter [opening_short] + [caught_short]/[clean_short].
+
+[opening]
+[i]The walk home is nice. It's a breath of fresh air after {place}.[/i]
+DRONE: HELLO CITIZEN. IDENTIFY YOURSELF.
+You: Uh.. Hi. I'm {name}.
+DRONE: PROVIDE IDENTIFICATION.
+[i]The drone's camera locks onto your hand as you reach into your pocket.[/i]
+
+[opening_short]
+[i]Another walk home after {place}. A patrol drone drops in front of you — you know the drill by now.[/i]
+DRONE: IDENTIFY. PRESENT IDENTIFICATION.
+
+[caught]
+[i]As you reach your hand out to present your ID, you notice that the drone's camera is still pointed at a large lump in your pocket.[/i]
+DRONE: WHAT IS THAT IN YOUR POCKET? SHOW ME.
+You: It's uhh... it's my... penis.
+DRONE: ...
+You: ...
+DRONE: YOU HAVE THREE SECONDS TO IDENTIFY THE ITEM IN YOUR POCKET. 3... 2...
+[i]You rip the {contraband} out of your pocket and present it to the drone.[/i]
+DRONE: THIS IS ILLEGAL CONTRABAND.
+DRONE: YOU WILL BE FINED AND THIS INCIDENT WILL BE CATALOGUED IN YOUR RECORD.
+[i]It drops your id at your feet on the sidewalk.[/i]
+DRONE: THANK YOU FOR YOUR COOPERATION, CRIMINAL.
+[i]The drone flies away.[/i]
+Thoughts: ...Damn.
+
+[caught_short]
+[i]The camera fixes on the lump in your pocket again.[/i]
+DRONE: SHOW ME WHAT'S IN YOUR POCKET. 3... 2...
+[i]You hand the {contraband} over.[/i]
+DRONE: CONTRABAND. YOU'LL BE FINED AND CATALOGUED.
+[i]It drops your id at your feet.[/i]
+DRONE: COOPERATION NOTED, CRIMINAL.
+[i]The drone flies off.[/i]
+
+[clean]
+[i]As you reach for your wallet, you notice the drone's camera scanning you up and down.[/i]
+Thoughts: I shouldn't have any contraband on me... I think I'm safe.
+[i]You hold out the id to the Patrol Drone.[/i]
+DRONE: EVERYTHING APPEARS TO BE IN ORDER. {signoff}
+[i]It flies off.[/i]
+Thoughts: That was stressful... Good thing I didn't steal anything.
+
+[clean_short]
+[i]The drone's camera gives you a quick sweep.[/i]
+[i]You hold out your id.[/i]
+DRONE: EVERYTHING'S IN ORDER. {signoff}
+[i]It flies off.[/i]
