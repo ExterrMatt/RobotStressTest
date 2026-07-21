@@ -16,6 +16,13 @@ const ANIMATION_PHASE_LOOP: String = "loop"
 ## static default pose with the syrup overlay switched on.
 const ANIMATION_PHASE_PRE_OUTRO: String = "pre_outro"
 const ANIMATION_PHASE_OUTRO: String = "outro"
+
+## When a wind-down is requested mid-loop we do not cut immediately: the loop
+## keeps playing its first three frames (0, 1, 2) and, on reaching the fourth
+## frame (index 3), begins the pre-outro instead of drawing that frame. This
+## gives a short, consistent beat before the outro on both the head and pelvis
+## animations.
+const LOOP_OUTRO_TRANSITION_FRAME: int = 3
 const HOVER_BOX_OVERLAY_Z_INDEX: int = 1000
 const WOOD_CREAK_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/wood/wood_creak.mp3",
@@ -994,10 +1001,12 @@ func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) 
 	var state: Dictionary = _animation_states[box]
 	var playing := bool(state.get("playing", false))
 	if String(state.get("phase", "")) == ANIMATION_PHASE_LOOP and playing:
-		# Lowering the head from the talk loop plays the wind-down (pre-outro then
+		# Lowering from the talk/lift loop plays the wind-down (pre-outro then
 		# outro) when the box has one; otherwise it snaps straight back to static.
+		# The wind-down does not start on click: it is armed here and begins when
+		# the loop next reaches its fourth frame (see _advance_animation_for_box).
 		if _box_has_outro(box):
-			_begin_outro_for_box(box)
+			state["pending_outro"] = true
 		else:
 			_finish_animation_for_box(box)
 		return
@@ -1062,6 +1071,17 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 	var frame := int(floor(float(state["elapsed"]) * fps))
 	var frame_count := _get_phase_frame_count(box, phase)
 
+	# A requested wind-down waits for the loop to play its first three frames and
+	# then, on the fourth frame, hands off to the pre-outro instead of drawing it.
+	# "Arming" on any frame before the fourth guarantees the loop is caught at a
+	# genuine 0,1,2 -> 3 boundary even if the click landed later in the cycle.
+	if phase == ANIMATION_PHASE_LOOP and bool(state.get("pending_outro", false)):
+		if frame < LOOP_OUTRO_TRANSITION_FRAME:
+			state["pending_outro_armed"] = true
+		elif bool(state.get("pending_outro_armed", false)):
+			_begin_outro_for_box(box)
+			return
+
 	if frame >= frame_count:
 		if phase == ANIMATION_PHASE_INTRO \
 				and bool(box.get("loop_after_intro")) \
@@ -1123,6 +1143,8 @@ func _begin_outro_for_box(box: Control) -> void:
 	state["elapsed"] = 0.0
 	state["playing"] = true
 	state["pre_outro_plays"] = 0
+	state["pending_outro"] = false
+	state["pending_outro_armed"] = false
 	_set_animation_frame_for_box(box, phase, 0)
 	_play_hand_rub_sound()
 	_apply_visibility_state()
