@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bdjil1v5440yi"
-path="res://.godot/imported/vegetable_mission_outro.png-e35890a9b5110dc9c83eb97a639ce87d.ctex"
+uid="uid://cxuaiuiligyo8"
+path="res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Outro/vegetable_mission_outro.png"
-dest_files=["res://.godot/imported/vegetable_mission_outro.png-e35890a9b5110dc9c83eb97a639ce87d.ctex"]
+source_file="res://assets/textures/asepritefiles/(Bed, StressTest) Robot Mouth-B Pre-Done.png"
+dest_files=["res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex"]
 
 [params]
 
