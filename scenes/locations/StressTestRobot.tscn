@@ -56,6 +56,8 @@
 [ext_resource type="Texture2D" uid="uid://belnxxgc3k8qa" path="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Loop-Medium/mouth_b_loop_medium.png" id="25_mouth_b_loop_medium"]
 [ext_resource type="Texture2D" uid="uid://c71qt80w3mb1h" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Intro/vegetable_mssion_intro.png" id="26_vegetable_mission_intro"]
 [ext_resource type="Texture2D" uid="uid://byojxnpwinxol" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Medium/vegetable_mission_loop_medium.png" id="27_vegetable_mission_loop_medium"]
+[ext_resource type="Texture2D" uid="uid://bvg8outro1x9k7" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Outro/vegetable_mission_outro.png" id="90_veg_outro"]
+[ext_resource type="Texture2D" uid="uid://cvg8preout2m7d" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Outro/vegetable_mission_pre_outro.png" id="91_veg_preoutro"]
 [ext_resource type="Texture2D" uid="uid://dp25lf0glr675" path="res://assets/textures/characters/robot/stresstest/torso/chest_details_left.png" id="28_chest_details_left"]
 [ext_resource type="Texture2D" uid="uid://cdtqvcab7vmls" path="res://assets/textures/characters/robot/stresstest/arms/left_shoulder_pad.png" id="29_left_shoulder_pad"]
 [ext_resource type="Texture2D" uid="uid://ctnpnm6c88viq" path="res://assets/textures/characters/robot/stresstest/arms/right_shoulder_pad.png" id="30_right_shoulder_pad"]
@@ -1655,6 +1657,290 @@ centered = false
 region_enabled = true
 region_rect = Rect2(3250, 0, 250, 350)
 
+[node name="VegetableMissionPreOutro" type="Node2D" parent="AnimationLayers" unique_id=730000000]
+
+[node name="TorsoCrunch" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000001]
+visible = false
+z_index = 0
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 250, 350)
+
+[node name="LeftLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000002]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(250, 0, 250, 350)
+
+[node name="RightLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000003]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(500, 0, 250, 350)
+
+[node name="LeftHandOvergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000004]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(750, 0, 250, 350)
+
+[node name="RightHandOvergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000005]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1000, 0, 250, 350)
+
+[node name="RightHandUndergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000006]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1250, 0, 250, 350)
+
+[node name="LeftHandUndergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000007]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1500, 0, 250, 350)
+
+[node name="LeftLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000008]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1750, 0, 250, 350)
+
+[node name="RightLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000009]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2000, 0, 250, 350)
+
+[node name="Vegetable" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000010]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2250, 0, 250, 350)
+
+[node name="VegetableOutline" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000011]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2500, 0, 250, 350)
+
+[node name="VegetableFolds" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000012]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2750, 0, 250, 350)
+
+[node name="Chest" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000013]
+visible = false
+z_index = 1
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3000, 0, 250, 350)
+
+[node name="Balloons" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000014]
+visible = false
+z_index = 4
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3250, 0, 250, 350)
+
+[node name="SmallCoconuts" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000015]
+visible = false
+z_index = 2
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3500, 0, 250, 350)
+
+[node name="BigCoconuts" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000016]
+visible = false
+z_index = 3
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3750, 0, 250, 350)
+
+[node name="Pepperonis" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000017]
+visible = false
+z_index = 3
+texture = ExtResource("91_veg_preoutro")
+centered = false
+region_enabled = true
+region_rect = Rect2(4000, 0, 250, 350)
+
+[node name="VegetableMissionOutro" type="Node2D" parent="AnimationLayers" unique_id=740000000]
+
+[node name="TorsoCrunch" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000001]
+visible = false
+z_index = 0
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 250, 350)
+
+[node name="LeftLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000002]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(250, 0, 250, 350)
+
+[node name="RightLegUpThigh" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000003]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(500, 0, 250, 350)
+
+[node name="LeftHandOvergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000004]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(750, 0, 250, 350)
+
+[node name="RightHandOvergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000005]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1000, 0, 250, 350)
+
+[node name="RightHandUndergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000006]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1250, 0, 250, 350)
+
+[node name="LeftHandUndergrip" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000007]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1500, 0, 250, 350)
+
+[node name="LeftLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000008]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(1750, 0, 250, 350)
+
+[node name="RightLegUpShin" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000009]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2000, 0, 250, 350)
+
+[node name="Vegetable" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000010]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2250, 0, 250, 350)
+
+[node name="VegetableOutline" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000011]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2500, 0, 250, 350)
+
+[node name="VegetableFolds" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000012]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(2750, 0, 250, 350)
+
+[node name="Syrup" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000013]
+visible = false
+z_index = 5
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3000, 0, 250, 350)
+
+[node name="Chest" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000014]
+visible = false
+z_index = 1
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3250, 0, 250, 350)
+
+[node name="Balloons" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000015]
+visible = false
+z_index = 4
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3500, 0, 250, 350)
+
+[node name="SmallCoconuts" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000016]
+visible = false
+z_index = 2
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(3750, 0, 250, 350)
+
+[node name="BigCoconuts" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000017]
+visible = false
+z_index = 3
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(4000, 0, 250, 350)
+
+[node name="Pepperonis" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000018]
+visible = false
+z_index = 3
+texture = ExtResource("90_veg_outro")
+centered = false
+region_enabled = true
+region_rect = Rect2(4250, 0, 250, 350)
+
 [node name="ChestCover" type="TextureRect" parent="." unique_id=931354332]
 z_index = 4
 layout_mode = 1
@@ -1724,6 +2010,11 @@ hover_description = "Raise Legs"
 hidden_while_active_image_paths = Array[NodePath]([NodePath("Legs/RightLeg"), NodePath("Legs/LeftLeg"), NodePath("Legs/RightLegSlightlyOut"), NodePath("Legs/LeftLegSlightlyOut"), NodePath("Legs/RightLegUpThigh"), NodePath("Legs/RightLegUpShin"), NodePath("Legs/LeftLegUpThigh"), NodePath("Legs/LeftLegUpShin"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/ChestDetailsLeft"), NodePath("Torso/ChestDetailsRight"), NodePath("Torso/ChestOutlineLeft"), NodePath("Torso/ChestOutlineRight"), NodePath("Torso/BigCoconuts"), NodePath("Torso/SmallCoconuts"), NodePath("Torso/Pepperonis"), NodePath("AnimationLayers/ChestDetailsLeft"), NodePath("AnimationLayers/ChestDetailsRight"), NodePath("AnimationLayers/ChestOutlineLeft"), NodePath("AnimationLayers/ChestOutlineRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineRight")])
 intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionIntro/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionIntro/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionIntro/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionIntro/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/Vegetable"), NodePath("AnimationLayers/VegetableMissionIntro/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionIntro/Chest"), NodePath("AnimationLayers/VegetableMissionIntro/SmallCoconuts"), NodePath("AnimationLayers/VegetableMissionIntro/BigCoconuts"), NodePath("AnimationLayers/VegetableMissionIntro/Pepperonis")])
 loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionLoopMedium/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Vegetable"), NodePath("AnimationLayers/VegetableMissionLoopMedium/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionLoopMedium/VegetableFolds"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Chest"), NodePath("AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts"), NodePath("AnimationLayers/VegetableMissionLoopMedium/BigCoconuts"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Pepperonis"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Balloons")])
+pre_outro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionPreOutro/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionPreOutro/Vegetable"), NodePath("AnimationLayers/VegetableMissionPreOutro/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionPreOutro/VegetableFolds"), NodePath("AnimationLayers/VegetableMissionPreOutro/Chest"), NodePath("AnimationLayers/VegetableMissionPreOutro/Balloons"), NodePath("AnimationLayers/VegetableMissionPreOutro/SmallCoconuts"), NodePath("AnimationLayers/VegetableMissionPreOutro/BigCoconuts"), NodePath("AnimationLayers/VegetableMissionPreOutro/Pepperonis")])
+outro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionOutro/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionOutro/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionOutro/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionOutro/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionOutro/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionOutro/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionOutro/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionOutro/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionOutro/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionOutro/Vegetable"), NodePath("AnimationLayers/VegetableMissionOutro/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionOutro/VegetableFolds"), NodePath("AnimationLayers/VegetableMissionOutro/Syrup"), NodePath("AnimationLayers/VegetableMissionOutro/Chest"), NodePath("AnimationLayers/VegetableMissionOutro/Balloons"), NodePath("AnimationLayers/VegetableMissionOutro/SmallCoconuts"), NodePath("AnimationLayers/VegetableMissionOutro/BigCoconuts"), NodePath("AnimationLayers/VegetableMissionOutro/Pepperonis")])
+pre_outro_frame_count = 6
+outro_frame_count = 9
+pre_outro_repeat = 3
 intro_frame_count = 16
 loop_frame_count = 8
 
