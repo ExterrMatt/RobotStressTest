@@ -398,6 +398,7 @@ texture = ExtResource("23_blanket_bump")
 expand_mode = 1
 
 [node name="Darkness" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1418230190]
+z_index = 1000
 modulate = Color(1, 1, 1, 0.8156863)
 layout_mode = 1
 anchors_preset = 15

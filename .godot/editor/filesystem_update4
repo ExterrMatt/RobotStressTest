@@ -18,3 +18,5 @@ res://scenes/locations/UncleHangout.tscn
 res://scenes/locations/DroneEncounter.gd
 res://scenes/locations/UncleHangout.gd
 res://scenes/locations/UncleWardrobe.gd
+res://scenes/locations/HeadScrewRepair.gd
+res://scenes/locations/RobotHoverBox.gd

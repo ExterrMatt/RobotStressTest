@@ -11,6 +11,18 @@ const CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION: int = 1
 const ANIMATION_PHASE_NONE: String = ""
 const ANIMATION_PHASE_INTRO: String = "intro"
 const ANIMATION_PHASE_LOOP: String = "loop"
+## Wind-down phases for the Mouth-B talk animation: the pre-outro strip plays a
+## few times, then the outro strip plays once, then the head returns to its
+## static default pose with the syrup overlay switched on.
+const ANIMATION_PHASE_PRE_OUTRO: String = "pre_outro"
+const ANIMATION_PHASE_OUTRO: String = "outro"
+
+## When a wind-down is requested mid-loop we do not cut immediately: the loop
+## keeps playing its first three frames (0, 1, 2) and, on reaching the fourth
+## frame (index 3), begins the pre-outro instead of drawing that frame. This
+## gives a short, consistent beat before the outro on both the head and pelvis
+## animations.
+const LOOP_OUTRO_TRANSITION_FRAME: int = 3
 const HOVER_BOX_OVERLAY_Z_INDEX: int = 1000
 const WOOD_CREAK_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/wood/wood_creak.mp3",
@@ -101,6 +113,35 @@ const SQUINT_ANIM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/SquintEyes",
 ]
 
+## The "human" skin set, toggled by the Ctrl+H debug key. Off by default. The
+## stomach skin and the two chest smooth overlays are authored to be shown
+## together, so they are gated as one group.
+const HUMAN_SKIN_DEFAULT_ENABLED: bool = false
+const HUMAN_SKIN_PATHS: Array[NodePath] = [
+	^"Torso/StomachSkin",
+	^"Torso/ChestSmoothLeft",
+	^"Torso/ChestSmoothRight",
+]
+
+## Syrup overlay drizzled onto the static head once the Mouth-B outro finishes.
+## Off by default and cleared whenever a fresh head animation is primed.
+const SYRUP_STATIC_PATH: NodePath = ^"Head/Syrup"
+
+## Leg-screw controllers (present only in the stress test) and the mapping from
+## each screw node to its texture stem. The rig swaps these screws between their
+## default and "slightly out" art as the leg pose changes, and hides them while
+## the leg is raised (there is no raised-leg screw art).
+const LEFT_LEG_SCREW_REPAIR_PATH: NodePath = ^"LeftLegScrewRepair"
+const RIGHT_LEG_SCREW_REPAIR_PATH: NodePath = ^"RightLegScrewRepair"
+const LEG_SCREW_PART_BY_NODE: Dictionary = {
+	"ScrewCheek": "cheek",
+	"ScrewOuterKnee": "outer_knee",
+	"ScrewInnerKnee": "inner_knee",
+	"ScrewAnkle": "ankle",
+	"ScrewFoot": "foot",
+}
+const LEG_SCREW_TEXTURE_DIR: String = "res://assets/textures/characters/robot/stresstest/legs/"
+
 ## Hair-front styles cycled by the hair hover box, in click order. One style is
 ## shown at a time on the static head; the matching column drives the head
 ## animation. The default is the swing style.
@@ -120,6 +161,16 @@ const HAIR_LOOP_ANIM_OPTIONS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/HairFrontNormal",
 	^"AnimationLayers/MouthBLoopMedium/HairFrontSwing",
 	^"AnimationLayers/MouthBLoopMedium/HairFrontBangs",
+]
+const HAIR_PRE_OUTRO_ANIM_OPTIONS: Array[NodePath] = [
+	^"AnimationLayers/MouthBPreOutro/HairFrontNormal",
+	^"AnimationLayers/MouthBPreOutro/HairFrontSwing",
+	^"AnimationLayers/MouthBPreOutro/HairFrontBangs",
+]
+const HAIR_OUTRO_ANIM_OPTIONS: Array[NodePath] = [
+	^"AnimationLayers/MouthBOutro/HairFrontNormal",
+	^"AnimationLayers/MouthBOutro/HairFrontSwing",
+	^"AnimationLayers/MouthBOutro/HairFrontBangs",
 ]
 
 # The old single "torso" part is split into two independently-gated parts:
@@ -366,6 +417,12 @@ var _hair_texture_index: int = HAIR_DEFAULT_INDEX
 var _head_texture_index: int = HEAD_DEFAULT_INDEX
 ## Whether the squint-eyes overlay is shown.
 var _squint_eyes_enabled: bool = SQUINT_DEFAULT_ENABLED
+## Whether the "human" skin set (stomach skin + chest smooth) is shown.
+var _human_skin_enabled: bool = HUMAN_SKIN_DEFAULT_ENABLED
+## Whether the syrup overlay is drizzled on the static head (set by the outro).
+var _syrup_enabled: bool = false
+## Cache of loaded leg-screw textures keyed by file name.
+var _leg_screw_texture_cache: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
@@ -433,13 +490,24 @@ func _handle_debug_key(event: InputEventKey) -> void:
 		return
 	if event.ctrl_pressed and event.shift_pressed:
 		_toggle_squint_eyes()
-	elif event.shift_pressed and not event.ctrl_pressed:
+	elif event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed:
+		# Ctrl+H previews the "human" skin set: stomach skin plus the chest smooth
+		# overlays, which always show together as a set.
+		_toggle_human_skin()
+	elif event.shift_pressed:
 		_swap_head_texture()
-	elif not event.ctrl_pressed and not event.alt_pressed and not event.meta_pressed:
+	elif not event.alt_pressed and not event.meta_pressed:
 		_toggle_hand_grip()
 	else:
 		return
 	get_viewport().set_input_as_handled()
+
+
+## Shows or hides the "human" skin set (stomach_skin + the two chest smooth
+## overlays). They are authored to be shown together, so they toggle as one.
+func _toggle_human_skin() -> void:
+	_human_skin_enabled = not _human_skin_enabled
+	_apply_visibility_state()
 
 
 func _toggle_hand_grip() -> void:
@@ -565,6 +633,8 @@ func reset_interactions_to_default() -> void:
 	_hair_texture_index = HAIR_DEFAULT_INDEX
 	_head_texture_index = HEAD_DEFAULT_INDEX
 	_squint_eyes_enabled = SQUINT_DEFAULT_ENABLED
+	_human_skin_enabled = HUMAN_SKIN_DEFAULT_ENABLED
+	_syrup_enabled = false
 	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -591,6 +661,10 @@ func is_in_default_pose() -> bool:
 	if _head_texture_index != HEAD_DEFAULT_INDEX:
 		return false
 	if _squint_eyes_enabled != SQUINT_DEFAULT_ENABLED:
+		return false
+	if _human_skin_enabled != HUMAN_SKIN_DEFAULT_ENABLED:
+		return false
+	if _syrup_enabled:
 		return false
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -937,7 +1011,14 @@ func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) 
 	var state: Dictionary = _animation_states[box]
 	var playing := bool(state.get("playing", false))
 	if String(state.get("phase", "")) == ANIMATION_PHASE_LOOP and playing:
-		_finish_animation_for_box(box)
+		# Lowering from the talk/lift loop plays the wind-down (pre-outro then
+		# outro) when the box has one; otherwise it snaps straight back to static.
+		# The wind-down does not start on click: it is armed here and begins when
+		# the loop next reaches its fourth frame (see _advance_animation_for_box).
+		if _box_has_outro(box):
+			state["pending_outro"] = true
+		else:
+			_finish_animation_for_box(box)
 		return
 
 	if playing:
@@ -964,6 +1045,9 @@ func _enter_leg_prestage() -> void:
 
 func _prime_layered_animation(box: Control) -> void:
 	_leg_prestage_active = false
+	# A fresh head talk cycle wipes the syrup left over from a previous outro.
+	if _box_has_outro(box):
+		_syrup_enabled = false
 	_animation_states[box] = {
 		"phase": ANIMATION_PHASE_INTRO,
 		"playing": false,
@@ -997,6 +1081,17 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 	var frame := int(floor(float(state["elapsed"]) * fps))
 	var frame_count := _get_phase_frame_count(box, phase)
 
+	# A requested wind-down waits for the loop to play its first three frames and
+	# then, on the fourth frame, hands off to the pre-outro instead of drawing it.
+	# "Arming" on any frame before the fourth guarantees the loop is caught at a
+	# genuine 0,1,2 -> 3 boundary even if the click landed later in the cycle.
+	if phase == ANIMATION_PHASE_LOOP and bool(state.get("pending_outro", false)):
+		if frame < LOOP_OUTRO_TRANSITION_FRAME:
+			state["pending_outro_armed"] = true
+		elif bool(state.get("pending_outro_armed", false)):
+			_begin_outro_for_box(box)
+			return
+
 	if frame >= frame_count:
 		if phase == ANIMATION_PHASE_INTRO \
 				and bool(box.get("loop_after_intro")) \
@@ -1013,10 +1108,71 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 			_apply_visibility_state()
 			return
 
+		if phase == ANIMATION_PHASE_PRE_OUTRO:
+			var plays := int(state.get("pre_outro_plays", 0)) + 1
+			var repeat := maxi(1, int(box.get("pre_outro_repeat")))
+			if plays < repeat:
+				state["pre_outro_plays"] = plays
+				state["elapsed"] = 0.0
+				_set_animation_frame_for_box(box, phase, 0)
+				_apply_visibility_state()
+				return
+			if not _get_animation_phase_paths(box, ANIMATION_PHASE_OUTRO).is_empty():
+				state["phase"] = ANIMATION_PHASE_OUTRO
+				state["elapsed"] = 0.0
+				_set_animation_frame_for_box(box, ANIMATION_PHASE_OUTRO, 0)
+				_apply_visibility_state()
+				return
+			_finish_outro_for_box(box)
+			return
+
+		if phase == ANIMATION_PHASE_OUTRO:
+			_finish_outro_for_box(box)
+			return
+
 		_finish_animation_for_box(box)
 		return
 
 	_set_animation_frame_for_box(box, phase, frame)
+
+
+## Starts the head wind-down: the pre-outro strip (repeated) then the outro
+## strip. Falls back to the outro alone, or a plain finish, when a strip is
+## missing so the head never gets stuck mid-loop.
+func _begin_outro_for_box(box: Control) -> void:
+	if not _animation_states.has(box):
+		return
+	var state: Dictionary = _animation_states[box]
+	var phase := ANIMATION_PHASE_PRE_OUTRO
+	if _get_animation_phase_paths(box, ANIMATION_PHASE_PRE_OUTRO).is_empty():
+		phase = ANIMATION_PHASE_OUTRO
+	if _get_animation_phase_paths(box, phase).is_empty():
+		_finish_outro_for_box(box)
+		return
+	state["phase"] = phase
+	state["elapsed"] = 0.0
+	state["playing"] = true
+	state["pre_outro_plays"] = 0
+	state["pending_outro"] = false
+	state["pending_outro_armed"] = false
+	_set_animation_frame_for_box(box, phase, 0)
+	_play_hand_rub_sound()
+	_apply_visibility_state()
+
+
+## Ends the head animation after the outro and drizzles the syrup overlay onto
+## the static head, leaving it in its default lowered pose.
+func _finish_outro_for_box(box: Control) -> void:
+	_syrup_enabled = true
+	_finish_animation_for_box(box)
+
+
+func _box_has_outro(box: Control) -> bool:
+	if box == null or not is_instance_valid(box):
+		return false
+	if box.has_method("has_outro"):
+		return bool(box.call("has_outro"))
+	return false
 
 
 ## Ends the layered animation on one hover box, leaving any other running
@@ -1067,10 +1223,13 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_leg_prestage_visibility(resolved)
 	_apply_leg_pose_selection(resolved)
+	_apply_leg_screw_pose()
 	_apply_hand_texture_selection(resolved)
 	_apply_hair_texture_selection(resolved)
 	_apply_head_texture_selection(resolved)
 	_apply_squint_eyes_state(resolved)
+	_apply_human_skin_state(resolved)
+	_apply_syrup_state(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_cosmetic_item_availability_to_dictionary(resolved)
 	_apply_chest_cover_gated_animations(resolved)
@@ -1212,8 +1371,10 @@ func _apply_single_hand_texture_selection(resolved: Dictionary, options: Array[N
 
 
 ## Shows the selected hair-front style and hides the others. The static head hair
-## is only shown while the head is lowered (the head animation supplies its own
-## hair strip); the animation hair columns keep only the selected style visible.
+## shows only while the head is lowered; each Mouth-B sheet carries all three
+## hair styles as their own columns, so while the head is raised the matching
+## animation column drives the same chosen style — keeping the hairstyle
+## consistent across the whole talk cycle in both directions.
 func _apply_hair_texture_selection(resolved: Dictionary) -> void:
 	if HAIR_STATIC_OPTIONS.is_empty():
 		return
@@ -1223,10 +1384,9 @@ func _apply_hair_texture_selection(resolved: Dictionary) -> void:
 		resolved[HAIR_STATIC_OPTIONS[i]] = (not head_active) and (i == selected)
 		if i == selected:
 			continue
-		if i < HAIR_INTRO_ANIM_OPTIONS.size():
-			resolved[HAIR_INTRO_ANIM_OPTIONS[i]] = false
-		if i < HAIR_LOOP_ANIM_OPTIONS.size():
-			resolved[HAIR_LOOP_ANIM_OPTIONS[i]] = false
+		for options in [HAIR_INTRO_ANIM_OPTIONS, HAIR_LOOP_ANIM_OPTIONS, HAIR_PRE_OUTRO_ANIM_OPTIONS, HAIR_OUTRO_ANIM_OPTIONS]:
+			if i < options.size():
+				resolved[options[i]] = false
 
 
 ## Shows the selected head style and hides the other. Like the hair, the static
@@ -1255,6 +1415,64 @@ func _apply_squint_eyes_state(resolved: Dictionary) -> void:
 	resolved[SQUINT_STATIC_PATH] = _squint_eyes_enabled and not head_active
 	if not _squint_eyes_enabled:
 		_hide_paths(resolved, SQUINT_ANIM_PATHS)
+
+
+## Resolves the "human" skin set. All three overlays (stomach skin and both chest
+## smooth overlays) show together while the set is enabled and the head is
+## lowered, and are hidden otherwise.
+func _apply_human_skin_state(resolved: Dictionary) -> void:
+	var head_active := _is_named_box_effect_active("HeadHoverBox")
+	var shown := _human_skin_enabled and not head_active
+	for path in HUMAN_SKIN_PATHS:
+		resolved[path] = shown
+
+
+## Resolves the syrup overlay: shown on the static head once the outro has run,
+## and only while the head is lowered (the raised-head animation carries its own
+## syrup column).
+func _apply_syrup_state(resolved: Dictionary) -> void:
+	var head_active := _is_named_box_effect_active("HeadHoverBox")
+	resolved[SYRUP_STATIC_PATH] = _syrup_enabled and not head_active
+
+
+## Swaps each leg's screws between their default and "slightly out" art to match
+## the current per-side leg pose, and hides them while the leg is raised. Runs
+## against the stress-test leg-screw controllers; a no-op in scenes without them.
+func _apply_leg_screw_pose() -> void:
+	if Engine.is_editor_hint():
+		return
+	_apply_single_leg_screw_pose(LEFT_LEG_SCREW_REPAIR_PATH, "left", _left_leg_pose)
+	_apply_single_leg_screw_pose(RIGHT_LEG_SCREW_REPAIR_PATH, "right", _right_leg_pose)
+
+
+func _apply_single_leg_screw_pose(controller_path: NodePath, side: String, pose: int) -> void:
+	var controller := get_node_or_null(controller_path)
+	if controller == null:
+		return
+	# The raised leg has no screw art, so hide the screws entirely while raised;
+	# the player can still raise a leg without repairing its screws first.
+	if controller.has_method("set_screws_force_hidden"):
+		controller.call("set_screws_force_hidden", pose == LEG_POSE_RAISED)
+	var suffix := "_slightly_out" if pose == LEG_POSE_SLIGHTLY_OUT else ""
+	for node_name in LEG_SCREW_PART_BY_NODE:
+		var node := controller.get_node_or_null(NodePath(node_name)) as TextureRect
+		if node == null:
+			continue
+		var part: String = LEG_SCREW_PART_BY_NODE[node_name]
+		var texture := _leg_screw_texture("screw_%s_%s%s.png" % [side, part, suffix])
+		if texture != null:
+			node.texture = texture
+
+
+func _leg_screw_texture(file_name: String) -> Texture2D:
+	if _leg_screw_texture_cache.has(file_name):
+		return _leg_screw_texture_cache[file_name]
+	var path := LEG_SCREW_TEXTURE_DIR + file_name
+	var texture: Texture2D = null
+	if ResourceLoader.exists(path, "Texture2D"):
+		texture = load(path) as Texture2D
+	_leg_screw_texture_cache[file_name] = texture
+	return texture
 
 
 ## Nudges the static squint eyes down one pixel while the head_2 style is shown
@@ -1532,7 +1750,11 @@ func _set_animation_frame_for_box(box: Control, phase: String, frame: int) -> vo
 		var node := get_node_or_null(path) as Sprite2D
 		if node == null:
 			continue
-		var rx := float(column * frame_size.x)
+		# Each sprite's sheet column is authored on its own region_rect.x, so the
+		# node order in the box's path list is independent of the packing order.
+		# This lets sheets pack parts in any column (and reuse a column for more
+		# than one node, e.g. the hair-style variants) without reshuffling lists.
+		var rx := node.region_rect.position.x
 		var ry := float(frame * frame_size.y)
 		var rw := float(frame_size.x)
 		var rh := float(frame_size.y)
@@ -1564,6 +1786,8 @@ func _get_box_animation_paths(box: Control) -> Array[NodePath]:
 	var merged: Array[NodePath] = []
 	_merge_paths(merged, box.get("intro_animation_nodes"))
 	_merge_paths(merged, box.get("loop_animation_nodes"))
+	_merge_paths(merged, box.get("pre_outro_animation_nodes"))
+	_merge_paths(merged, box.get("outro_animation_nodes"))
 	return merged
 
 
@@ -1592,6 +1816,10 @@ func _get_visible_animation_phase_for_box(box: Control) -> String:
 func _get_phase_frame_count(box: Control, phase: String) -> int:
 	if phase == ANIMATION_PHASE_LOOP:
 		return maxi(1, int(box.get("loop_frame_count")))
+	if phase == ANIMATION_PHASE_PRE_OUTRO:
+		return maxi(1, int(box.get("pre_outro_frame_count")))
+	if phase == ANIMATION_PHASE_OUTRO:
+		return maxi(1, int(box.get("outro_frame_count")))
 	return maxi(1, int(box.get("intro_frame_count")))
 
 

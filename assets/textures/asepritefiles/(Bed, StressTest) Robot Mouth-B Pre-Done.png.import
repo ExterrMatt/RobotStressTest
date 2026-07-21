@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c86x77ruw24p1"
-path="res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex"
+uid="uid://cxuaiuiligyo8"
+path="res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png"
-dest_files=["res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex"]
+source_file="res://assets/textures/asepritefiles/(Bed, StressTest) Robot Mouth-B Pre-Done.png"
+dest_files=["res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex"]
 
 [params]
 

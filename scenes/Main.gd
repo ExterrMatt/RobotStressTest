@@ -1061,17 +1061,30 @@ func _setup_debug_overlay() -> void:
 		return
 	var header := vbox.get_node_or_null("LogHeader") as Label
 	if header != null:
-		header.text = "DEBUG MENU  (Tab to hide)"
+		header.text = "DEBUG MENU  (Tab to toggle — available any time)"
 	if _debug_info_label == null:
+		# The live-state + hotkey legend sits in its own vertically-scrolling
+		# container just below the header, so it never pushes the event log off
+		# the panel no matter how many shortcuts are listed.
+		var info_scroll := ScrollContainer.new()
+		info_scroll.name = "DebugInfoScroll"
+		info_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		info_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		info_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		info_scroll.size_flags_stretch_ratio = 2.0
 		_debug_info_label = RichTextLabel.new()
 		_debug_info_label.name = "DebugInfo"
 		_debug_info_label.bbcode_enabled = true
 		_debug_info_label.fit_content = true
 		_debug_info_label.scroll_active = false
+		_debug_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_debug_info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_debug_info_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_child(_debug_info_label)
+		info_scroll.add_child(_debug_info_label)
+		vbox.add_child(info_scroll)
 		# Sit just below the header, above the scrolling event log.
-		vbox.move_child(_debug_info_label, 1)
+		vbox.move_child(info_scroll, 1)
 	_refresh_debug_info()
 
 
@@ -1106,6 +1119,15 @@ func _refresh_debug_info() -> void:
 	lines.append("6  workshop: auto-complete segments")
 	lines.append("Hold Enter  speed through intro obstacles")
 	lines.append("Z zoom   X portrait alt   Space inventory   Esc settings")
+	lines.append("")
+	lines.append("[b]ROBOT KEYS[/b] (stress test / bed)")
+	lines.append("H  swap robot hand grip (over/under)")
+	lines.append("Shift+H  swap head style")
+	lines.append("Ctrl+Shift+H  toggle squint eyes")
+	lines.append("Ctrl+H  toggle human skin (stomach skin + smooth)")
+	lines.append("Click legs  spread → raise → lower (screws follow)")
+	lines.append("Click hands / hair  cycle pose / hairstyle")
+	lines.append("Lower head from talk  plays outro, then syrup")
 	_debug_info_label.text = "[color=#a9e6ff]%s[/color]" % "\n".join(lines)
 
 

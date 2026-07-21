@@ -93,6 +93,21 @@ enum ClickAction {
 		loop_animation_nodes = value
 		_emit_configuration_changed()
 
+## Sprite2D nodes for the pre-outro strip, in left-to-right column order. When
+## set, lowering the head from the loop plays this strip pre_outro_repeat times
+## before the outro strip.
+@export var pre_outro_animation_nodes: Array[NodePath] = []:
+	set(value):
+		pre_outro_animation_nodes = value
+		_emit_configuration_changed()
+
+## Sprite2D nodes for the outro strip, in left-to-right column order. Played once
+## after the pre-outro repeats, then the animation ends.
+@export var outro_animation_nodes: Array[NodePath] = []:
+	set(value):
+		outro_animation_nodes = value
+		_emit_configuration_changed()
+
 @export var animation_frame_size: Vector2i = Vector2i(250, 350):
 	set(value):
 		animation_frame_size = value
@@ -101,6 +116,10 @@ enum ClickAction {
 @export_range(0.1, 60.0, 0.1) var animation_fps: float = 12.0
 @export_range(1, 256, 1) var intro_frame_count: int = 1
 @export_range(1, 256, 1) var loop_frame_count: int = 1
+@export_range(1, 256, 1) var pre_outro_frame_count: int = 1
+@export_range(1, 256, 1) var outro_frame_count: int = 1
+## How many times the pre-outro strip plays before the outro strip.
+@export_range(1, 16, 1) var pre_outro_repeat: int = 3
 @export var loop_after_intro: bool = true
 
 var _hovered: bool = false
@@ -152,10 +171,20 @@ func get_all_managed_paths() -> Array[NodePath]:
 	_append_unique_paths(merged, shown_while_active_image_paths)
 	_append_unique_paths(merged, intro_animation_nodes)
 	_append_unique_paths(merged, loop_animation_nodes)
+	_append_unique_paths(merged, pre_outro_animation_nodes)
+	_append_unique_paths(merged, outro_animation_nodes)
 	return merged
 
 
+func has_outro() -> bool:
+	return not outro_animation_nodes.is_empty() or not pre_outro_animation_nodes.is_empty()
+
+
 func get_animation_phase_paths(phase: String) -> Array[NodePath]:
+	if phase == "pre_outro" and not pre_outro_animation_nodes.is_empty():
+		return pre_outro_animation_nodes
+	if phase == "outro" and not outro_animation_nodes.is_empty():
+		return outro_animation_nodes
 	if phase == "loop" and not loop_animation_nodes.is_empty():
 		return loop_animation_nodes
 	return intro_animation_nodes

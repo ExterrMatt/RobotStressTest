@@ -34,7 +34,7 @@ const TEXTURE_PATHS: Dictionary = {
 	# Cosmetic chest items — placeholder icons reuse the torso overlay art for now.
 	"big_coconuts": "res://assets/textures/characters/robot/stresstest/torso/big_coconuts.png",
 	"small_coconuts": "res://assets/textures/characters/robot/stresstest/torso/small_coconuts.png",
-	"big_chest_cover": "res://assets/textures/characters/robot/stresstest/chest_cover.png",
+	"big_chest_cover": "res://assets/textures/characters/robot/stresstest/torso/chest_cover.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",

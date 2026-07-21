@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c86x77ruw24p1"
-path="res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex"
+uid="uid://d0crl31b415vo"
+path="res://.godot/imported/syrup_stomach.png-452e0e5aca2c1cce1fff5c93eb0cdac9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/robot/stresstest/animations/head/Mouth-B-Intro/mouth_b_Intro.png"
-dest_files=["res://.godot/imported/mouth_b_Intro.png-dd998f101a07c576e4c8a1400f7fbd2c.ctex"]
+source_file="res://assets/textures/characters/robot/stresstest/torso/syrup_stomach.png"
+dest_files=["res://.godot/imported/syrup_stomach.png-452e0e5aca2c1cce1fff5c93eb0cdac9.ctex"]
 
 [params]
 

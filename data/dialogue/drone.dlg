@@ -19,8 +19,8 @@ DRONE: PROVIDE IDENTIFICATION.
 [i]The drone's camera locks onto your hand as you reach into your pocket.[/i]
 
 [opening_short]
-[i]Another walk home after {place}. A patrol drone drops in front of you — you know the drill by now.[/i]
-DRONE: IDENTIFY. PRESENT IDENTIFICATION.
+[i]Another walk home after {place}. A patrol drone floats down hovers in your way. You know the drill by now.[/i]
+DRONE: IDENTIFY YOURSELF. PRESENT IDENTIFICATION.
 
 [caught]
 [i]As you reach your hand out to present your ID, you notice that the drone's camera is still pointed at a large lump in your pocket.[/i]
@@ -28,7 +28,8 @@ DRONE: WHAT IS THAT IN YOUR POCKET? SHOW ME.
 You: It's uhh... it's my... penis.
 DRONE: ...
 You: ...
-DRONE: YOU HAVE THREE SECONDS TO IDENTIFY THE ITEM IN YOUR POCKET. 3... 2...
+DRONE: YOU HAVE THREE SECONDS TO IDENTIFY THE ITEM IN YOUR POCKET.
+DRONE: 3... 2...
 [i]You rip the {contraband} out of your pocket and present it to the drone.[/i]
 DRONE: THIS IS ILLEGAL CONTRABAND.
 DRONE: YOU WILL BE FINED AND THIS INCIDENT WILL BE CATALOGUED IN YOUR RECORD.
@@ -38,12 +39,13 @@ DRONE: THANK YOU FOR YOUR COOPERATION, CRIMINAL.
 Thoughts: ...Damn.
 
 [caught_short]
-[i]The camera fixes on the lump in your pocket again.[/i]
-DRONE: SHOW ME WHAT'S IN YOUR POCKET. 3... 2...
+[i]The camera fixes on the lump in your pocket...[/i]
+Thoughts: Shit.
+DRONE: SHOW ME WHAT'S IN YOUR POCKET.
 [i]You hand the {contraband} over.[/i]
-DRONE: CONTRABAND. YOU'LL BE FINED AND CATALOGUED.
+DRONE: CONTRABAND. YOU WILL BE FINED. THIS INCIDENT WILL REFLECT ON YOUR RECORD.
 [i]It drops your id at your feet.[/i]
-DRONE: COOPERATION NOTED, CRIMINAL.
+DRONE: YOUR COOPERATION IS ACKOWLEDGED, CRIMINAL.
 [i]The drone flies off.[/i]
 
 [clean]
@@ -51,11 +53,12 @@ DRONE: COOPERATION NOTED, CRIMINAL.
 Thoughts: I shouldn't have any contraband on me... I think I'm safe.
 [i]You hold out the id to the Patrol Drone.[/i]
 DRONE: EVERYTHING APPEARS TO BE IN ORDER. {signoff}
+DRONE: THANK YOU FOR YOUR COOPERATION, CITIZEN.
 [i]It flies off.[/i]
 Thoughts: That was stressful... Good thing I didn't steal anything.
 
 [clean_short]
 [i]The drone's camera gives you a quick sweep.[/i]
 [i]You hold out your id.[/i]
-DRONE: EVERYTHING'S IN ORDER. {signoff}
+DRONE: EVERYTHING IS IN ORDER. {signoff}
 [i]It flies off.[/i]

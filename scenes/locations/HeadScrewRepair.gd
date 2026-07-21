@@ -78,6 +78,10 @@ var _repair_sound_segment_playing: bool = false
 ## four-frame animation that takes manual_repair_duration_multiplier times as
 ## long. Set by the stress test from the player's screwdriver count.
 var _manual_screwing: bool = false
+## When true, every screw node is kept hidden regardless of its loose state. Set
+## by the robot rig while a limb is in a pose that has no screw art (e.g. a
+## raised leg), so screws can stay logically loose without rendering out of place.
+var _screws_force_hidden: bool = false
 ## The screwdriver sprite's authored texture, restored when not screwing by hand.
 var _screwdriver_default_texture: Texture2D = null
 ## Resolved bare-hand texture (export or fallback path), or null when missing.
@@ -533,13 +537,24 @@ func _hide_all_screws() -> void:
 		screwdriver.visible = false
 
 
+## Hides or restores every screw node without changing its loose state. While
+## hidden, loose screws stay tracked (and can still be re-shown later) but do not
+## render — used for poses that lack screw art, like a raised leg.
+func set_screws_force_hidden(hidden: bool) -> void:
+	if _screws_force_hidden == hidden:
+		return
+	_screws_force_hidden = hidden
+	for index in range(screw_nodes.size()):
+		_set_screw_visible(index, _loose_screw_indices.has(index))
+
+
 func _set_screw_visible(index: int, value: bool) -> void:
 	if index < 0 or index >= screw_nodes.size():
 		return
 	var screw := get_node_or_null(screw_nodes[index]) as CanvasItem
 	if screw == null:
 		return
-	screw.visible = value
+	screw.visible = value and not _screws_force_hidden
 
 
 func _screwdriver_position_for_index(index: int) -> Vector2:
