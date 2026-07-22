@@ -1146,7 +1146,7 @@ region_rect = Rect2(2500, 0, 250, 350)
 
 [node name="Chest" type="Sprite2D" parent="AnimationLayers/VegetableMissionIntro" unique_id=710000011]
 visible = false
-z_index = 1
+z_index = 0
 texture = ExtResource("26_vegetable_mission_intro")
 centered = false
 region_enabled = true
@@ -1676,7 +1676,7 @@ region_rect = Rect2(2750, 0, 250, 350)
 
 [node name="Chest" type="Sprite2D" parent="AnimationLayers/VegetableMissionLoopMedium" unique_id=720000012]
 visible = false
-z_index = 1
+z_index = 0
 texture = ExtResource("27_vegetable_mission_loop_medium")
 centered = false
 region_enabled = true
@@ -1822,7 +1822,7 @@ region_rect = Rect2(2750, 0, 250, 350)
 
 [node name="Chest" type="Sprite2D" parent="AnimationLayers/VegetableMissionPreOutro" unique_id=730000013]
 visible = false
-z_index = 1
+z_index = 0
 texture = ExtResource("91_veg_preoutro")
 centered = false
 region_enabled = true
@@ -1976,7 +1976,7 @@ region_rect = Rect2(3000, 0, 250, 350)
 
 [node name="Chest" type="Sprite2D" parent="AnimationLayers/VegetableMissionOutro" unique_id=740000014]
 visible = false
-z_index = 1
+z_index = 0
 texture = ExtResource("90_veg_outro")
 centered = false
 region_enabled = true
