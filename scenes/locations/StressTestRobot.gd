@@ -97,11 +97,20 @@ const ANIM_CHEST_DETAILS_RIGHT_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBPreOutro/ChestDetailsRight",
 	^"AnimationLayers/MouthBOutro/ChestDetailsRight",
 ]
-## Chest-smooth animation columns per side. Populated once the smooth columns are
-## wired as Sprite2D nodes in each head-animation phase; empty until then, so the
-## smooth overlay currently resolves on the static robot only.
-const ANIM_CHEST_SMOOTH_LEFT_PATHS: Array[NodePath] = []
-const ANIM_CHEST_SMOOTH_RIGHT_PATHS: Array[NodePath] = []
+## Chest-smooth animation columns per side, across every head-animation phase —
+## the smooth counterpart to the outline/details columns.
+const ANIM_CHEST_SMOOTH_LEFT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestSmoothLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothLeft",
+	^"AnimationLayers/MouthBOutro/ChestSmoothLeft",
+]
+const ANIM_CHEST_SMOOTH_RIGHT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestSmoothRight",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothRight",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothRight",
+	^"AnimationLayers/MouthBOutro/ChestSmoothRight",
+]
 
 ## Front cover for the neck, shown only while the head is the robot's sole
 ## remaining part (no chest, stomach, arms, hands, or legs). The texture is loaded at
@@ -231,6 +240,14 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBOutro/ChestDetailsRight",
 	^"AnimationLayers/MouthBOutro/ChestOutlineLeft",
 	^"AnimationLayers/MouthBOutro/ChestOutlineRight",
+	^"AnimationLayers/ChestSmoothLeft",
+	^"AnimationLayers/ChestSmoothRight",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothRight",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothRight",
+	^"AnimationLayers/MouthBOutro/ChestSmoothLeft",
+	^"AnimationLayers/MouthBOutro/ChestSmoothRight",
 	# The leg/vegetable animation now carries its own chest-region columns, so
 	# they are gated on owning a chest just like the static and head-animation
 	# chest sprites — across every phase (intro, loop, pre-outro, outro).
@@ -1870,10 +1887,18 @@ func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
 ## spontaneously reappears.
 func _apply_chest_overlay_state(resolved: Dictionary) -> void:
 	var arm_count := _robot_part_count("arm")
+	# The static overlay is retained (shown on the static chest) whenever a chest
+	# is present and the head animation is not running. The head animation carries
+	# its own overlay columns for the upper half, so it takes priority and hides
+	# the static overlay; the vegetable-mission (pelvis) animation does NOT have
+	# overlay columns, so the static overlay stays on right through it.
+	var show_static := _robot_part_count("chest") >= 1 \
+			and not _is_named_box_effect_active("HeadHoverBox")
 	_apply_side_chest_overlay(
 		resolved,
 		_is_named_box_effect_active(LEFT_SHOULDER_HOVER_BOX_NAME),
 		arm_count >= 1,
+		show_static,
 		LEFT_SHOULDER_PAD_PATH,
 		CHEST_OUTLINE_LEFT_PATH,
 		CHEST_DETAILS_LEFT_PATH,
@@ -1887,6 +1912,7 @@ func _apply_chest_overlay_state(resolved: Dictionary) -> void:
 		resolved,
 		_is_named_box_effect_active(RIGHT_SHOULDER_HOVER_BOX_NAME),
 		arm_count >= 2,
+		show_static,
 		RIGHT_SHOULDER_PAD_PATH,
 		CHEST_OUTLINE_RIGHT_PATH,
 		CHEST_DETAILS_RIGHT_PATH,
@@ -1908,6 +1934,7 @@ func _apply_side_chest_overlay(
 	resolved: Dictionary,
 	pad_removed: bool,
 	side_has_arm: bool,
+	show_static: bool,
 	pad_path: NodePath,
 	outline_path: NodePath,
 	details_path: NodePath,
@@ -1918,12 +1945,12 @@ func _apply_side_chest_overlay(
 	anim_smooth_paths: Array[NodePath]
 ) -> void:
 	var mode := _chest_overlay_mode(pad_removed, side_has_arm)
-	var chest_visible := bool(resolved.get(CHEST_PATH, false))
 
-	# Static overlays: one variant on, the other two off, and all off with no chest.
-	resolved[outline_path] = chest_visible and mode == CHEST_OVERLAY_OUTLINE
-	resolved[details_path] = chest_visible and mode == CHEST_OVERLAY_DETAILS
-	resolved[smooth_path] = chest_visible and mode == CHEST_OVERLAY_SMOOTH
+	# Static overlays: one variant on, the other two off, and all off when the
+	# static overlay is not shown (no chest, or the head animation owns the chest).
+	resolved[outline_path] = show_static and mode == CHEST_OVERLAY_OUTLINE
+	resolved[details_path] = show_static and mode == CHEST_OVERLAY_DETAILS
+	resolved[smooth_path] = show_static and mode == CHEST_OVERLAY_SMOOTH
 
 	# Animation columns: hide the two variants that are not selected. The selected
 	# one stays as the current head-animation phase left it (shown for that phase,
