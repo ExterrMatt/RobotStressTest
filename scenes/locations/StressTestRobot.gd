@@ -54,29 +54,46 @@ const SHOULDER_HOVER_BOX_NAMES: Array[String] = [LEFT_SHOULDER_HOVER_BOX_NAME, R
 ## outline/details as their own columns. Each side mirrors the static robot:
 ## the pad and outline columns show while that side's pad is on, the details
 ## column shows while it is off.
+## Each side's shoulder-pad / chest-outline / chest-details columns across every
+## head-animation phase (static-intro layer, loop, pre-outro, outro). Listing the
+## pre-outro and outro columns here keeps the shoulder-pad toggle honoured through
+## the whole wind-down, so a pad the player removed stays off (and its details
+## stay on) instead of the pad spontaneously reappearing during the outro.
 const ANIM_LEFT_SHOULDER_PAD_PATHS: Array[NodePath] = [
 	^"AnimationLayers/LeftShoulderPad",
 	^"AnimationLayers/MouthBLoopMedium/LeftShoulderPad",
+	^"AnimationLayers/MouthBPreOutro/LeftShoulderPad",
+	^"AnimationLayers/MouthBOutro/LeftShoulderPad",
 ]
 const ANIM_RIGHT_SHOULDER_PAD_PATHS: Array[NodePath] = [
 	^"AnimationLayers/RightShoulderPad",
 	^"AnimationLayers/MouthBLoopMedium/RightShoulderPad",
+	^"AnimationLayers/MouthBPreOutro/RightShoulderPad",
+	^"AnimationLayers/MouthBOutro/RightShoulderPad",
 ]
 const ANIM_CHEST_OUTLINE_LEFT_PATHS: Array[NodePath] = [
 	^"AnimationLayers/ChestOutlineLeft",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestOutlineLeft",
+	^"AnimationLayers/MouthBOutro/ChestOutlineLeft",
 ]
 const ANIM_CHEST_OUTLINE_RIGHT_PATHS: Array[NodePath] = [
 	^"AnimationLayers/ChestOutlineRight",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineRight",
+	^"AnimationLayers/MouthBPreOutro/ChestOutlineRight",
+	^"AnimationLayers/MouthBOutro/ChestOutlineRight",
 ]
 const ANIM_CHEST_DETAILS_LEFT_PATHS: Array[NodePath] = [
 	^"AnimationLayers/ChestDetailsLeft",
 	^"AnimationLayers/MouthBLoopMedium/ChestDetailsLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestDetailsLeft",
+	^"AnimationLayers/MouthBOutro/ChestDetailsLeft",
 ]
 const ANIM_CHEST_DETAILS_RIGHT_PATHS: Array[NodePath] = [
 	^"AnimationLayers/ChestDetailsRight",
 	^"AnimationLayers/MouthBLoopMedium/ChestDetailsRight",
+	^"AnimationLayers/MouthBPreOutro/ChestDetailsRight",
+	^"AnimationLayers/MouthBOutro/ChestDetailsRight",
 ]
 
 ## Front cover for the neck, shown only while the head is the robot's sole
@@ -184,6 +201,7 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"Torso/ChestOutlineRight",
 	^"Torso/BigCoconuts",
 	^"Torso/SmallCoconuts",
+	^"Torso/Balloons",
 	^"Torso/Pepperonis",
 	^"ChestCover",
 	^"AnimationLayers/Chest",
@@ -196,9 +214,19 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/ChestDetailsRight",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineLeft",
 	^"AnimationLayers/MouthBLoopMedium/ChestOutlineRight",
+	^"AnimationLayers/MouthBPreOutro/Chest",
+	^"AnimationLayers/MouthBPreOutro/ChestDetailsLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestDetailsRight",
+	^"AnimationLayers/MouthBPreOutro/ChestOutlineLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestOutlineRight",
+	^"AnimationLayers/MouthBOutro/Chest",
+	^"AnimationLayers/MouthBOutro/ChestDetailsLeft",
+	^"AnimationLayers/MouthBOutro/ChestDetailsRight",
+	^"AnimationLayers/MouthBOutro/ChestOutlineLeft",
+	^"AnimationLayers/MouthBOutro/ChestOutlineRight",
 	# The leg/vegetable animation now carries its own chest-region columns, so
 	# they are gated on owning a chest just like the static and head-animation
-	# chest sprites.
+	# chest sprites — across every phase (intro, loop, pre-outro, outro).
 	^"AnimationLayers/VegetableMissionIntro/Chest",
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/BigCoconuts",
@@ -206,7 +234,21 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionLoopMedium/Chest",
 	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionLoopMedium/BigCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/Balloons",
 	^"AnimationLayers/VegetableMissionLoopMedium/Pepperonis",
+	^"AnimationLayers/VegetableMissionLoopMedium/ChestCover",
+	^"AnimationLayers/VegetableMissionPreOutro/Chest",
+	^"AnimationLayers/VegetableMissionPreOutro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionPreOutro/BigCoconuts",
+	^"AnimationLayers/VegetableMissionPreOutro/Balloons",
+	^"AnimationLayers/VegetableMissionPreOutro/Pepperonis",
+	^"AnimationLayers/VegetableMissionPreOutro/ChestCover",
+	^"AnimationLayers/VegetableMissionOutro/Chest",
+	^"AnimationLayers/VegetableMissionOutro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionOutro/BigCoconuts",
+	^"AnimationLayers/VegetableMissionOutro/Balloons",
+	^"AnimationLayers/VegetableMissionOutro/Pepperonis",
+	^"AnimationLayers/VegetableMissionOutro/ChestCover",
 ]
 
 ## Cosmetic chest overlays gated on owning the matching GameState cosmetic item
@@ -216,15 +258,42 @@ const BIG_COCONUTS_ITEM_PATHS: Array[NodePath] = [
 	^"Torso/BigCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/BigCoconuts",
 	^"AnimationLayers/VegetableMissionLoopMedium/BigCoconuts",
+	^"AnimationLayers/VegetableMissionPreOutro/BigCoconuts",
+	^"AnimationLayers/VegetableMissionOutro/BigCoconuts",
 ]
 const SMALL_COCONUTS_ITEM_PATHS: Array[NodePath] = [
 	^"Torso/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionPreOutro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionOutro/SmallCoconuts",
+]
+## Balloons are a third mutually-exclusive chest fill. The intro strip has no
+## balloon column, so the frozen freeze-frame falls back to the static balloons;
+## the loop/pre-outro/outro strips each carry a balloon column.
+const BALLOONS_ITEM_PATHS: Array[NodePath] = [
+	^"Torso/Balloons",
+	^"AnimationLayers/VegetableMissionLoopMedium/Balloons",
+	^"AnimationLayers/VegetableMissionPreOutro/Balloons",
+	^"AnimationLayers/VegetableMissionOutro/Balloons",
 ]
 const CHEST_COVER_ITEM_PATHS: Array[NodePath] = [
 	^"ChestCover",
+	^"AnimationLayers/VegetableMissionLoopMedium/ChestCover",
+	^"AnimationLayers/VegetableMissionPreOutro/ChestCover",
+	^"AnimationLayers/VegetableMissionOutro/ChestCover",
 ]
+
+## Static balloons pose art. Balloons were only painted into the animation strips,
+## so the static default-pose file may not exist yet; it is loaded at runtime like
+## the neck-front cover so the scene stays valid until the art is added.
+const BALLOONS_STATIC_PATH: NodePath = ^"Torso/Balloons"
+const BALLOONS_STATIC_TEXTURE_PATH: String = "res://assets/textures/characters/robot/stresstest/torso/balloons.png"
+
+## Syrup drizzled onto the stomach once the vegetable-mission outro finishes — the
+## pelvis counterpart to the head's Syrup overlay. A separate PNG from the head
+## syrup, shown on the static torso while the pelvis is lowered.
+const SYRUP_STOMACH_STATIC_PATH: NodePath = ^"Torso/SyrupStomach"
 
 ## The chest sprite is shared when the head and pelvis animations run together:
 ## the head half draws the top of the cell, the pelvis half the bottom.
@@ -302,11 +371,19 @@ const LEG_PRESTAGE_HIDDEN_PATHS: Array[NodePath] = [^"Legs/LeftLeg", ^"Legs/Righ
 const LEG_PRESTAGE_SHOWN_PATHS: Array[NodePath] = [^"Legs/LeftLegSlightlyOut", ^"Legs/RightLegSlightlyOut"]
 const LEG_PRESTAGE_BOX_NAME: String = "PelvisHoverBox"
 
-## Per-leg pose cycle beneath the pelvis hover box: each click on a leg advances
-## it one step through standing -> slightly-out -> raised (locked to the pelvis
-## animation's first frame) -> standing, for that side only.
+## Per-leg pose cycle: each click on a leg advances it one step through
+## standing -> slightly-out -> raised (locked to the pelvis animation's first
+## frame) -> standing, for that side only.
+##
+## Each side has three separate hover boxes — one per pose — so the box can be
+## positioned in the editor to sit over the leg wherever that pose physically
+## places it (standing, spread, or raised). Only the box matching the leg's
+## current pose is available at a time; clicking it advances the pose, which
+## hands off to the next pose's box.
 const LEFT_LEG_HOVER_BOX_NAME: String = "LeftLegHoverBox"
 const RIGHT_LEG_HOVER_BOX_NAME: String = "RightLegHoverBox"
+const LEFT_LEG_HOVER_BOX_NAMES: Array[String] = ["LeftLegHoverBox", "LeftLegHoverBoxOut", "LeftLegHoverBoxRaised"]
+const RIGHT_LEG_HOVER_BOX_NAMES: Array[String] = ["RightLegHoverBox", "RightLegHoverBoxOut", "RightLegHoverBoxRaised"]
 
 ## Per-leg pose steps. RAISED matches frame 0 of the pelvis (vegetable-mission)
 ## animation, so the static raised leg hands off seamlessly once the pelvis
@@ -315,6 +392,16 @@ const LEG_POSE_DEFAULT: int = 0
 const LEG_POSE_SLIGHTLY_OUT: int = 1
 const LEG_POSE_RAISED: int = 2
 const LEG_POSE_COUNT: int = 3
+
+## Which pose step each per-side leg box represents.
+const LEG_HOVER_BOX_POSE_BY_NAME: Dictionary = {
+	"LeftLegHoverBox": LEG_POSE_DEFAULT,
+	"LeftLegHoverBoxOut": LEG_POSE_SLIGHTLY_OUT,
+	"LeftLegHoverBoxRaised": LEG_POSE_RAISED,
+	"RightLegHoverBox": LEG_POSE_DEFAULT,
+	"RightLegHoverBoxOut": LEG_POSE_SLIGHTLY_OUT,
+	"RightLegHoverBoxRaised": LEG_POSE_RAISED,
+}
 
 ## Static leg sprites shown for each per-side pose step. The pose selection owns
 ## these while the pelvis animation is not running; a missing leg still hides
@@ -336,7 +423,14 @@ const CHEST_COVER_GATED_ANIM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
 	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionLoopMedium/Balloons",
 	^"AnimationLayers/VegetableMissionLoopMedium/Pepperonis",
+	^"AnimationLayers/VegetableMissionPreOutro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionPreOutro/Balloons",
+	^"AnimationLayers/VegetableMissionPreOutro/Pepperonis",
+	^"AnimationLayers/VegetableMissionOutro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionOutro/Balloons",
+	^"AnimationLayers/VegetableMissionOutro/Pepperonis",
 ]
 
 ## The vegetable-mission strips carry both hand grips as separate columns.
@@ -346,12 +440,20 @@ const OVERGRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/RightHandOvergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandOvergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionOutro/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionOutro/RightHandOvergrip",
 ]
 const UNDERGRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/LeftHandUndergrip",
 	^"AnimationLayers/VegetableMissionIntro/RightHandUndergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandUndergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/LeftHandUndergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/RightHandUndergrip",
+	^"AnimationLayers/VegetableMissionOutro/LeftHandUndergrip",
+	^"AnimationLayers/VegetableMissionOutro/RightHandUndergrip",
 ]
 
 ## The player's own hands, gripping the robot's raised legs during the pelvis
@@ -363,15 +465,36 @@ const LEFT_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/LeftHandUndergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandOvergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/LeftHandUndergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/LeftHandUndergrip",
+	^"AnimationLayers/VegetableMissionOutro/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionOutro/LeftHandUndergrip",
 ]
 const RIGHT_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/RightHandOvergrip",
 	^"AnimationLayers/VegetableMissionIntro/RightHandUndergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandOvergrip",
 	^"AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionPreOutro/RightHandUndergrip",
+	^"AnimationLayers/VegetableMissionOutro/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionOutro/RightHandUndergrip",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"ChestCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox", ^"LeftLegHoverBox", ^"RightLegHoverBox"]:
+## The intro strip's frame-0 grip hands, grouped by side. When a single leg is
+## raised (before both are up and the pelvis freeze-frames), that side's player
+## hand is shown gripping the raised leg, matching the pelvis animation's opening
+## pose. Frame 0 is the sprites' authored region, so no region change is needed.
+const LEFT_INTRO_GRIP_HAND_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/LeftHandOvergrip",
+	^"AnimationLayers/VegetableMissionIntro/LeftHandUndergrip",
+]
+const RIGHT_INTRO_GRIP_HAND_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/RightHandOvergrip",
+	^"AnimationLayers/VegetableMissionIntro/RightHandUndergrip",
+]
+
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"ChestCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox", ^"LeftLegHoverBox", ^"LeftLegHoverBoxOut", ^"LeftLegHoverBoxRaised", ^"RightLegHoverBox", ^"RightLegHoverBoxOut", ^"RightLegHoverBoxRaised"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()
@@ -419,8 +542,11 @@ var _head_texture_index: int = HEAD_DEFAULT_INDEX
 var _squint_eyes_enabled: bool = SQUINT_DEFAULT_ENABLED
 ## Whether the "human" skin set (stomach skin + chest smooth) is shown.
 var _human_skin_enabled: bool = HUMAN_SKIN_DEFAULT_ENABLED
-## Whether the syrup overlay is drizzled on the static head (set by the outro).
+## Whether the syrup overlay is drizzled on the static head (set by the head outro).
 var _syrup_enabled: bool = false
+## Whether the stomach-syrup overlay is drizzled on the static torso (set by the
+## vegetable-mission outro). The pelvis counterpart to _syrup_enabled.
+var _syrup_stomach_enabled: bool = false
 ## Cache of loaded leg-screw textures keyed by file name.
 var _leg_screw_texture_cache: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
@@ -435,6 +561,7 @@ var _repair_hidden_hand_sides: Dictionary = {}
 
 func _ready() -> void:
 	_initialize_neck_front_texture()
+	_initialize_balloons_static_texture()
 	_refresh_configuration()
 	_sync_animation_layers_to_robot_size()
 	if not resized.is_connected(_on_resized):
@@ -635,6 +762,7 @@ func reset_interactions_to_default() -> void:
 	_squint_eyes_enabled = SQUINT_DEFAULT_ENABLED
 	_human_skin_enabled = HUMAN_SKIN_DEFAULT_ENABLED
 	_syrup_enabled = false
+	_syrup_stomach_enabled = false
 	_repair_hidden_hand_sides.clear()
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -665,6 +793,8 @@ func is_in_default_pose() -> bool:
 	if _human_skin_enabled != HUMAN_SKIN_DEFAULT_ENABLED:
 		return false
 	if _syrup_enabled:
+		return false
+	if _syrup_stomach_enabled:
 		return false
 	for box in _hover_boxes:
 		if box == null or not is_instance_valid(box):
@@ -910,20 +1040,28 @@ func _handle_hover_box_click(box: Control, shift_pressed: bool = false) -> void:
 func _is_leg_pose_hover_box(box: Control) -> bool:
 	if box == null:
 		return false
-	var box_name := String(box.name)
-	return box_name == LEFT_LEG_HOVER_BOX_NAME or box_name == RIGHT_LEG_HOVER_BOX_NAME
+	return LEG_HOVER_BOX_POSE_BY_NAME.has(String(box.name))
+
+
+func _is_left_leg_box(box: Control) -> bool:
+	return box != null and String(box.name).begins_with("LeftLeg")
+
+
+## The pose step a given per-side leg box represents (its own slot in the cycle).
+func _pose_slot_for_box(box: Control) -> int:
+	return int(LEG_HOVER_BOX_POSE_BY_NAME.get(String(box.name), LEG_POSE_DEFAULT))
 
 
 ## Advances the clicked leg one step through its pose cycle
-## (standing -> slightly-out -> raised -> standing). The box's runtime-active
-## flag mirrors "moved from standing" so the screw controllers still treat a
-## moved leg as busy, exactly like the pelvis animation.
+## (standing -> slightly-out -> raised -> standing). The pose is tracked per side,
+## and the current pose decides which of that side's three hover boxes is live, so
+## the boxes no longer carry a runtime-active flag of their own. Raising or
+## lowering a leg re-syncs the pelvis freeze-frame (see _sync_pelvis_to_leg_poses).
 func _cycle_leg_pose(box: Control) -> void:
 	var pose := _next_leg_pose(_leg_pose_for_box(box))
 	_set_leg_pose_for_box(box, pose)
-	if box.has_method("set_runtime_active"):
-		box.call("set_runtime_active", pose != LEG_POSE_DEFAULT)
 	_play_wood_creak_sound()
+	_sync_pelvis_to_leg_poses()
 	_apply_visibility_state()
 
 
@@ -932,13 +1070,13 @@ func _next_leg_pose(pose: int) -> int:
 
 
 func _leg_pose_for_box(box: Control) -> int:
-	if box != null and String(box.name) == LEFT_LEG_HOVER_BOX_NAME:
+	if _is_left_leg_box(box):
 		return _left_leg_pose
 	return _right_leg_pose
 
 
 func _set_leg_pose_for_box(box: Control, pose: int) -> void:
-	if box != null and String(box.name) == LEFT_LEG_HOVER_BOX_NAME:
+	if _is_left_leg_box(box):
 		_left_leg_pose = pose
 	else:
 		_right_leg_pose = pose
@@ -946,6 +1084,59 @@ func _set_leg_pose_for_box(box: Control, pose: int) -> void:
 
 func _both_legs_raised() -> bool:
 	return _left_leg_pose == LEG_POSE_RAISED and _right_leg_pose == LEG_POSE_RAISED
+
+
+## Keeps the pelvis (vegetable-mission) animation in step with the leg poses.
+##
+## Raising both legs to the up pose recreates, by hand, the vegetable-mission
+## intro's frozen first frame — the crunched stomach, both raised legs and the
+## player's hands gripping them. So the moment both legs are up we freeze-frame
+## the pelvis animation on intro frame 0 (primed but not playing). That makes the
+## pelvis box "available"; clicking it simply starts the intro playing from that
+## pose. Dropping either leg out of the raised pose clears the freeze-frame again
+## (unless the animation is already running, in which case the leg boxes are
+## locked out anyway). The Sleep pre-stage keeps its own leg-lift flow, so this
+## only drives the stress test.
+func _sync_pelvis_to_leg_poses() -> void:
+	if _leg_slight_out_prestage_enabled:
+		return
+	var pelvis := _find_hover_box_by_name("PelvisHoverBox")
+	if pelvis == null:
+		return
+	if _both_legs_raised():
+		if not _animation_states.has(pelvis):
+			_prime_pelvis_freeze_frame(pelvis)
+	elif _animation_states.has(pelvis):
+		# Legs came back down before the animation was started: drop the frozen
+		# freeze-frame. A running animation owns the legs, so it is left alone.
+		if not bool(_animation_states[pelvis].get("playing", false)):
+			_finish_animation_for_box(pelvis, false)
+
+
+## Primes the pelvis animation on its frozen intro frame 0 without playing it and
+## without the click-time side effects (no hand-rub cue, no syrup wipe of the
+## head). This is the state the player builds by raising both legs themselves.
+func _prime_pelvis_freeze_frame(pelvis: Control) -> void:
+	_leg_prestage_active = false
+	_animation_states[pelvis] = {
+		"phase": ANIMATION_PHASE_INTRO,
+		"playing": false,
+		"elapsed": 0.0,
+	}
+	if pelvis.has_method("set_runtime_active"):
+		pelvis.call("set_runtime_active", true)
+	_set_animation_frame_for_box(pelvis, ANIMATION_PHASE_INTRO, 0)
+	_refresh_active_animation_frames()
+
+
+## True while the pelvis (vegetable-mission) animation is actively playing (past
+## the frozen freeze-frame). Used to lock the leg boxes while the legs are being
+## driven by the animation.
+func _pelvis_animation_playing() -> bool:
+	var pelvis := _find_hover_box_by_name("PelvisHoverBox")
+	if pelvis == null or not _animation_states.has(pelvis):
+		return false
+	return bool(_animation_states[pelvis].get("playing", false))
 
 
 func _is_hair_hover_box(box: Control) -> bool:
@@ -1045,9 +1236,14 @@ func _enter_leg_prestage() -> void:
 
 func _prime_layered_animation(box: Control) -> void:
 	_leg_prestage_active = false
-	# A fresh head talk cycle wipes the syrup left over from a previous outro.
-	if _box_has_outro(box):
+	# A fresh talk/lift cycle wipes the syrup left over from that box's previous
+	# outro — but only its own syrup. Priming the pelvis animation must not clear
+	# the head's syrup (and vice versa), so an ordinary head-syrup drizzle keeps
+	# showing right through the vegetable-mission animation.
+	if String(box.name) == "HeadHoverBox":
 		_syrup_enabled = false
+	elif String(box.name) == "PelvisHoverBox":
+		_syrup_stomach_enabled = false
 	_animation_states[box] = {
 		"phase": ANIMATION_PHASE_INTRO,
 		"playing": false,
@@ -1160,10 +1356,18 @@ func _begin_outro_for_box(box: Control) -> void:
 	_apply_visibility_state()
 
 
-## Ends the head animation after the outro and drizzles the syrup overlay onto
-## the static head, leaving it in its default lowered pose.
+## Ends the animation after the outro and drizzles the matching syrup overlay onto
+## the static robot, leaving it in its default lowered pose. The head outro drips
+## syrup on the head; the vegetable-mission outro drips syrup_stomach on the torso.
 func _finish_outro_for_box(box: Control) -> void:
-	_syrup_enabled = true
+	if box != null and is_instance_valid(box) and String(box.name) == "PelvisHoverBox":
+		_syrup_stomach_enabled = true
+		# The vegetable mission is over: the legs come back down to standing so the
+		# robot returns to its default lowered pose (now with the stomach syrup).
+		_left_leg_pose = LEG_POSE_DEFAULT
+		_right_leg_pose = LEG_POSE_DEFAULT
+	else:
+		_syrup_enabled = true
 	_finish_animation_for_box(box)
 
 
@@ -1223,6 +1427,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_always_hidden_to_dictionary(resolved)
 	_apply_leg_prestage_visibility(resolved)
 	_apply_leg_pose_selection(resolved)
+	_apply_raised_leg_grip_hands(resolved)
 	_apply_leg_screw_pose()
 	_apply_hand_texture_selection(resolved)
 	_apply_hair_texture_selection(resolved)
@@ -1345,12 +1550,53 @@ func _set_paths_visible(resolved: Dictionary, paths: Array[NodePath], value: boo
 		resolved[path] = value
 
 
+## Shows the player's gripping hand on any leg that is raised on its own — i.e.
+## before both legs are up and the pelvis freeze-frame takes over drawing both
+## hands. Each raised leg gets its side's intro-frame-0 grip hand so the hand
+## appears to hold the leg, matching the pelvis animation's opening pose.
+func _apply_raised_leg_grip_hands(resolved: Dictionary) -> void:
+	if Engine.is_editor_hint():
+		return
+	# Once both legs are up the pelvis freeze-frame/animation is active and draws
+	# both gripping hands itself, so this per-side fallback only runs otherwise.
+	if _is_named_box_effect_active("PelvisHoverBox"):
+		return
+	var shown := false
+	if _left_leg_pose == LEG_POSE_RAISED and _robot_part_count("leg") >= 1:
+		shown = _show_side_intro_grip(resolved, true) or shown
+	if _right_leg_pose == LEG_POSE_RAISED and _robot_part_count("leg") >= 2:
+		shown = _show_side_intro_grip(resolved, false) or shown
+	if shown and animation_layers_path != NodePath(""):
+		resolved[animation_layers_path] = true
+
+
+## Reveals the selected grip hand (over- or under-grip) for one side from the
+## vegetable-mission intro strip, locked to frame 0. Returns whether it showed one.
+func _show_side_intro_grip(resolved: Dictionary, is_left: bool) -> bool:
+	var options := LEFT_INTRO_GRIP_HAND_PATHS if is_left else RIGHT_INTRO_GRIP_HAND_PATHS
+	# Index 0 is the overgrip column, index 1 the undergrip column.
+	var selected := 0 if _hand_grip_overgrip else 1
+	if selected >= options.size():
+		return false
+	var path := options[selected]
+	resolved[path] = true
+	# Lock the sprite to frame 0 in case a previous animation left it elsewhere.
+	var node := get_node_or_null(NodePath(String(path))) as Sprite2D
+	if node != null:
+		node.region_rect = Rect2(node.region_rect.position.x, 0.0, float(DEFAULT_FRAME_SIZE.x), float(DEFAULT_FRAME_SIZE.y))
+		node.offset = Vector2(node.offset.x, 0.0)
+	return true
+
+
 ## Hides the overlays the big chest cover is not shaped for (small coconuts,
 ## pepperonis) while it is equipped (visible), so they don't clash with the cover
 ## during the raised-leg animation. The big coconuts are contoured to the cover
 ## and stay visible underneath it.
 func _apply_chest_cover_gated_animations(resolved: Dictionary) -> void:
-	if not bool(resolved.get(CHEST_COVER_PATH, false)):
+	# The cover is worn whenever it is owned and there is a chest to sit on. This
+	# holds for both the static cover and the animated cover column, so the gate
+	# keys off ownership rather than the (animation-hidden) static sprite.
+	if not (_cosmetic_item_owned("big_chest_cover") and _robot_part_count("chest") >= 1):
 		return
 	_hide_paths(resolved, CHEST_COVER_GATED_ANIM_PATHS)
 
@@ -1433,6 +1679,10 @@ func _apply_human_skin_state(resolved: Dictionary) -> void:
 func _apply_syrup_state(resolved: Dictionary) -> void:
 	var head_active := _is_named_box_effect_active("HeadHoverBox")
 	resolved[SYRUP_STATIC_PATH] = _syrup_enabled and not head_active
+	# The stomach syrup sits on the static torso, so it hides while the pelvis
+	# (vegetable-mission) animation is running its own strip.
+	var pelvis_active := _is_named_box_effect_active("PelvisHoverBox")
+	resolved[SYRUP_STOMACH_STATIC_PATH] = _syrup_stomach_enabled and not pelvis_active
 
 
 ## Swaps each leg's screws between their default and "slightly out" art to match
@@ -1510,8 +1760,19 @@ func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 ## own. Runs after the chest-part pass, so an unowned item hides even when a
 ## chest is present, and a removed chest still hides everything above.
 func _apply_cosmetic_item_availability_to_dictionary(resolved: Dictionary) -> void:
-	_apply_paths_available(resolved, BIG_COCONUTS_ITEM_PATHS, _cosmetic_item_owned("big_coconuts"))
-	_apply_paths_available(resolved, SMALL_COCONUTS_ITEM_PATHS, _cosmetic_item_owned("small_coconuts"))
+	# Big coconuts, small coconuts and balloons are three mutually-exclusive chest
+	# fills: only one shows at a time even if the player somehow owns more than one
+	# (e.g. the debug "give all" key). Big coconuts is the default, so it wins,
+	# then small coconuts, then balloons.
+	var has_big := _cosmetic_item_owned("big_coconuts")
+	var has_small := _cosmetic_item_owned("small_coconuts")
+	var has_balloons := _cosmetic_item_owned("balloons")
+	var show_big := has_big
+	var show_small := has_small and not has_big
+	var show_balloons := has_balloons and not has_big and not has_small
+	_apply_paths_available(resolved, BIG_COCONUTS_ITEM_PATHS, show_big)
+	_apply_paths_available(resolved, SMALL_COCONUTS_ITEM_PATHS, show_small)
+	_apply_paths_available(resolved, BALLOONS_ITEM_PATHS, show_balloons)
 	_apply_paths_available(resolved, CHEST_COVER_ITEM_PATHS, _cosmetic_item_owned("big_chest_cover"))
 
 
@@ -1520,8 +1781,9 @@ func _cosmetic_item_owned(id: String) -> bool:
 	if state != null and state.has_method("has_cosmetic_item"):
 		return bool(state.call("has_cosmetic_item", id))
 	# Editor / no GameState: mirror the shipped defaults so the scene preview
-	# matches a fresh game (big coconuts + big chest cover on, small coconuts off).
-	return id != "small_coconuts"
+	# matches a fresh game (big coconuts + big chest cover on; small coconuts and
+	# balloons off).
+	return id == "big_coconuts" or id == "big_chest_cover"
 
 
 func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
@@ -1614,6 +1876,17 @@ func _initialize_neck_front_texture() -> void:
 		node.texture = load(NECK_FRONT_TEXTURE_PATH) as Texture2D
 
 
+## The static balloons pose art is loaded at runtime so the scene stays valid
+## while the art file has not been created yet (balloons were first painted only
+## into the animation strips).
+func _initialize_balloons_static_texture() -> void:
+	var node := get_node_or_null(BALLOONS_STATIC_PATH) as TextureRect
+	if node == null or node.texture != null:
+		return
+	if ResourceLoader.exists(BALLOONS_STATIC_TEXTURE_PATH, "Texture2D"):
+		node.texture = load(BALLOONS_STATIC_TEXTURE_PATH) as Texture2D
+
+
 func _add_robot_part_managed_paths() -> void:
 	_add_managed_paths(CHEST_PART_PATHS)
 	_add_managed_paths(STOMACH_PART_PATHS)
@@ -1662,10 +1935,18 @@ func _is_hover_box_available(box: Control) -> bool:
 		return _robot_part_count("hand") >= 1
 	if box.name == RIGHT_HAND_HOVER_BOX_NAME:
 		return _robot_part_count("hand") >= 2
-	if box.name == LEFT_LEG_HOVER_BOX_NAME:
-		return _robot_part_count("leg") >= 1
-	if box.name == RIGHT_LEG_HOVER_BOX_NAME:
-		return _robot_part_count("leg") >= 2
+	if _is_leg_pose_hover_box(box):
+		# Need the leg itself (left needs one leg, right needs two).
+		var needed := 1 if _is_left_leg_box(box) else 2
+		if _robot_part_count("leg") < needed:
+			return false
+		# While the pelvis animation is actually playing, the legs are driven by
+		# the animation, so none of the leg boxes accept clicks.
+		if _pelvis_animation_playing():
+			return false
+		# Only the one box whose pose matches the leg's current pose is live, so
+		# the three per-side boxes are mutually exclusive.
+		return _pose_slot_for_box(box) == _leg_pose_for_box(box)
 	return true
 
 
