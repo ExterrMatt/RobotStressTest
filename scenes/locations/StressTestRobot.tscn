@@ -935,6 +935,7 @@ mouse_filter = 2
 
 [node name="HairBack" type="Sprite2D" parent="AnimationLayers" unique_id=400961888]
 visible = false
+z_index = -1
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
@@ -1177,6 +1178,7 @@ region_rect = Rect2(3500, 0, 250, 350)
 
 [node name="HairBack" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=348026164]
 visible = false
+z_index = -1
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
@@ -1298,6 +1300,7 @@ region_rect = Rect2(4250, 0, 250, 350)
 
 [node name="HairBack" type="Sprite2D" parent="AnimationLayers/MouthBPreOutro" unique_id=348026170]
 visible = false
+z_index = -1
 texture = ExtResource("85_mouth_b_pre_outro")
 centered = false
 region_enabled = true
@@ -1419,6 +1422,7 @@ region_rect = Rect2(4750, 0, 250, 350)
 
 [node name="HairBack" type="Sprite2D" parent="AnimationLayers/MouthBOutro" unique_id=348026190]
 visible = false
+z_index = -1
 texture = ExtResource("84_mouth_b_outro")
 centered = false
 region_enabled = true
@@ -2056,7 +2060,7 @@ show_border = true
 priority = 20
 click_action = 1
 hover_description = "Animate Legs"
-hidden_while_active_image_paths = Array[NodePath]([NodePath("ChestCover"), NodePath("Legs/RightLeg"), NodePath("Legs/LeftLeg"), NodePath("Legs/RightLegSlightlyOut"), NodePath("Legs/LeftLegSlightlyOut"), NodePath("Legs/RightLegUpThigh"), NodePath("Legs/RightLegUpShin"), NodePath("Legs/LeftLegUpThigh"), NodePath("Legs/LeftLegUpShin"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/ChestDetailsLeft"), NodePath("Torso/ChestDetailsRight"), NodePath("Torso/ChestOutlineLeft"), NodePath("Torso/ChestOutlineRight"), NodePath("Torso/BigCoconuts"), NodePath("Torso/SmallCoconuts"), NodePath("Torso/Balloons"), NodePath("Torso/Pepperonis"), NodePath("Torso/SyrupStomach"), NodePath("AnimationLayers/ChestDetailsLeft"), NodePath("AnimationLayers/ChestDetailsRight"), NodePath("AnimationLayers/ChestOutlineLeft"), NodePath("AnimationLayers/ChestOutlineRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineRight")])
+hidden_while_active_image_paths = Array[NodePath]([NodePath("Legs/RightLeg"), NodePath("Legs/LeftLeg"), NodePath("Legs/RightLegSlightlyOut"), NodePath("Legs/LeftLegSlightlyOut"), NodePath("Legs/RightLegUpThigh"), NodePath("Legs/RightLegUpShin"), NodePath("Legs/LeftLegUpThigh"), NodePath("Legs/LeftLegUpShin"), NodePath("Torso/TorsoBase"), NodePath("Torso/Chest"), NodePath("Torso/ChestDetailsLeft"), NodePath("Torso/ChestDetailsRight"), NodePath("Torso/ChestOutlineLeft"), NodePath("Torso/ChestOutlineRight"), NodePath("Torso/BigCoconuts"), NodePath("Torso/SmallCoconuts"), NodePath("Torso/Balloons"), NodePath("Torso/Pepperonis"), NodePath("Torso/SyrupStomach"), NodePath("AnimationLayers/ChestDetailsLeft"), NodePath("AnimationLayers/ChestDetailsRight"), NodePath("AnimationLayers/ChestOutlineLeft"), NodePath("AnimationLayers/ChestOutlineRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestDetailsRight"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineLeft"), NodePath("AnimationLayers/MouthBLoopMedium/ChestOutlineRight")])
 intro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionIntro/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionIntro/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionIntro/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionIntro/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionIntro/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionIntro/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionIntro/Vegetable"), NodePath("AnimationLayers/VegetableMissionIntro/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionIntro/Chest"), NodePath("AnimationLayers/VegetableMissionIntro/SmallCoconuts"), NodePath("AnimationLayers/VegetableMissionIntro/BigCoconuts"), NodePath("AnimationLayers/VegetableMissionIntro/Pepperonis")])
 loop_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionLoopMedium/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionLoopMedium/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Vegetable"), NodePath("AnimationLayers/VegetableMissionLoopMedium/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionLoopMedium/VegetableFolds"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Chest"), NodePath("AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts"), NodePath("AnimationLayers/VegetableMissionLoopMedium/BigCoconuts"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Pepperonis"), NodePath("AnimationLayers/VegetableMissionLoopMedium/Balloons"), NodePath("AnimationLayers/VegetableMissionLoopMedium/ChestCover")])
 pre_outro_animation_nodes = Array[NodePath]([NodePath("AnimationLayers/VegetableMissionPreOutro/TorsoCrunch"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftLegUpThigh"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightLegUpThigh"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftHandOvergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightHandOvergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightHandUndergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftHandUndergrip"), NodePath("AnimationLayers/VegetableMissionPreOutro/LeftLegUpShin"), NodePath("AnimationLayers/VegetableMissionPreOutro/RightLegUpShin"), NodePath("AnimationLayers/VegetableMissionPreOutro/Vegetable"), NodePath("AnimationLayers/VegetableMissionPreOutro/VegetableOutline"), NodePath("AnimationLayers/VegetableMissionPreOutro/VegetableFolds"), NodePath("AnimationLayers/VegetableMissionPreOutro/Chest"), NodePath("AnimationLayers/VegetableMissionPreOutro/Balloons"), NodePath("AnimationLayers/VegetableMissionPreOutro/SmallCoconuts"), NodePath("AnimationLayers/VegetableMissionPreOutro/BigCoconuts"), NodePath("AnimationLayers/VegetableMissionPreOutro/Pepperonis"), NodePath("AnimationLayers/VegetableMissionPreOutro/ChestCover")])

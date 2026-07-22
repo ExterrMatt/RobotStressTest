@@ -419,6 +419,17 @@ const RIGHT_LEG_POSE_RAISED_PATHS: Array[NodePath] = [^"Legs/RightLegUpThigh", ^
 ## shaped for (small coconuts, pepperonis) are hidden so they don't clash with
 ## the cover during the raised-leg animation.
 const CHEST_COVER_PATH: NodePath = ^"ChestCover"
+## The chest cover's own animated column in each vegetable-mission phase that has
+## one. The intro strip has no cover column, so the freeze-frame falls back to the
+## static cover.
+const VEG_LOOP_CHEST_COVER_PATH: NodePath = ^"AnimationLayers/VegetableMissionLoopMedium/ChestCover"
+const VEG_PRE_OUTRO_CHEST_COVER_PATH: NodePath = ^"AnimationLayers/VegetableMissionPreOutro/ChestCover"
+const VEG_OUTRO_CHEST_COVER_PATH: NodePath = ^"AnimationLayers/VegetableMissionOutro/ChestCover"
+const VEG_CHEST_COVER_ANIM_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionLoopMedium/ChestCover",
+	^"AnimationLayers/VegetableMissionPreOutro/ChestCover",
+	^"AnimationLayers/VegetableMissionOutro/ChestCover",
+]
 const CHEST_COVER_GATED_ANIM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
@@ -1438,6 +1449,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_cosmetic_item_availability_to_dictionary(resolved)
 	_apply_chest_cover_gated_animations(resolved)
+	_apply_chest_cover_state(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_shoulder_pad_state(resolved)
 	_apply_neck_front_state(resolved)
@@ -1593,12 +1605,54 @@ func _show_side_intro_grip(resolved: Dictionary, is_left: bool) -> bool:
 ## during the raised-leg animation. The big coconuts are contoured to the cover
 ## and stay visible underneath it.
 func _apply_chest_cover_gated_animations(resolved: Dictionary) -> void:
-	# The cover is worn whenever it is owned and there is a chest to sit on. This
-	# holds for both the static cover and the animated cover column, so the gate
-	# keys off ownership rather than the (animation-hidden) static sprite.
-	if not (_cosmetic_item_owned("big_chest_cover") and _robot_part_count("chest") >= 1):
+	# The under-cover overlays are only hidden while the cover is actually worn
+	# (owned, on a chest, and not taken off by the player). When the cover is off
+	# they show through, so removing the cover during the animation reveals them
+	# instead of leaving an empty gap.
+	if not _chest_cover_worn():
 		return
 	_hide_paths(resolved, CHEST_COVER_GATED_ANIM_PATHS)
+
+
+## Whether the big chest cover is currently being worn: it is owned, there is a
+## chest for it to sit on, and the player has not taken it off with the chest
+## cover hover box. This single source of truth drives the cover in every state
+## (static, freeze-frame and animation) so it stays consistent throughout.
+func _chest_cover_worn() -> bool:
+	return _cosmetic_item_owned("big_chest_cover") \
+			and _robot_part_count("chest") >= 1 \
+			and not _is_named_box_effect_active("ChestCoverHoverBox")
+
+
+## Resolves the chest cover consistently across every state. The static cover is
+## shown whenever it is worn, except while a vegetable-mission phase that carries
+## its own animated cover column (loop/pre-outro/outro) is on screen, where the
+## animated column takes over. The frozen intro freeze-frame has no cover column,
+## so it falls back to the static cover — keeping the cover present from the
+## moment the legs go up right through the animation. Taking the cover off hides
+## it in every phase.
+func _apply_chest_cover_state(resolved: Dictionary) -> void:
+	var worn := _chest_cover_worn()
+	# Every animated cover column starts hidden; the current phase re-enables one.
+	_hide_paths(resolved, VEG_CHEST_COVER_ANIM_PATHS)
+
+	var pelvis := _find_hover_box_by_name("PelvisHoverBox")
+	var phase := ANIMATION_PHASE_NONE
+	if pelvis != null and _is_box_effect_active(pelvis):
+		phase = _get_visible_animation_phase_for_box(pelvis)
+	var animated_cover_path := NodePath("")
+	match phase:
+		ANIMATION_PHASE_LOOP:
+			animated_cover_path = VEG_LOOP_CHEST_COVER_PATH
+		ANIMATION_PHASE_PRE_OUTRO:
+			animated_cover_path = VEG_PRE_OUTRO_CHEST_COVER_PATH
+		ANIMATION_PHASE_OUTRO:
+			animated_cover_path = VEG_OUTRO_CHEST_COVER_PATH
+
+	# The static cover yields to the animated column only when one is on screen.
+	resolved[CHEST_COVER_PATH] = worn and animated_cover_path == NodePath("")
+	if worn and animated_cover_path != NodePath(""):
+		resolved[animated_cover_path] = true
 
 
 ## Shows the selected pose per hand and hides the other options. Runs before the
@@ -1667,8 +1721,12 @@ func _apply_squint_eyes_state(resolved: Dictionary) -> void:
 ## smooth overlays) show together while the set is enabled and the head is
 ## lowered, and are hidden otherwise.
 func _apply_human_skin_state(resolved: Dictionary) -> void:
+	# The stomach skin and chest-smooth overlays are static-only (no animation
+	# columns), so they hide during any body animation — the head talk and the
+	# pelvis vegetable-mission alike — rather than clashing with the animated body.
 	var head_active := _is_named_box_effect_active("HeadHoverBox")
-	var shown := _human_skin_enabled and not head_active
+	var pelvis_active := _is_named_box_effect_active("PelvisHoverBox")
+	var shown := _human_skin_enabled and not head_active and not pelvis_active
 	for path in HUMAN_SKIN_PATHS:
 		resolved[path] = shown
 
