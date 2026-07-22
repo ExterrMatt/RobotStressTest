@@ -44,6 +44,8 @@ const CHEST_DETAILS_LEFT_PATH: NodePath = ^"Torso/ChestDetailsLeft"
 const CHEST_DETAILS_RIGHT_PATH: NodePath = ^"Torso/ChestDetailsRight"
 const CHEST_OUTLINE_LEFT_PATH: NodePath = ^"Torso/ChestOutlineLeft"
 const CHEST_OUTLINE_RIGHT_PATH: NodePath = ^"Torso/ChestOutlineRight"
+const CHEST_SMOOTH_LEFT_PATH: NodePath = ^"Torso/ChestSmoothLeft"
+const CHEST_SMOOTH_RIGHT_PATH: NodePath = ^"Torso/ChestSmoothRight"
 const LEFT_SHOULDER_PAD_PATH: NodePath = ^"Arms/LeftShoulderPad"
 const RIGHT_SHOULDER_PAD_PATH: NodePath = ^"Arms/RightShoulderPad"
 const LEFT_SHOULDER_HOVER_BOX_NAME: String = "LeftShoulderHoverBox"
@@ -95,6 +97,11 @@ const ANIM_CHEST_DETAILS_RIGHT_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBPreOutro/ChestDetailsRight",
 	^"AnimationLayers/MouthBOutro/ChestDetailsRight",
 ]
+## Chest-smooth animation columns per side. Populated once the smooth columns are
+## wired as Sprite2D nodes in each head-animation phase; empty until then, so the
+## smooth overlay currently resolves on the static robot only.
+const ANIM_CHEST_SMOOTH_LEFT_PATHS: Array[NodePath] = []
+const ANIM_CHEST_SMOOTH_RIGHT_PATHS: Array[NodePath] = []
 
 ## Front cover for the neck, shown only while the head is the robot's sole
 ## remaining part (no chest, stomach, arms, hands, or legs). The texture is loaded at
@@ -130,14 +137,14 @@ const SQUINT_ANIM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBLoopMedium/SquintEyes",
 ]
 
-## The "human" skin set, toggled by the Ctrl+H debug key. Off by default. The
-## stomach skin and the two chest smooth overlays are authored to be shown
-## together, so they are gated as one group.
+## The "human" skin set, toggled by the Ctrl+H debug key. Off by default. It shows
+## the stomach skin and, through the chest-overlay rule, swaps each side's chest to
+## its smooth variant (in place of the outline/details). The chest-smooth overlays
+## are therefore resolved by _apply_chest_overlay_state, not listed here — only the
+## stomach skin is gated directly by this set.
 const HUMAN_SKIN_DEFAULT_ENABLED: bool = false
 const HUMAN_SKIN_PATHS: Array[NodePath] = [
 	^"Torso/StomachSkin",
-	^"Torso/ChestSmoothLeft",
-	^"Torso/ChestSmoothRight",
 ]
 
 ## Syrup overlay drizzled onto the static head once the Mouth-B outro finishes.
@@ -1451,7 +1458,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_chest_cover_gated_animations(resolved)
 	_apply_chest_cover_state(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
-	_apply_shoulder_pad_state(resolved)
+	_apply_chest_overlay_state(resolved)
 	_apply_neck_front_state(resolved)
 	_apply_resolved_visibility(resolved)
 	_apply_squint_eyes_offset()
@@ -1851,53 +1858,98 @@ func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
 		_apply_paths_available(resolved, RIGHT_GRIP_HAND_PATHS, false)
 
 
-## Resolves the two independent shoulder-pad toggles. For each side: while the
-## pad is on, that side's chest outline shows and its chest details stay hidden;
-## while the pad is removed, the pad is hidden and the details replace the
-## outline. The static overlays follow the static chest, and the matching
-## animation columns follow the head animation the same way.
-func _apply_shoulder_pad_state(resolved: Dictionary) -> void:
-	_apply_side_shoulder_pad_state(
+## Resolves each side's chest overlay to exactly one of three mutually-exclusive
+## variants, and the shoulder pad along with it:
+##   - smooth  — while the "human skin" debug set is on (it also shows the stomach
+##               skin), regardless of the pad;
+##   - outline — while that side's shoulder pad is on, or that side has no arm at
+##               all (the pad can't be worn, so the chest keeps its plated look);
+##   - details — while the pad has been taken off and the arm is still there.
+## The same choice drives the static overlay and the matching head-animation
+## column, so the chest stays consistent across every phase and the pad never
+## spontaneously reappears.
+func _apply_chest_overlay_state(resolved: Dictionary) -> void:
+	var arm_count := _robot_part_count("arm")
+	_apply_side_chest_overlay(
 		resolved,
 		_is_named_box_effect_active(LEFT_SHOULDER_HOVER_BOX_NAME),
+		arm_count >= 1,
 		LEFT_SHOULDER_PAD_PATH,
 		CHEST_OUTLINE_LEFT_PATH,
 		CHEST_DETAILS_LEFT_PATH,
+		CHEST_SMOOTH_LEFT_PATH,
 		ANIM_LEFT_SHOULDER_PAD_PATHS,
 		ANIM_CHEST_OUTLINE_LEFT_PATHS,
-		ANIM_CHEST_DETAILS_LEFT_PATHS
+		ANIM_CHEST_DETAILS_LEFT_PATHS,
+		ANIM_CHEST_SMOOTH_LEFT_PATHS
 	)
-	_apply_side_shoulder_pad_state(
+	_apply_side_chest_overlay(
 		resolved,
 		_is_named_box_effect_active(RIGHT_SHOULDER_HOVER_BOX_NAME),
+		arm_count >= 2,
 		RIGHT_SHOULDER_PAD_PATH,
 		CHEST_OUTLINE_RIGHT_PATH,
 		CHEST_DETAILS_RIGHT_PATH,
+		CHEST_SMOOTH_RIGHT_PATH,
 		ANIM_RIGHT_SHOULDER_PAD_PATHS,
 		ANIM_CHEST_OUTLINE_RIGHT_PATHS,
-		ANIM_CHEST_DETAILS_RIGHT_PATHS
+		ANIM_CHEST_DETAILS_RIGHT_PATHS,
+		ANIM_CHEST_SMOOTH_RIGHT_PATHS
 	)
 
 
-func _apply_side_shoulder_pad_state(
+## Overlay modes for one chest side.
+const CHEST_OVERLAY_OUTLINE: int = 0
+const CHEST_OVERLAY_DETAILS: int = 1
+const CHEST_OVERLAY_SMOOTH: int = 2
+
+
+func _apply_side_chest_overlay(
 	resolved: Dictionary,
 	pad_removed: bool,
+	side_has_arm: bool,
 	pad_path: NodePath,
 	outline_path: NodePath,
 	details_path: NodePath,
+	smooth_path: NodePath,
 	anim_pad_paths: Array[NodePath],
 	anim_outline_paths: Array[NodePath],
-	anim_details_paths: Array[NodePath]
+	anim_details_paths: Array[NodePath],
+	anim_smooth_paths: Array[NodePath]
 ) -> void:
+	var mode := _chest_overlay_mode(pad_removed, side_has_arm)
 	var chest_visible := bool(resolved.get(CHEST_PATH, false))
-	resolved[outline_path] = chest_visible and not pad_removed
-	resolved[details_path] = chest_visible and pad_removed
+
+	# Static overlays: one variant on, the other two off, and all off with no chest.
+	resolved[outline_path] = chest_visible and mode == CHEST_OVERLAY_OUTLINE
+	resolved[details_path] = chest_visible and mode == CHEST_OVERLAY_DETAILS
+	resolved[smooth_path] = chest_visible and mode == CHEST_OVERLAY_SMOOTH
+
+	# Animation columns: hide the two variants that are not selected. The selected
+	# one stays as the current head-animation phase left it (shown for that phase,
+	# hidden otherwise), so it only appears while the head animation is running.
+	if mode != CHEST_OVERLAY_OUTLINE:
+		_hide_paths(resolved, anim_outline_paths)
+	if mode != CHEST_OVERLAY_DETAILS:
+		_hide_paths(resolved, anim_details_paths)
+	if mode != CHEST_OVERLAY_SMOOTH:
+		_hide_paths(resolved, anim_smooth_paths)
+
+	# The shoulder pad hides whenever it has been taken off (its arm-availability
+	# gate already hides it when the side has no arm).
 	if pad_removed:
 		resolved[pad_path] = false
 		_hide_paths(resolved, anim_pad_paths)
-		_hide_paths(resolved, anim_outline_paths)
-	else:
-		_hide_paths(resolved, anim_details_paths)
+
+
+## Picks the chest overlay variant for one side from the current toggles.
+func _chest_overlay_mode(pad_removed: bool, side_has_arm: bool) -> int:
+	if _human_skin_enabled:
+		return CHEST_OVERLAY_SMOOTH
+	# No arm (so no pad to wear) keeps the plated outline; a worn pad does too.
+	if not side_has_arm or not pad_removed:
+		return CHEST_OVERLAY_OUTLINE
+	return CHEST_OVERLAY_DETAILS
 
 
 func _hide_paths(resolved: Dictionary, paths: Array[NodePath]) -> void:
