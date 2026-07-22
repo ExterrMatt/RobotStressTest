@@ -34,6 +34,8 @@ const TEXTURE_PATHS: Dictionary = {
 	# Cosmetic chest items — placeholder icons reuse the torso overlay art for now.
 	"big_coconuts": "res://assets/textures/characters/robot/stresstest/torso/big_coconuts.png",
 	"small_coconuts": "res://assets/textures/characters/robot/stresstest/torso/small_coconuts.png",
+	# Balloons deliberately use the generic placeholder icon for now.
+	"balloons": "res://assets/textures/icons/placeholder_item.png",
 	"big_chest_cover": "res://assets/textures/characters/robot/stresstest/torso/chest_cover.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
@@ -69,6 +71,7 @@ const DISPLAY_NAMES: Dictionary = {
 	"hand": "Hand",
 	"big_coconuts": "Big Coconuts",
 	"small_coconuts": "Small Coconuts",
+	"balloons": "Balloons",
 	"big_chest_cover": "Big Chest Cover",
 	"screwdriver": "Screwdriver",
 	"crank": "Crank",

@@ -190,11 +190,13 @@ var robot_parts: Dictionary = {
 ## coconuts and the big chest cover is the default look; small coconuts is an
 ## alternative that starts unowned. The big chest cover is contoured for big
 ## coconuts specifically (a separate small chest cover is planned for the small
-## coconuts).
-const COSMETIC_ITEM_IDS: Array[String] = ["big_coconuts", "small_coconuts", "big_chest_cover"]
+## coconuts). Balloons are a third mutually-exclusive chest fill (like the
+## coconut variants) and also start unowned.
+const COSMETIC_ITEM_IDS: Array[String] = ["big_coconuts", "small_coconuts", "balloons", "big_chest_cover"]
 const COSMETIC_ITEM_DEFAULTS: Dictionary = {
 	"big_coconuts": 1,
 	"small_coconuts": 0,
+	"balloons": 0,
 	"big_chest_cover": 1,
 }
 
