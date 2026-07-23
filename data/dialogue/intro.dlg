@@ -113,7 +113,7 @@ Her: A shed…
 She’s silent for a few seconds. You can tell she’s trying to piece together what’s happening.
 Her: Who are you?
 You clear your throat and fix your posture a bit.
-You: I’m [name]. I found you at work, and decided to put you together.
+You: I’m {player_name}. I found you at work, and decided to put you together.
 Thoughts: You know, now that I think about it, activating a random trash-bound AI may not have been a great idea…
 Her: Why can’t I move? I can’t feel anything besides my head.
 You: Uhh.. You don't have a body.

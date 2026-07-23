@@ -38,7 +38,13 @@ func _ready() -> void:
 		_show_player_name_prompt()
 		return
 	_apply_intro_visuals(_intro_key)
-	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key))
+	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key, _intro_format_vars()))
+
+
+## Placeholders substituted into intro prose. {player_name} is the name the
+## player entered (or the default); the robot's wakeup scene uses it.
+func _intro_format_vars() -> Dictionary:
+	return {"player_name": GameState.get_player_name()}
 
 
 func _should_prompt_for_player_name() -> bool:
@@ -122,7 +128,7 @@ func _accept_player_name() -> void:
 	# would otherwise seed a hold-skip and eat the uncle's first line, so make
 	# this Enter act purely as a "click continue" on the newly shown dialogue.
 	dialogue_box.suppress_next_enter_hold()
-	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key))
+	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key, _intro_format_vars()))
 
 
 func _on_name_text_changed(new_text: String) -> void:
