@@ -381,9 +381,13 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 	var reward: Dictionary = REWARD_CORRECT if picked_correct else REWARD_WRONG
 	var feedback_pages: Array
 	if _scenario == SchoolScenario.CLASS_DISRUPTION:
-		# The disruption lesson has its own scripted correct/wrong feedback.
+		# The disruption lesson has its own scripted correct/wrong feedback,
+		# followed by the robot hanging up. After that it hands off to the SAME
+		# post-class steal opportunity as an ordinary school day (bell, cabinet
+		# background, nanobots) - see _enter_post_class_intro.
 		var key := "class_disruption.feedback.correct" if picked_correct else "class_disruption.feedback.wrong"
 		feedback_pages = Dialogue.get_pages("school", key, _school_format_vars())
+		feedback_pages.append_array(Dialogue.get_pages("school", "class_disruption.after", _school_format_vars()))
 	elif picked_correct:
 		feedback_pages = Dialogue.get_pages("school", "feedback.correct", {
 			"name": _current_teacher["name"],
@@ -411,12 +415,9 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
 	_hide_choice_grid()
-	# The class disruption's steal happens right there in the classroom (the robot
-	# told the player to look around the room), so it skips the bell/supply-cabinet
-	# transition and just plays its closing lines before the steal prompt.
-	if _scenario == SchoolScenario.CLASS_DISRUPTION:
-		dialogue_box.play_pages(Dialogue.get_pages("school", "class_disruption.after", _school_format_vars()))
-		return
+	# Both the class disruption and an ordinary school day end on the same steal
+	# opportunity: switch to the supply-cabinet background and play the [post_class]
+	# lines before the "what do you do?" steal-or-leave prompt.
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("_play_transition_then"):
 		main._play_transition_then(Callable(self, "_show_school_cabinet_background_and_play_post_class"))
