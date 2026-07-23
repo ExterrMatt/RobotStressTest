@@ -179,7 +179,7 @@ func _enter_intro_prompt() -> void:
 	choice_grid.visible = false
 
 	dialogue_box.visible = true
-	var prompt_text: String = "What do you do?"
+	var prompt_text: String = dlg_line("workshop", "intro.prompt")
 	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt_text]
 	# Font ladder bumped by 6 from the base [48, 36, 24, 16].
 	dialogue_box.play_pages_autosized([[gold_prompt]], [54, 42, 30, 22], 2)
@@ -201,11 +201,11 @@ func _show_intro_choices() -> void:
 	_clear_choice_buttons()
 	choice_grid.visible = true
 
-	var tinker_btn := _build_choice_button("TINKER")
+	var tinker_btn := _build_choice_button(dlg_line("workshop", "intro.tinker"))
 	tinker_btn.pressed.connect(_on_tinker_pressed)
 	choice_grid.add_child(tinker_btn)
 
-	var construct_btn := _build_choice_button("CONSTRUCT A LIMB")
+	var construct_btn := _build_choice_button(dlg_line("workshop", "intro.construct"))
 	construct_btn.pressed.connect(_on_construct_limb_pressed)
 	choice_grid.add_child(construct_btn)
 

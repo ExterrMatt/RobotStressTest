@@ -1,12 +1,16 @@
-[gd_resource type="Resource" script_class="DialogueBundle" format=3 uid="uid://wk5dqeeqerx0"]
+[gd_resource type="Resource" script_class="DialogueBundle" format=3]
 
-[ext_resource type="Script" uid="uid://bsmsh85841wdm" path="res://data/dialogue/DialogueBundle.gd" id="1_dlgbndl"]
+[ext_resource type="Script" path="res://data/dialogue/DialogueBundle.gd" id="1_dlgbndl"]
 
 [resource]
 script = ExtResource("1_dlgbndl")
 sources = {
 "intro": "# Intro sequence dialogue.
 # Format: see data/dialogue/school.dlg.
+
+# The label shown above the text box where the player types their name.
+[name_prompt]
+What is your name?
 
 [exposition]
 Uncle: You're up early.
@@ -57,6 +61,8 @@ You: You don't mean that.
 Uncle: Yeah... I don't.
 [i]He sits up and reaches over to the backpack.[/i]
 Uncle: Alright, scram. I don't want you involved in this part of the business.
+Uncle: And hey, make sure your phone's GPS is shut off before work tomorrow.
+You: Yeah, yeah... I'll make sure.
 You finally head to your room.
 
 [bedroom_night]
@@ -98,18 +104,53 @@ Thoughts: I guess the shed will have to do... If he checks his window I'll just 
 You head to the shed.
 
 [robot_first_talk]
-The head goes still after the test...
+The generator chugs to a stop.
 The silence is nice...
+Thoughts: …
+Thoughts: Did it work?
 Thoughts: ...
 Her: ... hello?
 Thoughts: ...
 You: ... Hi...
+Thoughts: Holy shit it worked!
+You can see her eyes scan the room. 
+Her: Where am I?
+You: Uhh.. you're my Uncle’s shed.
+Her: A shed…
+She’s silent for a few seconds. You can tell she’s trying to piece together what’s happening.
+Her: Who are you?
+You clear your throat and fix your posture a bit.
+You: I’m {player_name}. I found you at work, and decided to put you together.
+Thoughts: You know, now that I think about it, activating a random trash-bound AI may not have been a great idea…
+Her: Why can’t I move? I can’t feel anything besides my head.
+You: Uhh.. You don't have a body.
+Despite only being a head, her body language gives away her discomfort.
+Her: If you can find my head maybe you can find the rest of my body?
+You: I don't think you have a “rest of your body”.
+You: I found you in a box full of a bunch of spare head parts. Nothing besides that.
+She bites her lip.
+Thoughts: I didn’t know robots could be so expressive. The cleaning bots at work don’t seem to have any personality at all…
+Her: Help me, {player_name}. I don’t like just being a head. 
+You: I can try… But if I get caught helping you or stealing anything…
+Her: Please…
+You: …
+Thoughts: This could be risky… My uncle might find out. 
+Thoughts: I’d lose my job, and who knows, he might even kick me out of the house. I really shouldn’t…
+You: Yes, I’ll help you.
+Thoughts: What? Did I just agree??
+Her: Thank you, {player_name}...
+Thoughts: What the hell is happening to me right now?
+You: I… I’m gonna head to my room. It’s late and I'm tired.
+Her: Are you going to leave me here in the shed?
+You: Hmm… It’d be very bad if my uncle found you in here.
+Thoughts: I'll definitely have to keep her in the house- but I can't keep her in the shed.. or the garage…
+You let out a sigh.
+You: Alright. I guess you're coming with me.
+Her: I am?
+You: I can’t hide you anywhere else.
+Her: I understand.
 
 [free_reign]
-[This is the end of the demo]
-Thank you for playing! This was my first ever game.
-I have a vision for many more game features, so keep an eye out for any future updates!
-Please leave your thoughts of the game in the comments. I hope you enjoyed this early version!
 Thoughts: Stress Tests are now more difficult.",
 "school": "# =============================================================================
 # School dialogue file.
@@ -131,7 +172,19 @@ Thoughts: Stress Tests are now more difficult.",
 #
 # Placeholders (filled in by code with String.format):
 #   {name}          -> teacher name
+#   {player_name}   -> the player's name
 #   {correct}       -> correct answer text (only valid in wrong-answer entries)
+#
+# QUESTIONS (the on-screen quiz).  Every question owns three entries, ALL edited
+# here - nothing lives in the code any more:
+#   [<q>.lecture]   -> the lecture the teacher reads before the question.
+#   [<q>.prompt]    -> the big question shown in the box (e.g. the bolded ones
+#                      like \"What Caused The First Automaton War?\").
+#   [<q>.choices]   -> the multiple-choice answers, ONE PER LINE. Mark the
+#                      CORRECT answer by starting its line with \"* \". The star
+#                      is stripped before the answer is shown, and the on-screen
+#                      order is shuffled at runtime, so the star is the single
+#                      source of truth for which answer is right.
 # =============================================================================
 
 
@@ -140,20 +193,37 @@ Thoughts: Stress Tests are now more difficult.",
 # -----------------------------------------------------------------------------
 
 [gym.intro]
-[i]Drop your bags.[/i]
-[i]Today we're talking about something every one of you will need: not pulling a muscle.[/i]
+[i]Everyone put your phones away.[/i]
+[i]Today we're talking about something that WILL be on the exam. It's about not pulling your muscles.[/i]
 
 [gym.warmup.lecture]
-Warm-ups raise your muscle temperature and increase blood flow before exertion.
-A cold muscle is a brittle muscle - it tears under load that a warm one would shrug off.
-Five minutes of light cardio is enough to make a measurable difference.
-Skip the warm-up and you're betting your week on a coin flip.
+Warm-ups raise your muscle temperature and increase blood flow before you exert yourself.
+A cold muscle is a brittle muscle. It can cause injuries and tear muscles.
+A few minutes of light cardio is enough to make a difference.
+Skip the warm-up and you're in for a bad time.
+
+[gym.warmup.prompt]
+Why do we warm up before exercise?
+
+[gym.warmup.choices]
+It burns extra calories before the workout
+* It raises muscle temperature and blood flow
+It tightens the muscles for more power
 
 [gym.sprint.lecture]
-When you sprint, your body switches to anaerobic energy production - burning glucose without oxygen.
-That's why you can only hold a top sprint for ten or fifteen seconds before your legs start screaming.
-Long, slow runs are aerobic; they use oxygen and last for hours.
-Different systems, different fuels.
+When you Sprint, your body can't get oxygen to your muscles fast enough, so it runs on fuel it already has stored in the muscle itself.
+That store is small. it's why you can only hold the top Sprint for 10 to 15 seconds before your legs start screaming.
+Sprinting is anaerobic. Long, slow runs on the other hand, are aerobic.
+That means they use oxygen and can last for hours.
+Different systems require different fuels.
+
+[gym.sprint.prompt]
+What energy system does a short sprint mainly use?
+
+[gym.sprint.choices]
+Aerobic - uses lots of oxygen
+* Anaerobic: burns glucose without oxygen
+Acrobatic
 
 
 # -----------------------------------------------------------------------------
@@ -161,15 +231,23 @@ Different systems, different fuels.
 # -----------------------------------------------------------------------------
 
 [science.intro]
-[i]Goggles on the desk.[/i]
+[i]Alright everybody, listen up.[/i]
 [i]Today's topic is the smallest building blocks we know about.[/i]
 
 [science.atom.lecture]
 An atom has three kinds of particles.
 Protons carry a positive charge and live in the nucleus.
 Neutrons carry no charge and also live in the nucleus.
-Electrons carry a negative charge and orbit around the nucleus at much greater distances.
+Electrons carry a negative charge and can be found somewhere around the nucleus at much greater distances.
 The number of protons defines what element the atom is - change the proton count and you change the element entirely.
+
+[science.atom.prompt]
+Which particle determines what element an atom is?
+
+[science.atom.choices]
+The neutron
+* The proton
+The electron
 
 [science.photo.lecture]
 Photosynthesis is how plants make their own food.
@@ -177,10 +255,26 @@ They take in carbon dioxide from the air through tiny pores in their leaves, abs
 Oxygen is released as a byproduct, which is convenient for the rest of us.
 Without photosynthesis, almost no complex life on Earth would exist.
 
+[science.photo.prompt]
+What gas do plants release as a byproduct of photosynthesis?
+
+[science.photo.choices]
+Carbon dioxide
+Nitrogen
+* Oxygen
+
 [science.newton.lecture]
 Newton's third law of motion says that for every action, there is an equal and opposite reaction.
 When you push off the ground to jump, the ground pushes back on you with the same force - that reaction is what actually lifts you.
 Rockets work the same way: hot gas is pushed out the back, and the rocket is pushed forward in response.
+
+[science.newton.prompt]
+What does Newton's third law of motion state?
+
+[science.newton.choices]
+Objects in motion stay in motion
+Force equals mass times acceleration
+* Every action has an equal and opposite reaction
 
 
 # -----------------------------------------------------------------------------
@@ -198,6 +292,20 @@ Ms. Vey: You. What's your name?
 [i]She points directly at you.[/i]
 You: Uh, {player_name}, ma'am.
 Ms. Vey: Okay, Mr. {player_name}.
+
+# The bolded intro question uses [history.automaton_war.intro_prompt]; the normal
+# school-day version of the same question uses [history.automaton_war.prompt].
+# Both share the one [history.automaton_war.choices] list below.
+[history.automaton_war.prompt]
+What event originally started the first Automaton War?
+
+[history.automaton_war.intro_prompt]
+What Caused The First Automaton War?
+
+[history.automaton_war.choices]
+* A military automaton refused an order
+Factory automatons demanded payment
+A household unit refused shutdown
 
 [history.automaton_war.feedback]
 You: A pleasure automaton was given the wrong personality mode. It was able to bypass normal restrictions that usually kept their personalitys in check.
@@ -245,6 +353,72 @@ Thoughts: ...Should I be worried?
 [i]The supply cabinet at the back is unlocked.[/i]
 [i]You can see the small case of manufacturing nanobots inside.[/i]
 [i]Nobody's looking right now.[/i]
+
+# The \"what do you do?\" prompt and the two button labels for the steal-or-leave
+# choice. The labels are the exact text shown on the buttons.
+[post_class.prompt]
+What do you do?
+
+[post_class.leave]
+LEAVE QUIETLY
+
+[post_class.steal]
+STEAL NANOBOTS
+
+
+# -----------------------------------------------------------------------------
+# CLASS DISRUPTION - the scripted science class the player attends the first
+# time they go to class after the intro ends. The robot phones during Ms.
+# Okorie's \"what counts as alive?\" lecture and nudges the player to look for
+# something to steal. Plays: lecture -> prompt/choices -> feedback -> after ->
+# steal (reuses the [post_class.*] steal buttons).
+# -----------------------------------------------------------------------------
+
+[class_disruption.lecture]
+Ms. Okorie: Everybody settle down, let's get started.
+Ms. Okorie: We've spent a few weeks on cells, but today I want to ask a bigger question. How do you know if something is alive?
+She writes the numbers one to five on the chalk board.
+Your phone buzzes in your pocket.
+Thoughts: Who's calling me….. Unknown number?
+You answer the call.
+Her: I'm bored.
+Thoughts: ...
+Thoughts: Is she really calling me in the middle of class?
+You: Hey, I'm kinda busy right now…
+Ms. Okorie: You'd think it would be easy, but biologists have struggled to identify what necessarily counts as alive.
+Ms. Okorie: We use a checklist to determine if something is alive.
+She writes each out as she fills the five blank spaces she left beside the numbers.
+Her: Listen. Your school has a laboratory program with a local manufacturing company…
+You have to whisper so that the teacher doesn't hear you.
+You: So what?
+Ms. Okorie: Metabolism, growth, response, homeostasis, and reproduction.
+Ms. Okorie: Metabolism means the potential-life takes in energy and does something with it. Growth is self explanatory.
+Ms. Okorie: Then there's a response to stimuli, homeostasis is its ability to keep its own internal conditions stable, and finally, reproduction.
+Ms. Okorie: Here's where it gets tricky. Fire consumes fuel, grows and responds to wind.
+Ms. Okorie: On the other hand, mules cannot reproduce.
+Ms. Okorie: Nobody considers fire alive, and no one would consider a mule as non-living.
+Her: When no one's looking, take a peak around the room for anything useful.
+You: Useful? Useful for what? What do you mean usefu-
+Ms. Okorie: {player_name}.
+Thoughts: Oh shit.
+
+[class_disruption.prompt]
+Why is fire not considered alive?
+
+[class_disruption.choices]
+It doesn't take in energy.
+* It doesn't hold its internal conditions steady
+It doesn't reproduce.
+
+[class_disruption.feedback.correct]
+Great job, {player_name}! Yes, fire has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
+
+[class_disruption.feedback.wrong]
+That wasn't quite it, {player_name}. The reason fire isn't considered alive is because it has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
+
+[class_disruption.after]
+You look back down at your phone. She hung up…
+Thoughts: Great…
 ",
 "work": "# Work dialogue.
 # Format: see data/dialogue/school.dlg for the full spec.
@@ -278,6 +452,17 @@ Thoughts: ...Should I be worried?
 [i]A spare scrap of metal sits at the edge of the bin.[/i]
 [i]It wouldn't be missed.[/i]
 [i]Nobody's looking right now.[/i]
+
+# The gold \"what do you do?\" prompt and the two button labels (exact button text)
+# for the finish-or-steal choice at the end of the shift.
+[completion.prompt]
+What do you do?
+
+[completion.finish]
+FINISH SHIFT
+
+[completion.steal]
+POCKET A SCRAP
 ",
 "workshop": "# Workshop dialogue.
 # Format: see data/dialogue/school.dlg for the full spec.
@@ -298,6 +483,17 @@ Thoughts: ...Should I be worried?
 [i]It should be easy enough to put her together. Like a weird jigsaw puzzle.[/i]
 
 [i]Thoughts: Hmm, I called it a her... Can a robot be a 'her'?[/i]
+
+# The gold \"what do you do?\" prompt and the two button labels (exact button
+# text) shown when the player first enters the workshop.
+[intro.prompt]
+What do you do?
+
+[intro.tinker]
+TINKER
+
+[intro.construct]
+CONSTRUCT A LIMB
 
 # -----------------------------------------------------------------------------
 # TINKER - placeholder flavor when the player picks the tinker option.

@@ -29,8 +29,18 @@ enum SchoolPhase {
 	POST_CLASS_CHOICES,# steal/leave buttons up
 }
 
-# Each teacher entry pairs metadata with the DIALOGUE KEY for the intro and
-# one entry per question. The lecture prose itself lives in the .dlg file.
+## Which lesson this school visit is running:
+##   INTRO            - the scripted history question during the intro.
+##   CLASS_DISRUPTION - the scripted science lesson (robot phones during class),
+##                      shown once, the first class after the intro ends.
+##   NORMAL           - a random teacher and question, every class after that.
+enum SchoolScenario { INTRO, CLASS_DISRUPTION, NORMAL }
+
+# Each teacher entry pairs on-screen metadata with the DIALOGUE KEYS for its
+# intro and its questions. NONE of the prose lives here - the intro, each
+# question's lecture, its prompt, and its answer choices are all in
+# res://data/dialogue/school.dlg. A question is referenced by its base key
+# (e.g. "gym.warmup"); the .lecture / .prompt / .choices entries hang off it.
 const TEACHERS: Array = [
 	{
 		"id": "gym",
@@ -38,28 +48,7 @@ const TEACHERS: Array = [
 		"subject": "Gym",
 		"texture_path": "res://assets/textures/characters/teachers/Gym.png",
 		"intro_key": "gym.intro",
-		"questions": [
-			{
-				"lecture_key": "gym.warmup.lecture",
-				"prompt": "Why do we warm up before exercise?",
-				"choices": [
-					"It burns extra calories before the workout",
-					"It raises muscle temperature and blood flow",
-					"It tightens the muscles for more power",
-				],
-				"correct": 1,
-			},
-			{
-				"lecture_key": "gym.sprint.lecture",
-				"prompt": "What energy system does a short sprint mainly use?",
-				"choices": [
-					"Aerobic - uses lots of oxygen",
-					"Anaerobic - burns glucose without oxygen",
-					"Photosynthesis",
-				],
-				"correct": 1,
-			},
-		],
+		"question_keys": ["gym.warmup", "gym.sprint"],
 	},
 	{
 		"id": "science",
@@ -67,38 +56,7 @@ const TEACHERS: Array = [
 		"subject": "Science",
 		"texture_path": "res://assets/textures/characters/teachers/Science.png",
 		"intro_key": "science.intro",
-		"questions": [
-			{
-				"lecture_key": "science.atom.lecture",
-				"prompt": "Which particle determines what element an atom is?",
-				"choices": [
-					"The neutron",
-					"The proton",
-					"The electron",
-				],
-				"correct": 1,
-			},
-			{
-				"lecture_key": "science.photo.lecture",
-				"prompt": "What gas do plants release as a byproduct of photosynthesis?",
-				"choices": [
-					"Carbon dioxide",
-					"Nitrogen",
-					"Oxygen",
-				],
-				"correct": 2,
-			},
-			{
-				"lecture_key": "science.newton.lecture",
-				"prompt": "What does Newton's third law of motion state?",
-				"choices": [
-					"Objects in motion stay in motion",
-					"Force equals mass times acceleration",
-					"Every action has an equal and opposite reaction",
-				],
-				"correct": 2,
-			},
-		],
+		"question_keys": ["science.atom", "science.photo", "science.newton"],
 	},
 	{
 		"id": "history",
@@ -106,18 +64,7 @@ const TEACHERS: Array = [
 		"subject": "Automaton History",
 		"texture_path": "res://assets/textures/characters/teachers/History1.png",
 		"intro_key": "history.intro",
-		"questions": [
-			{
-				"lecture_key": "history.automaton_war.lecture",
-				"prompt": "What event originally started the first Automaton War?",
-				"choices": [
-					"A military automaton refused an order",
-					"Factory automatons demanded payment",
-					"A household unit refused shutdown",
-				],
-				"correct": 0,
-			},
-		],
+		"question_keys": ["history.automaton_war"],
 	},
 ]
 
@@ -162,15 +109,20 @@ const INTRO_HISTORY_TEACHER: Dictionary = {
 	"texture_path": "res://assets/textures/characters/teachers/History1.png",
 	"intro_key": "history.intro",
 }
-const INTRO_HISTORY_QUESTION: Dictionary = {
-	"lecture_key": "history.automaton_war.lecture",
-	"prompt": "What Caused The First Automaton War?",
-	"choices": [
-		"A military automaton refused an order",
-		"Factory automatons demanded payment",
-		"A household unit refused shutdown",
-	],
-	"correct": 0,
+# The intro history lesson reuses the normal history question's lecture and
+# choices, but shows the bolded title-case prompt in [history.automaton_war.intro_prompt].
+const INTRO_HISTORY_QUESTION_KEY: String = "history.automaton_war"
+const INTRO_HISTORY_PROMPT_KEY: String = "history.automaton_war.intro_prompt"
+
+# The scripted class-disruption science lesson. Its lecture, prompt, choices,
+# feedback and closing lines all live under the [class_disruption.*] keys in
+# school.dlg. Ms. Okorie teaches it and it has no separate teacher-intro line.
+const CLASS_DISRUPTION_KEY: String = "class_disruption"
+const CLASS_DISRUPTION_TEACHER: Dictionary = {
+	"id": "class_disruption",
+	"name": "Ms. Okorie",
+	"subject": "Science",
+	"texture_path": "res://assets/textures/characters/teachers/Science.png",
 }
 
 # --- Scene refs ---
@@ -180,6 +132,7 @@ const INTRO_HISTORY_QUESTION: Dictionary = {
 # --- Run state ---
 var _current_teacher: Dictionary = {}
 var _current_question: Dictionary = {}
+var _scenario: SchoolScenario = SchoolScenario.NORMAL
 var _scene_phase: SchoolPhase = SchoolPhase.LECTURE
 
 # Running totals applied on finish().
@@ -236,12 +189,20 @@ func debug_auto_solve() -> void:
 
 func _pick_teacher_and_question() -> void:
 	if _is_intro_school_first():
+		_scenario = SchoolScenario.INTRO
 		_current_teacher = INTRO_HISTORY_TEACHER
-		_current_question = INTRO_HISTORY_QUESTION
+		_current_question = _resolve_question(INTRO_HISTORY_QUESTION_KEY, INTRO_HISTORY_PROMPT_KEY)
+	elif _should_play_class_disruption():
+		_scenario = SchoolScenario.CLASS_DISRUPTION
+		# One-time: mark it seen the moment it starts so it never replays.
+		GameState.robot_class_disruption_seen = true
+		_current_teacher = CLASS_DISRUPTION_TEACHER
+		_current_question = _resolve_question(CLASS_DISRUPTION_KEY)
 	else:
+		_scenario = SchoolScenario.NORMAL
 		_current_teacher = TEACHERS.pick_random()
-		var questions: Array = _current_teacher["questions"]
-		_current_question = questions.pick_random()
+		var question_keys: Array = _current_teacher["question_keys"]
+		_current_question = _resolve_question(String(question_keys.pick_random()))
 
 	var texture_path: String = _teacher_texture_path(_current_teacher)
 	var tex: Texture2D = load(texture_path)
@@ -262,6 +223,52 @@ func _pick_teacher_and_question() -> void:
 			_current_teacher["subject"],
 			not _is_intro_school_first()
 		)
+
+
+## Builds the runtime question dict entirely from its .dlg entries, so every
+## word (lecture, prompt, answers) stays editable in school.dlg. `base_key`
+## locates <base>.lecture / <base>.prompt / <base>.choices; `prompt_key`
+## overrides which prompt entry to show (the intro lesson uses the bolded
+## [<base>.intro_prompt] variant of the same question).
+func _resolve_question(base_key: String, prompt_key: String = "") -> Dictionary:
+	if prompt_key == "":
+		prompt_key = base_key + ".prompt"
+	var fmt := _school_format_vars()
+	var parsed: Dictionary = _dlg_choices(base_key + ".choices", fmt)
+	return {
+		"lecture_key": base_key + ".lecture",
+		"prompt": _dlg_text(prompt_key, fmt),
+		"choices": parsed["choices"],
+		"correct": parsed["correct"],
+	}
+
+
+## Flattens a .dlg entry into a single string (its lines joined with spaces).
+## Used for one-line prose such as a question prompt or a button label.
+func _dlg_text(key: String, fmt: Dictionary = {}) -> String:
+	var out: String = ""
+	for page in Dialogue.get_pages("school", key, fmt):
+		for line in page:
+			if out != "":
+				out += " "
+			out += String(line)
+	return out
+
+
+## Reads a .dlg answer list (one choice per line). The correct answer is the
+## line the author marked with a leading "*"; the marker is stripped from the
+## shown text. Returns {"choices": Array[String], "correct": int}.
+func _dlg_choices(key: String, fmt: Dictionary = {}) -> Dictionary:
+	var choices: Array[String] = []
+	var correct: int = 0
+	for page in Dialogue.get_pages("school", key, fmt):
+		for line in page:
+			var text: String = String(line)
+			if text.begins_with("*"):
+				correct = choices.size()
+				text = text.substr(1).strip_edges()
+			choices.append(text)
+	return {"choices": choices, "correct": correct}
 
 
 func _teacher_texture_path(teacher: Dictionary) -> String:
@@ -297,11 +304,13 @@ func _enter_lecture() -> void:
 	_hide_choice_grid()
 	_hide_corner()
 
-	# Build a pages list by concatenating the intro pages and the lecture
-	# pages. Each is already a Array[Array[String]].
+	# Build a pages list from the teacher's intro (if any) plus the lecture. The
+	# class-disruption lesson has no separate teacher intro - its lecture already
+	# opens the scene - so its teacher carries no intro_key.
 	var pages: Array = []
 	var fmt := _school_format_vars()
-	pages.append_array(Dialogue.get_pages("school", _current_teacher["intro_key"], fmt))
+	if _current_teacher.has("intro_key"):
+		pages.append_array(Dialogue.get_pages("school", _current_teacher["intro_key"], fmt))
 	pages.append_array(Dialogue.get_pages("school", _current_question["lecture_key"], fmt))
 	dialogue_box.play_pages(pages)
 
@@ -369,15 +378,21 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 		return
 
 	var picked_correct: bool = (picked == correct)
-	var reward: Dictionary
+	var reward: Dictionary = REWARD_CORRECT if picked_correct else REWARD_WRONG
 	var feedback_pages: Array
-	if picked_correct:
-		reward = REWARD_CORRECT
+	if _scenario == SchoolScenario.CLASS_DISRUPTION:
+		# The disruption lesson has its own scripted correct/wrong feedback,
+		# followed by the robot hanging up. After that it hands off to the SAME
+		# post-class steal opportunity as an ordinary school day (bell, cabinet
+		# background, nanobots) - see _enter_post_class_intro.
+		var key := "class_disruption.feedback.correct" if picked_correct else "class_disruption.feedback.wrong"
+		feedback_pages = Dialogue.get_pages("school", key, _school_format_vars())
+		feedback_pages.append_array(Dialogue.get_pages("school", "class_disruption.after", _school_format_vars()))
+	elif picked_correct:
 		feedback_pages = Dialogue.get_pages("school", "feedback.correct", {
 			"name": _current_teacher["name"],
 		})
 	else:
-		reward = REWARD_WRONG
 		feedback_pages = Dialogue.get_pages("school", "feedback.wrong", {
 			"name": _current_teacher["name"],
 			"correct": str(_current_question["choices"][correct]),
@@ -400,6 +415,9 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
 	_hide_choice_grid()
+	# Both the class disruption and an ordinary school day end on the same steal
+	# opportunity: switch to the supply-cabinet background and play the [post_class]
+	# lines before the "what do you do?" steal-or-leave prompt.
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("_play_transition_then"):
 		main._play_transition_then(Callable(self, "_show_school_cabinet_background_and_play_post_class"))
@@ -415,7 +433,7 @@ func _show_school_cabinet_background_and_play_post_class() -> void:
 func _enter_post_class_prompt() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_PROMPT
 	_hide_choice_grid()
-	var prompt_text: String = "What do you do?"
+	var prompt_text: String = _dlg_text("post_class.prompt")
 	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt_text]
 	# Match the Workshop's "What do you do?" prompt: no line-height/separation
 	# overrides (which shift the single line off-centre), and the font ladder
@@ -443,11 +461,11 @@ func _show_post_class_choices() -> void:
 		# layout, leaving the pair filling only two-thirds).
 		choice_grid.columns = 2
 
-		var leave_btn := _build_choice_button("LEAVE QUIETLY")
+		var leave_btn := _build_choice_button(_dlg_text("post_class.leave"))
 		leave_btn.pressed.connect(_on_leave_pressed)
 		choice_grid.add_child(leave_btn)
 
-		var steal_btn := _build_choice_button("STEAL NANOBOTS")
+		var steal_btn := _build_choice_button(_dlg_text("post_class.steal"))
 		steal_btn.pressed.connect(_on_steal_pressed)
 		choice_grid.add_child(steal_btn)
 		_place_choice_grid_below_dialogue()
@@ -548,6 +566,12 @@ func _finish_school() -> void:
 
 func _is_intro_school_first() -> bool:
 	return GameState.is_intro_step(INTRO_SCHOOL_STEP)
+
+
+## The scripted class-disruption lesson plays exactly once: the first class the
+## player attends after the intro has ended.
+func _should_play_class_disruption() -> bool:
+	return GameState.intro_completed and not GameState.robot_class_disruption_seen
 
 
 func _school_format_vars() -> Dictionary:

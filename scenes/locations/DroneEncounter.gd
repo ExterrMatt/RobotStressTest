@@ -261,10 +261,10 @@ func _append_section(pages: Array, section_key: String, fmt: Dictionary, actions
 ## from the drone flags BEFORE this inspection updates them.
 func _clean_signoff() -> String:
 	if GameState.drone_caught_last_inspection or GameState.suspicion >= SUSPICION_ACKNOWLEDGED:
-		return "YOUR COOPERATION IS ACKNOWLEDGED."
+		return dlg_line("drone", "signoff.acknowledged")
 	if GameState.drone_ever_caught and GameState.suspicion >= SUSPICION_CRIMINAL:
-		return "THANK YOU FOR YOUR COOPERATION, CRIMINAL."
-	return "THANK YOU FOR YOUR COOPERATION, CITIZEN."
+		return dlg_line("drone", "signoff.criminal")
+	return dlg_line("drone", "signoff.citizen")
 
 
 # --- layer control -----------------------------------------------------------

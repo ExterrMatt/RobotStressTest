@@ -237,7 +237,9 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/Chest",
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/BigCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/Balloons",
 	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
+	^"AnimationLayers/VegetableMissionIntro/ChestCover",
 	^"AnimationLayers/VegetableMissionLoopMedium/Chest",
 	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionLoopMedium/BigCoconuts",
@@ -280,12 +282,14 @@ const SMALL_COCONUTS_ITEM_PATHS: Array[NodePath] = [
 ## the loop/pre-outro/outro strips each carry a balloon column.
 const BALLOONS_ITEM_PATHS: Array[NodePath] = [
 	^"Torso/Balloons",
+	^"AnimationLayers/VegetableMissionIntro/Balloons",
 	^"AnimationLayers/VegetableMissionLoopMedium/Balloons",
 	^"AnimationLayers/VegetableMissionPreOutro/Balloons",
 	^"AnimationLayers/VegetableMissionOutro/Balloons",
 ]
 const CHEST_COVER_ITEM_PATHS: Array[NodePath] = [
 	^"ChestCover",
+	^"AnimationLayers/VegetableMissionIntro/ChestCover",
 	^"AnimationLayers/VegetableMissionLoopMedium/ChestCover",
 	^"AnimationLayers/VegetableMissionPreOutro/ChestCover",
 	^"AnimationLayers/VegetableMissionOutro/ChestCover",
@@ -426,19 +430,22 @@ const RIGHT_LEG_POSE_RAISED_PATHS: Array[NodePath] = [^"Legs/RightLegUpThigh", ^
 ## shaped for (small coconuts, pepperonis) are hidden so they don't clash with
 ## the cover during the raised-leg animation.
 const CHEST_COVER_PATH: NodePath = ^"ChestCover"
-## The chest cover's own animated column in each vegetable-mission phase that has
-## one. The intro strip has no cover column, so the freeze-frame falls back to the
-## static cover.
+## The chest cover's own animated column in each vegetable-mission phase. The
+## intro strip now carries its own cover column too, so the freeze-frame draws the
+## animated cover rather than falling back to the static one.
+const VEG_INTRO_CHEST_COVER_PATH: NodePath = ^"AnimationLayers/VegetableMissionIntro/ChestCover"
 const VEG_LOOP_CHEST_COVER_PATH: NodePath = ^"AnimationLayers/VegetableMissionLoopMedium/ChestCover"
 const VEG_PRE_OUTRO_CHEST_COVER_PATH: NodePath = ^"AnimationLayers/VegetableMissionPreOutro/ChestCover"
 const VEG_OUTRO_CHEST_COVER_PATH: NodePath = ^"AnimationLayers/VegetableMissionOutro/ChestCover"
 const VEG_CHEST_COVER_ANIM_PATHS: Array[NodePath] = [
+	^"AnimationLayers/VegetableMissionIntro/ChestCover",
 	^"AnimationLayers/VegetableMissionLoopMedium/ChestCover",
 	^"AnimationLayers/VegetableMissionPreOutro/ChestCover",
 	^"AnimationLayers/VegetableMissionOutro/ChestCover",
 ]
 const CHEST_COVER_GATED_ANIM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
+	^"AnimationLayers/VegetableMissionIntro/Balloons",
 	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
 	^"AnimationLayers/VegetableMissionLoopMedium/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionLoopMedium/Balloons",
@@ -1633,11 +1640,11 @@ func _chest_cover_worn() -> bool:
 
 ## Resolves the chest cover consistently across every state. The static cover is
 ## shown whenever it is worn, except while a vegetable-mission phase that carries
-## its own animated cover column (loop/pre-outro/outro) is on screen, where the
-## animated column takes over. The frozen intro freeze-frame has no cover column,
-## so it falls back to the static cover — keeping the cover present from the
-## moment the legs go up right through the animation. Taking the cover off hides
-## it in every phase.
+## its own animated cover column (intro/loop/pre-outro/outro) is on screen, where
+## the animated column takes over. Every phase — including the frozen intro
+## freeze-frame — now has a cover column, keeping the cover present from the moment
+## the legs go up right through the animation. Taking the cover off hides it in
+## every phase.
 func _apply_chest_cover_state(resolved: Dictionary) -> void:
 	var worn := _chest_cover_worn()
 	# Every animated cover column starts hidden; the current phase re-enables one.
@@ -1649,6 +1656,8 @@ func _apply_chest_cover_state(resolved: Dictionary) -> void:
 		phase = _get_visible_animation_phase_for_box(pelvis)
 	var animated_cover_path := NodePath("")
 	match phase:
+		ANIMATION_PHASE_INTRO:
+			animated_cover_path = VEG_INTRO_CHEST_COVER_PATH
 		ANIMATION_PHASE_LOOP:
 			animated_cover_path = VEG_LOOP_CHEST_COVER_PATH
 		ANIMATION_PHASE_PRE_OUTRO:
@@ -1868,10 +1877,22 @@ func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
 ## The same choice drives the static overlay and the matching head-animation
 ## column, so the chest stays consistent across every phase and the pad never
 ## spontaneously reappears.
+##
+## The static overlay is retained through the pelvis (vegetable-mission) animation:
+## that animation only reshapes the lower half of the chest and carries no overlay
+## columns of its own, so whichever variant was active in the default pose keeps
+## showing over it. Only a running head animation replaces the static overlay with
+## its own per-phase column (the head half owns the chest overlay while it plays),
+## so the two never draw the variant twice.
 func _apply_chest_overlay_state(resolved: Dictionary) -> void:
 	var arm_count := _robot_part_count("arm")
+	# The static overlay carries the active variant whenever the chest exists and a
+	# head animation is not driving its own overlay columns. A pelvis-only animation
+	# therefore keeps the default-pose variant, while a head animation takes over.
+	var overlay_visible := _robot_part_count("chest") >= 1 and not _head_animation_active()
 	_apply_side_chest_overlay(
 		resolved,
+		overlay_visible,
 		_is_named_box_effect_active(LEFT_SHOULDER_HOVER_BOX_NAME),
 		arm_count >= 1,
 		LEFT_SHOULDER_PAD_PATH,
@@ -1885,6 +1906,7 @@ func _apply_chest_overlay_state(resolved: Dictionary) -> void:
 	)
 	_apply_side_chest_overlay(
 		resolved,
+		overlay_visible,
 		_is_named_box_effect_active(RIGHT_SHOULDER_HOVER_BOX_NAME),
 		arm_count >= 2,
 		RIGHT_SHOULDER_PAD_PATH,
@@ -1898,6 +1920,16 @@ func _apply_chest_overlay_state(resolved: Dictionary) -> void:
 	)
 
 
+## True while a head (Mouth-B) animation is on screen — running in game or being
+## previewed in the editor. While it is, its per-phase chest columns own the chest
+## overlay, so the static overlay stands down to avoid drawing the variant twice.
+func _head_animation_active() -> bool:
+	var head := _find_hover_box_by_name("HeadHoverBox")
+	if head == null or not _is_box_effect_active(head):
+		return false
+	return _get_visible_animation_phase_for_box(head) != ANIMATION_PHASE_NONE
+
+
 ## Overlay modes for one chest side.
 const CHEST_OVERLAY_OUTLINE: int = 0
 const CHEST_OVERLAY_DETAILS: int = 1
@@ -1906,6 +1938,7 @@ const CHEST_OVERLAY_SMOOTH: int = 2
 
 func _apply_side_chest_overlay(
 	resolved: Dictionary,
+	chest_visible: bool,
 	pad_removed: bool,
 	side_has_arm: bool,
 	pad_path: NodePath,
@@ -1918,7 +1951,6 @@ func _apply_side_chest_overlay(
 	anim_smooth_paths: Array[NodePath]
 ) -> void:
 	var mode := _chest_overlay_mode(pad_removed, side_has_arm)
-	var chest_visible := bool(resolved.get(CHEST_PATH, false))
 
 	# Static overlays: one variant on, the other two off, and all off with no chest.
 	resolved[outline_path] = chest_visible and mode == CHEST_OVERLAY_OUTLINE

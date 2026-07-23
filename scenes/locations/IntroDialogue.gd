@@ -6,7 +6,12 @@ const ROBOT_EYES_SHUT_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrou
 const ROBOT_EYES_OPEN_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/robot_eyes_open.png"
 const UNCLE_PORTRAIT_SCALE: float = 1.1
 const STORE_OUTRO_HOME_PAGE_INDEX: int = 2
-const ROBOT_FIRST_TALK_HELLO_PAGE_INDEX: int = 3
+## Fallback only. The page where the robot first says "hello" (and her eyes open)
+## is found from the dialogue at runtime - see _compute_robot_hello_page_index -
+## so the eyes stay in sync with her line no matter how many lines are added or
+## removed before it. This constant is used only if that lookup finds nothing.
+const ROBOT_FIRST_TALK_HELLO_PAGE_INDEX: int = 5
+const ROBOT_FIRST_TALK_HELLO_MATCH: String = "hello"
 ## Intro steps that show the uncle at home in his blue shirt (a random one of the
 ## two blue-shirt variants is picked each time — see _apply_intro_visuals). The
 ## living-room store_outro scene uses the Hawaiian outfit instead.
@@ -17,6 +22,7 @@ const BLUE_SHIRT_UNCLE_STEPS: Array[String] = ["exposition", "evening_room"]
 var _intro_key: String = ""
 var _store_outro_home_visual_applied: bool = false
 var _robot_eyes_open_applied: bool = false
+var _robot_hello_page_index: int = ROBOT_FIRST_TALK_HELLO_PAGE_INDEX
 var _name_prompt_panel: Control = null
 var _name_line_edit: LineEdit = null
 
@@ -32,7 +38,13 @@ func _ready() -> void:
 		_show_player_name_prompt()
 		return
 	_apply_intro_visuals(_intro_key)
-	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key))
+	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key, _intro_format_vars()))
+
+
+## Placeholders substituted into intro prose. {player_name} is the name the
+## player entered (or the default); the robot's wakeup scene uses it.
+func _intro_format_vars() -> Dictionary:
+	return {"player_name": GameState.get_player_name()}
 
 
 func _should_prompt_for_player_name() -> bool:
@@ -75,7 +87,7 @@ func _build_name_prompt_panel() -> void:
 	inner_frame.add_child(vbox)
 
 	var label := Label.new()
-	label.text = "What is your name?"
+	label.text = dlg_line("intro", "name_prompt")
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 32)
 	vbox.add_child(label)
@@ -116,7 +128,7 @@ func _accept_player_name() -> void:
 	# would otherwise seed a hold-skip and eat the uncle's first line, so make
 	# this Enter act purely as a "click continue" on the newly shown dialogue.
 	dialogue_box.suppress_next_enter_hold()
-	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key))
+	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key, _intro_format_vars()))
 
 
 func _on_name_text_changed(new_text: String) -> void:
@@ -134,7 +146,7 @@ func _on_dialogue_finished() -> void:
 
 func _on_page_advanced(index: int) -> void:
 	if _intro_key == "robot_first_talk":
-		if not _robot_eyes_open_applied and index >= ROBOT_FIRST_TALK_HELLO_PAGE_INDEX:
+		if not _robot_eyes_open_applied and index >= _robot_hello_page_index:
 			_robot_eyes_open_applied = true
 			_set_scene_image(ROBOT_EYES_OPEN_BACKGROUND_TEXTURE_PATH)
 		return
@@ -162,6 +174,7 @@ func _apply_intro_visuals(key: String) -> void:
 			main.hide_teacher_portrait()
 		return
 	if key == "robot_first_talk":
+		_robot_hello_page_index = _compute_robot_hello_page_index()
 		_set_scene_image(ROBOT_EYES_SHUT_BACKGROUND_TEXTURE_PATH)
 		if main.has_method("hide_teacher_portrait"):
 			main.hide_teacher_portrait()
@@ -173,6 +186,19 @@ func _apply_intro_visuals(key: String) -> void:
 		return
 	if main.has_method("hide_teacher_portrait"):
 		main.hide_teacher_portrait()
+
+
+## Finds the page of robot_first_talk on which she first says "hello", so her
+## eyes open exactly on that line. Scanning the dialogue (instead of hardcoding a
+## page number) keeps the eyes in sync when lines are added or removed above it.
+## Falls back to the authored constant if the line can't be found.
+func _compute_robot_hello_page_index() -> int:
+	var pages := Dialogue.get_pages("intro", "robot_first_talk")
+	for i in pages.size():
+		for line in pages[i]:
+			if String(line).to_lower().contains(ROBOT_FIRST_TALK_HELLO_MATCH):
+				return i
+	return ROBOT_FIRST_TALK_HELLO_PAGE_INDEX
 
 
 func _show_store_outro_home_visuals() -> void:

@@ -78,6 +78,14 @@ var uncle_hangout_seen: bool = false
 ## True once the player has been stopped by the patrol drone at least once
 ## (used to play the closing "that was stressful" thought only the first time).
 var drone_encounter_seen: bool = false
+## True once the scripted class-disruption science lesson has played. That lesson
+## (the robot phones during class) is shown the first time the player goes to
+## class after the intro ends; every class after that is a normal random lesson.
+var robot_class_disruption_seen: bool = false
+## True once the scripted work-disruption call has played. The robot phones the
+## first time the player finishes the upper-arm assembly minigame after the intro
+## and talks them into pocketing the arm; that shift skips the usual scrap steal.
+var robot_work_disruption_seen: bool = false
 ## True once the player has ever been caught with contraband by the drone.
 var drone_ever_caught: bool = false
 ## Whether the most recent drone inspection caught the player with contraband.
@@ -295,6 +303,8 @@ func reset_for_new_game() -> void:
 
 	uncle_hangout_seen = false
 	drone_encounter_seen = false
+	robot_class_disruption_seen = false
+	robot_work_disruption_seen = false
 	drone_ever_caught = false
 	drone_caught_last_inspection = false
 
@@ -632,6 +642,8 @@ func to_dict() -> Dictionary:
 		"intro_step": intro_step,
 		"uncle_hangout_seen": uncle_hangout_seen,
 		"drone_encounter_seen": drone_encounter_seen,
+		"robot_class_disruption_seen": robot_class_disruption_seen,
+		"robot_work_disruption_seen": robot_work_disruption_seen,
 		"drone_ever_caught": drone_ever_caught,
 		"drone_caught_last_inspection": drone_caught_last_inspection,
 		"debug_mode_enabled": _debug_mode_enabled,
@@ -690,6 +702,8 @@ func from_dict(data: Dictionary) -> void:
 	intro_step = String(data.get("intro_step", "" if intro_completed else "exposition"))
 	uncle_hangout_seen = bool(data.get("uncle_hangout_seen", false))
 	drone_encounter_seen = bool(data.get("drone_encounter_seen", false))
+	robot_class_disruption_seen = bool(data.get("robot_class_disruption_seen", false))
+	robot_work_disruption_seen = bool(data.get("robot_work_disruption_seen", false))
 	drone_ever_caught = bool(data.get("drone_ever_caught", false))
 	drone_caught_last_inspection = bool(data.get("drone_caught_last_inspection", false))
 	_debug_mode_enabled = bool(data.get("debug_mode_enabled", false))
