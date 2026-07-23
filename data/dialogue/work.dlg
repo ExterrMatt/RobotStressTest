@@ -30,3 +30,14 @@
 [i]A spare scrap of metal sits at the edge of the bin.[/i]
 [i]It wouldn't be missed.[/i]
 [i]Nobody's looking right now.[/i]
+
+# The gold "what do you do?" prompt and the two button labels (exact button text)
+# for the finish-or-steal choice at the end of the shift.
+[completion.prompt]
+What do you do?
+
+[completion.finish]
+FINISH SHIFT
+
+[completion.steal]
+POCKET A SCRAP

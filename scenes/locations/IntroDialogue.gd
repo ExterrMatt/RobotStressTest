@@ -75,7 +75,7 @@ func _build_name_prompt_panel() -> void:
 	inner_frame.add_child(vbox)
 
 	var label := Label.new()
-	label.text = "What is your name?"
+	label.text = dlg_line("intro", "name_prompt")
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 32)
 	vbox.add_child(label)

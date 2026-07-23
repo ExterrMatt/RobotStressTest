@@ -1,6 +1,10 @@
 # Intro sequence dialogue.
 # Format: see data/dialogue/school.dlg.
 
+# The label shown above the text box where the player types their name.
+[name_prompt]
+What is your name?
+
 [exposition]
 Uncle: You're up early.
 You: Yeah, I've gotta get to class.

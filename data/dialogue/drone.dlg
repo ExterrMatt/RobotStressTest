@@ -10,6 +10,19 @@
 #
 # First encounter plays the full [opening] + [caught]/[clean]. Every encounter
 # after that plays the shorter [opening_short] + [caught_short]/[clean_short].
+#
+# The drone's clean-scan sign-off ({signoff}) escalates with the player's record.
+# DroneEncounter.gd picks which of these to substitute based on suspicion and
+# whether the player has been caught before.
+
+[signoff.acknowledged]
+YOUR COOPERATION IS ACKNOWLEDGED.
+
+[signoff.criminal]
+THANK YOU FOR YOUR COOPERATION, CRIMINAL.
+
+[signoff.citizen]
+THANK YOU FOR YOUR COOPERATION, CITIZEN.
 
 [opening]
 [i]The walk home is nice. It's a breath of fresh air after {place}.[/i]

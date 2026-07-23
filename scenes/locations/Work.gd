@@ -435,7 +435,7 @@ func _enter_completion_prompt() -> void:
 	_set_node_visible(choice_grid, false)
 
 	_set_node_visible(dialogue_box, true)
-	var prompt_text: String = "What do you do?"
+	var prompt_text: String = dlg_line("work", "completion.prompt")
 	var gold_prompt: String = "[center][color=%s]%s[/color][/center]" % [PROMPT_COLOR, prompt_text]
 	# Font ladder bumped by 6 from the base [48, 36, 24, 16].
 	dialogue_box.play_pages_autosized([[gold_prompt]], [54, 42, 30, 22], 2)
@@ -459,11 +459,11 @@ func _show_completion_choices() -> void:
 	_clear_choice_buttons()
 	_set_node_visible(choice_grid, true)
 
-	var finish_btn := _build_choice_button("FINISH SHIFT")
+	var finish_btn := _build_choice_button(dlg_line("work", "completion.finish"))
 	finish_btn.pressed.connect(_on_finish_pressed)
 	choice_grid.add_child(finish_btn)
 
-	var steal_btn := _build_choice_button("POCKET A SCRAP")
+	var steal_btn := _build_choice_button(dlg_line("work", "completion.steal"))
 	steal_btn.pressed.connect(_on_steal_pressed)
 	choice_grid.add_child(steal_btn)
 

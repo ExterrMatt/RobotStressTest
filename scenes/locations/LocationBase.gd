@@ -90,6 +90,20 @@ func _ensure_entry_input_blocker() -> void:
 	_entry_input_blocker_layer.add_child(_entry_input_blocker)
 
 
+## Flattens a dialogue entry into a single string (its lines joined with
+## spaces). Use it to pull one-off prose - a prompt, a button label - from a
+## .dlg file instead of hardcoding it in a scene script, so every player-facing
+## word stays editable in data/dialogue. Returns "" if the key is unknown.
+func dlg_line(file_id: String, key: String, fmt: Dictionary = {}) -> String:
+	var out: String = ""
+	for page in Dialogue.get_pages(file_id, key, fmt):
+		for line in page:
+			if out != "":
+				out += " "
+			out += String(line)
+	return out
+
+
 ## Convenience: build a result dict and emit. Subclasses call this when done.
 ## `contraband` is the display name of anything the player stole this scene
 ## (e.g. "pile of nanobots"); empty means they left clean. The patrol-drone

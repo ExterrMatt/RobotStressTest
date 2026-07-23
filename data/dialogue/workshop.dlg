@@ -18,6 +18,17 @@
 
 [i]Thoughts: Hmm, I called it a her... Can a robot be a 'her'?[/i]
 
+# The gold "what do you do?" prompt and the two button labels (exact button
+# text) shown when the player first enters the workshop.
+[intro.prompt]
+What do you do?
+
+[intro.tinker]
+TINKER
+
+[intro.construct]
+CONSTRUCT A LIMB
+
 # -----------------------------------------------------------------------------
 # TINKER - placeholder flavor when the player picks the tinker option.
 # Returns to the selection screen without consuming the phase.
