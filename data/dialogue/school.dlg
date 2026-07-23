@@ -39,14 +39,14 @@
 # -----------------------------------------------------------------------------
 
 [gym.intro]
-[i]Drop your bags.[/i]
-[i]Today we're talking about something every one of you will need: not pulling a muscle.[/i]
+[i]Everyone put your phones away.[/i]
+[i]Today we're talking about something that WILL be on the exam. It's about not pulling your muscles.[/i]
 
 [gym.warmup.lecture]
-Warm-ups raise your muscle temperature and increase blood flow before exertion.
-A cold muscle is a brittle muscle - it tears under load that a warm one would shrug off.
-Five minutes of light cardio is enough to make a measurable difference.
-Skip the warm-up and you're betting your week on a coin flip.
+Warm-ups raise your muscle temperature and increase blood flow before you exert yourself.
+A cold muscle is a brittle muscle. It can cause injuries and tear muscles.
+A few minutes of light cardio is enough to make a difference.
+Skip the warm-up and you're in for a bad time.
 
 [gym.warmup.prompt]
 Why do we warm up before exercise?
@@ -57,18 +57,19 @@ It burns extra calories before the workout
 It tightens the muscles for more power
 
 [gym.sprint.lecture]
-When you sprint, your body switches to anaerobic energy production - burning glucose without oxygen.
-That's why you can only hold a top sprint for ten or fifteen seconds before your legs start screaming.
-Long, slow runs are aerobic; they use oxygen and last for hours.
-Different systems, different fuels.
+When you Sprint, your body can't get oxygen to your muscles fast enough, so it runs on fuel it already has stored in the muscle itself.
+That store is small. it's why you can only hold the top Sprint for 10 to 15 seconds before your legs start screaming.
+Sprinting is anaerobic. Long, slow runs on the other hand, are aerobic.
+That means they use oxygen and can last for hours.
+Different systems require different fuels.
 
 [gym.sprint.prompt]
 What energy system does a short sprint mainly use?
 
 [gym.sprint.choices]
 Aerobic - uses lots of oxygen
-* Anaerobic - burns glucose without oxygen
-Photosynthesis
+* Anaerobic: burns glucose without oxygen
+Acrobatic
 
 
 # -----------------------------------------------------------------------------
@@ -76,14 +77,14 @@ Photosynthesis
 # -----------------------------------------------------------------------------
 
 [science.intro]
-[i]Goggles on the desk.[/i]
+[i]Alright everybody, listen up.[/i]
 [i]Today's topic is the smallest building blocks we know about.[/i]
 
 [science.atom.lecture]
 An atom has three kinds of particles.
 Protons carry a positive charge and live in the nucleus.
 Neutrons carry no charge and also live in the nucleus.
-Electrons carry a negative charge and orbit around the nucleus at much greater distances.
+Electrons carry a negative charge and can be found somewhere around the nucleus at much greater distances.
 The number of protons defines what element the atom is - change the proton count and you change the element entirely.
 
 [science.atom.prompt]
