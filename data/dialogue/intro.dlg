@@ -91,16 +91,51 @@ Thoughts: I guess the shed will have to do... If he checks his window I'll just 
 You head to the shed.
 
 [robot_first_talk]
-The head goes still after the test...
+The generator chugs to a stop.
 The silence is nice...
+Thoughts: …
+Thoughts: Did it work?
 Thoughts: ...
 Her: ... hello?
 Thoughts: ...
 You: ... Hi...
+Thoughts: Holy shit it worked!
+You can see her eyes scan the room. 
+Her: Where am I?
+You: Uhh.. you're my Uncle’s shed.
+Her: A shed…
+She’s silent for a few seconds. You can tell she’s trying to piece together what’s happening.
+Her: Who are you?
+You clear your throat and fix your posture a bit.
+You: I’m [name]. I found you at work, and decided to put you together.
+Thoughts: You know, now that I think about it, activating a random trash-bound AI may not have been a great idea…
+Her: Why can’t I move? I can’t feel anything besides my head.
+You: Uhh.. You don't have a body.
+Despite only being a head, her body language gives away her discomfort.
+Her: If you can find my head maybe you can find the rest of my body?
+You: I don't think you have a “rest of your body”.
+You: I found you in a box full of a bunch of spare head parts. Nothing besides that.
+She bites her lip.
+Thoughts: I didn’t know robots could be so expressive. The cleaning bots at work don’t seem to have any personality at all…
+Her: Help me, {player_name}. I don’t like just being a head. 
+You: I can try… But if I get caught helping you or stealing anything…
+Her: Please…
+You: …
+Thoughts: This could be risky… My uncle might find out. 
+Thoughts: I’d lose my job, and who knows, he might even kick me out of the house. I really shouldn’t…
+You: Yes, I’ll help you.
+Thoughts: What? Did I just agree??
+Her: Thank you, {player_name}...
+Thoughts: What the hell is happening to me right now?
+You: I… I’m gonna head to my room. It’s late and I'm tired.
+Her: Are you going to leave me here in the shed?
+You: Hmm… It’d be very bad if my uncle found you in here.
+Thoughts: I'll definitely have to keep her in the house- but I can't keep her in the shed.. or the garage…
+You let out a sigh.
+You: Alright. I guess you're coming with me.
+Her: I am?
+You: I can’t hide you anywhere else.
+Her: I understand.
 
 [free_reign]
-[This is the end of the demo]
-Thank you for playing! This was my first ever game.
-I have a vision for many more game features, so keep an eye out for any future updates!
-Please leave your thoughts of the game in the comments. I hope you enjoyed this early version!
 Thoughts: Stress Tests are now more difficult.
