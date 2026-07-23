@@ -33,6 +33,11 @@ const FACTORY_HALLWAY_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/b
 const FACTORY_BOX_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_box.png"
 const WORK_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work.png"
 const WORK_SCRAP_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work_scrap.png"
+## The work-disruption robot call (first upper-arm shift after the intro) plays
+## over a placeholder background at this frame size until its own 500x125 art
+## exists.
+const WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/scene_placeholder.png"
+const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const WORK_FRAME_OUTER_WIDTH: float = 800.0
@@ -53,6 +58,7 @@ enum WorkPhase {
 	COMPLETION_INTRO,
 	COMPLETION_PROMPT,
 	COMPLETION_CHOICES,
+	WORK_DISRUPTION,   # scripted robot call after the first upper-arm shift
 }
 
 
@@ -224,7 +230,21 @@ func _on_arm_minigame_completed() -> void:
 	if _arm_minigame != null and is_instance_valid(_arm_minigame):
 		_arm_minigame.set_process(false)
 		_arm_minigame.set_process_input(false)
+	# The first upper-arm shift after the intro plays the scripted robot call
+	# instead of the normal completion/steal screen: the arm gets stolen as part
+	# of that call, so there's no separate scrap steal choice.
+	if _should_play_work_disruption():
+		_enter_work_disruption()
+		return
 	_enter_completion_screen()
+
+
+## The scripted work-disruption call plays exactly once: the first time the
+## player finishes the upper-arm assembly minigame after the intro has ended.
+func _should_play_work_disruption() -> bool:
+	return not _intro_work \
+			and GameState.intro_completed \
+			and not GameState.robot_work_disruption_seen
 
 
 func _enter_intro_job() -> void:
@@ -376,10 +396,11 @@ func _enter_completion_screen() -> void:
 		_apply_completion_screen()
 
 
-func _apply_completion_screen() -> void:
+## Tears down the in-frame minigame visuals (overlays, side containers, the arm
+## controller node, the grey backdrop) so a dialogue screen has room below.
+## Shared by the normal completion screen and the work-disruption call.
+func _teardown_work_minigame_visuals() -> void:
 	var main: Node = get_tree().current_scene
-
-	# Tear down the in-frame minigame visuals so the buttons have room below.
 	if main and main.has_method("hide_scene_overlay"):
 		main.hide_scene_overlay()
 	if main and main.has_method("hide_inventory_overlay"):
@@ -393,10 +414,15 @@ func _apply_completion_screen() -> void:
 		_arm_minigame.queue_free()
 	_arm_minigame = null
 
-	# Drop the opaque grey backdrop so the completion screen matches School's
+	# Drop the opaque grey backdrop so the dialogue screen matches School's
 	# starfield-on-dark look. The minigame uses it to focus attention on the
-	# work area; on the completion screen it would just be a distracting slab.
+	# work area; on the dialogue screen it would just be a distracting slab.
 	_set_node_visible(color_background, false)
+
+
+func _apply_completion_screen() -> void:
+	_teardown_work_minigame_visuals()
+	var main: Node = get_tree().current_scene
 
 	# Show the scrap-focused work image for the completion dialogue and
 	# steal-or-finish choice.
@@ -414,7 +440,42 @@ func _apply_completion_screen() -> void:
 		main._apply_scene_presentation_mode()
 
 	_enter_completion_intro()
-	
+
+
+# --- Work-disruption phase (scripted robot call after the arm shift) ---
+
+func _enter_work_disruption() -> void:
+	# One-time: mark it seen the moment it starts so it never replays.
+	GameState.robot_work_disruption_seen = true
+	_disable_work_hud_timer()
+	set_process(false)
+	_scene_phase = WorkPhase.WORK_DISRUPTION
+	var main: Node = get_tree().current_scene
+	if main != null and main.has_method("_play_transition_then"):
+		main._play_transition_then(Callable(self, "_apply_work_disruption_screen"))
+	else:
+		_apply_work_disruption_screen()
+
+
+func _apply_work_disruption_screen() -> void:
+	_teardown_work_minigame_visuals()
+	var main: Node = get_tree().current_scene
+	# The call has its own unique 500x125 background; until that art exists it
+	# runs over the generic placeholder.
+	_set_main_scene_image_and_frame(
+		WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH,
+		WORK_DISRUPTION_FRAME_SIZE,
+		WORK_DISRUPTION_FRAME_SIZE.x
+	)
+	if main and main.has_method("_apply_scene_presentation_mode"):
+		main._apply_scene_presentation_mode()
+
+	_set_node_visible(choice_grid, false)
+	_set_node_visible(dialogue_box, true)
+	await get_tree().process_frame
+	dialogue_box.play_pages(Dialogue.get_pages("work", "robot_work_disruption"))
+
+# --- Completion intro phase (italic scene-setting before the prompt) ---
 # --- Completion intro phase (italic scene-setting before the prompt) ---
 
 func _enter_completion_intro() -> void:
@@ -485,6 +546,10 @@ func _on_dialogue_finished() -> void:
 			_enter_completion_prompt()
 		WorkPhase.COMPLETION_PROMPT:
 			_show_completion_choices()
+		WorkPhase.WORK_DISRUPTION:
+			# The robot talked the player into pocketing the arm; the shift ends
+			# there, with no separate scrap steal choice.
+			_finish_work_arm_disruption()
 		_:
 			pass
 
@@ -534,6 +599,19 @@ func _finish_work(stole: bool) -> void:
 
 	var contraband := "scrap metal" if stole else ""
 	finish(money, suspicion, 0, ingredients, false, contraband)
+
+
+## Ends the work-disruption shift: the player completed the shift AND pocketed
+## the upper arm the robot pointed out, so they get the normal completion reward
+## plus the steal's suspicion, and carry the arm as contraband (the patrol drone
+## branches on it). There is no scrap steal here - the arm is the only theft.
+func _finish_work_arm_disruption() -> void:
+	_disable_work_hud_timer()
+	set_process(false)
+	var money: int = int(REWARD_COMPLETE.get("money", 0))
+	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0)) + int(REWARD_STEAL.get("suspicion", 0))
+	var ingredients: Dictionary = _copy_ingredients(REWARD_COMPLETE.get("ingredients", {}))
+	finish(money, suspicion, 0, ingredients, false, "upper arm")
 
 
 func _finish_work_timeout() -> void:

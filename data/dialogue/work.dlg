@@ -41,3 +41,53 @@ FINISH SHIFT
 
 [completion.steal]
 POCKET A SCRAP
+
+
+# -----------------------------------------------------------------------------
+# WORK DISRUPTION - the scripted robot phone call that plays the first time the
+# player finishes the upper-arm assembly minigame after the intro. The robot
+# notices the phone's GPS is on and talks the player into pocketing the arm.
+# This shift ends on the arm being stolen, so the usual scrap steal choice is
+# skipped (see Work.gd). Plays over a placeholder background until its own art
+# exists.
+# -----------------------------------------------------------------------------
+
+[robot_work_disruption]
+You feel your phone buzzing in your pocket. No caller ID, it's an unknown number…
+You: Hello?
+Her: You know your phone's GPS is on?
+You: What?
+Thoughts: Shit! I can NOT leave that on.
+Thoughts: It's bad enough that she knows where I am- but next time it might be the cops who find out where I am.
+You quickly shut off your GPS before responding.
+Her: Oh you turned it off…
+You: Yeah, I can't just have it on. My job isn't exactly legal.
+Her: It isn't?
+Thoughts: …
+Thoughts: She wouldn't report me would she?
+Thoughts: No… She'd be destroyed if the police found her. I wonder if she knows that.
+You: Yeah, robots are illegal now. It's a risk working for my uncle, but it pays.
+Thoughts: I wish it paid more…
+Her: You should steal that arm.
+You: What?
+You turn the phone over and see the flash is on…
+You: Did you hack my phone's camera??
+Her: Yes. Why?
+You: The flash's on.
+Her: Oh.
+The flash suddenly turns off.
+Thoughts: This is super creepy.
+You: Please don't spy on me…
+Her: I'm bored.
+Her: Steal the arm
+You have to whisper so no one hears you.
+You: I can't just take it! There are people around.
+Her: No one's watching I can tell.
+It's just then that you notice a blue light coming from a camera above you.
+Thoughts: This is super freaky.
+You wave to the camera.
+Her: Stop goofing around and steal the arm now. While no one's looking.
+You: Hey don't boss me around.
+You pack the upper arm in your bag.
+Her: That's a good boy
+You: Shut up.
