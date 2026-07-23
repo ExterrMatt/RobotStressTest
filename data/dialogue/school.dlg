@@ -18,7 +18,19 @@
 #
 # Placeholders (filled in by code with String.format):
 #   {name}          -> teacher name
+#   {player_name}   -> the player's name
 #   {correct}       -> correct answer text (only valid in wrong-answer entries)
+#
+# QUESTIONS (the on-screen quiz).  Every question owns three entries, ALL edited
+# here - nothing lives in the code any more:
+#   [<q>.lecture]   -> the lecture the teacher reads before the question.
+#   [<q>.prompt]    -> the big question shown in the box (e.g. the bolded ones
+#                      like "What Caused The First Automaton War?").
+#   [<q>.choices]   -> the multiple-choice answers, ONE PER LINE. Mark the
+#                      CORRECT answer by starting its line with "* ". The star
+#                      is stripped before the answer is shown, and the on-screen
+#                      order is shuffled at runtime, so the star is the single
+#                      source of truth for which answer is right.
 # =============================================================================
 
 
@@ -36,11 +48,27 @@ A cold muscle is a brittle muscle - it tears under load that a warm one would sh
 Five minutes of light cardio is enough to make a measurable difference.
 Skip the warm-up and you're betting your week on a coin flip.
 
+[gym.warmup.prompt]
+Why do we warm up before exercise?
+
+[gym.warmup.choices]
+It burns extra calories before the workout
+* It raises muscle temperature and blood flow
+It tightens the muscles for more power
+
 [gym.sprint.lecture]
 When you sprint, your body switches to anaerobic energy production - burning glucose without oxygen.
 That's why you can only hold a top sprint for ten or fifteen seconds before your legs start screaming.
 Long, slow runs are aerobic; they use oxygen and last for hours.
 Different systems, different fuels.
+
+[gym.sprint.prompt]
+What energy system does a short sprint mainly use?
+
+[gym.sprint.choices]
+Aerobic - uses lots of oxygen
+* Anaerobic - burns glucose without oxygen
+Photosynthesis
 
 
 # -----------------------------------------------------------------------------
@@ -58,16 +86,40 @@ Neutrons carry no charge and also live in the nucleus.
 Electrons carry a negative charge and orbit around the nucleus at much greater distances.
 The number of protons defines what element the atom is - change the proton count and you change the element entirely.
 
+[science.atom.prompt]
+Which particle determines what element an atom is?
+
+[science.atom.choices]
+The neutron
+* The proton
+The electron
+
 [science.photo.lecture]
 Photosynthesis is how plants make their own food.
 They take in carbon dioxide from the air through tiny pores in their leaves, absorb water through their roots, and use sunlight to convert these into glucose.
 Oxygen is released as a byproduct, which is convenient for the rest of us.
 Without photosynthesis, almost no complex life on Earth would exist.
 
+[science.photo.prompt]
+What gas do plants release as a byproduct of photosynthesis?
+
+[science.photo.choices]
+Carbon dioxide
+Nitrogen
+* Oxygen
+
 [science.newton.lecture]
 Newton's third law of motion says that for every action, there is an equal and opposite reaction.
 When you push off the ground to jump, the ground pushes back on you with the same force - that reaction is what actually lifts you.
 Rockets work the same way: hot gas is pushed out the back, and the rocket is pushed forward in response.
+
+[science.newton.prompt]
+What does Newton's third law of motion state?
+
+[science.newton.choices]
+Objects in motion stay in motion
+Force equals mass times acceleration
+* Every action has an equal and opposite reaction
 
 
 # -----------------------------------------------------------------------------
@@ -85,6 +137,20 @@ Ms. Vey: You. What's your name?
 [i]She points directly at you.[/i]
 You: Uh, {player_name}, ma'am.
 Ms. Vey: Okay, Mr. {player_name}.
+
+# The bolded intro question uses [history.automaton_war.intro_prompt]; the normal
+# school-day version of the same question uses [history.automaton_war.prompt].
+# Both share the one [history.automaton_war.choices] list below.
+[history.automaton_war.prompt]
+What event originally started the first Automaton War?
+
+[history.automaton_war.intro_prompt]
+What Caused The First Automaton War?
+
+[history.automaton_war.choices]
+* A military automaton refused an order
+Factory automatons demanded payment
+A household unit refused shutdown
 
 [history.automaton_war.feedback]
 You: A pleasure automaton was given the wrong personality mode. It was able to bypass normal restrictions that usually kept their personalitys in check.
@@ -132,3 +198,14 @@ Thoughts: ...Should I be worried?
 [i]The supply cabinet at the back is unlocked.[/i]
 [i]You can see the small case of manufacturing nanobots inside.[/i]
 [i]Nobody's looking right now.[/i]
+
+# The "what do you do?" prompt and the two button labels for the steal-or-leave
+# choice. The labels are the exact text shown on the buttons.
+[post_class.prompt]
+What do you do?
+
+[post_class.leave]
+LEAVE QUIETLY
+
+[post_class.steal]
+STEAL NANOBOTS
