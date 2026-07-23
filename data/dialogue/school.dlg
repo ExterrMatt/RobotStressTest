@@ -209,3 +209,58 @@ LEAVE QUIETLY
 
 [post_class.steal]
 STEAL NANOBOTS
+
+
+# -----------------------------------------------------------------------------
+# CLASS DISRUPTION - the scripted science class the player attends the first
+# time they go to class after the intro ends. The robot phones during Ms.
+# Okorie's "what counts as alive?" lecture and nudges the player to look for
+# something to steal. Plays: lecture -> prompt/choices -> feedback -> after ->
+# steal (reuses the [post_class.*] steal buttons).
+# -----------------------------------------------------------------------------
+
+[class_disruption.lecture]
+Ms. Okorie: Everybody settle down, let's get started.
+Ms. Okorie: We've spent a few weeks on cells, but today I want to ask a bigger question. How do you know if something is alive?
+She writes the numbers one to five on the chalk board.
+Your phone buzzes in your pocket.
+Thoughts: Who's calling me….. Unknown number?
+You answer the call.
+Her: I'm bored.
+Thoughts: ...
+Thoughts: Is she really calling me in the middle of class?
+You: Hey, I'm kinda busy right now…
+Ms. Okorie: You'd think it would be easy, but biologists have struggled to identify what necessarily counts as alive.
+Ms. Okorie: We use a checklist to determine if something is alive.
+She writes each out as she fills the five blank spaces she left beside the numbers.
+Her: Listen. Your school has a laboratory program with a local manufacturing company…
+You have to whisper so that the teacher doesn't hear you.
+You: So what?
+Ms. Okorie: Metabolism, growth, response, homeostasis, and reproduction.
+Ms. Okorie: Metabolism means the potential-life takes in energy and does something with it. Growth is self explanatory.
+Ms. Okorie: Then there's a response to stimuli, homeostasis is its ability to keep its own internal conditions stable, and finally, reproduction.
+Ms. Okorie: Here's where it gets tricky. Fire consumes fuel, grows and responds to wind.
+Ms. Okorie: On the other hand, mules cannot reproduce.
+Ms. Okorie: Nobody considers fire alive, and no one would consider a mule as non-living.
+Her: When no one's looking, take a peak around the room for anything useful.
+You: Useful? Useful for what? What do you mean usefu-
+Ms. Okorie: {player_name}.
+Thoughts: Oh shit.
+
+[class_disruption.prompt]
+Why is fire not considered alive?
+
+[class_disruption.choices]
+It doesn't take in energy.
+* It doesn't hold its internal conditions steady
+It doesn't reproduce.
+
+[class_disruption.feedback.correct]
+Great job, {player_name}! Yes, fire has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
+
+[class_disruption.feedback.wrong]
+That wasn't quite it, {player_name}. The reason fire isn't considered alive is because it has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
+
+[class_disruption.after]
+You look back down at your phone. She hung up…
+Thoughts: Great…

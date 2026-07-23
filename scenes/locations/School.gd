@@ -29,6 +29,13 @@ enum SchoolPhase {
 	POST_CLASS_CHOICES,# steal/leave buttons up
 }
 
+## Which lesson this school visit is running:
+##   INTRO            - the scripted history question during the intro.
+##   CLASS_DISRUPTION - the scripted science lesson (robot phones during class),
+##                      shown once, the first class after the intro ends.
+##   NORMAL           - a random teacher and question, every class after that.
+enum SchoolScenario { INTRO, CLASS_DISRUPTION, NORMAL }
+
 # Each teacher entry pairs on-screen metadata with the DIALOGUE KEYS for its
 # intro and its questions. NONE of the prose lives here - the intro, each
 # question's lecture, its prompt, and its answer choices are all in
@@ -107,6 +114,17 @@ const INTRO_HISTORY_TEACHER: Dictionary = {
 const INTRO_HISTORY_QUESTION_KEY: String = "history.automaton_war"
 const INTRO_HISTORY_PROMPT_KEY: String = "history.automaton_war.intro_prompt"
 
+# The scripted class-disruption science lesson. Its lecture, prompt, choices,
+# feedback and closing lines all live under the [class_disruption.*] keys in
+# school.dlg. Ms. Okorie teaches it and it has no separate teacher-intro line.
+const CLASS_DISRUPTION_KEY: String = "class_disruption"
+const CLASS_DISRUPTION_TEACHER: Dictionary = {
+	"id": "class_disruption",
+	"name": "Ms. Okorie",
+	"subject": "Science",
+	"texture_path": "res://assets/textures/characters/teachers/Science.png",
+}
+
 # --- Scene refs ---
 @onready var dialogue_box: DialogueBox = %DialogueBox
 @onready var choice_grid: GridContainer = %ChoiceGrid
@@ -114,6 +132,7 @@ const INTRO_HISTORY_PROMPT_KEY: String = "history.automaton_war.intro_prompt"
 # --- Run state ---
 var _current_teacher: Dictionary = {}
 var _current_question: Dictionary = {}
+var _scenario: SchoolScenario = SchoolScenario.NORMAL
 var _scene_phase: SchoolPhase = SchoolPhase.LECTURE
 
 # Running totals applied on finish().
@@ -170,9 +189,17 @@ func debug_auto_solve() -> void:
 
 func _pick_teacher_and_question() -> void:
 	if _is_intro_school_first():
+		_scenario = SchoolScenario.INTRO
 		_current_teacher = INTRO_HISTORY_TEACHER
 		_current_question = _resolve_question(INTRO_HISTORY_QUESTION_KEY, INTRO_HISTORY_PROMPT_KEY)
+	elif _should_play_class_disruption():
+		_scenario = SchoolScenario.CLASS_DISRUPTION
+		# One-time: mark it seen the moment it starts so it never replays.
+		GameState.robot_class_disruption_seen = true
+		_current_teacher = CLASS_DISRUPTION_TEACHER
+		_current_question = _resolve_question(CLASS_DISRUPTION_KEY)
 	else:
+		_scenario = SchoolScenario.NORMAL
 		_current_teacher = TEACHERS.pick_random()
 		var question_keys: Array = _current_teacher["question_keys"]
 		_current_question = _resolve_question(String(question_keys.pick_random()))
@@ -277,11 +304,13 @@ func _enter_lecture() -> void:
 	_hide_choice_grid()
 	_hide_corner()
 
-	# Build a pages list by concatenating the intro pages and the lecture
-	# pages. Each is already a Array[Array[String]].
+	# Build a pages list from the teacher's intro (if any) plus the lecture. The
+	# class-disruption lesson has no separate teacher intro - its lecture already
+	# opens the scene - so its teacher carries no intro_key.
 	var pages: Array = []
 	var fmt := _school_format_vars()
-	pages.append_array(Dialogue.get_pages("school", _current_teacher["intro_key"], fmt))
+	if _current_teacher.has("intro_key"):
+		pages.append_array(Dialogue.get_pages("school", _current_teacher["intro_key"], fmt))
 	pages.append_array(Dialogue.get_pages("school", _current_question["lecture_key"], fmt))
 	dialogue_box.play_pages(pages)
 
@@ -349,15 +378,17 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 		return
 
 	var picked_correct: bool = (picked == correct)
-	var reward: Dictionary
+	var reward: Dictionary = REWARD_CORRECT if picked_correct else REWARD_WRONG
 	var feedback_pages: Array
-	if picked_correct:
-		reward = REWARD_CORRECT
+	if _scenario == SchoolScenario.CLASS_DISRUPTION:
+		# The disruption lesson has its own scripted correct/wrong feedback.
+		var key := "class_disruption.feedback.correct" if picked_correct else "class_disruption.feedback.wrong"
+		feedback_pages = Dialogue.get_pages("school", key, _school_format_vars())
+	elif picked_correct:
 		feedback_pages = Dialogue.get_pages("school", "feedback.correct", {
 			"name": _current_teacher["name"],
 		})
 	else:
-		reward = REWARD_WRONG
 		feedback_pages = Dialogue.get_pages("school", "feedback.wrong", {
 			"name": _current_teacher["name"],
 			"correct": str(_current_question["choices"][correct]),
@@ -380,6 +411,12 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
 	_hide_choice_grid()
+	# The class disruption's steal happens right there in the classroom (the robot
+	# told the player to look around the room), so it skips the bell/supply-cabinet
+	# transition and just plays its closing lines before the steal prompt.
+	if _scenario == SchoolScenario.CLASS_DISRUPTION:
+		dialogue_box.play_pages(Dialogue.get_pages("school", "class_disruption.after", _school_format_vars()))
+		return
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("_play_transition_then"):
 		main._play_transition_then(Callable(self, "_show_school_cabinet_background_and_play_post_class"))
@@ -528,6 +565,12 @@ func _finish_school() -> void:
 
 func _is_intro_school_first() -> bool:
 	return GameState.is_intro_step(INTRO_SCHOOL_STEP)
+
+
+## The scripted class-disruption lesson plays exactly once: the first class the
+## player attends after the intro has ended.
+func _should_play_class_disruption() -> bool:
+	return GameState.intro_completed and not GameState.robot_class_disruption_seen
 
 
 func _school_format_vars() -> Dictionary:
