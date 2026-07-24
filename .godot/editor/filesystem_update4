@@ -1,0 +1,8 @@
+res://autoload/GameState.gd
+res://scenes/locations/DroneEncounter.gd
+res://scenes/locations/IntroDialogue.gd
+res://scenes/locations/LocationBase.gd
+res://scenes/locations/School.gd
+res://scenes/locations/StressTestRobot.gd
+res://scenes/locations/Work.gd
+res://scenes/locations/Workshop.gd
