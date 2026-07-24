@@ -39,6 +39,18 @@ const POSE_ANIM_SETTLE: float = 0.08
 ## successful placement.
 const PLACE_SETTLE_DURATION: float = 0.2
 
+## Metal "thunk" sounds played (at a random pitch) each time an arm segment is
+## dropped into its slot. A heavy and a light variant are picked at random.
+const PLACE_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/metal_thunk/heavy_metal_thunk.mp3",
+	"res://assets/sounds/metal_thunk/light_metal_thunk.mp3",
+]
+## Random pitch shift applied to each placement sound, as an integer percentage
+## in [-PLACE_PITCH_VARIATION_PERCENT, +PLACE_PITCH_VARIATION_PERCENT] inclusive
+## (e.g. -15 .. +15 -> pitch_scale 0.85 .. 1.15). Same ±15% rule the shape-sort
+## shift uses for its metal dinks.
+const PLACE_PITCH_VARIATION_PERCENT: int = 15
+
 @onready var furniture: Control = $Furniture
 ## The assembled arm — an authored node with the arm's slots/pieces as children.
 ## It shows the full arm in the editor; select it to move / rotate / scale the
@@ -74,12 +86,17 @@ var _placement_hint_elapsed: float = 0.0
 var _completed: bool = false
 var _started: bool = false
 
+var _place_rng := RandomNumberGenerator.new()
+var _place_sounds: Array[AudioStream] = []
+var _place_audio_player: AudioStreamPlayer = null
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_collect_authored_arm_assembly()
 	_spawn_segments()
 	_setup_placement_hint_layer()
+	_setup_place_audio()
 
 
 ## Called by the Work location after it has handed `furniture` and
@@ -335,6 +352,8 @@ func _rect_overlap_area(a: Rect2, b: Rect2) -> float:
 func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
 	if segment == null or slot == null:
 		return
+	# A metal "thunk" the moment the segment is committed to its slot.
+	_play_place_sound()
 	_kill_pose_tween(segment)
 	_clear_placed_part_outline(segment)
 	# Where the piece's centre is at the moment of release, so we can ease it from
@@ -372,6 +391,33 @@ func _clear_placed_part_outline(segment: WorkshopSegment) -> void:
 			continue
 		piece.outline_texture = null
 		piece.queue_redraw()
+
+
+# --- placement audio -------------------------------------------------------
+
+func _setup_place_audio() -> void:
+	_place_rng.randomize()
+	_place_sounds.clear()
+	for path in PLACE_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_place_sounds.append(stream)
+	if _place_sounds.is_empty():
+		return
+	_place_audio_player = AudioStreamPlayer.new()
+	_place_audio_player.name = "PlaceAudioPlayer"
+	add_child(_place_audio_player)
+
+
+## Play one of the metal "thunk" sounds at random, at a random pitch within
+## ±PLACE_PITCH_VARIATION_PERCENT (whole-percent steps).
+func _play_place_sound() -> void:
+	if _place_audio_player == null or _place_sounds.is_empty():
+		return
+	_place_audio_player.stream = _place_sounds[_place_rng.randi_range(0, _place_sounds.size() - 1)]
+	var percent := _place_rng.randi_range(-PLACE_PITCH_VARIATION_PERCENT, PLACE_PITCH_VARIATION_PERCENT)
+	_place_audio_player.pitch_scale = 1.0 + float(percent) / 100.0
+	_place_audio_player.play()
 
 
 # --- assembly setup --------------------------------------------------------

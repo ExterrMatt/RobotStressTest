@@ -34,6 +34,18 @@ class_name WorkInventory
 ## reward / advance / play a sting.
 signal slots_changed(filled_count: int)
 
+## Metal "dink" placement sounds, played (at a random pitch) each time a shape
+## snaps into its correct slot. The two variants are picked at random.
+const PLACE_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/metal_thunk/metal_dink.mp3",
+	"res://assets/sounds/metal_thunk/metal_dink_2.mp3",
+]
+## Random pitch shift applied to each placement sound, as an integer percentage
+## in [-PLACE_PITCH_VARIATION_PERCENT, +PLACE_PITCH_VARIATION_PERCENT] inclusive
+## (e.g. -15 .. +15 -> pitch_scale 0.85 .. 1.15). Matches the ±15% variation used
+## by the screw-loosen sounds.
+const PLACE_PITCH_VARIATION_PERCENT: int = 15
+
 
 @onready var draggables: Array = _collect_draggables_from_root()
 @onready var drop_slots: Array = _collect_drop_slots_from_root()
@@ -41,11 +53,17 @@ signal slots_changed(filled_count: int)
 ## The item currently being dragged, or null. There can only be one.
 var _active_drag: DraggableItem = null
 
+var _rng := RandomNumberGenerator.new()
+var _place_sounds: Array[AudioStream] = []
+var _place_audio_player: AudioStreamPlayer = null
+
 
 func _ready() -> void:
 	# We want to receive _input notifications (for the left-release) but
 	# not block clicks on UI behind us.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_setup_place_audio()
 
 	# Shuffle which shape starts in which pocket so the puzzle isn't the same
 	# every shift. The drop targets stay fixed (each accepts its own shape) —
@@ -151,6 +169,8 @@ func _on_drag_released(item: DraggableItem, _release_pos: Vector2) -> void:
 	# Find the first drop slot that accepts this item and contains its center.
 	for slot in drop_slots:
 		if slot.is_valid_drop(item):
+			# A metal "dink" the moment the piece is committed to its slot.
+			_play_place_sound()
 			# Announce the fill only after the shape has eased into the slot, so
 			# the completion beat waits for the final glide to finish.
 			slot.fill_with(item, func() -> void: slots_changed.emit(_filled_count()))
@@ -203,6 +223,33 @@ func _filled_count() -> int:
 		if slot.filled_by != null:
 			n += 1
 	return n
+
+
+# --- Placement audio ------------------------------------------------------
+
+func _setup_place_audio() -> void:
+	_rng.randomize()
+	_place_sounds.clear()
+	for path in PLACE_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_place_sounds.append(stream)
+	if _place_sounds.is_empty():
+		return
+	_place_audio_player = AudioStreamPlayer.new()
+	_place_audio_player.name = "PlaceAudioPlayer"
+	add_child(_place_audio_player)
+
+
+## Play one of the metal "dink" sounds at random, at a random pitch within
+## ±PLACE_PITCH_VARIATION_PERCENT (whole-percent steps).
+func _play_place_sound() -> void:
+	if _place_audio_player == null or _place_sounds.is_empty():
+		return
+	_place_audio_player.stream = _place_sounds[_rng.randi_range(0, _place_sounds.size() - 1)]
+	var percent := _rng.randi_range(-PLACE_PITCH_VARIATION_PERCENT, PLACE_PITCH_VARIATION_PERCENT)
+	_place_audio_player.pitch_scale = 1.0 + float(percent) / 100.0
+	_place_audio_player.play()
 
 
 ## Walk from the scene root to collect every DraggableItem.

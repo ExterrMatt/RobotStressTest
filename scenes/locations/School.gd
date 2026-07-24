@@ -125,9 +125,15 @@ const CLASS_DISRUPTION_TEACHER: Dictionary = {
 	"texture_path": "res://assets/textures/characters/teachers/Science.png",
 }
 
+# Looping clock tick that runs for the duration of class (from the lecture up
+# until the bell rings and the post-class steal opportunity begins).
+const CLOCK_SOUND_PATH: String = "res://assets/sounds/clock/clock_ticking.mp3"
+
 # --- Scene refs ---
 @onready var dialogue_box: DialogueBox = %DialogueBox
 @onready var choice_grid: GridContainer = %ChoiceGrid
+
+var _clock_audio_player: AudioStreamPlayer = null
 
 # --- Run state ---
 var _current_teacher: Dictionary = {}
@@ -147,6 +153,8 @@ func _ready() -> void:
 	Dialogue.load_file("school", "res://data/dialogue/school.dlg")
 
 	dialogue_box.finished.connect(_on_dialogue_finished)
+
+	_start_class_clock()
 
 	_pick_teacher_and_question()
 	_enter_lecture()
@@ -414,6 +422,8 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
+	# The bell has rung — class is over, so silence the ticking clock.
+	_stop_class_clock()
 	_hide_choice_grid()
 	# Both the class disruption and an ordinary school day end on the same steal
 	# opportunity: switch to the supply-cabinet background and play the [post_class]
@@ -560,8 +570,45 @@ func _show_school_cabinet_background() -> void:
 
 
 func _finish_school() -> void:
+	# The intro history lesson finishes straight from feedback without a
+	# post-class beat, so make sure the clock is stopped here too.
+	_stop_class_clock()
 	var contraband := "pile of nanobots" if _stole_contraband else ""
 	finish(0, _total_suspicion, 0, _total_ingredients, false, contraband)
+
+
+func _exit_tree() -> void:
+	_stop_class_clock()
+
+
+# --- Class clock audio ---
+
+func _start_class_clock() -> void:
+	var stream := load(CLOCK_SOUND_PATH) as AudioStream
+	if stream == null:
+		return
+	_set_audio_stream_loop(stream, true)
+	_clock_audio_player = AudioStreamPlayer.new()
+	_clock_audio_player.name = "ClockAudioPlayer"
+	_clock_audio_player.stream = stream
+	add_child(_clock_audio_player)
+	_clock_audio_player.play()
+
+
+func _stop_class_clock() -> void:
+	if _clock_audio_player != null and is_instance_valid(_clock_audio_player):
+		_clock_audio_player.stop()
+
+
+## Toggle the streaming loop flag on an AudioStream (AudioStreamMP3 exposes a
+## `loop` property), mirroring StressTest's helper so the clock ticks forever.
+func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
+	if stream == null:
+		return
+	for property in stream.get_property_list():
+		if String(property.get("name", "")) == "loop":
+			stream.set("loop", enabled)
+			return
 
 
 func _is_intro_school_first() -> bool:
