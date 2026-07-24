@@ -5,7 +5,9 @@ icon.svg::CompressedTexture2D::4062773066978308223::1778711437::1782787469::1:::
 ::res://assets/::1782705556
 ::res://assets/fonts/::1782787467
 Jersey10-Regular.ttf::FontFile::8216688361414985612::1778712572::1782787467::1::::<><><>0<>0<>a4319c4db0ecdbc93bf4d1a2a8a5c724<>res://.godot/imported/Jersey10-Regular.ttf-200460e514ca6d2634756f713ee1b38e.fontdata::
-::res://assets/sounds/::1782705557
+::res://assets/sounds/::1784932782
+::res://assets/sounds/clock/::1784932800
+clock_ticking.mp3::AudioStreamMP3::8616108939836263567::1784688969::1784933245::1::::<><><>0<>0<>48a73b48af125564223db917c5a2e98a<>res://.godot/imported/clock_ticking.mp3-cdfd8c3efb22a6d8a15b6465e1ac9276.mp3str::
 ::res://assets/sounds/emergency_button/::1782787467
 emergency_power_button.mp3::AudioStreamMP3::7956286958573482971::1782705556::1782787467::1::::<><><>0<>0<>8f70ab76c334182c6b094ffd269822f6<>res://.godot/imported/emergency_power_button.mp3-23307681daab85f0c6306e342de310fe.mp3str::
 ::res://assets/sounds/generator/::1782787467
@@ -22,6 +24,12 @@ hand_rub_loud.mp3::AudioStreamMP3::4913029466661414569::1782705556::1782787467::
 light_bulb_hum.mp3::AudioStreamMP3::8155990420153091329::1782705556::1782787467::1::::<><><>0<>0<>631407ab827965180b0cd633e2d32dbe<>res://.godot/imported/light_bulb_hum.mp3-7f739b11485640fbc8d265be0b79c6d0.mp3str::
 ::res://assets/sounds/menu_buttons/::1782787467
 button_noise_inaccessable.mp3::AudioStreamMP3::4237801755196856350::1782705556::1782787467::1::::<><><>0<>0<>0e5c035610808a251601802adc18ab0e<>res://.godot/imported/button_noise_inaccessable.mp3-f2fa4ad459c9b45b7d54551e8569d994.mp3str::
+::res://assets/sounds/metal_thunk/::1784932656
+heavy_metal_thunk.mp3::AudioStreamMP3::3731656945955157147::1784688195::1784933245::1::::<><><>0<>0<>576208cd2ff40821760a63571ea55e7d<>res://.godot/imported/heavy_metal_thunk.mp3-eb4aca524431a3550c27d7e9fd7e4318.mp3str::
+light_metal_thunk.mp3::AudioStreamMP3::6406618852816123379::1784688143::1784933245::1::::<><><>0<>0<>d4eab093c2ab661128b09fa841bf7a0c<>res://.godot/imported/light_metal_thunk.mp3-56b8a881bde5fbb4c5f942953853e4af.mp3str::
+light_metal_thunk_2.mp3::AudioStreamMP3::1170341337627318310::1784688122::1784933245::1::::<><><>0<>0<>84b95454ad02932f66ee55638048cafa<>res://.godot/imported/light_metal_thunk_2.mp3-715f3e1f46ca51bf05f2940d7d8d4273.mp3str::
+metal_dink.mp3::AudioStreamMP3::3690113771294289764::1784688548::1784933245::1::::<><><>0<>0<>aac4c5a6e9889af76ce509614befd311<>res://.godot/imported/metal_dink.mp3-a419be7fcbbc36a4a380a886555fda15.mp3str::
+metal_dink_2.mp3::AudioStreamMP3::2407257727463017638::1784688555::1784933245::1::::<><><>0<>0<>8d2b54005bca2c356ecf6ae69b6cbce4<>res://.godot/imported/metal_dink_2.mp3-f5fa1449da8a2ecde4f929369f879403.mp3str::
 ::res://assets/sounds/night_sounds/::1782939672
 1_min_night_sounds.mp3::AudioStreamMP3::1809246168745302546::1782705557::1782787467::1::::<><><>0<>0<>d0cce32c0a69c686e1da65f5e3b3ddc5<>res://.godot/imported/1_min_night_sounds.mp3-20f3f9a8746431fdcc759cae2f22f3d0.mp3str::
 loud_crickets.mp3::AudioStreamMP3::6672311681361680368::1782705557::1782787467::1::::<><><>0<>0<>595f1506bf10e2913bced1f0a83752fd<>res://.godot/imported/loud_crickets.mp3-7a81606da042d673636284d9fc693480.mp3str::
@@ -39,12 +47,16 @@ screw_in_1.mp3::AudioStreamMP3::6293033289676354520::1782705557::1782787467::1::
 screw_in_2.mp3::AudioStreamMP3::1591677168072340517::1782705557::1782787467::1::::<><><>0<>0<>377756faabd7d2d2a9d14bcea2802b31<>res://.godot/imported/screw_in_2.mp3-85d9dd4af0c9a4286bfb132356c87b9c.mp3str::
 screw_in_3.mp3::AudioStreamMP3::4453200287335084918::1782705557::1782787467::1::::<><><>0<>0<>1ba5d9d26c4bf9dd78a7ce873a405fd9<>res://.godot/imported/screw_in_3.mp3-a2addd7ca6517c84ddc5d336d877e680.mp3str::
 screw_in_4.mp3::AudioStreamMP3::8785191067704917236::1782705557::1782787467::1::::<><><>0<>0<>6009ba7ceddf6e37f1c8e164ea7f727b<>res://.godot/imported/screw_in_4.mp3-110904b8e268996fd1cb5507e0095a52.mp3str::
+::res://assets/sounds/songs/::1784932595
+song_iron_pipe_cadence.mp3::AudioStreamMP3::8463549735664852863::1784579726::1784933246::1::::<><><>0<>0<>a31f1669bb2ff703126119366e1e9491<>res://.godot/imported/song_iron_pipe_cadence.mp3-39262a6838e50eacc204e5ed097f0885.mp3str::
+song_low_battery_sunset.mp3::AudioStreamMP3::8868429106176361419::1784578003::1784933246::1::::<><><>0<>0<>ad849dbf35e874fe427083d1b5792fcf<>res://.godot/imported/song_low_battery_sunset.mp3-dd31f1b2bdfb32519d5a48b28dbdac6b.mp3str::
+song_low_tide_thoughts.mp3::AudioStreamMP3::488215493320252506::1784579047::1784933246::1::::<><><>0<>0<>f9ca32ae211be4be4ee0c6b315f96323<>res://.godot/imported/song_low_tide_thoughts.mp3-23e1ef3afbc1179af4d4ebe112926970.mp3str::
 ::res://assets/sounds/wood/::1782787467
 wood_creak.mp3::AudioStreamMP3::6436080713433057192::1782705557::1782787467::1::::<><><>0<>0<>0d1bcc008a3c432b0cb90621ebc9f453<>res://.godot/imported/wood_creak.mp3-cbc87de955ce61e30a5a1475d90a21f3.mp3str::
 wood_creak_long.mp3::AudioStreamMP3::9164911732870077280::1782705557::1782787467::1::::<><><>0<>0<>318a435b59f777e83587efe69c31b636<>res://.godot/imported/wood_creak_long.mp3-ca283cf1618fda0f6b33ff16eafa10ce.mp3str::
 wood_creak_slight.mp3::AudioStreamMP3::5467906602112351266::1782705557::1782787467::1::::<><><>0<>0<>b04a43249c97a58366019faf7e814b35<>res://.godot/imported/wood_creak_slight.mp3-a8099a5329956b99e1efc5eb1beed913.mp3str::
 ::res://assets/textures/::1779326126
-::res://assets/textures/asepritefiles/::1784923762
+::res://assets/textures/asepritefiles/::1784932205
 (Bed, StressTest) Robot Mouth-B Pre-Done.png::CompressedTexture2D::6428487675829564269::1784677774::1784665697::1::::<><><>0<>0<>469423b5b89dc666ffaa210812bc0fc0<>res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex::
 (Bed, StressTest) Robot Vegetable-Mission Medium Loop.png::CompressedTexture2D::4407109698332461170::1784923762::1784700295::1::::<><><>0<>0<>a8fb40a55342d40f67e3b696589a9323<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission Medium Loop.png-ad7e9b7ed8c8a13ce6f7f7974510d887.ctex::
 (Bed, StressTest) Robot Vegetable-Mission-Intro.png::CompressedTexture2D::5300773249546261467::1782705557::1782787471::1::::<><><>0<>0<>87416b7bccd73139cf24ac912c5abf0b<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission-Intro.png-876f771cdf25f3e28257b0fff1171054.ctex::
@@ -53,10 +65,9 @@ large_workshop_placeholder.png::CompressedTexture2D::7257541348602475801::178270
 Stress Test Bot.png::CompressedTexture2D::6527154148771642737::1782705557::1782787471::1::::<><><>0<>0<>33da11ca9f26f6343669ea54388631ce<>res://.godot/imported/Stress Test Bot.png-eaa0dedb0f105f438d064da463fcad3b.ctex::
 Stress Test Bot_layers.txt::TextFile::-1::1784665644::0::1::::<><><>0<>0<><>::
 Stress Test Shed.png::CompressedTexture2D::5733040214497596::1782705557::1782787471::1::::<><><>0<>0<>951c01dce9f66e954241addb0537db74<>res://.godot/imported/Stress Test Shed.png-49fb5ccc7106881aa742e8e332032df3.ctex::
-::res://assets/textures/backgrounds/::1784923762
+::res://assets/textures/backgrounds/::1784930302
 bedroom_evening.png::CompressedTexture2D::5016043500698100473::1784862243::1784923599::1::::<><><>0<>0<>18997cb137fa485a700645a9ec965f86<>res://.godot/imported/bedroom_evening.png-5d2783d6dd788185447c9940aaa2af38.ctex::
-bedroom_evening_bot.png::CompressedTexture2D::5822104111772821551::1784923762::1784923768::1::::<><><>0<>0<>422d9487acd36548793e9a9fa82b2267<>res://.godot/imported/bedroom_evening_bot.png-c4cf15d725b2f88ab598adeb0a1a15bd.ctex::
-bedroom_morning.png::CompressedTexture2D::590344480680096236::1778739094::1782787471::1::::<><><>0<>0<>f91af4342c0e1daba29db589d0c81d54<>res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex::
+bedroom_morning.png::CompressedTexture2D::590344480680096236::1784929086::1784930011::1::::<><><>0<>0<>f91af4342c0e1daba29db589d0c81d54<>res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex::
 bedroom_night.png::CompressedTexture2D::1860716824234239661::1778740332::1782787471::1::::<><><>0<>0<>78f8818fb94781e1748fd191707c0b52<>res://.godot/imported/bedroom_night.png-332efe34657d693e16426d9dd86b614d.ctex::
 darkness.png::CompressedTexture2D::8702934063126962672::1782705557::1782787471::1::::<><><>0<>0<>10fa00e329853be59dabe4d337668c52<>res://.godot/imported/darkness.png-1428011f4a301437bf474d412b3b71c0.ctex::
 ed_shop.png::CompressedTexture2D::175404533009468174::1782705557::1782787471::1::::<><><>0<>0<>8be6d60e065caf59e39b28074ed682cb<>res://.godot/imported/ed_shop.png-4b056e759315cee921da2d148ebc10c5.ctex::
@@ -83,6 +94,33 @@ store.png::CompressedTexture2D::2458786479390739977::1778987602::1782787472::1::
 work.png::CompressedTexture2D::8772444295820861781::1778882052::1782787472::1::::<><><>0<>0<>d2a6ac9574dd939bdb257924f202de85<>res://.godot/imported/work.png-23eb61895458e082d4df190ae91d13df.ctex::
 work_scrap.png::CompressedTexture2D::2248572996157268048::1782705557::1782787472::1::::<><><>0<>0<>e7b0f854b0afbf00f02ec698b00125b4<>res://.godot/imported/work_scrap.png-796227444644ad5c78625eea4e4acc61.ctex::
 work_table.png::CompressedTexture2D::1362290454412918487::1784923762::1784923768::1::::<><><>0<>0<>5ca83e4b9bd895c07be3fb6640155e65<>res://.godot/imported/work_table.png-27e381e9ddb6afda5d7d5b6bcd9864b1.ctex::
+::res://assets/textures/backgrounds/bedroom/::1784932205
+evening.png::CompressedTexture2D::5901132472068115418::1784930321::1784930348::1::::<><><>0<>0<>0e51382a56f0ee124d65222b4d5b0e11<>res://.godot/imported/evening.png-4cc66bb55a8037203e25522ff680fd64.ctex::
+morning.png::CompressedTexture2D::4938606194928162367::1784930321::1784930348::1::::<><><>0<>0<>d688b238fa9f30051167ec24882d6da0<>res://.godot/imported/morning.png-d9d6a7ddd057674d1bd04fdd4954a037.ctex::
+night.png::CompressedTexture2D::3909223151888516800::1784930321::1784930348::1::::<><><>0<>0<>80ea3fa05a11afe2019f19241fbc2785<>res://.godot/imported/night.png-310e86a42244747d8d63b30f7048af0e.ctex::
+::res://assets/textures/backgrounds/bedroom/bot/::1784930348
+chest.png::CompressedTexture2D::4710706994930244851::1784930329::1784930348::1::::<><><>0<>0<>3e86bf840e33e78e69040e55f224b262<>res://.godot/imported/chest.png-ad78ebede178197a046aaab635946486.ctex::
+chest_cover.png::CompressedTexture2D::1345321146177075077::1784930329::1784930348::1::::<><><>0<>0<>ce4f64a012e0164ce8a2da49f30d4e31<>res://.godot/imported/chest_cover.png-f1d72bf76bfd59072df98656d7a636c8.ctex::
+day_evening_shadow.png::CompressedTexture2D::6908599112099709317::1784930322::1784930348::1::::<><><>0<>0<>38327478f5651d1db879ab0f7f65f329<>res://.godot/imported/day_evening_shadow.png-f1961c57df472aae2c6b4fcb34526d1f.ctex::
+head.png::CompressedTexture2D::5132654215628000127::1784930330::1784930348::1::::<><><>0<>0<>bbcb0ec1da3c0360545250ee5c6d0557<>res://.godot/imported/head.png-4a3ccfdc83ddc3d6ef78f7512dee80ed.ctex::
+left_forearm.png::CompressedTexture2D::6448314004550539161::1784930324::1784930348::1::::<><><>0<>0<>06e5df0c6b294053f1c5985d1681e329<>res://.godot/imported/left_forearm.png-c40b8aaa7234095560a9a40c2772e324.ctex::
+left_hand.png::CompressedTexture2D::3933658507501417273::1784930323::1784930348::1::::<><><>0<>0<>e72994663f06bfee1cb3b8093c3f3976<>res://.godot/imported/left_hand.png-d6d81376f65ac89b6cce8f3a8d0b31a5.ctex::
+left_shin.png::CompressedTexture2D::922072555011886136::1784930328::1784930348::1::::<><><>0<>0<>da607f4a40e726954835b0c1cfd220bf<>res://.godot/imported/left_shin.png-420528044b142818d80ce1d332930171.ctex::
+left_shoulder_pad.png::CompressedTexture2D::398834698793137654::1784930325::1784930348::1::::<><><>0<>0<>f555f5fbe4414386e4ce786bc4dc6207<>res://.godot/imported/left_shoulder_pad.png-10ac9436b1fe18d39c7630da5d984ca0.ctex::
+left_thigh.png::CompressedTexture2D::7652487872317295941::1784930328::1784930348::1::::<><><>0<>0<>3f19105713783ee27efe717c0f14aaca<>res://.godot/imported/left_thigh.png-6f65b6aa5be4eae30bb0e713e198a88d.ctex::
+left_upper_arm.png::CompressedTexture2D::4288658805022918955::1784930324::1784930348::1::::<><><>0<>0<>f9279f5d3419373ae3432ffa08b32bdd<>res://.godot/imported/left_upper_arm.png-08af9980c386240719bde55b8513d221.ctex::
+long_hair.png::CompressedTexture2D::8247445980401512190::1784930323::1784930348::1::::<><><>0<>0<>cfec56599743fab58857fd372b358794<>res://.godot/imported/long_hair.png-9b334fe61d8a23a1caf0001bb5d313d6.ctex::
+long_hair_front.png::CompressedTexture2D::4938339097255193241::1784930330::1784930348::1::::<><><>0<>0<>d055bfdd4fec34a428ae0d3a6a8e1772<>res://.godot/imported/long_hair_front.png-d6d5522d23b73b02cb345d9a726509dc.ctex::
+neck.png::CompressedTexture2D::5261210579050076250::1784930330::1784930348::1::::<><><>0<>0<>d5bdf7ff32d3b8e704e572a764a7002f<>res://.godot/imported/neck.png-e76f3fb6b6d0ce7460d984003cac8216.ctex::
+night_shadow.png::CompressedTexture2D::8806353838851923335::1784930322::1784930348::1::::<><><>0<>0<>e98331613139689ed8a51105dcdcbeeb<>res://.godot/imported/night_shadow.png-2a99e00af313149c9e9271d30fe20281.ctex::
+right_forearm.png::CompressedTexture2D::184804227670263538::1784930325::1784930348::1::::<><><>0<>0<>36acbf0b263426810243e65fed6631c9<>res://.godot/imported/right_forearm.png-b8ba87c3ad52bc61321ebd18db4fe410.ctex::
+right_hand.png::CompressedTexture2D::739315071946117553::1784930325::1784930348::1::::<><><>0<>0<>53df9bb036b1496103e508b42dead6a0<>res://.godot/imported/right_hand.png-a2972fb6df9efddf766ad904a1c15571.ctex::
+right_shin.png::CompressedTexture2D::1903393774905661251::1784930328::1784930348::1::::<><><>0<>0<>aba800ecda9efa805f871d0fdcfb0382<>res://.godot/imported/right_shin.png-2fc143565a3e0c1423a1b1e09238c0ed.ctex::
+right_shoulder_pad.png::CompressedTexture2D::1018291394706004334::1784930326::1784930348::1::::<><><>0<>0<>dd3f048f40a494982aff9874c6fc6a63<>res://.godot/imported/right_shoulder_pad.png-c543a5d0eed4420f32cad8a6d7435c2b.ctex::
+right_thigh.png::CompressedTexture2D::4541347728675212204::1784930327::1784930348::1::::<><><>0<>0<>59c165224b861811068a14394b0f9b88<>res://.godot/imported/right_thigh.png-9074ebc1307244a1cd728f71e19f4ec1.ctex::
+right_upper_arm.png::CompressedTexture2D::6517926617577876244::1784930326::1784930348::1::::<><><>0<>0<>6c32238fbee3863486628969676c469b<>res://.godot/imported/right_upper_arm.png-f6aadf781a6bde9ba2f61fe1af23de92.ctex::
+short_hair.png::CompressedTexture2D::2807150405697024918::1784930331::1784930348::1::::<><><>0<>0<>3c1de53d27e4710dac743dee6956509c<>res://.godot/imported/short_hair.png-8e6e4b9332cc145d2bec8a8c5c2dbfdc.ctex::
+stomach.png::CompressedTexture2D::3949740232245572455::1784930327::1784930348::1::::<><><>0<>0<>26bb93e7d66b348d9ba3acbc5dac78b3<>res://.godot/imported/stomach.png-2cf8eecefe780b72357ec7dc1025f3c2.ctex::
 ::res://assets/textures/backgrounds/load/::1782787471
 FlowerLoad.png::CompressedTexture2D::5101804189681311314::1782705557::1782787471::1::::<><><>0<>0<>2deac4036f791b770eb3434787495f65<>res://.godot/imported/FlowerLoad.png-58f868f13fbcd49515326b566b030dab.ctex::
 FlowerLoadOG.png::CompressedTexture2D::1635614282974209882::1782705557::1782787471::1::::<><><>0<>0<>81856599d00f835fd7eef42ac97750bb<>res://.godot/imported/FlowerLoadOG.png-1366eb3b2e0bab143cad0739267cf1c4.ctex::
