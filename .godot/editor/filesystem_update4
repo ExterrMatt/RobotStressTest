@@ -6,3 +6,5 @@ res://scenes/locations/School.gd
 res://scenes/locations/StressTestRobot.gd
 res://scenes/locations/Work.gd
 res://scenes/locations/Workshop.gd
+res://scenes/locations/WorkArmMinigame.gd
+res://scenes/locations/WorkInventory.gd
