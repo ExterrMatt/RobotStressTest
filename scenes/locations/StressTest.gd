@@ -1229,7 +1229,8 @@ func _play_generator_no_power_sound() -> void:
 		return
 	_generator_no_power_audio_player.stream = _generator_no_power_sound
 	_generator_no_power_audio_player.pitch_scale = 1.0
-	_generator_no_power_audio_player.volume_db = 0.0
+	# The out-of-battery chugging matches the running generator loops at 20%.
+	_generator_no_power_audio_player.volume_db = linear_to_db(GENERATOR_VOLUME_SCALE)
 	_generator_no_power_audio_player.play()
 
 
