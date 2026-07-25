@@ -38,6 +38,24 @@ const HAND_RUB_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/hands/hand_rub_long_3.mp3",
 	"res://assets/sounds/hands/hand_rub_loud.mp3",
 ]
+# "Plap" hit played during the vegetable-mission animation (the PelvisHoverBox
+# box): once on intro frame 11 and once each loop cycle on loop frame 3. A random
+# plap_1..6 normally, with a rare (1-in-50) plap_wet_1 instead.
+const PLAP_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/plap/plap_1.mp3",
+	"res://assets/sounds/plap/plap_2.mp3",
+	"res://assets/sounds/plap/plap_3.mp3",
+	"res://assets/sounds/plap/plap_4.mp3",
+	"res://assets/sounds/plap/plap_5.mp3",
+	"res://assets/sounds/plap/plap_6.mp3",
+]
+const PLAP_WET_SOUND_PATH: String = "res://assets/sounds/plap/plap_wet_1.mp3"
+const PLAP_WET_ONE_IN: int = 50
+## The vegetable-mission animation lives on the pelvis box; these are the 0-based
+## frame indices in each phase that trigger a plap.
+const VEG_MISSION_BOX_NAME: String = "PelvisHoverBox"
+const VEG_PLAP_INTRO_FRAME: int = 11
+const VEG_PLAP_LOOP_FRAME: int = 3
 
 ## Chest overlays swapped by the per-side shoulder-pad toggles: each side shows
 ## its chest outline while that side's pad is on, and its chest details while
@@ -582,6 +600,13 @@ var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
 var _wood_creak_audio_player: AudioStreamPlayer = null
 var _hand_rub_audio_player: AudioStreamPlayer = null
+var _plap_sounds: Array[AudioStream] = []
+var _plap_wet_sound: AudioStream = null
+var _plap_audio_player: AudioStreamPlayer = null
+## Frame-crossing tracker so the veg-mission plap fires once each time its target
+## frame is reached (per intro, and per loop cycle).
+var _veg_plap_phase: String = ""
+var _veg_plap_last_frame: int = -1
 ## Sides ("left"/"right") whose player hand is currently hidden because that
 ## hand is holding the screwdriver on that side during a stress-test repair.
 var _repair_hidden_hand_sides: Dictionary = {}
@@ -1357,6 +1382,7 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 		_finish_animation_for_box(box)
 		return
 
+	_maybe_play_veg_plap(box, phase, frame)
 	_set_animation_frame_for_box(box, phase, frame)
 
 
@@ -2321,6 +2347,13 @@ func _initialize_interaction_sounds() -> void:
 		_hand_rub_audio_player.name = "HandRubAudioPlayer"
 		add_child(_hand_rub_audio_player)
 
+	_plap_sounds = _load_audio_streams(PLAP_SOUND_PATHS)
+	_plap_wet_sound = load(PLAP_WET_SOUND_PATH) as AudioStream
+	if not _plap_sounds.is_empty() or _plap_wet_sound != null:
+		_plap_audio_player = AudioStreamPlayer.new()
+		_plap_audio_player.name = "PlapAudioPlayer"
+		add_child(_plap_audio_player)
+
 
 func _load_audio_streams(paths: Array[String]) -> Array[AudioStream]:
 	var streams: Array[AudioStream] = []
@@ -2337,6 +2370,46 @@ func _play_wood_creak_sound() -> void:
 
 func _play_hand_rub_sound() -> void:
 	_play_random_stream(_hand_rub_audio_player, _hand_rub_sounds)
+
+
+## Fire a plap the moment the vegetable-mission animation reaches its target frame
+## in the intro (frame 11) or in each loop cycle (frame 3). Uses a per-phase
+## frame-crossing tracker so it plays once per reach, not every frame it sits on.
+func _maybe_play_veg_plap(box: Control, phase: String, frame: int) -> void:
+	if Engine.is_editor_hint():
+		return
+	if box == null or String(box.name) != VEG_MISSION_BOX_NAME:
+		return
+	if phase != _veg_plap_phase:
+		_veg_plap_phase = phase
+		_veg_plap_last_frame = -1
+
+	var target := -1
+	if phase == ANIMATION_PHASE_INTRO:
+		target = VEG_PLAP_INTRO_FRAME
+	elif phase == ANIMATION_PHASE_LOOP:
+		target = VEG_PLAP_LOOP_FRAME
+
+	if target >= 0 and _veg_plap_last_frame < target and frame >= target:
+		_play_veg_plap()
+	_veg_plap_last_frame = frame
+
+
+## Random plap_1..6, or (1-in-PLAP_WET_ONE_IN) the wet variant instead.
+func _play_veg_plap() -> void:
+	if _plap_audio_player == null:
+		return
+	var stream: AudioStream = null
+	if _plap_wet_sound != null and _rng.randi_range(1, PLAP_WET_ONE_IN) == 1:
+		stream = _plap_wet_sound
+	elif not _plap_sounds.is_empty():
+		stream = _plap_sounds[_rng.randi_range(0, _plap_sounds.size() - 1)]
+	if stream == null:
+		return
+	_plap_audio_player.stream = stream
+	_plap_audio_player.pitch_scale = 1.0
+	_plap_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
+	_plap_audio_player.play()
 
 
 func _play_random_stream(player: AudioStreamPlayer, streams: Array[AudioStream]) -> void:
