@@ -32,9 +32,11 @@ const CRAFTABLE_PARTS: Dictionary = {
 		"display_name": "Leg",
 		"recipe": {"scrap_metal": 1},
 	},
+	# Placeholder intermediate recipe: nuts & bolts (the forearm) plus a pre-made
+	# upper_arm item (stolen from work). Meant to grow more complex later.
 	"arm": {
 		"display_name": "Arm",
-		"recipe": {"nuts_bolts": 1},
+		"recipe": {"nuts_bolts": 1, "upper_arm": 1},
 	},
 	"hand": {
 		"display_name": "Hand",
@@ -109,6 +111,22 @@ const ARM_SEGMENT_IDS: Array[StringName] = [
 	&"tricep",
 	&"shoulder_pad",
 	&"shoulder_joint",
+]
+## The upper-arm sub-assembly: shoulder + upper arm + elbow — exactly the segments
+## the work-scene arm minigame builds. When an arm is crafted with an `upper_arm`
+## item in the recipe, these spawn pre-assembled as ONE bundle (paired so they
+## drag and drop together, filling all their slots at once) rather than as loose
+## pieces; the forearm (wrist / forearm / forearm_lower) still spawns loose.
+const UPPER_ARM_SEGMENT_IDS: Array[StringName] = [
+	&"shoulder_joint",
+	&"shoulder_pad",
+	&"tricep",
+	&"bicep",
+	&"upper_arm_plate",
+	&"upper_arm_plate_lower",
+	&"elbow_cap",
+	&"elbow_joint",
+	&"elbow_inner_gears",
 ]
 ## The hand is grafted separately (recipe: nanobots). Its segments live in the
 ## same arm art directory. Back-to-front draw order, same convention as the arm.
@@ -1936,6 +1954,8 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 		if this_seg and other_seg and not this_seg.pair_partners.has(other_seg):
 			this_seg.pair_partners.append(other_seg)
 
+	_link_upper_arm_bundle(segments_by_id)
+
 	var positioned: Dictionary = {}
 	var group_index: int = 0
 
@@ -1990,6 +2010,7 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 			positioned[member] = true
 
 	_enforce_axle_cap_order()
+	_enforce_upper_arm_bundle_order()
 	craft_bin.contents_changed.emit()
 
 
@@ -2011,6 +2032,46 @@ func _enforce_axle_cap_order() -> void:
 				continue
 			if axel.get_index() > partner.get_index():
 				craft_bin.move_child(axel, partner.get_index())
+
+
+## Fuse the just-spawned upper-arm segments into a single bundle by fully
+## connecting their pair_partners. The existing pair machinery then lays them out
+## in assembled relative positions, drags them as one, and — because non-leg drop
+## scoring matches each segment against its own slot by overlap — drops the whole
+## bundle at once, filling every upper-arm slot. The forearm segments are left
+## loose. No-op unless an arm was crafted.
+## The bundle's segments overlap in their pre-assembled layout, but they spawn in
+## a shuffled order. Re-stack them in ARM_SEGMENT_IDS (authored back-to-front)
+## order so the pre-built upper arm overlaps correctly in the bin and while
+## dragged; placement into slots restores each part's authored slot order anyway.
+func _enforce_upper_arm_bundle_order() -> void:
+	if _crafted_part_id != "arm":
+		return
+	for seg_id in ARM_SEGMENT_IDS:
+		if not UPPER_ARM_SEGMENT_IDS.has(seg_id):
+			continue
+		for child in craft_bin.get_children():
+			if child is WorkshopSegment and child.segment_id == seg_id:
+				craft_bin.move_child(child, craft_bin.get_child_count() - 1)
+				break
+
+
+func _link_upper_arm_bundle(segments_by_id: Dictionary) -> void:
+	if _crafted_part_id != "arm":
+		return
+	var bundle: Array = []
+	for seg_id in UPPER_ARM_SEGMENT_IDS:
+		var seg: WorkshopSegment = segments_by_id.get(seg_id)
+		if seg != null:
+			bundle.append(seg)
+	for i in bundle.size():
+		var a: WorkshopSegment = bundle[i]
+		for j in bundle.size():
+			if i == j:
+				continue
+			var b: WorkshopSegment = bundle[j]
+			if not a.pair_partners.has(b):
+				a.pair_partners.append(b)
 
 
 func _segment_spawn_center(index: int, total: int) -> Vector2:
