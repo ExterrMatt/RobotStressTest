@@ -34,9 +34,13 @@ const FACTORY_BOX_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backg
 const WORK_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work.png"
 const WORK_SCRAP_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work_scrap.png"
 ## The work-disruption robot call (first upper-arm shift after the intro) plays
-## over a placeholder background at this frame size until its own 500x125 art
-## exists.
-const WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/scene_placeholder.png"
+## over the work-table background, with the stealable upper arm drawn on top.
+const WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work_table.png"
+## The upper-arm overlay shown over the table (same 500x125 footprint as the
+## background) until the player pockets it — see WORK_ARM_PACKED_CUE.
+const WORK_ARM_OVERLAY_TEXTURE_PATH: String = "res://assets/textures/icons/work_arm.png"
+## Lower-cased fragment of the disruption line that hides the arm overlay.
+const WORK_ARM_PACKED_CUE: String = "pack the upper arm"
 const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
@@ -81,6 +85,10 @@ var _work_timed_out: bool = false
 ## shape-sorting one. Only ever set for a normal (non-intro) shift.
 var _arm_variant: bool = false
 var _arm_minigame: WorkArmMinigame = null
+## The upper-arm sprite shown over the work table during the disruption call, and
+## the pages driving that call (so a page index maps back to its text).
+var _work_arm_overlay: TextureRect = null
+var _work_disruption_pages: Array = []
 
 
 func _ready() -> void:
@@ -325,15 +333,19 @@ func _apply_intro_head_box() -> void:
 
 
 func _on_dialogue_page_advanced(index: int) -> void:
-	if _scene_phase != WorkPhase.INTRO_HEAD_BOX:
-		return
-	if index == INTRO_HEAD_BOX_LOOK_PAGE_INDEX and not _intro_box_open_visual_applied:
-		_intro_box_open_visual_applied = true
-		var main: Node = get_tree().current_scene
-		if main != null and main.has_method("_play_transition_then"):
-			main._play_transition_then(_set_scene_image.bind(FACTORY_BOX_BACKGROUND_TEXTURE_PATH))
-		else:
-			_set_scene_image(FACTORY_BOX_BACKGROUND_TEXTURE_PATH)
+	if _scene_phase == WorkPhase.INTRO_HEAD_BOX:
+		if index == INTRO_HEAD_BOX_LOOK_PAGE_INDEX and not _intro_box_open_visual_applied:
+			_intro_box_open_visual_applied = true
+			var main: Node = get_tree().current_scene
+			if main != null and main.has_method("_play_transition_then"):
+				main._play_transition_then(_set_scene_image.bind(FACTORY_BOX_BACKGROUND_TEXTURE_PATH))
+			else:
+				_set_scene_image(FACTORY_BOX_BACKGROUND_TEXTURE_PATH)
+	elif _scene_phase == WorkPhase.WORK_DISRUPTION:
+		# Once the line says the arm goes in the bag, take it off the table.
+		if index >= 0 and index < _work_disruption_pages.size():
+			if _page_text(_work_disruption_pages[index]).to_lower().contains(WORK_ARM_PACKED_CUE):
+				_hide_work_arm_overlay()
 
 
 func _set_scene_image(texture_path: String) -> void:
@@ -460,8 +472,7 @@ func _enter_work_disruption() -> void:
 func _apply_work_disruption_screen() -> void:
 	_teardown_work_minigame_visuals()
 	var main: Node = get_tree().current_scene
-	# The call has its own unique 500x125 background; until that art exists it
-	# runs over the generic placeholder.
+	# The call runs over the 500x125 work-table background.
 	_set_main_scene_image_and_frame(
 		WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH,
 		WORK_DISRUPTION_FRAME_SIZE,
@@ -470,10 +481,48 @@ func _apply_work_disruption_screen() -> void:
 	if main and main.has_method("_apply_scene_presentation_mode"):
 		main._apply_scene_presentation_mode()
 
+	# Draw the upper arm on the table; it stays until the player pockets it.
+	_show_work_arm_overlay()
+
 	_set_node_visible(choice_grid, false)
 	_set_node_visible(dialogue_box, true)
 	await get_tree().process_frame
-	dialogue_box.play_pages(Dialogue.get_pages("work", "robot_work_disruption"))
+	_work_disruption_pages = Dialogue.get_pages("work", "robot_work_disruption")
+	dialogue_box.play_pages(_work_disruption_pages)
+
+
+## Shows the upper-arm sprite as a full-frame overlay over the work table (both
+## are 500x125, so it lines up exactly with the background).
+func _show_work_arm_overlay() -> void:
+	var main: Node = get_tree().current_scene
+	if main == null or not main.has_method("show_scene_overlay"):
+		return
+	var texture := load(WORK_ARM_OVERLAY_TEXTURE_PATH) as Texture2D
+	if texture == null:
+		return
+	_work_arm_overlay = TextureRect.new()
+	_work_arm_overlay.name = "WorkArmOverlay"
+	_work_arm_overlay.texture = texture
+	_work_arm_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_work_arm_overlay.stretch_mode = TextureRect.STRETCH_SCALE
+	_work_arm_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_work_arm_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	main.show_scene_overlay(_work_arm_overlay)
+
+
+func _hide_work_arm_overlay() -> void:
+	if _work_arm_overlay != null and is_instance_valid(_work_arm_overlay):
+		_work_arm_overlay.visible = false
+
+
+## Flatten a dialogue page (its lines) into one string for text matching.
+func _page_text(page) -> String:
+	var out := ""
+	for line in page:
+		if out != "":
+			out += " "
+		out += String(line)
+	return out
 
 # --- Completion intro phase (italic scene-setting before the prompt) ---
 # --- Completion intro phase (italic scene-setting before the prompt) ---
