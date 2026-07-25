@@ -61,6 +61,13 @@ var _money: int = 0
 var _brightness_value: float = 50.0
 var _volume_value: float = 100.0
 var _scanlines_enabled: bool = true
+
+## Default playback level for any sound effect that does NOT set its own volume.
+## Individually-tuned sounds keep their own scale (e.g. the generator loops, clock,
+## bell, screw sounds); every other/new sound plays at this fraction of full. To
+## re-balance all untuned sounds at once, change this one value. To tune a specific
+## sound, give its AudioStreamPlayer its own volume_db instead of this default.
+const DEFAULT_SFX_VOLUME_SCALE: float = 0.5
 var _debug_mode_enabled: bool = false
 var _easy_workshop_enabled: bool = false
 var _window_mode: int = WindowMode.WINDOWED

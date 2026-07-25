@@ -1245,7 +1245,7 @@ func _play_emergency_power_button_sound() -> void:
 		return
 	_emergency_power_button_audio_player.stream = _emergency_power_button_sound
 	_emergency_power_button_audio_player.pitch_scale = 1.0
-	_emergency_power_button_audio_player.volume_db = 0.0
+	_emergency_power_button_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 	_emergency_power_button_audio_player.play()
 
 
@@ -1265,7 +1265,7 @@ func _play_random_night_ambient() -> void:
 	var path := _night_ambient_paths[index]
 	_night_ambient_audio_player.stream = _night_ambient_sounds[index]
 	_night_ambient_audio_player.pitch_scale = 1.0
-	_night_ambient_audio_player.volume_db = linear_to_db(NIGHT_AMBIENT_LOUD_VOLUME_SCALE) if _is_loud_night_ambient(path) else 0.0
+	_night_ambient_audio_player.volume_db = linear_to_db(NIGHT_AMBIENT_LOUD_VOLUME_SCALE) if _is_loud_night_ambient(path) else linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 	_night_ambient_audio_player.play()
 
 

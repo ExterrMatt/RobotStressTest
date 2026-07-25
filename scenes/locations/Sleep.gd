@@ -293,6 +293,7 @@ func _setup_sleep_audio() -> void:
 	if not _blanket_sounds.is_empty():
 		_blanket_audio_player = AudioStreamPlayer.new()
 		_blanket_audio_player.name = "BlanketAudioPlayer"
+		_blanket_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 		add_child(_blanket_audio_player)
 
 	var pillow_stream := load(PILLOW_REST_SOUND_PATH) as AudioStream
@@ -300,6 +301,7 @@ func _setup_sleep_audio() -> void:
 		_pillow_audio_player = AudioStreamPlayer.new()
 		_pillow_audio_player.name = "PillowAudioPlayer"
 		_pillow_audio_player.stream = pillow_stream
+		_pillow_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 		add_child(_pillow_audio_player)
 
 

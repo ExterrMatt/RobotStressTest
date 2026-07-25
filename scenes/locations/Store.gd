@@ -677,10 +677,12 @@ func _setup_purchase_audio() -> void:
 	if not _grab_sounds.is_empty():
 		_grab_audio_player = AudioStreamPlayer.new()
 		_grab_audio_player.name = "GrabAudioPlayer"
+		_grab_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 		add_child(_grab_audio_player)
 	if not _coin_sounds.is_empty():
 		_coin_audio_player = AudioStreamPlayer.new()
 		_coin_audio_player.name = "CoinAudioPlayer"
+		_coin_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 		add_child(_coin_audio_player)
 
 

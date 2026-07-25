@@ -746,6 +746,7 @@ func _initialize_pull_string_sounds() -> void:
 
 	_pull_string_audio_player = AudioStreamPlayer.new()
 	_pull_string_audio_player.name = "PullStringAudioPlayer"
+	_pull_string_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 	add_child(_pull_string_audio_player)
 
 

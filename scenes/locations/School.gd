@@ -720,6 +720,7 @@ func _setup_chalk_audio() -> void:
 	if _chalk_short_stream != null or _chalk_medium_stream != null or _chalk_long_stream != null:
 		_chalk_audio_player = AudioStreamPlayer.new()
 		_chalk_audio_player.name = "ChalkAudioPlayer"
+		_chalk_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 		add_child(_chalk_audio_player)
 
 

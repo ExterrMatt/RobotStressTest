@@ -406,6 +406,7 @@ func _setup_place_audio() -> void:
 		return
 	_place_audio_player = AudioStreamPlayer.new()
 	_place_audio_player.name = "PlaceAudioPlayer"
+	_place_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 	add_child(_place_audio_player)
 
 

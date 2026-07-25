@@ -14,6 +14,7 @@ static func play_inaccessible_button(anchor: Node) -> void:
 	var player := AudioStreamPlayer.new()
 	player.name = "InaccessibleButtonAudioPlayer"
 	player.stream = stream
+	player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 	anchor.add_child(player)
 	player.finished.connect(player.queue_free)
 	player.play()

@@ -2344,7 +2344,7 @@ func _play_random_stream(player: AudioStreamPlayer, streams: Array[AudioStream])
 		return
 	player.stream = streams[_rng.randi_range(0, streams.size() - 1)]
 	player.pitch_scale = 1.0
-	player.volume_db = 0.0
+	player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 	player.play()
 
 
