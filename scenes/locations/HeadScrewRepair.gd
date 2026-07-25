@@ -11,8 +11,17 @@ const SCREW_LOOSEN_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/screws/screw_coming_loose_2.mp3",
 	"res://assets/sounds/screws/screw_coming_loose_3.mp3",
 ]
-const SCREW_REPAIR_SOUND_PATH: String = "res://assets/sounds/screws/screw_in_1.mp3"
+## Screwing-in sounds. When a repair begins, one of these is chosen at random
+## (never the same as the previous screw's) and looped for the whole screw.
+const SCREW_REPAIR_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/screws/screw_in_1.mp3",
+	"res://assets/sounds/screws/screw_in_2.mp3",
+	"res://assets/sounds/screws/screw_in_3.mp3",
+	"res://assets/sounds/screws/screw_in_4.mp3",
+]
 const SCREW_LOOSEN_PITCH_VARIATION: float = 0.15
+## All screw sounds (loosen + screw-in) play at 40% volume (reduced by 60%).
+const SCREW_VOLUME_SCALE: float = 0.4
 ## Fallback path for the bare-hand screwing animation, used when the player owns
 ## no screwdriver. Loaded only if hand_screw_texture is left unset in the scene.
 const HAND_SCREW_TEXTURE_PATH: String = "res://assets/textures/icons/hand_horizontal_screwing.png"
@@ -68,12 +77,10 @@ var _completion_enabled: bool = true
 var _screw_loosen_sounds: Array[AudioStream] = []
 var _screw_loosen_audio_player: AudioStreamPlayer = null
 var _last_screw_loosen_sound_index: int = -1
-var _screw_repair_sound: AudioStream = null
+var _screw_repair_sounds: Array[AudioStream] = []
 var _screw_repair_audio_player: AudioStreamPlayer = null
+var _last_screw_repair_sound_index: int = -1
 var _repair_sound_loop_active: bool = false
-var _repair_sound_segment_index: int = 0
-var _repair_sound_segment_elapsed: float = 0.0
-var _repair_sound_segment_playing: bool = false
 ## When true the player has no screwdriver and screws by hand: a taller,
 ## four-frame animation that takes manual_repair_duration_multiplier times as
 ## long. Set by the stress test from the player's screwdriver count.
@@ -119,7 +126,10 @@ func _process(delta: float) -> void:
 
 	if not _active_repairs.is_empty():
 		_update_repair_animation(delta)
-		_update_screw_repair_sound(delta)
+
+
+func _exit_tree() -> void:
+	_stop_screw_repair_sound_loop()
 
 
 func _input(event: InputEvent) -> void:
@@ -182,6 +192,7 @@ func _initialize_screw_loosen_sounds() -> void:
 
 	_screw_loosen_audio_player = AudioStreamPlayer.new()
 	_screw_loosen_audio_player.name = "ScrewLoosenAudioPlayer"
+	_screw_loosen_audio_player.volume_db = linear_to_db(SCREW_VOLUME_SCALE)
 	add_child(_screw_loosen_audio_player)
 
 
@@ -598,73 +609,63 @@ func _blocked_hover_boxes() -> Array[Control]:
 
 
 func _initialize_screw_repair_sounds() -> void:
-	_screw_repair_sound = load(SCREW_REPAIR_SOUND_PATH) as AudioStream
-	if _screw_repair_sound == null:
+	_screw_repair_sounds.clear()
+	for path in SCREW_REPAIR_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream == null:
+			continue
+		# Loop the whole clip so it repeats seamlessly for as long as the screw is
+		# being driven, rather than playing once.
+		_set_audio_stream_loop(stream, true)
+		_screw_repair_sounds.append(stream)
+	if _screw_repair_sounds.is_empty():
 		return
 
 	_screw_repair_audio_player = AudioStreamPlayer.new()
 	_screw_repair_audio_player.name = "ScrewRepairAudioPlayer"
+	_screw_repair_audio_player.volume_db = linear_to_db(SCREW_VOLUME_SCALE)
 	add_child(_screw_repair_audio_player)
 
 
+## Begin a screwing session: pick one screw-in clip at random (never a repeat of
+## the last one) and loop it until the repair finishes or is interrupted.
 func _start_screw_repair_sound_loop() -> void:
-	if _screw_repair_audio_player == null or _screw_repair_sound == null:
+	if _screw_repair_audio_player == null or _screw_repair_sounds.is_empty():
 		return
 
+	var index := _rng.randi_range(0, _screw_repair_sounds.size() - 1)
+	if _screw_repair_sounds.size() > 1 and index == _last_screw_repair_sound_index:
+		index = (index + _rng.randi_range(1, _screw_repair_sounds.size() - 1)) % _screw_repair_sounds.size()
+	_last_screw_repair_sound_index = index
+
 	_repair_sound_loop_active = true
-	_repair_sound_segment_index = 0
-	_repair_sound_segment_elapsed = 0.0
-	_repair_sound_segment_playing = false
-	_begin_screw_repair_segment()
+	_screw_repair_audio_player.stream = _screw_repair_sounds[index]
+	_screw_repair_audio_player.pitch_scale = 1.0
+	_screw_repair_audio_player.play()
 
 
 func _stop_screw_repair_sound_loop() -> void:
 	_repair_sound_loop_active = false
-	_repair_sound_segment_elapsed = 0.0
-	_repair_sound_segment_playing = false
 	if _screw_repair_audio_player != null:
 		_screw_repair_audio_player.stop()
 
 
-func _update_screw_repair_sound(delta: float) -> void:
-	if not _repair_sound_loop_active or _screw_repair_audio_player == null:
+## Stop the looping screw sound without touching repair state. The stress test
+## calls this when the night ends so the loop can't bleed a sliver of audio onto
+## the results screen.
+func stop_repair_audio() -> void:
+	_stop_screw_repair_sound_loop()
+
+
+## Toggle the streaming loop flag on an AudioStream (AudioStreamMP3 exposes a
+## `loop` property).
+func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
+	if stream == null:
 		return
-
-	_repair_sound_segment_elapsed += delta
-	var segment_seconds := _current_screw_repair_segment_seconds()
-	if _repair_sound_segment_elapsed < segment_seconds:
-		return
-
-	_repair_sound_segment_elapsed = 0.0
-	if _repair_sound_segment_playing:
-		_screw_repair_audio_player.stop()
-		_repair_sound_segment_playing = false
-	else:
-		_advance_screw_repair_segment()
-		_begin_screw_repair_segment()
-
-
-func _advance_screw_repair_segment() -> void:
-	_repair_sound_segment_index += 1
-	if _repair_sound_segment_index >= 4:
-		_repair_sound_segment_index = 0
-
-
-func _begin_screw_repair_segment() -> void:
-	if _screw_repair_audio_player == null or _screw_repair_sound == null:
-		return
-
-	var segment_seconds := _current_screw_repair_segment_seconds()
-	_screw_repair_audio_player.stream = _screw_repair_sound
-	_screw_repair_audio_player.pitch_scale = 1.0
-	_screw_repair_audio_player.play(segment_seconds * float(_repair_sound_segment_index))
-	_repair_sound_segment_playing = true
-
-
-func _current_screw_repair_segment_seconds() -> float:
-	if _screw_repair_sound == null:
-		return 0.1
-	return maxf(0.01, _screw_repair_sound.get_length() * 0.25)
+	for property in stream.get_property_list():
+		if String(property.get("name", "")) == "loop":
+			stream.set("loop", enabled)
+			return
 
 
 func _refresh_editor_preview() -> void:

@@ -1643,6 +1643,14 @@ func _interrupt_screw_repairs() -> void:
 			repair.call("interrupt_repair")
 
 
+## Silence any looping screw-in sound without disturbing repair state. Called when
+## the night ends so the loop can't leak a sliver of audio onto the results screen.
+func _stop_screw_repair_audio() -> void:
+	for repair in _screw_repair_controllers():
+		if repair.has_method("stop_repair_audio"):
+			repair.call("stop_repair_audio")
+
+
 func _is_uncle_exposure_active() -> bool:
 	return not _stress_test_dark or (_electricity_percent > 0.0 and not _emergency_power_shutoff_pressed)
 
@@ -2481,6 +2489,7 @@ func _finish_intro_tutorial_stress_test() -> void:
 	_night_finished = true
 	_stop_generator_power_sound()
 	_stop_night_ambient()
+	_stop_screw_repair_audio()
 	_hide_mouse_tooltip()
 	_set_stress_test_interaction_enabled(false)
 	finish(0, 0, 0, {}, false)
@@ -2497,6 +2506,7 @@ func _begin_stress_test_summary(
 	_clear_patrol_drone()
 	_stop_generator_power_sound()
 	_stop_night_ambient()
+	_stop_screw_repair_audio()
 	_hide_mouse_tooltip()
 	_set_stress_test_interaction_enabled(false)
 	_summary_success = success
