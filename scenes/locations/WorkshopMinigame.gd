@@ -259,6 +259,17 @@ var _placement_hint_layer: Control = null
 var _placement_hint_sprite: TextureRect = null
 var _pending_hint_entries: Array = []
 var _placement_hint_elapsed: float = 0.0
+
+# Placement sound: the same metal thunk the work-scene arm assembly plays when a
+# limb segment lands in its slot (random heavy/light clip, ±10% pitch).
+const PLACE_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/metal_thunk/heavy_metal_thunk.mp3",
+	"res://assets/sounds/metal_thunk/light_metal_thunk.mp3",
+]
+const PLACE_PITCH_VARIATION_PERCENT: int = 10
+var _place_rng := RandomNumberGenerator.new()
+var _place_sounds: Array[AudioStream] = []
+var _place_audio_player: AudioStreamPlayer = null
 ## When true the hint layer plays a single in-out pulse (the on-craft "here's
 ## where everything goes" reveal) and then clears itself, instead of the
 ## continuous drag-time flash.
@@ -331,6 +342,7 @@ func _ready() -> void:
 	_shadow_group.add_child(_shadow_drawer)
 
 	_setup_placement_hint_layer()
+	_setup_place_audio()
 	_populate_ingredients_tray()
 
 	craft_bin.contents_changed.connect(_refresh_craft_button)
@@ -365,6 +377,10 @@ func _process(_delta: float) -> void:
 ## Easy Workshop Mode still off (and outside the guided intro), offer it once.
 func _update_easy_mode_offer(delta: float) -> void:
 	if _easy_mode_offer_made or _is_tutorial_workshop() or _easy_workshop_enabled():
+		return
+	# A finished limb (all slots filled, just not collected yet) doesn't need any
+	# placement help — don't pop the offer.
+	if _is_assembly_complete():
 		return
 	_workshop_elapsed += delta
 	if _workshop_elapsed >= EASY_MODE_OFFER_SECONDS:
@@ -1170,6 +1186,7 @@ const SEGMENT_PLACE_DURATION: float = 0.1
 func _accept_segment_into_slot(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
 	if segment == null or slot == null:
 		return
+	_play_place_sound()
 	_apply_socket_art_for_segment(segment, slot)
 	_clear_placed_part_outline(segment, slot)
 	# Remember where the piece is at release so we can ease it to its settled spot.
@@ -2009,6 +2026,7 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 				- primary_slot_local - primary.placement_offset
 			positioned[member] = true
 
+	_position_upper_arm_bundle_at_bottom()
 	_enforce_axle_cap_order()
 	_enforce_upper_arm_bundle_order()
 	craft_bin.contents_changed.emit()
@@ -2044,6 +2062,42 @@ func _enforce_axle_cap_order() -> void:
 ## a shuffled order. Re-stack them in ARM_SEGMENT_IDS (authored back-to-front)
 ## order so the pre-built upper arm overlaps correctly in the bin and while
 ## dragged; placement into slots restores each part's authored slot order anyway.
+## Drop the whole pre-assembled upper-arm bundle down so its bottom sits just
+## above the bottom of the crafting area (the framed scene image), keeping its
+## internal layout intact. The forearm pieces are untouched. No-op unless an arm
+## was crafted.
+func _position_upper_arm_bundle_at_bottom() -> void:
+	if _crafted_part_id != "arm":
+		return
+	var segs: Array = []
+	for child in craft_bin.get_children():
+		if child is WorkshopSegment and UPPER_ARM_SEGMENT_IDS.has(child.segment_id):
+			segs.append(child)
+	if segs.is_empty():
+		return
+
+	# Union of the bundle's visible rects in craft_bin-local space.
+	var bounds: Rect2 = Rect2()
+	var found: bool = false
+	for seg in segs:
+		var hb: Rect2 = seg.grab_hitbox_rect
+		if hb.size.x <= 0.0 or hb.size.y <= 0.0:
+			hb = Rect2(Vector2.ZERO, seg.size)
+		var seg_rect: Rect2 = Rect2(seg.position + hb.position, hb.size)
+		if not found:
+			bounds = seg_rect
+			found = true
+		else:
+			bounds = bounds.merge(seg_rect)
+	if not found:
+		return
+
+	const BOTTOM_MARGIN: float = 8.0
+	var delta_y: float = (craft_bin.size.y - BOTTOM_MARGIN) - bounds.end.y
+	for seg in segs:
+		seg.position.y += delta_y
+
+
 func _enforce_upper_arm_bundle_order() -> void:
 	if _crafted_part_id != "arm":
 		return
@@ -2054,6 +2108,32 @@ func _enforce_upper_arm_bundle_order() -> void:
 			if child is WorkshopSegment and child.segment_id == seg_id:
 				craft_bin.move_child(child, craft_bin.get_child_count() - 1)
 				break
+
+
+func _setup_place_audio() -> void:
+	_place_rng.randomize()
+	_place_sounds.clear()
+	for path in PLACE_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_place_sounds.append(stream)
+	if _place_sounds.is_empty():
+		return
+	_place_audio_player = AudioStreamPlayer.new()
+	_place_audio_player.name = "PlaceAudioPlayer"
+	_place_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
+	add_child(_place_audio_player)
+
+
+## Random metal thunk (±PLACE_PITCH_VARIATION_PERCENT pitch) when a segment lands
+## in its slot — the same cue the work-scene arm assembly plays.
+func _play_place_sound() -> void:
+	if _place_audio_player == null or _place_sounds.is_empty():
+		return
+	_place_audio_player.stream = _place_sounds[_place_rng.randi_range(0, _place_sounds.size() - 1)]
+	var percent := _place_rng.randi_range(-PLACE_PITCH_VARIATION_PERCENT, PLACE_PITCH_VARIATION_PERCENT)
+	_place_audio_player.pitch_scale = 1.0 + float(percent) / 100.0
+	_place_audio_player.play()
 
 
 func _link_upper_arm_bundle(segments_by_id: Dictionary) -> void:
@@ -2165,15 +2245,19 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 # --- collect ---
 
 func _refresh_collect_button() -> void:
-	var all_filled: bool = true
+	collect_button.disabled = not _is_assembly_complete()
+
+
+## True once every active assembly slot is filled — the limb is fully built and
+## just waiting on COLLECT.
+func _is_assembly_complete() -> bool:
 	if _active_assembly_slot_ids.is_empty():
-		all_filled = false
+		return false
 	for slot_id in _active_assembly_slot_ids:
-		var slot: WorkshopAssemblySlot = _assembly_slots[slot_id]
-		if not slot.filled:
-			all_filled = false
-			break
-	collect_button.disabled = not all_filled
+		var slot: WorkshopAssemblySlot = _assembly_slots.get(slot_id)
+		if slot == null or not slot.filled:
+			return false
+	return true
 
 
 func _on_collect_pressed() -> void:
