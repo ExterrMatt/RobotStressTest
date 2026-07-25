@@ -14,3 +14,5 @@ res://scenes/locations/StressTest.gd
 res://scenes/locations/HeadScrewRepair.gd
 res://scenes/ui/InventoryOverlay.gd
 res://scenes/locations/WorkshopMinigame.gd
+res://scenes/locations/PullCord.gd
+res://scenes/ui/UiSound.gd
