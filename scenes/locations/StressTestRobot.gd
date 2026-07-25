@@ -38,25 +38,38 @@ const HAND_RUB_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/hands/hand_rub_long_3.mp3",
 	"res://assets/sounds/hands/hand_rub_loud.mp3",
 ]
-# "Plap" hit played during the vegetable-mission animation (the PelvisHoverBox
-# box): once on intro frame 11 and once each loop cycle on loop frame 3. A random
-# plap_1..6 normally, with a rare (1-in-50) plap_wet_1 instead.
-const PLAP_SOUND_PATHS: Array[String] = [
-	"res://assets/sounds/plap/plap_1.mp3",
-	"res://assets/sounds/plap/plap_2.mp3",
-	"res://assets/sounds/plap/plap_3.mp3",
-	"res://assets/sounds/plap/plap_4.mp3",
-	"res://assets/sounds/plap/plap_5.mp3",
-	"res://assets/sounds/plap/plap_6.mp3",
+# Sounds synced to the head (talk) and pelvis (vegetable-mission) animations:
+#   intro + each loop cycle -> a "slurp" (veg = slip_1..3, head = glug_1..3)
+#   pre-outro ("pre done")  -> a random pump_1..3
+#   outro ("done")          -> the done clip
+const SLIP_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/slip/slip_1.mp3",
+	"res://assets/sounds/slip/slip_2.mp3",
+	"res://assets/sounds/slip/slip_3.mp3",
 ]
-const PLAP_WET_SOUND_PATH: String = "res://assets/sounds/plap/plap_wet_1.mp3"
-const PLAP_WET_ONE_IN: int = 50
-## The vegetable-mission animation lives on the pelvis box. Frames below are
-## 0-based indices, nudged one earlier than the straight 1-based conversion to
-## land the plap where it reads best (intro frame 11 and loop frame 3 authored).
+const GLUG_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/glug/glug_1.mp3",
+	"res://assets/sounds/glug/glug_2.mp3",
+	"res://assets/sounds/glug/glug_3.mp3",
+]
+const PUMP_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/pump/pump_1.mp3",
+	"res://assets/sounds/pump/pump_2.mp3",
+	"res://assets/sounds/pump/pump_3.mp3",
+]
+const DONE_SOUND_PATH: String = "res://assets/sounds/pump/done.mp3"
+
+const HEAD_ANIM_BOX_NAME: String = "HeadHoverBox"
 const VEG_MISSION_BOX_NAME: String = "PelvisHoverBox"
-const VEG_PLAP_INTRO_FRAME: int = 9
-const VEG_PLAP_LOOP_FRAME: int = 1
+## 0-based frame indices that trigger each sound. Intro/loop keep the veg's
+## fine-tuned timing (authored 11/3 minus 2); the newer pre-done/done use the
+## authored 1-based frame minus one (minus two would push veg-done negative).
+## Easy to nudge per line if a cue lands early or late.
+const ANIM_SOUND_INTRO_FRAME: int = 9      # authored frame 11
+const ANIM_SOUND_LOOP_FRAME: int = 1       # authored frame 3
+const ANIM_SOUND_PRE_DONE_FRAME: int = 4   # authored frame 5
+const ANIM_SOUND_VEG_DONE_FRAME: int = 0   # authored frame 1
+const ANIM_SOUND_HEAD_DONE_FRAME: int = 1  # authored frame 2
 
 ## Chest overlays swapped by the per-side shoulder-pad toggles: each side shows
 ## its chest outline while that side's pad is on, and its chest details while
@@ -601,13 +614,14 @@ var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
 var _wood_creak_audio_player: AudioStreamPlayer = null
 var _hand_rub_audio_player: AudioStreamPlayer = null
-var _plap_sounds: Array[AudioStream] = []
-var _plap_wet_sound: AudioStream = null
-var _plap_audio_player: AudioStreamPlayer = null
-## Frame-crossing tracker so the veg-mission plap fires once each time its target
-## frame is reached (per intro, and per loop cycle).
-var _veg_plap_phase: String = ""
-var _veg_plap_last_frame: int = -1
+var _slip_sounds: Array[AudioStream] = []
+var _glug_sounds: Array[AudioStream] = []
+var _pump_sounds: Array[AudioStream] = []
+var _done_sound: AudioStream = null
+var _slip_audio_player: AudioStreamPlayer = null
+var _glug_audio_player: AudioStreamPlayer = null
+var _pump_audio_player: AudioStreamPlayer = null
+var _done_audio_player: AudioStreamPlayer = null
 ## Sides ("left"/"right") whose player hand is currently hidden because that
 ## hand is holding the screwdriver on that side during a stress-test repair.
 var _repair_hidden_hand_sides: Dictionary = {}
@@ -1383,7 +1397,7 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 		_finish_animation_for_box(box)
 		return
 
-	_maybe_play_veg_plap(box, phase, frame)
+	_maybe_play_animation_sound(box, phase, frame)
 	_set_animation_frame_for_box(box, phase, frame)
 
 
@@ -2348,12 +2362,25 @@ func _initialize_interaction_sounds() -> void:
 		_hand_rub_audio_player.name = "HandRubAudioPlayer"
 		add_child(_hand_rub_audio_player)
 
-	_plap_sounds = _load_audio_streams(PLAP_SOUND_PATHS)
-	_plap_wet_sound = load(PLAP_WET_SOUND_PATH) as AudioStream
-	if not _plap_sounds.is_empty() or _plap_wet_sound != null:
-		_plap_audio_player = AudioStreamPlayer.new()
-		_plap_audio_player.name = "PlapAudioPlayer"
-		add_child(_plap_audio_player)
+	_slip_sounds = _load_audio_streams(SLIP_SOUND_PATHS)
+	_glug_sounds = _load_audio_streams(GLUG_SOUND_PATHS)
+	_pump_sounds = _load_audio_streams(PUMP_SOUND_PATHS)
+	_done_sound = load(DONE_SOUND_PATH) as AudioStream
+	if not _slip_sounds.is_empty():
+		_slip_audio_player = _make_anim_sound_player("SlipAudioPlayer")
+	if not _glug_sounds.is_empty():
+		_glug_audio_player = _make_anim_sound_player("GlugAudioPlayer")
+	if not _pump_sounds.is_empty():
+		_pump_audio_player = _make_anim_sound_player("PumpAudioPlayer")
+	if _done_sound != null:
+		_done_audio_player = _make_anim_sound_player("DoneAudioPlayer")
+
+
+func _make_anim_sound_player(player_name: String) -> AudioStreamPlayer:
+	var player := AudioStreamPlayer.new()
+	player.name = player_name
+	add_child(player)
+	return player
 
 
 func _load_audio_streams(paths: Array[String]) -> Array[AudioStream]:
@@ -2373,44 +2400,62 @@ func _play_hand_rub_sound() -> void:
 	_play_random_stream(_hand_rub_audio_player, _hand_rub_sounds)
 
 
-## Fire a plap the moment the vegetable-mission animation reaches its target frame
-## in the intro (frame 11) or in each loop cycle (frame 3). Uses a per-phase
-## frame-crossing tracker so it plays once per reach, not every frame it sits on.
-func _maybe_play_veg_plap(box: Control, phase: String, frame: int) -> void:
-	if Engine.is_editor_hint():
+## Fire the head/veg animation cues as their target frames are reached: a slurp
+## (glug for the head, slip for the veg mission) on the intro and each loop cycle,
+## a pump on the pre-outro, and the done clip on the outro. Uses a per-box,
+## per-phase frame-crossing tracker (stored on the box's animation state) so each
+## cue plays once per reach, and re-arms every loop/pre-outro cycle.
+func _maybe_play_animation_sound(box: Control, phase: String, frame: int) -> void:
+	if Engine.is_editor_hint() or box == null or not _animation_states.has(box):
 		return
-	if box == null or String(box.name) != VEG_MISSION_BOX_NAME:
+	var box_name := String(box.name)
+	var is_head := box_name == HEAD_ANIM_BOX_NAME
+	var is_veg := box_name == VEG_MISSION_BOX_NAME
+	if not (is_head or is_veg):
 		return
-	if phase != _veg_plap_phase:
-		_veg_plap_phase = phase
-		_veg_plap_last_frame = -1
+
+	var state: Dictionary = _animation_states[box]
+	if String(state.get("sound_phase", "")) != phase:
+		state["sound_phase"] = phase
+		state["sound_last_frame"] = -1
+	var last_frame := int(state.get("sound_last_frame", -1))
 
 	var target := -1
-	if phase == ANIMATION_PHASE_INTRO:
-		target = VEG_PLAP_INTRO_FRAME
-	elif phase == ANIMATION_PHASE_LOOP:
-		target = VEG_PLAP_LOOP_FRAME
+	match phase:
+		ANIMATION_PHASE_INTRO, ANIMATION_PHASE_LOOP:
+			target = ANIM_SOUND_INTRO_FRAME if phase == ANIMATION_PHASE_INTRO else ANIM_SOUND_LOOP_FRAME
+		ANIMATION_PHASE_PRE_OUTRO:
+			target = ANIM_SOUND_PRE_DONE_FRAME
+		ANIMATION_PHASE_OUTRO:
+			target = ANIM_SOUND_HEAD_DONE_FRAME if is_head else ANIM_SOUND_VEG_DONE_FRAME
 
-	if target >= 0 and _veg_plap_last_frame < target and frame >= target:
-		_play_veg_plap()
-	_veg_plap_last_frame = frame
+	if target >= 0 and last_frame < target and frame >= target:
+		match phase:
+			ANIMATION_PHASE_INTRO, ANIMATION_PHASE_LOOP:
+				if is_head:
+					_play_random_anim_sound(_glug_audio_player, _glug_sounds)
+				else:
+					_play_random_anim_sound(_slip_audio_player, _slip_sounds)
+			ANIMATION_PHASE_PRE_OUTRO:
+				_play_random_anim_sound(_pump_audio_player, _pump_sounds)
+			ANIMATION_PHASE_OUTRO:
+				_play_anim_sound(_done_audio_player, _done_sound)
+	state["sound_last_frame"] = frame
 
 
-## Random plap_1..6, or (1-in-PLAP_WET_ONE_IN) the wet variant instead.
-func _play_veg_plap() -> void:
-	if _plap_audio_player == null:
+func _play_random_anim_sound(player: AudioStreamPlayer, sounds: Array[AudioStream]) -> void:
+	if player == null or sounds.is_empty():
 		return
-	var stream: AudioStream = null
-	if _plap_wet_sound != null and _rng.randi_range(1, PLAP_WET_ONE_IN) == 1:
-		stream = _plap_wet_sound
-	elif not _plap_sounds.is_empty():
-		stream = _plap_sounds[_rng.randi_range(0, _plap_sounds.size() - 1)]
-	if stream == null:
+	_play_anim_sound(player, sounds[_rng.randi_range(0, sounds.size() - 1)])
+
+
+func _play_anim_sound(player: AudioStreamPlayer, stream: AudioStream) -> void:
+	if player == null or stream == null:
 		return
-	_plap_audio_player.stream = stream
-	_plap_audio_player.pitch_scale = 1.0
-	_plap_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
-	_plap_audio_player.play()
+	player.stream = stream
+	player.pitch_scale = 1.0
+	player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
+	player.play()
 
 
 func _play_random_stream(player: AudioStreamPlayer, streams: Array[AudioStream]) -> void:
