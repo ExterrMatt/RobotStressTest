@@ -131,6 +131,12 @@ const CLOCK_SOUND_PATH: String = "res://assets/sounds/clock/clock_ticking.mp3"
 ## The ticking clock plays at half volume.
 const CLOCK_VOLUME_SCALE: float = 0.5
 
+# School bell: rings softly as the scene opens (class starting) and a touch louder
+# when class lets out (the post-class steal beat).
+const SCHOOL_BELL_SOUND_PATH: String = "res://assets/sounds/school_bell/school_bell.mp3"
+const SCHOOL_BELL_START_VOLUME_SCALE: float = 0.30
+const SCHOOL_BELL_END_VOLUME_SCALE: float = 0.50
+
 # Chair scrapes played (all three, softly staggered) as class ends and the scene
 # transitions into the post-class steal opportunity.
 const CHAIR_SCRAPE_SOUND_PATHS: Array[String] = [
@@ -157,6 +163,8 @@ const CHALK_LONG_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_long.mp3"
 @onready var choice_grid: GridContainer = %ChoiceGrid
 
 var _clock_audio_player: AudioStreamPlayer = null
+var _bell_stream: AudioStream = null
+var _bell_audio_player: AudioStreamPlayer = null
 var _chair_rng := RandomNumberGenerator.new()
 var _chair_sounds: Array[AudioStream] = []
 var _chair_audio_players: Array[AudioStreamPlayer] = []
@@ -191,6 +199,9 @@ func _ready() -> void:
 
 	_setup_chair_audio()
 	_setup_chalk_audio()
+	_setup_bell_audio()
+	# Ring the bell to open class.
+	_play_bell(SCHOOL_BELL_START_VOLUME_SCALE)
 	_start_class_clock()
 
 	_pick_teacher_and_question()
@@ -462,8 +473,9 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
-	# The bell has rung — class is over, so silence the ticking clock and let the
-	# chairs scrape as everyone gets up for the post-class steal opportunity.
+	# Class is over: ring the dismissal bell, silence the ticking clock, and let
+	# the chairs scrape as everyone gets up for the post-class steal opportunity.
+	_play_bell(SCHOOL_BELL_END_VOLUME_SCALE)
 	_stop_class_clock()
 	_play_chair_scrape_sound()
 	_hide_choice_grid()
@@ -641,6 +653,23 @@ func _start_class_clock() -> void:
 func _stop_class_clock() -> void:
 	if _clock_audio_player != null and is_instance_valid(_clock_audio_player):
 		_clock_audio_player.stop()
+
+
+func _setup_bell_audio() -> void:
+	_bell_stream = load(SCHOOL_BELL_SOUND_PATH) as AudioStream
+	if _bell_stream != null:
+		_bell_audio_player = AudioStreamPlayer.new()
+		_bell_audio_player.name = "BellAudioPlayer"
+		_bell_audio_player.stream = _bell_stream
+		add_child(_bell_audio_player)
+
+
+## Ring the school bell at the given fraction of full volume.
+func _play_bell(volume_scale: float) -> void:
+	if _bell_audio_player == null:
+		return
+	_bell_audio_player.volume_db = linear_to_db(volume_scale)
+	_bell_audio_player.play()
 
 
 func _setup_chair_audio() -> void:
