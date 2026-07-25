@@ -131,11 +131,14 @@ const CLOCK_SOUND_PATH: String = "res://assets/sounds/clock/clock_ticking.mp3"
 ## The ticking clock plays at a quarter volume.
 const CLOCK_VOLUME_SCALE: float = 0.25
 
-# School bell: rings softly as the scene opens (class starting) and a touch louder
-# when class lets out (the post-class steal beat).
-const SCHOOL_BELL_SOUND_PATH: String = "res://assets/sounds/school_bell/school_bell.mp3"
-const SCHOOL_BELL_START_VOLUME_SCALE: float = 0.30
-const SCHOOL_BELL_END_VOLUME_SCALE: float = 0.50
+# School bell: rings as the scene opens (class starting) and again when class
+# lets out (the post-class steal beat, or the intro's in-dialogue bell line).
+# Two interchangeable clips, alternated each ring; both play at 15%.
+const SCHOOL_BELL_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/school_bell/school_bell_1.mp3",
+	"res://assets/sounds/school_bell/school_bell_2.mp3",
+]
+const SCHOOL_BELL_VOLUME_SCALE: float = 0.15
 
 # Chair scrapes played (all three, softly staggered) as class ends and the scene
 # transitions into the post-class steal opportunity.
@@ -163,8 +166,9 @@ const CHALK_LONG_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_long.mp3"
 @onready var choice_grid: GridContainer = %ChoiceGrid
 
 var _clock_audio_player: AudioStreamPlayer = null
-var _bell_stream: AudioStream = null
+var _bell_sounds: Array[AudioStream] = []
 var _bell_audio_player: AudioStreamPlayer = null
+var _last_bell_index: int = -1
 var _chair_rng := RandomNumberGenerator.new()
 var _chair_sounds: Array[AudioStream] = []
 var _chair_audio_players: Array[AudioStreamPlayer] = []
@@ -204,7 +208,7 @@ func _ready() -> void:
 	_setup_chalk_audio()
 	_setup_bell_audio()
 	# Ring the opening bell as every school scene begins.
-	_play_bell(SCHOOL_BELL_START_VOLUME_SCALE)
+	_play_bell()
 	_start_class_clock()
 
 	_pick_teacher_and_question()
@@ -479,7 +483,7 @@ func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
 	# Class is over: ring the dismissal bell, silence the ticking clock, and let
 	# the chairs scrape as everyone gets up for the post-class steal opportunity.
-	_play_bell(SCHOOL_BELL_END_VOLUME_SCALE)
+	_play_bell()
 	_stop_class_clock()
 	_play_chair_scrape_sound()
 	_hide_choice_grid()
@@ -660,19 +664,25 @@ func _stop_class_clock() -> void:
 
 
 func _setup_bell_audio() -> void:
-	_bell_stream = load(SCHOOL_BELL_SOUND_PATH) as AudioStream
-	if _bell_stream != null:
-		_bell_audio_player = AudioStreamPlayer.new()
-		_bell_audio_player.name = "BellAudioPlayer"
-		_bell_audio_player.stream = _bell_stream
-		add_child(_bell_audio_player)
-
-
-## Ring the school bell at the given fraction of full volume.
-func _play_bell(volume_scale: float) -> void:
-	if _bell_audio_player == null:
+	for path in SCHOOL_BELL_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_bell_sounds.append(stream)
+	if _bell_sounds.is_empty():
 		return
-	_bell_audio_player.volume_db = linear_to_db(volume_scale)
+	_bell_audio_player = AudioStreamPlayer.new()
+	_bell_audio_player.name = "BellAudioPlayer"
+	_bell_audio_player.volume_db = linear_to_db(SCHOOL_BELL_VOLUME_SCALE)
+	add_child(_bell_audio_player)
+
+
+## Ring the school bell, alternating between the two clips each time (when both
+## are available). Volume is fixed at SCHOOL_BELL_VOLUME_SCALE on the player.
+func _play_bell() -> void:
+	if _bell_audio_player == null or _bell_sounds.is_empty():
+		return
+	_last_bell_index = (_last_bell_index + 1) % _bell_sounds.size()
+	_bell_audio_player.stream = _bell_sounds[_last_bell_index]
 	_bell_audio_player.play()
 
 
@@ -740,7 +750,7 @@ func _on_school_page_advanced(index: int) -> void:
 		if index < 0 or index >= _feedback_pages.size():
 			return
 		if _is_bell_interruption_line(_page_text(_feedback_pages[index])):
-			_play_bell(SCHOOL_BELL_END_VOLUME_SCALE)
+			_play_bell()
 
 
 ## True when a line's prose has the bell ringing and interrupting the player's
