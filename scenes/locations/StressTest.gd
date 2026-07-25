@@ -21,10 +21,10 @@ const GENERATOR_CHUG_SOUND_PATH := "res://assets/sounds/generator/generator_chug
 const GENERATOR_SHUTTING_OFF_SOUND_PATH := "res://assets/sounds/generator/generator_shutting_off.mp3"
 const GENERATOR_NO_POWER_SOUND_PATH := "res://assets/sounds/generator/generator_no_power.mp3"
 const EMERGENCY_POWER_BUTTON_SOUND_PATH := "res://assets/sounds/emergency_button/emergency_power_button.mp3"
-## The running generator hum/chug loops play at 34% (i.e. reduced by 66%).
-const GENERATOR_VOLUME_SCALE: float = 0.34
-## The rip-cord pull plays at half volume.
-const RIP_CORD_VOLUME_SCALE: float = 0.5
+## The running generator hum/chug loops play at 20% (i.e. reduced by 80%).
+const GENERATOR_VOLUME_SCALE: float = 0.2
+## The rip-cord pull plays at a quarter volume.
+const RIP_CORD_VOLUME_SCALE: float = 0.25
 const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/night_sounds/1_min_night_sounds.mp3",
 ]
