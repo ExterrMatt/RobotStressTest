@@ -21,8 +21,10 @@ const GENERATOR_CHUG_SOUND_PATH := "res://assets/sounds/generator/generator_chug
 const GENERATOR_SHUTTING_OFF_SOUND_PATH := "res://assets/sounds/generator/generator_shutting_off.mp3"
 const GENERATOR_NO_POWER_SOUND_PATH := "res://assets/sounds/generator/generator_no_power.mp3"
 const EMERGENCY_POWER_BUTTON_SOUND_PATH := "res://assets/sounds/emergency_button/emergency_power_button.mp3"
-## The running generator hum/chug loops play at 20% (i.e. reduced by 80%).
+## The running generator hum/chug loops (and the out-of-battery chug) play at 20%.
 const GENERATOR_VOLUME_SCALE: float = 0.2
+## The manual emergency-button powering-off sound plays a bit louder, at 35%.
+const GENERATOR_SHUTTING_OFF_VOLUME_SCALE: float = 0.35
 ## The rip-cord pull plays at a quarter volume.
 const RIP_CORD_VOLUME_SCALE: float = 0.25
 const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [
@@ -36,6 +38,8 @@ const NIGHT_AMBIENT_LOUD_VOLUME_SCALE: float = 0.5
 const PLANE_SOUND_PATH: String = "res://assets/sounds/night_sounds/plane_fly_by.mp3"
 ## The plane fly-by plays at 25% volume.
 const PLANE_VOLUME_SCALE: float = 0.25
+## The police sirens play at 15% volume.
+const POLICE_SIREN_VOLUME_SCALE: float = 0.15
 ## Police sirens: two distinct clips, each of which may play at most once a night.
 const POLICE_SIREN_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/night_sounds/police_sirens_1.mp3",
@@ -1177,8 +1181,10 @@ func _generator_hum_volume() -> float:
 func _generator_chug_volume() -> float:
 	if _electricity_percent <= 0.0:
 		return 0.0
+	# As the battery drains from 50% to 20% the chug swells in (the start, kept as
+	# is). Below 20% it holds at full instead of tapering back down toward empty.
 	if _electricity_percent < 20.0:
-		return 0.5 + 0.5 * clampf(_electricity_percent / 20.0, 0.0, 1.0)
+		return 1.0
 	return clampf((50.0 - _electricity_percent) / 30.0, 0.0, 1.0)
 
 
@@ -1220,7 +1226,7 @@ func _play_generator_shutting_off_sound() -> void:
 		return
 	_generator_shutdown_audio_player.stream = _generator_shutting_off_sound
 	_generator_shutdown_audio_player.pitch_scale = 1.0
-	_generator_shutdown_audio_player.volume_db = 0.0
+	_generator_shutdown_audio_player.volume_db = linear_to_db(GENERATOR_SHUTTING_OFF_VOLUME_SCALE)
 	_generator_shutdown_audio_player.play()
 
 
@@ -1346,7 +1352,7 @@ func _play_night_police_siren(index: int) -> void:
 		return
 	player.stream = _police_siren_sounds[index]
 	player.pitch_scale = 1.0
-	player.volume_db = 0.0
+	player.volume_db = linear_to_db(POLICE_SIREN_VOLUME_SCALE)
 	player.play()
 
 
