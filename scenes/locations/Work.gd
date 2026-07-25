@@ -660,6 +660,8 @@ func _finish_work_arm_disruption() -> void:
 	var money: int = int(REWARD_COMPLETE.get("money", 0))
 	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0)) + int(REWARD_STEAL.get("suspicion", 0))
 	var ingredients: Dictionary = _copy_ingredients(REWARD_COMPLETE.get("ingredients", {}))
+	# The pocketed arm is a real inventory item now (shows up in the workshop).
+	ingredients["upper_arm"] = int(ingredients.get("upper_arm", 0)) + 1
 	finish(money, suspicion, 0, ingredients, false, "upper arm")
 
 

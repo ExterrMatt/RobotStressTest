@@ -58,6 +58,7 @@ const INGREDIENT_PATHS: Dictionary = {
 	"synth_skin":    "res://assets/textures/icons/synth_skin.png",
 	"head_segments": "res://assets/textures/icons/head_segments.png",
 	"oil":           "res://assets/textures/icons/oil.png",
+	"upper_arm":     "res://assets/textures/icons/upper_arm.png",
 }
 const HEAD_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot head"
 const HEAD_ASSEMBLY_SIZE: Vector2 = Vector2(200, 200)

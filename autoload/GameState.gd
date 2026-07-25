@@ -219,6 +219,9 @@ var ingredients: Dictionary = {
 	"nanobots": 0,
 	"head_segments": 0,
 	"oil": 0,
+	# Pre-made upper-arm sub-assembly, pocketed during the work arm-steal call and
+	# brought to the workshop to graft onto an arm.
+	"upper_arm": 0,
 }
 
 # --- unlocked skills (string IDs from design doc) ---
