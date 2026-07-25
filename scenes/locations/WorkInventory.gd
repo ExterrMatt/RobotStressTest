@@ -44,6 +44,8 @@ const PLACE_SOUND_PATHS: Array[String] = [
 ## in [-PLACE_PITCH_VARIATION_PERCENT, +PLACE_PITCH_VARIATION_PERCENT] inclusive
 ## (e.g. -10 .. +10 -> pitch_scale 0.90 .. 1.10).
 const PLACE_PITCH_VARIATION_PERCENT: int = 10
+## Placement dinks play at half volume.
+const PLACE_VOLUME_SCALE: float = 0.5
 
 
 @onready var draggables: Array = _collect_draggables_from_root()
@@ -237,6 +239,7 @@ func _setup_place_audio() -> void:
 		return
 	_place_audio_player = AudioStreamPlayer.new()
 	_place_audio_player.name = "PlaceAudioPlayer"
+	_place_audio_player.volume_db = linear_to_db(PLACE_VOLUME_SCALE)
 	add_child(_place_audio_player)
 
 

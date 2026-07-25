@@ -30,6 +30,8 @@ const NIGHT_AMBIENT_LOUD_VOLUME_SCALE: float = 0.5
 # once per in-game minute, whether these play; a hit is scheduled at a random
 # moment inside that minute (never exactly on the minute boundary).
 const PLANE_SOUND_PATH: String = "res://assets/sounds/night_sounds/plane_fly_by.mp3"
+## The plane fly-by plays at 25% volume.
+const PLANE_VOLUME_SCALE: float = 0.25
 ## Police sirens: two distinct clips, each of which may play at most once a night.
 const POLICE_SIREN_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/night_sounds/police_sirens_1.mp3",
@@ -1327,7 +1329,7 @@ func _play_night_plane() -> void:
 	_plane_played = true
 	_plane_audio_player.stream = _plane_sound
 	_plane_audio_player.pitch_scale = 1.0
-	_plane_audio_player.volume_db = 0.0
+	_plane_audio_player.volume_db = linear_to_db(PLANE_VOLUME_SCALE)
 	_plane_audio_player.play()
 
 

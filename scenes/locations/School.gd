@@ -128,6 +128,8 @@ const CLASS_DISRUPTION_TEACHER: Dictionary = {
 # Looping clock tick that runs for the duration of class (from the lecture up
 # until the bell rings and the post-class steal opportunity begins).
 const CLOCK_SOUND_PATH: String = "res://assets/sounds/clock/clock_ticking.mp3"
+## The ticking clock plays at half volume.
+const CLOCK_VOLUME_SCALE: float = 0.5
 
 # Chair scrapes played (all three, softly staggered) as class ends and the scene
 # transitions into the post-class steal opportunity.
@@ -631,6 +633,7 @@ func _start_class_clock() -> void:
 	_clock_audio_player = AudioStreamPlayer.new()
 	_clock_audio_player.name = "ClockAudioPlayer"
 	_clock_audio_player.stream = stream
+	_clock_audio_player.volume_db = linear_to_db(CLOCK_VOLUME_SCALE)
 	add_child(_clock_audio_player)
 	_clock_audio_player.play()
 
