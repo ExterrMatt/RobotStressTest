@@ -23,10 +23,27 @@ const GENERATOR_NO_POWER_SOUND_PATH := "res://assets/sounds/generator/generator_
 const EMERGENCY_POWER_BUTTON_SOUND_PATH := "res://assets/sounds/emergency_button/emergency_power_button.mp3"
 const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/night_sounds/1_min_night_sounds.mp3",
-	"res://assets/sounds/night_sounds/loud_crickets.mp3",
-	"res://assets/sounds/night_sounds/loud_night_sounds.mp3",
 ]
 const NIGHT_AMBIENT_LOUD_VOLUME_SCALE: float = 0.5
+
+# One-off night flyovers/sirens layered over the ambient bed. Each night we roll,
+# once per in-game minute, whether these play; a hit is scheduled at a random
+# moment inside that minute (never exactly on the minute boundary).
+const PLANE_SOUND_PATH: String = "res://assets/sounds/night_sounds/plane_fly_by.mp3"
+## Police sirens: two distinct clips, each of which may play at most once a night.
+const POLICE_SIREN_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/night_sounds/police_sirens_1.mp3",
+	"res://assets/sounds/night_sounds/police_sirens_2.mp3",
+]
+## Length of one "minute" of night for the per-minute probability rolls.
+const NIGHT_SPECIAL_MINUTE_SECONDS: float = 60.0
+## Per-minute odds: the plane has a 1-in-30 chance, each siren roll a 1-in-5.
+const PLANE_CHANCE_ONE_IN: int = 30
+const POLICE_CHANCE_ONE_IN: int = 5
+## A scheduled hit fires at a random point within its minute, kept clear of the
+## minute's very start and end so it never lands right on a boundary.
+const NIGHT_SPECIAL_MIN_OFFSET: float = 1.0
+const NIGHT_SPECIAL_MAX_OFFSET: float = 59.0
 const HEAD_ONLY_DISABLED_ZOOM_REGIONS: Array[StringName] = [
 	&"Zoom1_R1_C1",
 	&"Zoom1_R3_C1",
@@ -292,6 +309,21 @@ var _night_ambient_paths: Array[String] = []
 var _night_ambient_audio_player: AudioStreamPlayer = null
 var _generator_had_power: bool = false
 
+# Plane/police one-off night sounds.
+var _plane_sound: AudioStream = null
+var _plane_audio_player: AudioStreamPlayer = null
+var _police_siren_sounds: Array[AudioStream] = []
+var _police_siren_audio_players: Array[AudioStreamPlayer] = []
+## Last night-minute we rolled for (-1 = none rolled yet this night).
+var _night_special_last_minute: int = -1
+## The plane plays at most once a night; -1 time = nothing scheduled.
+var _plane_played: bool = false
+var _plane_scheduled_time: float = -1.0
+## Siren indices not yet used this night, plus the currently-scheduled hit.
+var _police_sirens_remaining: Array[int] = []
+var _police_scheduled_time: float = -1.0
+var _police_scheduled_index: int = -1
+
 const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
 const WINDOW_ALERT_RED: int = 2
@@ -373,6 +405,7 @@ func _process(delta: float) -> void:
 		_set_emergency_power_shutoff_pressed(false)
 	_update_electricity_summary_time(_night_elapsed - previous_elapsed)
 	_update_screw_batches()
+	_update_night_special_sounds()
 	_apply_scheduled_meter_events()
 	_update_emergency_power_gas_equalization(sim_delta)
 	_update_generator_power_sound()
@@ -1089,6 +1122,23 @@ func _initialize_audio_players() -> void:
 		_night_ambient_audio_player.name = "NightAmbientAudioPlayer"
 		add_child(_night_ambient_audio_player)
 
+	_plane_sound = load(PLANE_SOUND_PATH) as AudioStream
+	if _plane_sound != null:
+		_plane_audio_player = AudioStreamPlayer.new()
+		_plane_audio_player.name = "NightPlaneAudioPlayer"
+		add_child(_plane_audio_player)
+
+	_police_siren_sounds.clear()
+	for path in POLICE_SIREN_SOUND_PATHS:
+		var siren := load(path) as AudioStream
+		if siren == null:
+			continue
+		_police_siren_sounds.append(siren)
+		var player := AudioStreamPlayer.new()
+		player.name = "NightPoliceSirenAudioPlayer%d" % _police_siren_audio_players.size()
+		add_child(player)
+		_police_siren_audio_players.append(player)
+
 
 func _play_rip_cord_full_extend_sound() -> void:
 	if _rip_cord_audio_player == null or _rip_cord_full_extend_sound == null:
@@ -1209,6 +1259,88 @@ func _play_random_night_ambient() -> void:
 func _stop_night_ambient() -> void:
 	if _night_ambient_audio_player != null:
 		_night_ambient_audio_player.stop()
+	if _plane_audio_player != null:
+		_plane_audio_player.stop()
+	for player in _police_siren_audio_players:
+		if player != null:
+			player.stop()
+
+
+## Clear the plane/siren bookkeeping so each night starts fresh.
+func _reset_night_special_sounds() -> void:
+	_night_special_last_minute = -1
+	_plane_played = false
+	_plane_scheduled_time = -1.0
+	_police_scheduled_time = -1.0
+	_police_scheduled_index = -1
+	_police_sirens_remaining.clear()
+	for i in _police_siren_sounds.size():
+		_police_sirens_remaining.append(i)
+
+
+## Per-frame driver for the one-off night flyover/sirens. Rolls once for each
+## in-game minute that has newly begun, then fires anything whose scheduled moment
+## has arrived. Skips ahead cleanly if a debug speedrun jumps several minutes.
+func _update_night_special_sounds() -> void:
+	if _night_finished:
+		return
+
+	var minute := int(_night_elapsed / NIGHT_SPECIAL_MINUTE_SECONDS)
+	while _night_special_last_minute < minute:
+		_night_special_last_minute += 1
+		_roll_night_special_sounds_for_minute(_night_special_last_minute)
+
+	if _plane_scheduled_time >= 0.0 and _night_elapsed >= _plane_scheduled_time:
+		_plane_scheduled_time = -1.0
+		_play_night_plane()
+
+	if _police_scheduled_time >= 0.0 and _night_elapsed >= _police_scheduled_time:
+		var index := _police_scheduled_index
+		_police_scheduled_time = -1.0
+		_police_scheduled_index = -1
+		_play_night_police_siren(index)
+
+
+## Roll the minute's odds. A successful roll schedules the sound at a random moment
+## inside the minute (never on the boundary). Only one of each can be pending, and
+## the plane is capped at one per night, the sirens at one play each.
+func _roll_night_special_sounds_for_minute(minute: int) -> void:
+	var minute_start := float(minute) * NIGHT_SPECIAL_MINUTE_SECONDS
+
+	if not _plane_played and _plane_scheduled_time < 0.0 and _plane_audio_player != null:
+		if _rng.randi_range(1, PLANE_CHANCE_ONE_IN) == 1:
+			_plane_scheduled_time = minute_start + _rng.randf_range(
+				NIGHT_SPECIAL_MIN_OFFSET, NIGHT_SPECIAL_MAX_OFFSET)
+
+	if not _police_sirens_remaining.is_empty() and _police_scheduled_time < 0.0:
+		if _rng.randi_range(1, POLICE_CHANCE_ONE_IN) == 1:
+			var pick_pos := _rng.randi_range(0, _police_sirens_remaining.size() - 1)
+			_police_scheduled_index = _police_sirens_remaining[pick_pos]
+			_police_sirens_remaining.remove_at(pick_pos)
+			_police_scheduled_time = minute_start + _rng.randf_range(
+				NIGHT_SPECIAL_MIN_OFFSET, NIGHT_SPECIAL_MAX_OFFSET)
+
+
+func _play_night_plane() -> void:
+	if _plane_audio_player == null or _plane_sound == null:
+		return
+	_plane_played = true
+	_plane_audio_player.stream = _plane_sound
+	_plane_audio_player.pitch_scale = 1.0
+	_plane_audio_player.volume_db = 0.0
+	_plane_audio_player.play()
+
+
+func _play_night_police_siren(index: int) -> void:
+	if index < 0 or index >= _police_siren_audio_players.size():
+		return
+	var player := _police_siren_audio_players[index]
+	if player == null:
+		return
+	player.stream = _police_siren_sounds[index]
+	player.pitch_scale = 1.0
+	player.volume_db = 0.0
+	player.play()
 
 
 func _is_loud_night_ambient(path: String) -> bool:
@@ -1223,6 +1355,7 @@ func _initialize_stress_systems() -> void:
 		end_button.disabled = not show_end_button
 	_night_elapsed = 0.0
 	_night_finished = false
+	_reset_night_special_sounds()
 	_play_random_night_ambient()
 	_electricity_percent = electricity_start_percent
 	_gas_flow_percent = gas_start_percent

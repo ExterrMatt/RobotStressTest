@@ -129,13 +129,25 @@ const CLASS_DISRUPTION_TEACHER: Dictionary = {
 # until the bell rings and the post-class steal opportunity begins).
 const CLOCK_SOUND_PATH: String = "res://assets/sounds/clock/clock_ticking.mp3"
 
-# Chair scrapes (random pick, no pitch change) played as class ends and the scene
+# Chair scrapes played (all three, softly staggered) as class ends and the scene
 # transitions into the post-class steal opportunity.
 const CHAIR_SCRAPE_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/chairs_scraping/chairs_scraping_1.mp3",
 	"res://assets/sounds/chairs_scraping/chairs_scraping_2.mp3",
 	"res://assets/sounds/chairs_scraping/chairs_scraping_3.mp3",
 ]
+# Each chair after the first starts this many seconds (randomized) after the
+# previous, so the three scrapes overlap raggedly instead of firing in unison.
+const CHAIR_STAGGER_MIN_SECONDS: float = 0.01
+const CHAIR_STAGGER_MAX_SECONDS: float = 0.3
+# The three chairs together were too loud at full volume; play them at 35%.
+const CHAIR_VOLUME_SCALE: float = 0.35
+
+# Chalk on the board: the short scratch for Ms. Vey's quick strokes (her name, the
+# timeline line), the longer one for Ms. Okorie writing out her is-it-alive
+# checklist. Triggered off the italic "writes on the board" stage directions.
+const CHALK_SHORT_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_short.mp3"
+const CHALK_LONG_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_long.mp3"
 
 # --- Scene refs ---
 @onready var dialogue_box: DialogueBox = %DialogueBox
@@ -144,7 +156,14 @@ const CHAIR_SCRAPE_SOUND_PATHS: Array[String] = [
 var _clock_audio_player: AudioStreamPlayer = null
 var _chair_rng := RandomNumberGenerator.new()
 var _chair_sounds: Array[AudioStream] = []
-var _chair_audio_player: AudioStreamPlayer = null
+var _chair_audio_players: Array[AudioStreamPlayer] = []
+
+var _chalk_short_stream: AudioStream = null
+var _chalk_long_stream: AudioStream = null
+var _chalk_audio_player: AudioStreamPlayer = null
+## The pages fed to the dialogue box for the current lecture, so a page_advanced
+## index can be mapped back to its text to spot "writes on the board" moments.
+var _lecture_pages: Array = []
 
 # --- Run state ---
 var _current_teacher: Dictionary = {}
@@ -164,8 +183,10 @@ func _ready() -> void:
 	Dialogue.load_file("school", "res://data/dialogue/school.dlg")
 
 	dialogue_box.finished.connect(_on_dialogue_finished)
+	dialogue_box.page_advanced.connect(_on_lecture_page_advanced)
 
 	_setup_chair_audio()
+	_setup_chalk_audio()
 	_start_class_clock()
 
 	_pick_teacher_and_question()
@@ -332,6 +353,9 @@ func _enter_lecture() -> void:
 	if _current_teacher.has("intro_key"):
 		pages.append_array(Dialogue.get_pages("school", _current_teacher["intro_key"], fmt))
 	pages.append_array(Dialogue.get_pages("school", _current_question["lecture_key"], fmt))
+	# Remember the exact pages so page_advanced indices can be matched back to the
+	# board-writing stage directions that cue the chalk sounds.
+	_lecture_pages = pages
 	dialogue_box.play_pages(pages)
 
 
@@ -616,22 +640,91 @@ func _stop_class_clock() -> void:
 
 func _setup_chair_audio() -> void:
 	_chair_rng.randomize()
-	for path in CHAIR_SCRAPE_SOUND_PATHS:
-		var stream := load(path) as AudioStream
-		if stream != null:
-			_chair_sounds.append(stream)
-	if not _chair_sounds.is_empty():
-		_chair_audio_player = AudioStreamPlayer.new()
-		_chair_audio_player.name = "ChairAudioPlayer"
-		add_child(_chair_audio_player)
+	# One player per chair so all three can overlap; volume trimmed to 35%.
+	for i in CHAIR_SCRAPE_SOUND_PATHS.size():
+		var stream := load(CHAIR_SCRAPE_SOUND_PATHS[i]) as AudioStream
+		if stream == null:
+			continue
+		_chair_sounds.append(stream)
+		var player := AudioStreamPlayer.new()
+		player.name = "ChairAudioPlayer%d" % _chair_audio_players.size()
+		player.stream = stream
+		player.volume_db = linear_to_db(CHAIR_VOLUME_SCALE)
+		add_child(player)
+		_chair_audio_players.append(player)
 
 
-## Random chair-scrape sound, no pitch change.
+## Play all three chair scrapes, each staggered a random 0.01–0.3s behind the
+## previous so they land as a ragged shuffle rather than a single unison scrape.
 func _play_chair_scrape_sound() -> void:
-	if _chair_audio_player == null or _chair_sounds.is_empty():
+	var delay := 0.0
+	for i in _chair_audio_players.size():
+		var player := _chair_audio_players[i]
+		if player == null:
+			continue
+		if i == 0:
+			player.play()
+			continue
+		delay += _chair_rng.randf_range(CHAIR_STAGGER_MIN_SECONDS, CHAIR_STAGGER_MAX_SECONDS)
+		_play_after_delay(player, delay)
+
+
+func _play_after_delay(player: AudioStreamPlayer, delay: float) -> void:
+	await get_tree().create_timer(delay).timeout
+	if is_instance_valid(player):
+		player.play()
+
+
+func _setup_chalk_audio() -> void:
+	_chalk_short_stream = load(CHALK_SHORT_SOUND_PATH) as AudioStream
+	_chalk_long_stream = load(CHALK_LONG_SOUND_PATH) as AudioStream
+	if _chalk_short_stream != null or _chalk_long_stream != null:
+		_chalk_audio_player = AudioStreamPlayer.new()
+		_chalk_audio_player.name = "ChalkAudioPlayer"
+		add_child(_chalk_audio_player)
+
+
+## As each lecture page is shown, play a chalk scratch on the pages whose stage
+## direction has the teacher writing on the board. Ms. Okorie's checklist uses the
+## long clip; every other teacher (i.e. Ms. Vey) uses the short one.
+func _on_lecture_page_advanced(index: int) -> void:
+	if _scene_phase != SchoolPhase.LECTURE:
 		return
-	_chair_audio_player.stream = _chair_sounds[_chair_rng.randi_range(0, _chair_sounds.size() - 1)]
-	_chair_audio_player.play()
+	if index < 0 or index >= _lecture_pages.size():
+		return
+	if not _is_chalkboard_writing_line(_page_text(_lecture_pages[index])):
+		return
+	var use_long := String(_current_teacher.get("name", "")) == "Ms. Okorie"
+	_play_chalk(use_long)
+
+
+## True when a lecture line's prose describes the teacher writing on the board.
+## Most cues mention the "board"; Ms. Okorie's checklist fill-in instead talks about
+## the "blank spaces" she left, so match that too.
+func _is_chalkboard_writing_line(text: String) -> bool:
+	var lower := text.to_lower()
+	return lower.contains("board") or lower.contains("blank space")
+
+
+func _page_text(page) -> String:
+	var out := ""
+	for line in page:
+		if out != "":
+			out += " "
+		out += String(line)
+	return out
+
+
+func _play_chalk(use_long: bool) -> void:
+	if _chalk_audio_player == null:
+		return
+	var stream := _chalk_long_stream if use_long else _chalk_short_stream
+	if stream == null:
+		stream = _chalk_short_stream if use_long else _chalk_long_stream
+	if stream == null:
+		return
+	_chalk_audio_player.stream = stream
+	_chalk_audio_player.play()
 
 
 ## Toggle the streaming loop flag on an AudioStream (AudioStreamMP3 exposes a
