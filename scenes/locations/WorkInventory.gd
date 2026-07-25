@@ -42,9 +42,8 @@ const PLACE_SOUND_PATHS: Array[String] = [
 ]
 ## Random pitch shift applied to each placement sound, as an integer percentage
 ## in [-PLACE_PITCH_VARIATION_PERCENT, +PLACE_PITCH_VARIATION_PERCENT] inclusive
-## (e.g. -15 .. +15 -> pitch_scale 0.85 .. 1.15). Matches the ±15% variation used
-## by the screw-loosen sounds.
-const PLACE_PITCH_VARIATION_PERCENT: int = 15
+## (e.g. -10 .. +10 -> pitch_scale 0.90 .. 1.10).
+const PLACE_PITCH_VARIATION_PERCENT: int = 10
 
 
 @onready var draggables: Array = _collect_draggables_from_root()

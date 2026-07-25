@@ -129,11 +129,22 @@ const CLASS_DISRUPTION_TEACHER: Dictionary = {
 # until the bell rings and the post-class steal opportunity begins).
 const CLOCK_SOUND_PATH: String = "res://assets/sounds/clock/clock_ticking.mp3"
 
+# Chair scrapes (random pick, no pitch change) played as class ends and the scene
+# transitions into the post-class steal opportunity.
+const CHAIR_SCRAPE_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/chairs_scraping/chairs_scraping_1.mp3",
+	"res://assets/sounds/chairs_scraping/chairs_scraping_2.mp3",
+	"res://assets/sounds/chairs_scraping/chairs_scraping_3.mp3",
+]
+
 # --- Scene refs ---
 @onready var dialogue_box: DialogueBox = %DialogueBox
 @onready var choice_grid: GridContainer = %ChoiceGrid
 
 var _clock_audio_player: AudioStreamPlayer = null
+var _chair_rng := RandomNumberGenerator.new()
+var _chair_sounds: Array[AudioStream] = []
+var _chair_audio_player: AudioStreamPlayer = null
 
 # --- Run state ---
 var _current_teacher: Dictionary = {}
@@ -154,6 +165,7 @@ func _ready() -> void:
 
 	dialogue_box.finished.connect(_on_dialogue_finished)
 
+	_setup_chair_audio()
 	_start_class_clock()
 
 	_pick_teacher_and_question()
@@ -422,8 +434,10 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 
 func _enter_post_class_intro() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_INTRO
-	# The bell has rung — class is over, so silence the ticking clock.
+	# The bell has rung — class is over, so silence the ticking clock and let the
+	# chairs scrape as everyone gets up for the post-class steal opportunity.
 	_stop_class_clock()
+	_play_chair_scrape_sound()
 	_hide_choice_grid()
 	# Both the class disruption and an ordinary school day end on the same steal
 	# opportunity: switch to the supply-cabinet background and play the [post_class]
@@ -598,6 +612,26 @@ func _start_class_clock() -> void:
 func _stop_class_clock() -> void:
 	if _clock_audio_player != null and is_instance_valid(_clock_audio_player):
 		_clock_audio_player.stop()
+
+
+func _setup_chair_audio() -> void:
+	_chair_rng.randomize()
+	for path in CHAIR_SCRAPE_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_chair_sounds.append(stream)
+	if not _chair_sounds.is_empty():
+		_chair_audio_player = AudioStreamPlayer.new()
+		_chair_audio_player.name = "ChairAudioPlayer"
+		add_child(_chair_audio_player)
+
+
+## Random chair-scrape sound, no pitch change.
+func _play_chair_scrape_sound() -> void:
+	if _chair_audio_player == null or _chair_sounds.is_empty():
+		return
+	_chair_audio_player.stream = _chair_sounds[_chair_rng.randi_range(0, _chair_sounds.size() - 1)]
+	_chair_audio_player.play()
 
 
 ## Toggle the streaming loop flag on an AudioStream (AudioStreamMP3 exposes a

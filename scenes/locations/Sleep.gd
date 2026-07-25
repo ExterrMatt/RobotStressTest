@@ -8,6 +8,16 @@ const PAN_TRANS: int = Tween.TRANS_SINE
 const PAN_EASE: int = Tween.EASE_IN_OUT
 const ZOOM_DURATION: float = 0.35
 
+## Played (random pick, no pitch change) when the player pulls the blanket down.
+const BLANKET_PULL_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/pulling_blanket/blanket_being_pulled_short_1.mp3",
+	"res://assets/sounds/pulling_blanket/blanket_being_pulled_short_2.mp3",
+	"res://assets/sounds/pulling_blanket/blanket_being_pulled_short_3.mp3",
+]
+## Played when the robot's head settles from its raised (animated) pose back onto
+## the pillow (static).
+const PILLOW_REST_SOUND_PATH: String = "res://assets/sounds/pillow/head_resting_on_pillow.mp3"
+
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
 @onready var blanket: TextureRect = %Blanket
@@ -29,11 +39,20 @@ var _has_robot_in_bed := false
 var _pan_tween: Tween = null
 var _zoom_tween: Tween = null
 
+var _rng := RandomNumberGenerator.new()
+var _blanket_sounds: Array[AudioStream] = []
+var _blanket_audio_player: AudioStreamPlayer = null
+var _pillow_audio_player: AudioStreamPlayer = null
+
 
 func _ready() -> void:
 	call_deferred("_initialize_zoom")
+	_setup_sleep_audio()
 	if bot_placeholder.has_method("set_head_interaction_enabled"):
 		bot_placeholder.set_head_interaction_enabled(false)
+	# Play a soft thud when the robot lowers its head back onto the pillow.
+	if bot_placeholder.has_signal("head_returned_to_rest"):
+		bot_placeholder.connect("head_returned_to_rest", _on_head_returned_to_rest)
 
 	_has_robot_in_bed = GameState.equipped_limbs > 0
 	end_button.visible = _has_robot_in_bed
@@ -81,6 +100,7 @@ func _process(_delta: float) -> void:
 		_blanket_removed = true
 		blanket.visible = false
 		blanket_bump.visible = false
+		_play_blanket_pull_sound()
 		return
 	finish()
 
@@ -230,6 +250,7 @@ func _on_bed_click_area_gui_input(event: InputEvent) -> void:
 		_blanket_removed = true
 		blanket.visible = false
 		blanket_bump.visible = false
+		_play_blanket_pull_sound()
 		if _has_robot_in_bed and bot_placeholder.has_method("set_head_interaction_enabled"):
 			bot_placeholder.set_head_interaction_enabled(true)
 		return
@@ -259,3 +280,38 @@ func _append_unique_node_path(node: Node, property_name: StringName, path: NodeP
 
 func _on_end_button_pressed() -> void:
 	finish()
+
+
+# --- Audio ---
+
+func _setup_sleep_audio() -> void:
+	_rng.randomize()
+	for path in BLANKET_PULL_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_blanket_sounds.append(stream)
+	if not _blanket_sounds.is_empty():
+		_blanket_audio_player = AudioStreamPlayer.new()
+		_blanket_audio_player.name = "BlanketAudioPlayer"
+		add_child(_blanket_audio_player)
+
+	var pillow_stream := load(PILLOW_REST_SOUND_PATH) as AudioStream
+	if pillow_stream != null:
+		_pillow_audio_player = AudioStreamPlayer.new()
+		_pillow_audio_player.name = "PillowAudioPlayer"
+		_pillow_audio_player.stream = pillow_stream
+		add_child(_pillow_audio_player)
+
+
+## Random blanket-pull sound, no pitch change.
+func _play_blanket_pull_sound() -> void:
+	if _blanket_audio_player == null or _blanket_sounds.is_empty():
+		return
+	_blanket_audio_player.stream = _blanket_sounds[_rng.randi_range(0, _blanket_sounds.size() - 1)]
+	_blanket_audio_player.play()
+
+
+func _on_head_returned_to_rest() -> void:
+	if _pillow_audio_player == null:
+		return
+	_pillow_audio_player.play()

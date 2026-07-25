@@ -47,9 +47,9 @@ const PLACE_SOUND_PATHS: Array[String] = [
 ]
 ## Random pitch shift applied to each placement sound, as an integer percentage
 ## in [-PLACE_PITCH_VARIATION_PERCENT, +PLACE_PITCH_VARIATION_PERCENT] inclusive
-## (e.g. -15 .. +15 -> pitch_scale 0.85 .. 1.15). Same ±15% rule the shape-sort
-## shift uses for its metal dinks.
-const PLACE_PITCH_VARIATION_PERCENT: int = 15
+## (e.g. -10 .. +10 -> pitch_scale 0.90 .. 1.10). Same rule the shape-sort shift
+## uses for its metal dinks.
+const PLACE_PITCH_VARIATION_PERCENT: int = 10
 
 @onready var furniture: Control = $Furniture
 ## The assembled arm — an authored node with the arm's slots/pieces as children.

@@ -2,6 +2,9 @@
 extends Control
 
 signal visual_state_changed
+## Emitted when the head animation ends and the head returns to its static pose
+## (e.g. the Sleep scene plays a pillow thud as the robot lowers its head).
+signal head_returned_to_rest
 
 const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
 
@@ -1409,11 +1412,16 @@ func _box_has_outro(box: Control) -> bool:
 func _finish_animation_for_box(box: Control, apply_state: bool = true) -> void:
 	_leg_prestage_active = false
 	_animation_states.erase(box)
+	var is_head_box := box != null and is_instance_valid(box) and String(box.name) == "HeadHoverBox"
 	if box != null and is_instance_valid(box) and box.has_method("set_runtime_active"):
 		box.call("set_runtime_active", false)
 	if apply_state:
 		_refresh_active_animation_frames()
 		_apply_visibility_state()
+	# The head just settled from its raised animation back to the static pose;
+	# listeners (e.g. the Sleep scene) use this to play the head-on-pillow sound.
+	if is_head_box and not Engine.is_editor_hint():
+		head_returned_to_rest.emit()
 
 
 ## Ends every running layered animation.

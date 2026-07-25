@@ -48,6 +48,29 @@ const INTRO_STORE_STEP: String = "store"
 const INTRO_PICKUP_ITEM_IDS: Array[String] = ["electronics", "nuts_bolts", "nanobots"]
 const INTRO_TABLE_VERTICAL_OFFSET: float = 200.0
 
+## Played (random pick, ±GRAB_PITCH_VARIATION_PERCENT pitch) when an item is
+## bought, alongside a coin-bag jingle.
+const GRAB_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/grabbing_item/grabbing_item_1.mp3",
+	"res://assets/sounds/grabbing_item/grabbing_item_2.mp3",
+	"res://assets/sounds/grabbing_item/grabbing_item_3.mp3",
+]
+## Coin-bag jingles played (no pitch change) at the same moment as the grab.
+const COIN_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/coin_bag/bag_of_coins_1.mp3",
+	"res://assets/sounds/coin_bag/bag_of_coins_2.mp3",
+	"res://assets/sounds/coin_bag/bag_of_coins_3.mp3",
+	"res://assets/sounds/coin_bag/bag_of_coins_4.mp3",
+]
+## Whole-percent pitch spread on the grab sound (±10 -> pitch_scale 0.90 .. 1.10).
+const GRAB_PITCH_VARIATION_PERCENT: int = 10
+## How many recent coin picks to avoid repeating, tracked across purchases for the
+## whole session (static, so it survives leaving and re-entering the store).
+const COIN_HISTORY_SIZE: int = 2
+
+## Coin indices used by the last COIN_HISTORY_SIZE purchases this session.
+static var _recent_coin_indices: Array[int] = []
+
 ## Pixel size of each item's sprite slot on the table.
 const SLOT_SIZE: Vector2 = Vector2(160, 160)
 
@@ -78,6 +101,12 @@ var _slot_by_id: Dictionary = {}
 ## We walk this in _input to figure out which slot the click landed on.
 var _slot_hits: Array = []
 
+var _rng := RandomNumberGenerator.new()
+var _grab_sounds: Array[AudioStream] = []
+var _coin_sounds: Array[AudioStream] = []
+var _grab_audio_player: AudioStreamPlayer = null
+var _coin_audio_player: AudioStreamPlayer = null
+
 
 @onready var furniture_layer: Control = $FurnitureLayer
 @onready var store_table: TextureRect = $FurnitureLayer/StoreTable
@@ -90,6 +119,8 @@ func _ready() -> void:
 	# never reach our reparented slots inside SceneImage. IGNORE means
 	# we render but never consume input — clicks pass straight through.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_setup_purchase_audio()
 
 	Dialogue.load_file("intro", "res://data/dialogue/intro.dlg")
 	if dialogue_box != null:
@@ -560,6 +591,7 @@ func _try_purchase(item: StoreItemData) -> void:
 	else:
 		GameState.add_ingredient(item_id, item.amount)
 
+	_play_purchase_sounds()
 	GameState.mark_purchased_today(item_id)
 	if not _has_available_lottery_items():
 		_build_grid()
@@ -625,3 +657,62 @@ func _on_money_changed(_v: int) -> void:
 
 func _on_purchased_today_changed(_ids: Array) -> void:
 	_refresh_all_slots()
+
+
+# --- purchase audio ---
+
+func _setup_purchase_audio() -> void:
+	_rng.randomize()
+	for path in GRAB_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_grab_sounds.append(stream)
+	for path in COIN_SOUND_PATHS:
+		var stream := load(path) as AudioStream
+		if stream != null:
+			_coin_sounds.append(stream)
+	if not _grab_sounds.is_empty():
+		_grab_audio_player = AudioStreamPlayer.new()
+		_grab_audio_player.name = "GrabAudioPlayer"
+		add_child(_grab_audio_player)
+	if not _coin_sounds.is_empty():
+		_coin_audio_player = AudioStreamPlayer.new()
+		_coin_audio_player.name = "CoinAudioPlayer"
+		add_child(_coin_audio_player)
+
+
+## A random item-grab sound (±GRAB_PITCH_VARIATION_PERCENT pitch) plus a random
+## coin-bag jingle (no pitch) at the same instant. The coin pick avoids the sounds
+## used by the last COIN_HISTORY_SIZE purchases this session.
+func _play_purchase_sounds() -> void:
+	if _grab_audio_player != null and not _grab_sounds.is_empty():
+		_grab_audio_player.stream = _grab_sounds[_rng.randi_range(0, _grab_sounds.size() - 1)]
+		var percent := _rng.randi_range(-GRAB_PITCH_VARIATION_PERCENT, GRAB_PITCH_VARIATION_PERCENT)
+		_grab_audio_player.pitch_scale = 1.0 + float(percent) / 100.0
+		_grab_audio_player.play()
+
+	if _coin_audio_player != null and not _coin_sounds.is_empty():
+		var index := _pick_coin_index()
+		_coin_audio_player.stream = _coin_sounds[index]
+		_coin_audio_player.pitch_scale = 1.0
+		_coin_audio_player.play()
+
+
+## Choose a coin-bag index at random, excluding the last COIN_HISTORY_SIZE picks so
+## the same jingle can't land within two purchases. Records the pick for next time.
+func _pick_coin_index() -> int:
+	var candidates: Array[int] = []
+	for i in _coin_sounds.size():
+		if not _recent_coin_indices.has(i):
+			candidates.append(i)
+	# With fewer sounds than the history window there may be nothing left; fall back
+	# to the full set so we still play something.
+	if candidates.is_empty():
+		for i in _coin_sounds.size():
+			candidates.append(i)
+
+	var index: int = candidates[_rng.randi_range(0, candidates.size() - 1)]
+	_recent_coin_indices.append(index)
+	while _recent_coin_indices.size() > COIN_HISTORY_SIZE:
+		_recent_coin_indices.pop_front()
+	return index
