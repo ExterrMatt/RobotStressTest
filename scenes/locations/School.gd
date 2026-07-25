@@ -176,6 +176,9 @@ var _chalk_audio_player: AudioStreamPlayer = null
 ## The pages fed to the dialogue box for the current lecture, so a page_advanced
 ## index can be mapped back to its text to spot "writes on the board" moments.
 var _lecture_pages: Array = []
+## Same idea for the intro feedback, so we can ring the bell on the "train of
+## thought interrupted by the bell" line rather than at the scene's start/end.
+var _feedback_pages: Array = []
 
 # --- Run state ---
 var _current_teacher: Dictionary = {}
@@ -195,13 +198,16 @@ func _ready() -> void:
 	Dialogue.load_file("school", "res://data/dialogue/school.dlg")
 
 	dialogue_box.finished.connect(_on_dialogue_finished)
-	dialogue_box.page_advanced.connect(_on_lecture_page_advanced)
+	dialogue_box.page_advanced.connect(_on_school_page_advanced)
 
 	_setup_chair_audio()
 	_setup_chalk_audio()
 	_setup_bell_audio()
-	# Ring the bell to open class.
-	_play_bell(SCHOOL_BELL_START_VOLUME_SCALE)
+	# Ring the opening bell for an ordinary class. The intro class rings its bell
+	# later instead, on the "train of thought interrupted by the bell" line, so it
+	# stays silent here (and never rings at the end).
+	if not _is_intro_school_first():
+		_play_bell(SCHOOL_BELL_START_VOLUME_SCALE)
 	_start_class_clock()
 
 	_pick_teacher_and_question()
@@ -433,7 +439,8 @@ func _on_answer_pressed(picked: int, correct: int) -> void:
 			_hide_choice_grid()
 		)
 		_scene_phase = SchoolPhase.FEEDBACK
-		dialogue_box.play_pages(Dialogue.get_pages("school", "history.automaton_war.feedback", _school_format_vars()))
+		_feedback_pages = Dialogue.get_pages("school", "history.automaton_war.feedback", _school_format_vars())
+		dialogue_box.play_pages(_feedback_pages)
 		return
 
 	var picked_correct: bool = (picked == correct)
@@ -719,18 +726,28 @@ func _setup_chalk_audio() -> void:
 		add_child(_chalk_audio_player)
 
 
-## As each lecture page is shown, play a chalk scratch on the pages whose stage
-## direction has the teacher writing on the board (see _chalk_stream_for_line for
-## which clip each moment uses).
-func _on_lecture_page_advanced(index: int) -> void:
-	if _scene_phase != SchoolPhase.LECTURE:
-		return
-	if index < 0 or index >= _lecture_pages.size():
-		return
-	var text := _page_text(_lecture_pages[index])
-	if not _is_chalkboard_writing_line(text):
-		return
-	_play_chalk(_chalk_stream_for_line(text))
+## Fires as each dialogue page is shown. During the lecture it plays a chalk
+## scratch on the "writes on the board" stage directions; during the intro
+## feedback it rings the bell on the "train of thought interrupted by the bell"
+## line (the intro's only bell — see _ready and _enter_post_class_intro).
+func _on_school_page_advanced(index: int) -> void:
+	if _scene_phase == SchoolPhase.LECTURE:
+		if index < 0 or index >= _lecture_pages.size():
+			return
+		var text := _page_text(_lecture_pages[index])
+		if _is_chalkboard_writing_line(text):
+			_play_chalk(_chalk_stream_for_line(text))
+	elif _scene_phase == SchoolPhase.FEEDBACK:
+		if index < 0 or index >= _feedback_pages.size():
+			return
+		if _is_bell_interruption_line(_page_text(_feedback_pages[index])):
+			_play_bell(SCHOOL_BELL_END_VOLUME_SCALE)
+
+
+## True when a line's prose has the bell ringing and interrupting the player's
+## train of thought (the intro feedback's dismissal beat).
+func _is_bell_interruption_line(text: String) -> bool:
+	return text.to_lower().contains("interrupted by the bell")
 
 
 ## True when a lecture line's prose describes the teacher writing on the board.
