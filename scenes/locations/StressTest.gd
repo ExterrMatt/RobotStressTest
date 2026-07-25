@@ -21,6 +21,10 @@ const GENERATOR_CHUG_SOUND_PATH := "res://assets/sounds/generator/generator_chug
 const GENERATOR_SHUTTING_OFF_SOUND_PATH := "res://assets/sounds/generator/generator_shutting_off.mp3"
 const GENERATOR_NO_POWER_SOUND_PATH := "res://assets/sounds/generator/generator_no_power.mp3"
 const EMERGENCY_POWER_BUTTON_SOUND_PATH := "res://assets/sounds/emergency_button/emergency_power_button.mp3"
+## The running generator hum/chug loops play at 34% (i.e. reduced by 66%).
+const GENERATOR_VOLUME_SCALE: float = 0.34
+## The rip-cord pull plays at half volume.
+const RIP_CORD_VOLUME_SCALE: float = 0.5
 const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/night_sounds/1_min_night_sounds.mp3",
 ]
@@ -1147,7 +1151,7 @@ func _play_rip_cord_full_extend_sound() -> void:
 		return
 	_rip_cord_audio_player.stream = _rip_cord_full_extend_sound
 	_rip_cord_audio_player.pitch_scale = 1.0
-	_rip_cord_audio_player.volume_db = 0.0
+	_rip_cord_audio_player.volume_db = linear_to_db(RIP_CORD_VOLUME_SCALE)
 	_rip_cord_audio_player.play()
 
 
@@ -1186,7 +1190,7 @@ func _apply_generator_loop_volume(player: AudioStreamPlayer, volume: float) -> v
 		if player.playing:
 			player.stop()
 		return
-	player.volume_db = linear_to_db(clamped_volume)
+	player.volume_db = linear_to_db(clamped_volume * GENERATOR_VOLUME_SCALE)
 	player.pitch_scale = 1.0
 	if not player.playing:
 		player.play()
