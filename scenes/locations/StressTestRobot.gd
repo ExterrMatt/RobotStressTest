@@ -52,11 +52,11 @@ const PLAP_SOUND_PATHS: Array[String] = [
 const PLAP_WET_SOUND_PATH: String = "res://assets/sounds/plap/plap_wet_1.mp3"
 const PLAP_WET_ONE_IN: int = 50
 ## The vegetable-mission animation lives on the pelvis box. Frames below are
-## 0-based (the code counts from 0), so they're the authored 1-based frame minus
-## one: intro frame 11 -> index 10, loop frame 3 -> index 2.
+## 0-based indices, nudged one earlier than the straight 1-based conversion to
+## land the plap where it reads best (intro frame 11 and loop frame 3 authored).
 const VEG_MISSION_BOX_NAME: String = "PelvisHoverBox"
-const VEG_PLAP_INTRO_FRAME: int = 10
-const VEG_PLAP_LOOP_FRAME: int = 2
+const VEG_PLAP_INTRO_FRAME: int = 9
+const VEG_PLAP_LOOP_FRAME: int = 1
 
 ## Chest overlays swapped by the per-side shoulder-pad toggles: each side shows
 ## its chest outline while that side's pad is on, and its chest details while
