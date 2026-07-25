@@ -33,11 +33,11 @@ const TEXTURE_PATHS: Dictionary = {
 	"hand": "res://assets/textures/icons/hand.png",
 	# Cosmetic chest items.
 	"big_coconuts": "res://assets/textures/icons/big_coconuts.png",
-	"small_coconuts": "res://assets/textures/characters/robot/stresstest/torso/small_coconuts.png",
+	"small_coconuts": "res://assets/textures/icons/small_coconuts.png",
 	"balloons": "res://assets/textures/icons/balloons.png",
+	"big_chest_cover": "res://assets/textures/icons/chest_cover.png",
 	# Upper arm — a pre-made arm sub-assembly craftable in the workshop.
 	"upper_arm": "res://assets/textures/icons/upper_arm.png",
-	"big_chest_cover": "res://assets/textures/characters/robot/stresstest/torso/chest_cover.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
