@@ -143,10 +143,11 @@ const CHAIR_STAGGER_MAX_SECONDS: float = 0.3
 # The three chairs together were too loud at full volume; play them at 35%.
 const CHAIR_VOLUME_SCALE: float = 0.35
 
-# Chalk on the board: the short scratch for Ms. Vey's quick strokes (her name, the
-# timeline line), the longer one for Ms. Okorie writing out her is-it-alive
-# checklist. Triggered off the italic "writes on the board" stage directions.
+# Chalk on the board, triggered off the italic "writes on the board" stage
+# directions. Ms. Vey writes twice: her name (medium) then the timeline stroke
+# (short). Ms. Okorie writes out her is-it-alive checklist with the long clip.
 const CHALK_SHORT_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_short.mp3"
+const CHALK_MEDIUM_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_medium.mp3"
 const CHALK_LONG_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_long.mp3"
 
 # --- Scene refs ---
@@ -159,6 +160,7 @@ var _chair_sounds: Array[AudioStream] = []
 var _chair_audio_players: Array[AudioStreamPlayer] = []
 
 var _chalk_short_stream: AudioStream = null
+var _chalk_medium_stream: AudioStream = null
 var _chalk_long_stream: AudioStream = null
 var _chalk_audio_player: AudioStreamPlayer = null
 ## The pages fed to the dialogue box for the current lecture, so a page_advanced
@@ -677,25 +679,26 @@ func _play_after_delay(player: AudioStreamPlayer, delay: float) -> void:
 
 func _setup_chalk_audio() -> void:
 	_chalk_short_stream = load(CHALK_SHORT_SOUND_PATH) as AudioStream
+	_chalk_medium_stream = load(CHALK_MEDIUM_SOUND_PATH) as AudioStream
 	_chalk_long_stream = load(CHALK_LONG_SOUND_PATH) as AudioStream
-	if _chalk_short_stream != null or _chalk_long_stream != null:
+	if _chalk_short_stream != null or _chalk_medium_stream != null or _chalk_long_stream != null:
 		_chalk_audio_player = AudioStreamPlayer.new()
 		_chalk_audio_player.name = "ChalkAudioPlayer"
 		add_child(_chalk_audio_player)
 
 
 ## As each lecture page is shown, play a chalk scratch on the pages whose stage
-## direction has the teacher writing on the board. Ms. Okorie's checklist uses the
-## long clip; every other teacher (i.e. Ms. Vey) uses the short one.
+## direction has the teacher writing on the board (see _chalk_stream_for_line for
+## which clip each moment uses).
 func _on_lecture_page_advanced(index: int) -> void:
 	if _scene_phase != SchoolPhase.LECTURE:
 		return
 	if index < 0 or index >= _lecture_pages.size():
 		return
-	if not _is_chalkboard_writing_line(_page_text(_lecture_pages[index])):
+	var text := _page_text(_lecture_pages[index])
+	if not _is_chalkboard_writing_line(text):
 		return
-	var use_long := String(_current_teacher.get("name", "")) == "Ms. Okorie"
-	_play_chalk(use_long)
+	_play_chalk(_chalk_stream_for_line(text))
 
 
 ## True when a lecture line's prose describes the teacher writing on the board.
@@ -715,13 +718,29 @@ func _page_text(page) -> String:
 	return out
 
 
-func _play_chalk(use_long: bool) -> void:
-	if _chalk_audio_player == null:
-		return
-	var stream := _chalk_long_stream if use_long else _chalk_short_stream
+## Picks the chalk clip for a board-writing line:
+##   Ms. Okorie's checklist -> long.
+##   Ms. Vey's timeline stroke -> short; her other writing (her name) -> medium.
+## Falls back to any loaded clip so a missing file never silences the cue.
+func _chalk_stream_for_line(text: String) -> AudioStream:
+	var stream: AudioStream
+	if String(_current_teacher.get("name", "")) == "Ms. Okorie":
+		stream = _chalk_long_stream
+	elif text.to_lower().contains("timeline"):
+		stream = _chalk_short_stream
+	else:
+		stream = _chalk_medium_stream
 	if stream == null:
-		stream = _chalk_short_stream if use_long else _chalk_long_stream
-	if stream == null:
+		stream = _chalk_medium_stream
+		if stream == null:
+			stream = _chalk_short_stream
+		if stream == null:
+			stream = _chalk_long_stream
+	return stream
+
+
+func _play_chalk(stream: AudioStream) -> void:
+	if _chalk_audio_player == null or stream == null:
 		return
 	_chalk_audio_player.stream = stream
 	_chalk_audio_player.play()
