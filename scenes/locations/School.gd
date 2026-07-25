@@ -128,8 +128,8 @@ const CLASS_DISRUPTION_TEACHER: Dictionary = {
 # Looping clock tick that runs for the duration of class (from the lecture up
 # until the bell rings and the post-class steal opportunity begins).
 const CLOCK_SOUND_PATH: String = "res://assets/sounds/clock/clock_ticking.mp3"
-## The ticking clock plays at half volume.
-const CLOCK_VOLUME_SCALE: float = 0.5
+## The ticking clock plays at a quarter volume.
+const CLOCK_VOLUME_SCALE: float = 0.25
 
 # School bell: rings softly as the scene opens (class starting) and a touch louder
 # when class lets out (the post-class steal beat).
@@ -176,8 +176,8 @@ var _chalk_audio_player: AudioStreamPlayer = null
 ## The pages fed to the dialogue box for the current lecture, so a page_advanced
 ## index can be mapped back to its text to spot "writes on the board" moments.
 var _lecture_pages: Array = []
-## Same idea for the intro feedback, so we can ring the bell on the "train of
-## thought interrupted by the bell" line rather than at the scene's start/end.
+## Same idea for the intro feedback, so we can ring the intro's dismissal bell on
+## the "train of thought interrupted by the bell" line instead of at the end.
 var _feedback_pages: Array = []
 
 # --- Run state ---
@@ -203,11 +203,8 @@ func _ready() -> void:
 	_setup_chair_audio()
 	_setup_chalk_audio()
 	_setup_bell_audio()
-	# Ring the opening bell for an ordinary class. The intro class rings its bell
-	# later instead, on the "train of thought interrupted by the bell" line, so it
-	# stays silent here (and never rings at the end).
-	if not _is_intro_school_first():
-		_play_bell(SCHOOL_BELL_START_VOLUME_SCALE)
+	# Ring the opening bell as every school scene begins.
+	_play_bell(SCHOOL_BELL_START_VOLUME_SCALE)
 	_start_class_clock()
 
 	_pick_teacher_and_question()
@@ -728,8 +725,9 @@ func _setup_chalk_audio() -> void:
 
 ## Fires as each dialogue page is shown. During the lecture it plays a chalk
 ## scratch on the "writes on the board" stage directions; during the intro
-## feedback it rings the bell on the "train of thought interrupted by the bell"
-## line (the intro's only bell — see _ready and _enter_post_class_intro).
+## feedback it rings the dismissal bell on the "train of thought interrupted by
+## the bell" line (the intro plays its end bell here instead of at the scene's
+## end; the opening bell still rings in _ready).
 func _on_school_page_advanced(index: int) -> void:
 	if _scene_phase == SchoolPhase.LECTURE:
 		if index < 0 or index >= _lecture_pages.size():

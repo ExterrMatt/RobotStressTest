@@ -603,6 +603,9 @@ func _collect_intro_pickup_item(item: StoreItemData) -> void:
 	if _intro_collected_item_ids.has(item_id):
 		return
 	_intro_collected_item_ids[item_id] = true
+	# Grabbing the items off Ed's table uses the same grab sound as a purchase,
+	# but no coin jingle — nothing is being paid for here.
+	_play_grab_sound()
 
 	if _slot_by_id.has(item_id):
 		var slot := _slot_by_id[item_id] as Control
@@ -682,20 +685,32 @@ func _setup_purchase_audio() -> void:
 
 
 ## A random item-grab sound (±GRAB_PITCH_VARIATION_PERCENT pitch) plus a random
-## coin-bag jingle (no pitch) at the same instant. The coin pick avoids the sounds
-## used by the last COIN_HISTORY_SIZE purchases this session.
+## coin-bag jingle (no pitch) at the same instant — the sound of a paid purchase.
 func _play_purchase_sounds() -> void:
-	if _grab_audio_player != null and not _grab_sounds.is_empty():
-		_grab_audio_player.stream = _grab_sounds[_rng.randi_range(0, _grab_sounds.size() - 1)]
-		var percent := _rng.randi_range(-GRAB_PITCH_VARIATION_PERCENT, GRAB_PITCH_VARIATION_PERCENT)
-		_grab_audio_player.pitch_scale = 1.0 + float(percent) / 100.0
-		_grab_audio_player.play()
+	_play_grab_sound()
+	_play_coin_sound()
 
-	if _coin_audio_player != null and not _coin_sounds.is_empty():
-		var index := _pick_coin_index()
-		_coin_audio_player.stream = _coin_sounds[index]
-		_coin_audio_player.pitch_scale = 1.0
-		_coin_audio_player.play()
+
+## Just the item-grab sound, at a random pitch. Used on its own for the intro
+## pickup, where the items are grabbed for free (so no coin jingle).
+func _play_grab_sound() -> void:
+	if _grab_audio_player == null or _grab_sounds.is_empty():
+		return
+	_grab_audio_player.stream = _grab_sounds[_rng.randi_range(0, _grab_sounds.size() - 1)]
+	var percent := _rng.randi_range(-GRAB_PITCH_VARIATION_PERCENT, GRAB_PITCH_VARIATION_PERCENT)
+	_grab_audio_player.pitch_scale = 1.0 + float(percent) / 100.0
+	_grab_audio_player.play()
+
+
+## A random coin-bag jingle (no pitch), avoiding the sounds used by the last
+## COIN_HISTORY_SIZE purchases this session.
+func _play_coin_sound() -> void:
+	if _coin_audio_player == null or _coin_sounds.is_empty():
+		return
+	var index := _pick_coin_index()
+	_coin_audio_player.stream = _coin_sounds[index]
+	_coin_audio_player.pitch_scale = 1.0
+	_coin_audio_player.play()
 
 
 ## Choose a coin-bag index at random, excluding the last COIN_HISTORY_SIZE picks so
