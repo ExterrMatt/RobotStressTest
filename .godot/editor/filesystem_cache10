@@ -94,8 +94,9 @@ pull_string_off.mp3::AudioStreamMP3::9116314980726540890::1782705557::1782787467
 pull_string_on.mp3::AudioStreamMP3::9205418035882852330::1782705557::1782787467::1::::<><><>0<>0<>4fd5ca5896bab02404504d82c799d1f3<>res://.godot/imported/pull_string_on.mp3-0a52c0aeec4b65072d15c7014a530839.mp3str::
 ::res://assets/sounds/rip_cord/::1782787467
 ripcord.mp3::AudioStreamMP3::7776921370237597744::1782705557::1782787467::1::::<><><>0<>0<>c609f09f072d60050f129192a000ff13<>res://.godot/imported/ripcord.mp3-015141b904403b0c9b47b47dfabd9bb1.mp3str::
-::res://assets/sounds/school_bell/::1784940494
-school_bell.mp3::AudioStreamMP3::820401150738533649::1784940000::1784940494::1::::<><><>0<>0<>c08fb16041a169f24f459926776c1c7b<>res://.godot/imported/school_bell.mp3-ff4c4b162b186b336b27092162a2014c.mp3str::
+::res://assets/sounds/school_bell/::1784960950
+school_bell_1.mp3::AudioStreamMP3::8743670151735163181::1784940000::1784960955::1::::<><><>0<>0<>08b9b6e903adbe39a8de225b5a150383<>res://.godot/imported/school_bell_1.mp3-c7c7e83e8d019fc914884c112427385a.mp3str::
+school_bell_2.mp3::AudioStreamMP3::492886049281031607::1784959791::1784960955::1::::<><><>0<>0<>2574ea16fc02ed1d57cae8e5fc05ca44<>res://.godot/imported/school_bell_2.mp3-37e3718a7cbbae9d681772ed41394819.mp3str::
 ::res://assets/sounds/screws/::1782787467
 screw_coming_loose_1.mp3::AudioStreamMP3::8726087367600299402::1782705557::1782787467::1::::<><><>0<>0<>1a4e37f86c69823999299bfcd221c7d1<>res://.godot/imported/screw_coming_loose_1.mp3-a7f1490fd6371eaa9eea396e1cd03ec6.mp3str::
 screw_coming_loose_2.mp3::AudioStreamMP3::4533213884000827316::1782705557::1782787467::1::::<><><>0<>0<>eb32413e4a172f0e51a7d43d30b0629b<>res://.godot/imported/screw_coming_loose_2.mp3-039942818f3b4bff610c21b982080026.mp3str::
@@ -586,7 +587,7 @@ blue_tanktop_uncle_1.png::CompressedTexture2D::7258274744853494497::1784622373::
 blue_tanktop_uncle_2.png::CompressedTexture2D::973487335897910154::1784622374::1784622399::1::::<><><>0<>0<>221074d3c108746a5823ffbc3ea4e7d8<>res://.godot/imported/blue_tanktop_uncle_2.png-e3f2fe928e2a74edf5314fecf4788802.ctex::
 hawaiian_uncle1.png::CompressedTexture2D::197595179381130183::1782705557::1782787468::1::::<><><>0<>0<>5cab6a5c23f764480740986ee021b8f7<>res://.godot/imported/hawaiian_uncle1.png-097c3064282d619f6a9cbfbe252e53c4.ctex::
 hawaiian_uncle2.png::CompressedTexture2D::5015565737273723541::1782705557::1782787468::1::::<><><>0<>0<>7128381d09743914cca874ba2fd2e19a<>res://.godot/imported/hawaiian_uncle2.png-cf33268af468d0de6d2129e1c23b4a6d.ctex::
-::res://assets/textures/icons/::1784956641
+::res://assets/textures/icons/::1784959569
 arc.png::CompressedTexture2D::5919516915562426399::1778899717::1782787469::1::::<><><>0<>0<>0285d4b1add2f60a90aa538fac90d6ed<>res://.godot/imported/arc.png-91e8e2f473dd75804f25cef648f0557e.ctex::
 arc_panel_1.png::CompressedTexture2D::323038522785866367::1778899700::1782787469::1::::<><><>0<>0<>ca3a0a1540921e8823ac90feddd38c2d<>res://.godot/imported/arc_panel_1.png-266eec1ceb8e911fd232ad71dd2b20df.ctex::
 arm.png::CompressedTexture2D::8007349931127588257::1782705557::1782787469::1::::<><><>0<>0<>bd9cf969a723d82a1bbf741cd0c7b838<>res://.godot/imported/arm.png-ef5ffa43b6df3d1da96487ee6ed1aa23.ctex::
@@ -685,7 +686,7 @@ Main.tscn::PackedScene::6014830843503735391::1784665652::0::1::::<><><>0<>0<><>:
 Scanlines.tscn::PackedScene::4620079510714485324::1782705557::0::1::::<><><>0<>0<><>::uid://d3k11cw7sxoh6::::res://shaders/scanlines.gdshader
 Transition.gd::GDScript::6657196936549354663::1782705557::0::1::::<>TextureRect<><>0<>0<><>::
 Transition.tscn::PackedScene::5942311429986572456::1778799880::0::1::::<><><>0<>0<><>::res://scenes/Transition.gd<>uid://cexl7748vgoji::::res://assets/textures/backgrounds/load/FlowerLoad.png
-::res://scenes/locations/::1784958925
+::res://scenes/locations/::1784960828
 DraggableItem.gd::GDScript::4351373448739835074::1784622374::0::1::::DraggableItem<>TextureRect<><>0<>0<><>::
 DroneEncounter.gd::GDScript::4955085017189888894::1784923762::0::1::::DroneEncounter<>LocationBase<><>0<>0<><>::
 DroneEncounter.tscn::PackedScene::7060472199048655531::1784832940::0::1::::<><><>0<>0<><>::uid://ccujr5nfd0mwk::::res://scenes/locations/DroneEncounter.gd<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
@@ -704,7 +705,7 @@ PersonalityTraining.gd::GDScript::2203202251105694777::1782705557::0::1::::<>Loc
 PersonalityTraining.tscn::PackedScene::4323982211143207888::1782705557::0::1::::<><><>0<>0<><>::uid://cyie4hrdescw1::::res://scenes/locations/StubLocation.tscn<>uid://6nioitupg834::::res://scenes/locations/PersonalityTraining.gd<>uid://k8jls1dgr68d::::res://scenes/locations/PersonalityTestRobot.tscn
 PullCord.gd::GDScript::6735275170292713859::1784958607::0::1::::<>Control<><>0<>0<><>::
 RobotHoverBox.gd::GDScript::5774976043214079249::1784665652::0::1::::<>Control<><>0<>1<><>::
-School.gd::GDScript::7587241416541553663::1784958607::0::1::::<>LocationBase<><>0<>0<><>::
+School.gd::GDScript::7587241416541553663::1784960828::0::1::::<>LocationBase<><>0<>0<><>::
 School.tscn::PackedScene::4486802543738284867::1782705557::0::1::::<><><>0<>0<><>::uid://dgdk002rw8p48::::res://scenes/locations/School.gd<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
 Sleep.gd::GDScript::5469452142873545122::1784958607::0::1::::<>LocationBase<><>0<>0<><>::
 Sleep.tscn::PackedScene::3424818502344078674::1784665652::0::1::::<><><>0<>0<><>::uid://cj6pcv21gmhu5::::res://scenes/locations/Sleep.gd<>uid://diah3lxrbt302::::res://assets/textures/backgrounds/sleep/carpet.png<>uid://c1ireuj5oyk8i::::res://assets/textures/backgrounds/sleep/stuff_shadow.png<>uid://by0nkqptr8xp8::::res://assets/textures/backgrounds/sleep/wall.png<>uid://cbi30kr5ewtcf::::res://assets/textures/backgrounds/sleep/stuff.png<>uid://bp8d8hk8ekn5o::::res://assets/textures/backgrounds/sleep/coin.png<>uid://dmwsxwlhb7jni::::res://assets/textures/backgrounds/sleep/left_stuff_under.png<>uid://lcn4l4te5xop::::res://assets/textures/backgrounds/sleep/left_stuff.png<>uid://d1ila1fq45ipp::::res://assets/textures/backgrounds/sleep/bed/drawer.png<>uid://ib5mdj3b37ew::::res://assets/textures/backgrounds/sleep/bed/boots.png<>uid://b6bvilgmtm8kf::::res://assets/textures/backgrounds/sleep/bed/bedframe.png<>uid://tok2soq47nhg::::res://assets/textures/backgrounds/sleep/bed/mattress_texture.png<>uid://c3jdbliob1hk::::res://assets/textures/backgrounds/sleep/bed/mattress_texture_indent_2.png<>uid://bhfm50nuw8cfi::::res://assets/textures/backgrounds/sleep/bed/mattress_edge.png<>uid://dim2jad8d5kma::::res://assets/textures/backgrounds/sleep/bed/pillow_shadow_light.png<>uid://do60demwvspjt::::res://assets/textures/backgrounds/sleep/bed/pillow_shadow_heavy.png<>uid://sjmpdc6r8cly::::res://assets/textures/backgrounds/sleep/bed/pillow.png<>uid://d3fht6umtfbpg::::res://assets/textures/backgrounds/sleep/bed/pillow_indented.png<>uid://bakyutktw30kr::::res://assets/textures/backgrounds/sleep/bed/pillow_slightly_indented.png<>uid://dawhy3fb082em::::res://scenes/locations/StressTestRobot.tscn<>uid://dr8ugk2gassrm::::res://assets/textures/backgrounds/sleep/bed/blanket.png<>uid://bjo7rj73fkj3w::::res://assets/textures/backgrounds/sleep/bed/blanket_bump.png<>uid://ufmxbsfwbwlw::::res://assets/textures/backgrounds/sleep/darkness.png<>uid://cvbl2j3xth0hm::::res://scenes/locations/StressTestRobotShadow.gd
