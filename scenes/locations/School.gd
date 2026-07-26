@@ -653,8 +653,10 @@ func _finish_school() -> void:
 
 func _exit_tree() -> void:
 	_stop_class_clock()
+	# Let the ring's current pass ring out (then self-free) instead of cutting it
+	# off — the player is parented to the persistent scene so it survives us.
 	if _phone_ring_player != null and is_instance_valid(_phone_ring_player):
-		_phone_ring_player.stop_loop()
+		_phone_ring_player.release_when_finished()
 
 
 # --- Class clock audio ---
@@ -752,7 +754,13 @@ func _setup_phone_ring_audio() -> void:
 	_phone_ring_player = LoopingSfxPlayer.new()
 	_phone_ring_player.name = "PhoneRingAudioPlayer"
 	_phone_ring_player.configure(load(PHONE_RING_SOUND_PATH) as AudioStream, PHONE_RING_VOLUME_SCALE)
-	add_child(_phone_ring_player)
+	# Parent the ring to a node that outlives this scene (the persistent root
+	# scene) so its final pass rings out fully even after we transition away,
+	# instead of being cut off when this School node is freed.
+	var persistent: Node = get_tree().current_scene
+	if persistent == null:
+		persistent = get_tree().root
+	persistent.add_child(_phone_ring_player)
 
 
 ## Start/stop the looping ringtone based on the current lecture line. The buzz

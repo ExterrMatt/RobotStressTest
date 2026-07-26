@@ -15,6 +15,8 @@ class_name LoopingSfxPlayer
 
 ## Whether a finished pass should be replayed. Toggled off by finish_loop().
 var _looping: bool = false
+## Set by release_when_finished(): free this player once the current pass ends.
+var _free_when_done: bool = false
 
 
 func _ready() -> void:
@@ -45,8 +47,21 @@ func finish_loop() -> void:
 	_looping = false
 
 
-## Hard stop: silence immediately and end the loop. For teardown, not the
-## graceful "let it finish" case above.
+## End the loop and free this player once its current pass rings out (or right
+## now, if nothing is sounding). Parent this player to a node that outlives the
+## caller's scene (e.g. the persistent root scene) before using this, so the
+## final pass keeps playing through a scene transition instead of being cut off
+## when the caller is freed.
+func release_when_finished() -> void:
+	_looping = false
+	if playing:
+		_free_when_done = true
+	else:
+		queue_free()
+
+
+## Hard stop: silence immediately and end the loop. For teardown where the sound
+## SHOULD be cut, not the graceful "let it ring out" case above.
 func stop_loop() -> void:
 	_looping = false
 	stop()
@@ -55,6 +70,8 @@ func stop_loop() -> void:
 func _on_finished() -> void:
 	if _looping:
 		play()
+	elif _free_when_done:
+		queue_free()
 
 
 func _disable_stream_loop(audio_stream: AudioStream) -> void:
