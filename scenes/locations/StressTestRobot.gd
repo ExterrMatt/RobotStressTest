@@ -51,7 +51,11 @@ const GLUG_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/glug/glug_1.mp3",
 	"res://assets/sounds/glug/glug_2.mp3",
 	"res://assets/sounds/glug/glug_3.mp3",
+	"res://assets/sounds/glug/glug_4.mp3",
+	"res://assets/sounds/glug/glug_5.mp3",
 ]
+## The head glug avoids repeating any of its last GLUG_HISTORY_SIZE picks.
+const GLUG_HISTORY_SIZE: int = 2
 const PUMP_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/pump/pump_1.mp3",
 	"res://assets/sounds/pump/pump_2.mp3",
@@ -622,6 +626,8 @@ var _slip_audio_player: AudioStreamPlayer = null
 var _glug_audio_player: AudioStreamPlayer = null
 var _pump_audio_player: AudioStreamPlayer = null
 var _done_audio_player: AudioStreamPlayer = null
+## Glug indices used by the last GLUG_HISTORY_SIZE plays, to avoid repeats.
+var _recent_glug_indices: Array[int] = []
 ## Sides ("left"/"right") whose player hand is currently hidden because that
 ## hand is holding the screwdriver on that side during a stress-test repair.
 var _repair_hidden_hand_sides: Dictionary = {}
@@ -2433,7 +2439,7 @@ func _maybe_play_animation_sound(box: Control, phase: String, frame: int) -> voi
 		match phase:
 			ANIMATION_PHASE_INTRO, ANIMATION_PHASE_LOOP:
 				if is_head:
-					_play_random_anim_sound(_glug_audio_player, _glug_sounds)
+					_play_avoiding_recent(_glug_audio_player, _glug_sounds, _recent_glug_indices, GLUG_HISTORY_SIZE)
 				else:
 					_play_random_anim_sound(_slip_audio_player, _slip_sounds)
 			ANIMATION_PHASE_PRE_OUTRO:
@@ -2447,6 +2453,26 @@ func _play_random_anim_sound(player: AudioStreamPlayer, sounds: Array[AudioStrea
 	if player == null or sounds.is_empty():
 		return
 	_play_anim_sound(player, sounds[_rng.randi_range(0, sounds.size() - 1)])
+
+
+## Play a random sound whose index isn't among the last `history` picks (tracked
+## in `recent`, which is mutated in place). Falls back to the full set if avoiding
+## repeats would leave nothing.
+func _play_avoiding_recent(player: AudioStreamPlayer, sounds: Array[AudioStream], recent: Array[int], history: int) -> void:
+	if player == null or sounds.is_empty():
+		return
+	var candidates: Array[int] = []
+	for i in sounds.size():
+		if not recent.has(i):
+			candidates.append(i)
+	if candidates.is_empty():
+		for i in sounds.size():
+			candidates.append(i)
+	var index: int = candidates[_rng.randi_range(0, candidates.size() - 1)]
+	recent.append(index)
+	while recent.size() > history:
+		recent.pop_front()
+	_play_anim_sound(player, sounds[index])
 
 
 func _play_anim_sound(player: AudioStreamPlayer, stream: AudioStream) -> void:

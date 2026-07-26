@@ -21,6 +21,9 @@ const GENERATOR_CHUG_SOUND_PATH := "res://assets/sounds/generator/generator_chug
 const GENERATOR_SHUTTING_OFF_SOUND_PATH := "res://assets/sounds/generator/generator_shutting_off.mp3"
 const GENERATOR_NO_POWER_SOUND_PATH := "res://assets/sounds/generator/generator_no_power.mp3"
 const EMERGENCY_POWER_BUTTON_SOUND_PATH := "res://assets/sounds/emergency_button/emergency_power_button.mp3"
+## Zap played when the emergency button drives off a patrol drone at the window.
+const ZAP_SOUND_PATH := "res://assets/sounds/zap/zap_3.mp3"
+const ZAP_VOLUME_SCALE: float = 0.25
 ## The running generator hum/chug loops (and the out-of-battery chug) play at 20%.
 const GENERATOR_VOLUME_SCALE: float = 0.2
 ## The manual emergency-button powering-off sound plays a bit louder, at 35%.
@@ -314,6 +317,8 @@ var _generator_chug_audio_player: AudioStreamPlayer = null
 var _generator_shutdown_audio_player: AudioStreamPlayer = null
 var _generator_no_power_audio_player: AudioStreamPlayer = null
 var _emergency_power_button_audio_player: AudioStreamPlayer = null
+var _zap_sound: AudioStream = null
+var _zap_audio_player: AudioStreamPlayer = null
 var _night_ambient_sounds: Array[AudioStream] = []
 var _night_ambient_paths: Array[String] = []
 var _night_ambient_audio_player: AudioStreamPlayer = null
@@ -1119,6 +1124,13 @@ func _initialize_audio_players() -> void:
 		_emergency_power_button_audio_player.name = "EmergencyPowerButtonAudioPlayer"
 		add_child(_emergency_power_button_audio_player)
 
+	_zap_sound = load(ZAP_SOUND_PATH) as AudioStream
+	if _zap_sound != null:
+		_zap_audio_player = AudioStreamPlayer.new()
+		_zap_audio_player.name = "ZapAudioPlayer"
+		_zap_audio_player.volume_db = linear_to_db(ZAP_VOLUME_SCALE)
+		add_child(_zap_audio_player)
+
 	_night_ambient_sounds.clear()
 	_night_ambient_paths.clear()
 	for path in NIGHT_AMBIENT_SOUND_PATHS:
@@ -1704,6 +1716,10 @@ func _zap_patrol_drone_if_active() -> void:
 	if _drone_state == DRONE_NONE or _drone_state == DRONE_ZAP:
 		return
 	_set_drone_state(DRONE_ZAP)
+	if _zap_audio_player != null and _zap_sound != null:
+		_zap_audio_player.stream = _zap_sound
+		_zap_audio_player.pitch_scale = 1.0
+		_zap_audio_player.play()
 
 
 ## Removes the drone and resets its timeline. Safe to call when no drone is
