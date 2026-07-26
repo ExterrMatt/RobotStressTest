@@ -616,9 +616,9 @@ func _initialize_screw_repair_sounds() -> void:
 		var stream := load(path) as AudioStream
 		if stream == null:
 			continue
-		# Loop the whole clip so it repeats seamlessly for as long as the screw is
-		# being driven, rather than playing once.
-		_set_audio_stream_loop(stream, true)
+		# Don't use the stream's built-in loop — we re-play the clip ourselves on
+		# each finish so every repeat can get a fresh random pitch.
+		_set_audio_stream_loop(stream, false)
 		_screw_repair_sounds.append(stream)
 	if _screw_repair_sounds.is_empty():
 		return
@@ -627,10 +627,14 @@ func _initialize_screw_repair_sounds() -> void:
 	_screw_repair_audio_player.name = "ScrewRepairAudioPlayer"
 	_screw_repair_audio_player.volume_db = linear_to_db(SCREW_VOLUME_SCALE)
 	add_child(_screw_repair_audio_player)
+	# Each time the clip ends, restart it (see _on_screw_repair_finished) with a
+	# new pitch, forming the loop.
+	_screw_repair_audio_player.finished.connect(_on_screw_repair_finished)
 
 
 ## Begin a screwing session: pick one screw-in clip at random (never a repeat of
-## the last one) and loop it until the repair finishes or is interrupted.
+## the last one) and loop it — re-rolling the pitch each cycle — until the repair
+## finishes or is interrupted.
 func _start_screw_repair_sound_loop() -> void:
 	if _screw_repair_audio_player == null or _screw_repair_sounds.is_empty():
 		return
@@ -642,10 +646,24 @@ func _start_screw_repair_sound_loop() -> void:
 
 	_repair_sound_loop_active = true
 	_screw_repair_audio_player.stream = _screw_repair_sounds[index]
-	# Fresh random pitch each screwing session, so the loop varies screw to screw.
+	_play_screw_repair_cycle()
+
+
+## (Re)start the current screw-in clip with a fresh random ±SCREW_PITCH_VARIATION
+## pitch, so each loop iteration sounds a little different.
+func _play_screw_repair_cycle() -> void:
+	if _screw_repair_audio_player == null:
+		return
 	var variation := maxf(0.0, SCREW_PITCH_VARIATION)
 	_screw_repair_audio_player.pitch_scale = _rng.randf_range(1.0 - variation, 1.0 + variation)
 	_screw_repair_audio_player.play()
+
+
+## Fires when a screw-in clip finishes; re-plays it (new pitch) while the screwing
+## loop is still active, so the sound repeats until the repair ends.
+func _on_screw_repair_finished() -> void:
+	if _repair_sound_loop_active:
+		_play_screw_repair_cycle()
 
 
 func _stop_screw_repair_sound_loop() -> void:
