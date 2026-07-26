@@ -161,6 +161,14 @@ const CHALK_SHORT_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_short.mp
 const CHALK_MEDIUM_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_medium.mp3"
 const CHALK_LONG_SOUND_PATH: String = "res://assets/sounds/chalk/chalk_long.mp3"
 
+# The robot's phone call during the class-disruption lecture: the ringtone loops
+# while the "your phone buzzes in your pocket" line is on screen and stops (its
+# current pass rings out) the moment the player advances to the next line.
+const PHONE_RING_SOUND_PATH: String = "res://assets/sounds/ringtone/ringtone.mp3"
+const PHONE_RING_VOLUME_SCALE: float = 0.5
+## Lower-cased fragment marking the lecture line where the phone starts ringing.
+const PHONE_RING_CUE: String = "buzz"
+
 # --- Scene refs ---
 @onready var dialogue_box: DialogueBox = %DialogueBox
 @onready var choice_grid: GridContainer = %ChoiceGrid
@@ -177,6 +185,9 @@ var _chalk_short_stream: AudioStream = null
 var _chalk_medium_stream: AudioStream = null
 var _chalk_long_stream: AudioStream = null
 var _chalk_audio_player: AudioStreamPlayer = null
+## Looping phone ringtone for the class-disruption call. Loops itself and can be
+## told to end its loop gracefully (current pass rings out) — see LoopingSfxPlayer.
+var _phone_ring_player: LoopingSfxPlayer = null
 ## The pages fed to the dialogue box for the current lecture, so a page_advanced
 ## index can be mapped back to its text to spot "writes on the board" moments.
 var _lecture_pages: Array = []
@@ -207,6 +218,7 @@ func _ready() -> void:
 	_setup_chair_audio()
 	_setup_chalk_audio()
 	_setup_bell_audio()
+	_setup_phone_ring_audio()
 	# Ring the opening bell as every school scene begins.
 	_play_bell()
 	_start_class_clock()
@@ -641,6 +653,8 @@ func _finish_school() -> void:
 
 func _exit_tree() -> void:
 	_stop_class_clock()
+	if _phone_ring_player != null and is_instance_valid(_phone_ring_player):
+		_phone_ring_player.stop_loop()
 
 
 # --- Class clock audio ---
@@ -734,6 +748,25 @@ func _setup_chalk_audio() -> void:
 		add_child(_chalk_audio_player)
 
 
+func _setup_phone_ring_audio() -> void:
+	_phone_ring_player = LoopingSfxPlayer.new()
+	_phone_ring_player.name = "PhoneRingAudioPlayer"
+	_phone_ring_player.configure(load(PHONE_RING_SOUND_PATH) as AudioStream, PHONE_RING_VOLUME_SCALE)
+	add_child(_phone_ring_player)
+
+
+## Start/stop the looping ringtone based on the current lecture line. The buzz
+## line loops the ring; every other line ends the loop gracefully so the ring
+## rings out on its own boundary rather than cutting off.
+func _update_phone_ring(text: String) -> void:
+	if _phone_ring_player == null:
+		return
+	if text.to_lower().contains(PHONE_RING_CUE):
+		_phone_ring_player.start_loop()
+	else:
+		_phone_ring_player.finish_loop()
+
+
 ## Fires as each dialogue page is shown. During the lecture it plays a chalk
 ## scratch on the "writes on the board" stage directions; during the intro
 ## feedback it rings the dismissal bell on the "train of thought interrupted by
@@ -744,6 +777,9 @@ func _on_school_page_advanced(index: int) -> void:
 		if index < 0 or index >= _lecture_pages.size():
 			return
 		var text := _page_text(_lecture_pages[index])
+		# Loop the ringtone while the "phone buzzes in your pocket" line is up;
+		# any other line ends the loop (the current ring pass finishes on its own).
+		_update_phone_ring(text)
 		if _is_chalkboard_writing_line(text):
 			_play_chalk(_chalk_stream_for_line(text))
 	elif _scene_phase == SchoolPhase.FEEDBACK:

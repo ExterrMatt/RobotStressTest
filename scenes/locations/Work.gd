@@ -41,6 +41,13 @@ const WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/b
 const WORK_ARM_OVERLAY_TEXTURE_PATH: String = "res://assets/textures/icons/work_arm.png"
 ## Lower-cased fragment of the disruption line that hides the arm overlay.
 const WORK_ARM_PACKED_CUE: String = "pack the upper arm"
+## The robot's phone call opens the disruption with the phone buzzing in the
+## player's pocket. The ringtone loops while that line is on screen and ends its
+## loop (current pass rings out) the moment the player advances to the next line.
+const PHONE_RING_SOUND_PATH: String = "res://assets/sounds/ringtone/ringtone.mp3"
+const PHONE_RING_VOLUME_SCALE: float = 0.5
+## Lower-cased fragment marking the disruption line where the phone starts ringing.
+const PHONE_RING_CUE: String = "buzz"
 const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
@@ -89,6 +96,9 @@ var _arm_minigame: WorkArmMinigame = null
 ## the pages driving that call (so a page index maps back to its text).
 var _work_arm_overlay: TextureRect = null
 var _work_disruption_pages: Array = []
+## Looping phone ringtone for the robot's disruption call. Loops itself and ends
+## its loop gracefully (current pass rings out) — see LoopingSfxPlayer.
+var _phone_ring_player: LoopingSfxPlayer = null
 
 
 func _ready() -> void:
@@ -106,6 +116,7 @@ func _ready() -> void:
 	# once the gold prompt is done typing out.
 	dialogue_box.finished.connect(_on_dialogue_finished)
 	dialogue_box.page_advanced.connect(_on_dialogue_page_advanced)
+	_setup_phone_ring_audio()
 
 	_intro_work = _is_intro_work_scene()
 	set_process(false)
@@ -342,9 +353,13 @@ func _on_dialogue_page_advanced(index: int) -> void:
 			else:
 				_set_scene_image(FACTORY_BOX_BACKGROUND_TEXTURE_PATH)
 	elif _scene_phase == WorkPhase.WORK_DISRUPTION:
-		# Once the line says the arm goes in the bag, take it off the table.
 		if index >= 0 and index < _work_disruption_pages.size():
-			if _page_text(_work_disruption_pages[index]).to_lower().contains(WORK_ARM_PACKED_CUE):
+			var text := _page_text(_work_disruption_pages[index])
+			# Loop the ringtone while the "phone buzzing in your pocket" line is
+			# up; any other line ends the loop (the current ring pass rings out).
+			_update_phone_ring(text)
+			# Once the line says the arm goes in the bag, take it off the table.
+			if text.to_lower().contains(WORK_ARM_PACKED_CUE):
 				_hide_work_arm_overlay()
 
 
@@ -515,6 +530,25 @@ func _hide_work_arm_overlay() -> void:
 		_work_arm_overlay.visible = false
 
 
+func _setup_phone_ring_audio() -> void:
+	_phone_ring_player = LoopingSfxPlayer.new()
+	_phone_ring_player.name = "PhoneRingAudioPlayer"
+	_phone_ring_player.configure(load(PHONE_RING_SOUND_PATH) as AudioStream, PHONE_RING_VOLUME_SCALE)
+	add_child(_phone_ring_player)
+
+
+## Start/stop the looping ringtone based on the current disruption line. The buzz
+## line loops the ring; every other line ends the loop gracefully so the ring
+## rings out on its own boundary rather than cutting off.
+func _update_phone_ring(text: String) -> void:
+	if _phone_ring_player == null:
+		return
+	if text.to_lower().contains(PHONE_RING_CUE):
+		_phone_ring_player.start_loop()
+	else:
+		_phone_ring_player.finish_loop()
+
+
 ## Flatten a dialogue page (its lines) into one string for text matching.
 func _page_text(page) -> String:
 	var out := ""
@@ -605,6 +639,8 @@ func _on_dialogue_finished() -> void:
 
 func _exit_tree() -> void:
 	_disable_work_hud_timer()
+	if _phone_ring_player != null and is_instance_valid(_phone_ring_player):
+		_phone_ring_player.stop_loop()
 	var main: Node = get_tree().current_scene
 	# If the next location already loaded (e.g. the drone encounter after a
 	# shift), it owns the overlays now — don't wipe them on our deferred exit.
