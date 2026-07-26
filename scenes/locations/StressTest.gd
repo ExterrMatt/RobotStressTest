@@ -26,8 +26,8 @@ const ZAP_SOUND_PATH := "res://assets/sounds/zap/zap_3.mp3"
 const ZAP_VOLUME_SCALE: float = 0.25
 ## The running generator hum/chug loops (and the out-of-battery chug) play at 20%.
 const GENERATOR_VOLUME_SCALE: float = 0.2
-## The manual emergency-button powering-off sound plays a bit louder, at 35%.
-const GENERATOR_SHUTTING_OFF_VOLUME_SCALE: float = 0.35
+## The manual emergency-button powering-off sound, at 17.5% (half of its old 35%).
+const GENERATOR_SHUTTING_OFF_VOLUME_SCALE: float = 0.175
 ## The rip-cord pull plays at a quarter volume.
 const RIP_CORD_VOLUME_SCALE: float = 0.25
 const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [

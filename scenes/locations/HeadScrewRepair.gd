@@ -19,7 +19,9 @@ const SCREW_REPAIR_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/screws/screw_in_3.mp3",
 	"res://assets/sounds/screws/screw_in_4.mp3",
 ]
-const SCREW_LOOSEN_PITCH_VARIATION: float = 0.15
+## Random pitch spread applied to every screw sound (loosen, and each screw-in
+## loop): ±10% (pitch_scale 0.90 .. 1.10).
+const SCREW_PITCH_VARIATION: float = 0.10
 ## All screw sounds (loosen + screw-in) play at 40% volume (reduced by 60%).
 const SCREW_VOLUME_SCALE: float = 0.4
 ## Fallback path for the bare-hand screwing animation, used when the player owns
@@ -205,7 +207,7 @@ func _play_screw_loosen_sound() -> void:
 		sound_index = (sound_index + _rng.randi_range(1, _screw_loosen_sounds.size() - 1)) % _screw_loosen_sounds.size()
 	_last_screw_loosen_sound_index = sound_index
 
-	var variation := maxf(0.0, SCREW_LOOSEN_PITCH_VARIATION)
+	var variation := maxf(0.0, SCREW_PITCH_VARIATION)
 	_screw_loosen_audio_player.stream = _screw_loosen_sounds[sound_index]
 	_screw_loosen_audio_player.pitch_scale = _rng.randf_range(1.0 - variation, 1.0 + variation)
 	_screw_loosen_audio_player.play()
@@ -640,7 +642,9 @@ func _start_screw_repair_sound_loop() -> void:
 
 	_repair_sound_loop_active = true
 	_screw_repair_audio_player.stream = _screw_repair_sounds[index]
-	_screw_repair_audio_player.pitch_scale = 1.0
+	# Fresh random pitch each screwing session, so the loop varies screw to screw.
+	var variation := maxf(0.0, SCREW_PITCH_VARIATION)
+	_screw_repair_audio_player.pitch_scale = _rng.randf_range(1.0 - variation, 1.0 + variation)
 	_screw_repair_audio_player.play()
 
 
