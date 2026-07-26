@@ -76,6 +76,19 @@ const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryO
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
+
+## Door sounds that play as the framed picture crosses in or out of "the
+## bedroom scene" — the hub selection screen and any bedroom-backed dialogue
+## step (scenes whose background is one of the bedroom_*.png textures). Open
+## plays when a bedroom scene is entered (including its dialogue); close plays
+## when leaving the bedroom for any other location. Locations that swap in their
+## own art (School, Work, Store, Sleep, Stress Test, …) are NOT bedroom scenes.
+const DOOR_OPEN_SOUND_PATH: String = "res://assets/sounds/door/door_open.mp3"
+const DOOR_CLOSE_SOUND_PATH: String = "res://assets/sounds/door/door_close.mp3"
+## Substring that marks a background texture as a bedroom scene. All three phase
+## backgrounds live under this path (bedroom_morning/evening/night.png), as do
+## the intro bedroom dialogue previews.
+const BEDROOM_TEXTURE_MARKER: String = "bedroom"
 ## Patrol-drone street inspection that plays after a regular (non-intro) school
 ## or work run: a chance the drone stops the player before the day advances. It
 ## is loaded like a normal dialogue location (its own LocationData below), so it
@@ -356,6 +369,12 @@ var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
 var _intro_sequence_enabled: bool = false
 var _suppress_phase_selection_refresh: bool = false
+
+## Tracks whether the framed picture is currently showing a bedroom scene, so
+## the door sounds only fire on an actual bedroom<->elsewhere crossing (not on
+## every same-side swap, e.g. bedroom dialogue -> bedroom hub). Starts false so
+## the first bedroom scene the game shows opens the door.
+var _in_bedroom_scene: bool = false
 
 func _ready() -> void:
 	_create_mouse_tooltip()
@@ -1942,6 +1961,9 @@ func _apply_selection_screen_swap(animate_slide: bool = true) -> void:
 	else:
 		swap_visuals.call()
 
+	# The hub selection screen is always a bedroom scene.
+	_update_bedroom_scene_audio(true)
+
 	_apply_scene_presentation_mode()
 
 	# Selection screen always uses the default frame size. Animate back to
@@ -1971,6 +1993,47 @@ func _restore_fullscreen_layout_for_shrink() -> void:
 
 func _selection_narration_text() -> String:
 	return "Where will you go?"
+
+
+## True when the given background belongs to the bedroom (any bedroom_*.png).
+## AtlasTextures (used by some intro previews with a region) are unwrapped to
+## their source atlas so the marker check still sees the underlying path.
+func _texture_is_bedroom(tex: Texture2D) -> bool:
+	if tex == null:
+		return false
+	var path := tex.resource_path
+	if path.is_empty() and tex is AtlasTexture:
+		var atlas := (tex as AtlasTexture).atlas
+		if atlas != null:
+			path = atlas.resource_path
+	return path.contains(BEDROOM_TEXTURE_MARKER)
+
+
+## Plays the door sound whenever the picture crosses between the bedroom and
+## elsewhere: open on entering a bedroom scene, close on leaving one. No sound
+## fires for same-side swaps (bedroom dialogue -> hub, or location -> location).
+func _update_bedroom_scene_audio(is_bedroom: bool) -> void:
+	if is_bedroom == _in_bedroom_scene:
+		return
+	_in_bedroom_scene = is_bedroom
+	_play_door_sound(DOOR_OPEN_SOUND_PATH if is_bedroom else DOOR_CLOSE_SOUND_PATH)
+
+
+## Fires a one-shot door SFX on a self-freeing AudioStreamPlayer, honouring the
+## default SFX level (the master bus already carries the player's volume setting).
+func _play_door_sound(path: String) -> void:
+	if Engine.is_editor_hint():
+		return
+	var stream := load(path) as AudioStream
+	if stream == null:
+		return
+	var player := AudioStreamPlayer.new()
+	player.name = "DoorAudioPlayer"
+	player.stream = stream
+	player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
+	add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
 
 
 func _add_choice_entry(btn: Button, loc: LocationData) -> void:
@@ -2255,6 +2318,10 @@ func _apply_location_pick_swap(
 		_run_with_frame_slide(swap_visuals)
 	else:
 		swap_visuals.call()
+
+	# Bedroom-backed dialogue steps (intro exposition, evening room, etc.) count
+	# as entering the bedroom; every other location counts as leaving it.
+	_update_bedroom_scene_audio(_texture_is_bedroom(loc.preview_texture))
 
 	_apply_scene_presentation_mode()
 
