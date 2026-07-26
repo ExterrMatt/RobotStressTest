@@ -31,7 +31,7 @@ const GENERATOR_SHUTTING_OFF_VOLUME_SCALE: float = 0.35
 ## The rip-cord pull plays at a quarter volume.
 const RIP_CORD_VOLUME_SCALE: float = 0.25
 const NIGHT_AMBIENT_SOUND_PATHS: Array[String] = [
-	"res://assets/sounds/night_sounds/1_min_night_sounds.mp3",
+	"res://assets/sounds/night_sounds/3_min_night_sounds.mp3",
 ]
 const NIGHT_AMBIENT_LOUD_VOLUME_SCALE: float = 0.5
 
