@@ -89,6 +89,12 @@ const DOOR_CLOSE_SOUND_PATH: String = "res://assets/sounds/door/door_close.mp3"
 ## backgrounds live under this path (bedroom_morning/evening/night.png), as do
 ## the intro bedroom dialogue previews.
 const BEDROOM_TEXTURE_MARKER: String = "bedroom"
+## Locations that take place inside the bedroom itself (no door is used to reach
+## them — the player never leaves the room), so entering or leaving them must NOT
+## play the bedroom door sounds. Sleep is the player going to bed in this room.
+const BEDROOM_LOCATION_IDS: Dictionary = {
+	&"sleep": true,
+}
 ## Patrol-drone street inspection that plays after a regular (non-intro) school
 ## or work run: a chance the drone stops the player before the day advances. It
 ## is loaded like a normal dialogue location (its own LocationData below), so it
@@ -2320,8 +2326,11 @@ func _apply_location_pick_swap(
 		swap_visuals.call()
 
 	# Bedroom-backed dialogue steps (intro exposition, evening room, etc.) count
-	# as entering the bedroom; every other location counts as leaving it.
-	_update_bedroom_scene_audio(_texture_is_bedroom(loc.preview_texture))
+	# as entering the bedroom, as do in-room locations like Sleep; every other
+	# location counts as leaving it. In-room locations keep the door silent since
+	# the player never actually leaves the room to reach them.
+	var is_bedroom_scene := _texture_is_bedroom(loc.preview_texture) or BEDROOM_LOCATION_IDS.has(loc.id)
+	_update_bedroom_scene_audio(is_bedroom_scene)
 
 	_apply_scene_presentation_mode()
 
