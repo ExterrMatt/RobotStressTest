@@ -72,13 +72,16 @@ const COIN_HISTORY_SIZE: int = 2
 ## shop. The electronic variant in the same folder is deliberately not used.
 const STORE_BELL_SOUND_PATH: String = "res://assets/sounds/store_bell/store_bell.mp3"
 ## Ed's own door, played when the intro dialogue says he walks in from the back.
+## He unlocks the door first, so the two play as a sequence: unlock -> Ed's door.
 const ED_DOOR_SOUND_PATH: String = "res://assets/sounds/door/ed_door.mp3"
+const DOOR_UNLOCK_SOUND_PATH: String = "res://assets/sounds/door/door_unlock.mp3"
 ## Lower-cased fragment of the store_intro line where Ed enters the room.
 const ED_ENTERS_CUE: String = "appears from the back"
-## Light-bulb hum that runs the whole time the player is in Ed's shop — both the
-## normal store scene and the intro cut scene — held at 15% so it just underlays.
-const LIGHT_BULB_HUM_SOUND_PATH: String = "res://assets/sounds/light_bulb/light_bulb_hum.mp3"
-const LIGHT_BULB_HUM_VOLUME_SCALE: float = 0.15
+## Fluorescent-light buzz that runs the whole time the player is in Ed's shop —
+## both the normal store scene and the intro cut scene — held at 15% so it just
+## underlays.
+const FLUORESCENT_LIGHT_SOUND_PATH: String = "res://assets/sounds/factory_noises/fluorescent_light.mp3"
+const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.15
 
 ## Coin indices used by the last COIN_HISTORY_SIZE purchases this session.
 static var _recent_coin_indices: Array[int] = []
@@ -118,8 +121,8 @@ var _grab_sounds: Array[AudioStream] = []
 var _coin_sounds: Array[AudioStream] = []
 var _grab_audio_player: AudioStreamPlayer = null
 var _coin_audio_player: AudioStreamPlayer = null
-## Looping light-bulb hum ambiance for the shop (see LIGHT_BULB_HUM_*).
-var _light_bulb_hum_player: AudioStreamPlayer = null
+## Looping fluorescent-light ambiance for the shop (see FLUORESCENT_LIGHT_*).
+var _fluorescent_light_player: AudioStreamPlayer = null
 ## Pages of the currently-playing intro dialogue, so a page_advanced index can be
 ## mapped back to its prose (used to fire Ed's door on the "he walks in" line).
 var _intro_dialogue_pages: Array = []
@@ -140,9 +143,10 @@ func _ready() -> void:
 	_setup_purchase_audio()
 
 	# The player has just walked into Ed's shop: ring the door bell once and start
-	# the light-bulb hum that underlays the whole visit (normal store and intro).
+	# the fluorescent-light buzz that underlays the whole visit (normal store and
+	# intro).
 	play_oneshot_sound(STORE_BELL_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
-	_start_light_bulb_hum()
+	_start_fluorescent_light()
 
 	Dialogue.load_file("intro", "res://data/dialogue/intro.dlg")
 	if dialogue_box != null:
@@ -206,7 +210,8 @@ func _on_store_dialogue_page_advanced(index: int) -> void:
 	if index < 0 or index >= _intro_dialogue_pages.size():
 		return
 	if page_to_text(_intro_dialogue_pages[index]).to_lower().contains(ED_ENTERS_CUE):
-		play_oneshot_sound(ED_DOOR_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
+		# He unlocks the door, then comes through it: unlock -> Ed's door.
+		play_oneshot_sequence([DOOR_UNLOCK_SOUND_PATH, ED_DOOR_SOUND_PATH], GameState.DEFAULT_SFX_VOLUME_SCALE)
 
 
 func _enter_store_ui() -> void:
@@ -246,8 +251,8 @@ func _enter_store_ui() -> void:
 
 
 func _exit_tree() -> void:
-	# The player is leaving the shop — the hum stops with them.
-	_stop_light_bulb_hum()
+	# The player is leaving the shop — the light buzz stops with them.
+	_stop_fluorescent_light()
 	var main: Node = get_tree().current_scene
 	# If the next location already loaded, it owns the shared scene overlay now —
 	# tearing it down here (on our deferred exit) would wipe the incoming scene's
@@ -699,24 +704,24 @@ func _on_purchased_today_changed(_ids: Array) -> void:
 	_refresh_all_slots()
 
 
-# --- light-bulb hum ambiance ---
+# --- fluorescent-light ambiance ---
 
-func _start_light_bulb_hum() -> void:
-	var stream := load(LIGHT_BULB_HUM_SOUND_PATH) as AudioStream
+func _start_fluorescent_light() -> void:
+	var stream := load(FLUORESCENT_LIGHT_SOUND_PATH) as AudioStream
 	if stream == null:
 		return
 	_set_audio_stream_loop(stream, true)
-	_light_bulb_hum_player = AudioStreamPlayer.new()
-	_light_bulb_hum_player.name = "LightBulbHumAudioPlayer"
-	_light_bulb_hum_player.stream = stream
-	_light_bulb_hum_player.volume_db = linear_to_db(LIGHT_BULB_HUM_VOLUME_SCALE)
-	add_child(_light_bulb_hum_player)
-	_light_bulb_hum_player.play()
+	_fluorescent_light_player = AudioStreamPlayer.new()
+	_fluorescent_light_player.name = "FluorescentLightAudioPlayer"
+	_fluorescent_light_player.stream = stream
+	_fluorescent_light_player.volume_db = linear_to_db(FLUORESCENT_LIGHT_VOLUME_SCALE)
+	add_child(_fluorescent_light_player)
+	_fluorescent_light_player.play()
 
 
-func _stop_light_bulb_hum() -> void:
-	if _light_bulb_hum_player != null and is_instance_valid(_light_bulb_hum_player):
-		_light_bulb_hum_player.stop()
+func _stop_fluorescent_light() -> void:
+	if _fluorescent_light_player != null and is_instance_valid(_fluorescent_light_player):
+		_fluorescent_light_player.stop()
 
 
 func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:

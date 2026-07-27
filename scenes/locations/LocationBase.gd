@@ -132,6 +132,33 @@ func play_oneshot_sound(sound_path: String, volume_scale: float = -1.0) -> void:
 	player.play()
 
 
+## Play one-shot SFX back-to-back: each clip starts only when the previous one
+## finishes, so callers get a real sequence (e.g. unlock -> door, or close ->
+## lock) rather than an overlapping stack. Fire-and-forget; each player self-frees
+## as it completes. A clip that fails to load is skipped so the rest still plays.
+func play_oneshot_sequence(sound_paths: Array, volume_scale: float = -1.0) -> void:
+	_play_oneshot_sequence_step(sound_paths, 0, volume_scale)
+
+
+func _play_oneshot_sequence_step(sound_paths: Array, index: int, volume_scale: float) -> void:
+	if index < 0 or index >= sound_paths.size():
+		return
+	var stream := load(String(sound_paths[index])) as AudioStream
+	if stream == null:
+		_play_oneshot_sequence_step(sound_paths, index + 1, volume_scale)
+		return
+	var scale: float = volume_scale if volume_scale >= 0.0 else GameState.DEFAULT_SFX_VOLUME_SCALE
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = linear_to_db(scale)
+	add_child(player)
+	player.finished.connect(func() -> void:
+		player.queue_free()
+		_play_oneshot_sequence_step(sound_paths, index + 1, volume_scale)
+	)
+	player.play()
+
+
 ## Convenience: build a result dict and emit. Subclasses call this when done.
 ## `contraband` is the display name of anything the player stole this scene
 ## (e.g. "pile of nanobots"); empty means they left clean. The patrol-drone

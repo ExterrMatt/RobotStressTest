@@ -17,21 +17,23 @@ const ROBOT_FIRST_TALK_HELLO_MATCH: String = "hello"
 ## living-room store_outro scene uses the Hawaiian outfit instead.
 const BLUE_SHIRT_UNCLE_STEPS: Array[String] = ["exposition", "evening_room"]
 
-## SFX cued off store_outro prose. Each entry fires its sound once, on the first
-## page whose (lower-cased) text contains the cue:
+## SFX cued off store_outro prose. Each entry fires its sound(s) once, on the
+## first page whose (lower-cased) text contains the cue. "sounds" is a sequence
+## played back-to-back (each clip starts when the previous finishes):
 ##   - the player zips their bag shut back in Ed's shop,
-##   - Ed leaves the room (retreats into his office and locks the door),
+##   - Ed leaves the room: the door closes, then he locks it behind him,
 ##   - the player drops the haul off at their uncle's,
 ##   - the uncle reaches over and opens the bag.
 const DOOR_CLOSE_SOUND_PATH: String = "res://assets/sounds/door/door_close.mp3"
+const DOOR_LOCK_SOUND_PATH: String = "res://assets/sounds/door/door_lock.mp3"
 const ZIP_CLOSING_SOUND_PATH: String = "res://assets/sounds/backpack/zip_closing.mp3"
 const ZIP_OPENING_SOUND_PATH: String = "res://assets/sounds/backpack/zip_opening.mp3"
 const BACKPACK_DROP_SOUND_PATH: String = "res://assets/sounds/backpack/backpack_drop.mp3"
 const STORE_OUTRO_SOUND_CUES: Array[Dictionary] = [
-	{"cue": "zipping your bag", "path": ZIP_CLOSING_SOUND_PATH},
-	{"cue": "retreats", "path": DOOR_CLOSE_SOUND_PATH},
-	{"cue": "drop everything off", "path": BACKPACK_DROP_SOUND_PATH},
-	{"cue": "reaches over to the backpack", "path": ZIP_OPENING_SOUND_PATH},
+	{"cue": "zipping your bag", "sounds": [ZIP_CLOSING_SOUND_PATH]},
+	{"cue": "retreats", "sounds": [DOOR_CLOSE_SOUND_PATH, DOOR_LOCK_SOUND_PATH]},
+	{"cue": "drop everything off", "sounds": [BACKPACK_DROP_SOUND_PATH]},
+	{"cue": "reaches over to the backpack", "sounds": [ZIP_OPENING_SOUND_PATH]},
 ]
 
 @onready var dialogue_box: DialogueBox = %DialogueBox
@@ -190,9 +192,9 @@ func _on_page_advanced(index: int) -> void:
 
 
 ## Fire any STORE_OUTRO_SOUND_CUES whose cue appears in the current page's prose
-## (bag zip, Ed's door, backpack drop, uncle opening the bag). Each cue plays
-## once; a single page may trigger more than one (the opening line both zips the
-## bag and locks Ed's door).
+## (bag zip, Ed's door closing+locking, backpack drop, uncle opening the bag).
+## Each cue plays once; a single page may trigger more than one (the opening line
+## both zips the bag and closes+locks Ed's door).
 func _maybe_play_store_outro_sound_cues(index: int) -> void:
 	if index < 0 or index >= _intro_pages.size():
 		return
@@ -203,7 +205,7 @@ func _maybe_play_store_outro_sound_cues(index: int) -> void:
 			continue
 		if text.contains(cue):
 			_store_outro_cues_played[cue] = true
-			play_oneshot_sound(String(entry["path"]), GameState.DEFAULT_SFX_VOLUME_SCALE)
+			play_oneshot_sequence(entry["sounds"], GameState.DEFAULT_SFX_VOLUME_SCALE)
 
 
 func _apply_intro_visuals(key: String) -> void:
