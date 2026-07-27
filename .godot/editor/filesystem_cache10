@@ -5,7 +5,7 @@ icon.svg::CompressedTexture2D::4062773066978308223::1778711437::1782787469::1:::
 ::res://assets/::1782705556
 ::res://assets/fonts/::1782787467
 Jersey10-Regular.ttf::FontFile::8216688361414985612::1778712572::1782787467::1::::<><><>0<>0<>a4319c4db0ecdbc93bf4d1a2a8a5c724<>res://.godot/imported/Jersey10-Regular.ttf-200460e514ca6d2634756f713ee1b38e.fontdata::
-::res://assets/sounds/::1785185115
+::res://assets/sounds/::1785188779
 ::res://assets/sounds/backpack/::1785185163
 backpack_drop.mp3::AudioStreamMP3::4911097706673511313::1785185085::1785185163::1::::<><><>0<>0<>796dd74d3da8e2873608661116284001<>res://.godot/imported/backpack_drop.mp3-6bccab8802e2cab44cf9bebac2cb04ac.mp3str::
 zip_closing.mp3::AudioStreamMP3::2082906111395144856::1785177136::1785185163::1::::<><><>0<>0<>77727b1caf2f70b2e3f447fe3b0086c3<>res://.godot/imported/zip_closing.mp3-f5608861dbe19cbf6ae129977a2245e9.mp3str::
@@ -70,6 +70,8 @@ hand_rub_sharp_1.mp3::AudioStreamMP3::5603648413121037472::1785094931::178509494
 hand_rub_short_1.mp3::AudioStreamMP3::6050096945177096636::1785094931::1785094944::1::::<><><>0<>0<>603ae361a7299e35061726a5e1cc7e45<>res://.godot/imported/hand_rub_short_1.mp3-3931565504d443ac3e5ff7059929bd53.mp3str::
 hand_rub_short_2.mp3::AudioStreamMP3::7523836895604865238::1785094931::1785094944::1::::<><><>0<>0<>6faa50bb4bcd7c4b9708c9fcbb9af34b<>res://.godot/imported/hand_rub_short_2.mp3-ea11cbabc297e498e388c3ebe047f946.mp3str::
 hand_rub_short_3.mp3::AudioStreamMP3::3354513173582047579::1785094931::1785094944::1::::<><><>0<>0<>cf872723472d4f70f7e7f29533cc034a<>res://.godot/imported/hand_rub_short_3.mp3-12a5b8366dabbbad2cca250fc90977a4.mp3str::
+::res://assets/sounds/head_turn/::1785188782
+head_turn.mp3::AudioStreamMP3::5717948001210131531::1785188747::1785188889::1::::<><><>0<>0<>70f7a67968a5fe2760b6dfcf27dc6065<>res://.godot/imported/head_turn.mp3-ff42d51ef4df4606a5b84f069c41cb52.mp3str::
 ::res://assets/sounds/light_bulb/::1782787467
 light_bulb_hum.mp3::AudioStreamMP3::8155990420153091329::1782705556::1782787467::1::::<><><>0<>0<>631407ab827965180b0cd633e2d32dbe<>res://.godot/imported/light_bulb_hum.mp3-7f739b11485640fbc8d265be0b79c6d0.mp3str::
 ::res://assets/sounds/menu_buttons/::1785094944
@@ -624,7 +626,7 @@ blue_tanktop_uncle_1.png::CompressedTexture2D::7258274744853494497::1784622373::
 blue_tanktop_uncle_2.png::CompressedTexture2D::973487335897910154::1784622374::1784622399::1::::<><><>0<>0<>221074d3c108746a5823ffbc3ea4e7d8<>res://.godot/imported/blue_tanktop_uncle_2.png-e3f2fe928e2a74edf5314fecf4788802.ctex::
 hawaiian_uncle1.png::CompressedTexture2D::197595179381130183::1782705557::1782787468::1::::<><><>0<>0<>5cab6a5c23f764480740986ee021b8f7<>res://.godot/imported/hawaiian_uncle1.png-097c3064282d619f6a9cbfbe252e53c4.ctex::
 hawaiian_uncle2.png::CompressedTexture2D::5015565737273723541::1782705557::1782787468::1::::<><><>0<>0<>7128381d09743914cca874ba2fd2e19a<>res://.godot/imported/hawaiian_uncle2.png-cf33268af468d0de6d2129e1c23b4a6d.ctex::
-::res://assets/textures/icons/::1785188352
+::res://assets/textures/icons/::1785188437
 arc.png::CompressedTexture2D::5919516915562426399::1778899717::1782787469::1::::<><><>0<>0<>0285d4b1add2f60a90aa538fac90d6ed<>res://.godot/imported/arc.png-91e8e2f473dd75804f25cef648f0557e.ctex::
 arc_panel_1.png::CompressedTexture2D::323038522785866367::1778899700::1782787469::1::::<><><>0<>0<>ca3a0a1540921e8823ac90feddd38c2d<>res://.godot/imported/arc_panel_1.png-266eec1ceb8e911fd232ad71dd2b20df.ctex::
 arm.png::CompressedTexture2D::8007349931127588257::1782705557::1782787469::1::::<><><>0<>0<>bd9cf969a723d82a1bbf741cd0c7b838<>res://.godot/imported/arm.png-ef5ffa43b6df3d1da96487ee6ed1aa23.ctex::
