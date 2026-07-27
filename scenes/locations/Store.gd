@@ -78,10 +78,10 @@ const DOOR_UNLOCK_SOUND_PATH: String = "res://assets/sounds/door/door_unlock.mp3
 ## Lower-cased fragment of the store_intro line where Ed enters the room.
 const ED_ENTERS_CUE: String = "appears from the back"
 ## Fluorescent-light buzz that runs the whole time the player is in Ed's shop —
-## both the normal store scene and the intro cut scene — held at 15% so it just
-## underlays.
+## both the normal store scene and the intro cut scene — at 60% so the buzz reads
+## clearly over the scene.
 const FLUORESCENT_LIGHT_SOUND_PATH: String = "res://assets/sounds/factory_noises/fluorescent_light.mp3"
-const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.15
+const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
 
 ## Coin indices used by the last COIN_HISTORY_SIZE purchases this session.
 static var _recent_coin_indices: Array[int] = []
