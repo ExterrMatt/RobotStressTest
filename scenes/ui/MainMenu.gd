@@ -1102,7 +1102,7 @@ func _on_brightness_changed(value: float) -> void:
 
 func _current_volume_value() -> float:
 	var settings := get_node_or_null("/root/GameState")
-	return settings.volume_value if settings else 100.0
+	return settings.volume_value if settings else GameState.DEFAULT_VOLUME_VALUE
 
 
 func _on_volume_changed(value: float) -> void:
