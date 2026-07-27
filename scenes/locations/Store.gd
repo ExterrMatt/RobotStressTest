@@ -224,12 +224,13 @@ func _on_store_dialogue_page_advanced(index: int) -> void:
 	if index < 0 or index >= _intro_dialogue_pages.size():
 		return
 	if page_to_text(_intro_dialogue_pages[index]).to_lower().contains(ED_ENTERS_CUE):
-		# He unlocks the door, then comes through it: unlock -> Ed's door. Ed
-		# himself is only revealed once that whole sequence has finished.
+		# He unlocks the door, then comes through it. Reveal Ed the moment the
+		# unlock finishes — he appears as the door swings open — then play the
+		# door-open sound over him.
 		play_oneshot_sequence(
-			[DOOR_UNLOCK_SOUND_PATH, ED_DOOR_SOUND_PATH],
+			[DOOR_UNLOCK_SOUND_PATH],
 			GameState.DEFAULT_SFX_VOLUME_SCALE,
-			_reveal_ed_overlay,
+			_reveal_ed_and_open_door,
 		)
 
 
@@ -727,8 +728,15 @@ func _on_purchased_today_changed(_ids: Array) -> void:
 
 # --- Ed overlay ---
 
-## Reveal Ed over the ed_shop background. Called after the unlock/door sequence
-## finishes on the "he walks in" line. Guarded so a fast dialogue skip (which can
+## Reveal Ed as he comes through the just-unlocked door, then play the door-open
+## sound over him. Called the moment the unlock clip finishes.
+func _reveal_ed_and_open_door() -> void:
+	_reveal_ed_overlay()
+	play_oneshot_sound(ED_DOOR_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
+
+
+## Reveal Ed over the ed_shop background. Called after the unlock finishes on the
+## "he walks in" line. Guarded so a fast dialogue skip (which can
 ## move us on to the store-table pickup before the sequence ends) never mounts Ed
 ## over the wrong background — once the pickup UI is up we simply don't show him.
 func _reveal_ed_overlay() -> void:

@@ -17,6 +17,9 @@ const BLANKET_PULL_SOUND_PATHS: Array[String] = [
 ## Played when the robot's head settles from its raised (animated) pose back onto
 ## the pillow (static).
 const PILLOW_REST_SOUND_PATH: String = "res://assets/sounds/pillow/head_resting_on_pillow.mp3"
+## Played as the player lays down on the mattress to sleep (the second bed click
+## in the no-robot bedroom).
+const MATTRESS_SOUND_PATH: String = "res://assets/sounds/bed/laying_on_a_mattress.mp3"
 
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
@@ -43,6 +46,7 @@ var _rng := RandomNumberGenerator.new()
 var _blanket_sounds: Array[AudioStream] = []
 var _blanket_audio_player: AudioStreamPlayer = null
 var _pillow_audio_player: AudioStreamPlayer = null
+var _mattress_stream: AudioStream = null
 
 
 func _ready() -> void:
@@ -102,6 +106,7 @@ func _process(_delta: float) -> void:
 		blanket_bump.visible = false
 		_play_blanket_pull_sound()
 		return
+	_play_mattress_sound()
 	finish()
 
 
@@ -256,6 +261,7 @@ func _on_bed_click_area_gui_input(event: InputEvent) -> void:
 		return
 
 	if not _has_robot_in_bed:
+		_play_mattress_sound()
 		finish()
 
 
@@ -303,6 +309,15 @@ func _setup_sleep_audio() -> void:
 		_pillow_audio_player.stream = pillow_stream
 		_pillow_audio_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
 		add_child(_pillow_audio_player)
+
+	_mattress_stream = load(MATTRESS_SOUND_PATH) as AudioStream
+
+
+## Lay-down SFX as the player gets onto the mattress. Played on a detached player
+## (parented to the persistent scene) so it rings out through the sleep transition
+## that immediately follows finish(), instead of being cut off with this scene.
+func _play_mattress_sound() -> void:
+	play_oneshot_stream_detached(_mattress_stream, GameState.DEFAULT_SFX_VOLUME_SCALE)
 
 
 ## Random blanket-pull sound, no pitch change.
