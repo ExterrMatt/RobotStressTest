@@ -14,3 +14,5 @@ res://scenes/ui/InventoryOverlay.gd
 res://scenes/ui/UiSound.gd
 res://scenes/Main.gd
 res://scenes/ui/LoopingSfxPlayer.gd
+res://scenes/locations/IntroDialogue.gd
+res://scenes/locations/LocationBase.gd
