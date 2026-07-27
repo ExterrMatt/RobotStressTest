@@ -52,6 +52,11 @@ const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
 const MOVIE_SOUND_PATH: String = "res://assets/sounds/movie/the_invisible_man.mp3"
 const MOVIE_VOLUME_SCALE: float = 0.25
 const MOVIE_MIN_REMAINING_SECONDS: float = 60.0
+## The TV is muffled (heard across the room): route it through a low-pass bus.
+## Lower cutoff = more muffled. The bus feeds back into Master so the game volume
+## and mute still apply.
+const MUFFLED_MOVIE_BUS_NAME: String = "MuffledMovie"
+const MOVIE_MUFFLE_CUTOFF_HZ: float = 800.0
 
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
@@ -303,6 +308,7 @@ func _start_living_room_movie() -> void:
 	_movie_player.name = "LivingRoomMovieAudioPlayer"
 	_movie_player.stream = stream
 	_movie_player.volume_db = linear_to_db(MOVIE_VOLUME_SCALE)
+	_movie_player.bus = _ensure_muffled_movie_bus()
 	add_child(_movie_player)
 	# Drop in at a random point, as if the movie's already been playing, but leave
 	# enough runway that it can't land in the last few seconds and go quiet.
@@ -310,6 +316,21 @@ func _start_living_room_movie() -> void:
 	rng.randomize()
 	var runway: float = maxf(0.0, stream.get_length() - MOVIE_MIN_REMAINING_SECONDS)
 	_movie_player.play(rng.randf() * runway)
+
+
+## Return the name of a low-pass "muffled" audio bus (feeding Master), creating it
+## on first use. Idempotent — reused across replays rather than re-added.
+func _ensure_muffled_movie_bus() -> String:
+	if AudioServer.get_bus_index(MUFFLED_MOVIE_BUS_NAME) != -1:
+		return MUFFLED_MOVIE_BUS_NAME
+	var index := AudioServer.bus_count
+	AudioServer.add_bus(index)
+	AudioServer.set_bus_name(index, MUFFLED_MOVIE_BUS_NAME)
+	AudioServer.set_bus_send(index, &"Master")
+	var low_pass := AudioEffectLowPassFilter.new()
+	low_pass.cutoff_hz = MOVIE_MUFFLE_CUTOFF_HZ
+	AudioServer.add_bus_effect(index, low_pass)
+	return MUFFLED_MOVIE_BUS_NAME
 
 
 func _show_uncle_portrait(texture_path: String) -> void:
