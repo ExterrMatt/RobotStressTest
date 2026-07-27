@@ -50,13 +50,16 @@ const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
 ## quiet at 25%. A little runway is left so a random start never lands in the
 ## final seconds and goes silent mid-scene.
 const MOVIE_SOUND_PATH: String = "res://assets/sounds/movie/the_invisible_man.mp3"
-const MOVIE_VOLUME_SCALE: float = 0.25
+const MOVIE_VOLUME_SCALE: float = 0.15
 const MOVIE_MIN_REMAINING_SECONDS: float = 60.0
-## The TV is muffled (heard across the room): route it through a low-pass bus.
-## Lower cutoff = more muffled. The bus feeds back into Master so the game volume
-## and mute still apply.
+## The TV is muffled (heard across the room): route it through a low-pass +
+## panner bus. Lower cutoff = more muffled. The bus feeds back into Master so the
+## game volume and mute still apply.
 const MUFFLED_MOVIE_BUS_NAME: String = "MuffledMovie"
-const MOVIE_MUFFLE_CUTOFF_HZ: float = 800.0
+const MOVIE_MUFFLE_CUTOFF_HZ: float = 400.0
+## Stereo pan for the TV, -1 (full left) .. 1 (full right). 0.4 puts it at roughly
+## 70% right / 30% left ((pan + 1) / 2 = 0.7 to the right).
+const MOVIE_PAN: float = 0.4
 
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
@@ -330,6 +333,9 @@ func _ensure_muffled_movie_bus() -> String:
 	var low_pass := AudioEffectLowPassFilter.new()
 	low_pass.cutoff_hz = MOVIE_MUFFLE_CUTOFF_HZ
 	AudioServer.add_bus_effect(index, low_pass)
+	var panner := AudioEffectPanner.new()
+	panner.pan = MOVIE_PAN
+	AudioServer.add_bus_effect(index, panner)
 	return MUFFLED_MOVIE_BUS_NAME
 
 
