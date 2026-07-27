@@ -68,6 +68,18 @@ const GRAB_PITCH_VARIATION_PERCENT: int = 10
 ## whole session (static, so it survives leaving and re-entering the store).
 const COIN_HISTORY_SIZE: int = 2
 
+## Ordinary (non-electronic) shop-door bell, rung once as the player enters Ed's
+## shop. The electronic variant in the same folder is deliberately not used.
+const STORE_BELL_SOUND_PATH: String = "res://assets/sounds/store_bell/store_bell.mp3"
+## Ed's own door, played when the intro dialogue says he walks in from the back.
+const ED_DOOR_SOUND_PATH: String = "res://assets/sounds/door/ed_door.mp3"
+## Lower-cased fragment of the store_intro line where Ed enters the room.
+const ED_ENTERS_CUE: String = "appears from the back"
+## Light-bulb hum that runs the whole time the player is in Ed's shop — both the
+## normal store scene and the intro cut scene — held at 15% so it just underlays.
+const LIGHT_BULB_HUM_SOUND_PATH: String = "res://assets/sounds/light_bulb/light_bulb_hum.mp3"
+const LIGHT_BULB_HUM_VOLUME_SCALE: float = 0.15
+
 ## Coin indices used by the last COIN_HISTORY_SIZE purchases this session.
 static var _recent_coin_indices: Array[int] = []
 
@@ -106,6 +118,11 @@ var _grab_sounds: Array[AudioStream] = []
 var _coin_sounds: Array[AudioStream] = []
 var _grab_audio_player: AudioStreamPlayer = null
 var _coin_audio_player: AudioStreamPlayer = null
+## Looping light-bulb hum ambiance for the shop (see LIGHT_BULB_HUM_*).
+var _light_bulb_hum_player: AudioStreamPlayer = null
+## Pages of the currently-playing intro dialogue, so a page_advanced index can be
+## mapped back to its prose (used to fire Ed's door on the "he walks in" line).
+var _intro_dialogue_pages: Array = []
 
 
 @onready var furniture_layer: Control = $FurnitureLayer
@@ -122,10 +139,16 @@ func _ready() -> void:
 
 	_setup_purchase_audio()
 
+	# The player has just walked into Ed's shop: ring the door bell once and start
+	# the light-bulb hum that underlays the whole visit (normal store and intro).
+	play_oneshot_sound(STORE_BELL_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
+	_start_light_bulb_hum()
+
 	Dialogue.load_file("intro", "res://data/dialogue/intro.dlg")
 	if dialogue_box != null:
 		dialogue_box.visible = false
 		dialogue_box.finished.connect(_on_intro_dialogue_finished)
+		dialogue_box.page_advanced.connect(_on_store_dialogue_page_advanced)
 
 	if GameState.is_intro_step(INTRO_STORE_STEP):
 		_enter_intro_dialogue("store_intro")
@@ -156,7 +179,8 @@ func _enter_intro_dialogue(dialogue_key: String) -> void:
 
 	if dialogue_box != null:
 		dialogue_box.visible = true
-		dialogue_box.play_pages(Dialogue.get_pages("intro", dialogue_key))
+		_intro_dialogue_pages = Dialogue.get_pages("intro", dialogue_key)
+		dialogue_box.play_pages(_intro_dialogue_pages)
 
 
 func _on_intro_dialogue_finished() -> void:
@@ -172,6 +196,17 @@ func _on_intro_dialogue_finished() -> void:
 			_enter_store_ui()
 	else:
 		_finish_intro_store()
+
+
+## Fires as each intro-dialogue page is shown. Plays Ed's door the moment the
+## store_intro prose says he walks in from the back.
+func _on_store_dialogue_page_advanced(index: int) -> void:
+	if _intro_dialogue_key != "store_intro":
+		return
+	if index < 0 or index >= _intro_dialogue_pages.size():
+		return
+	if page_to_text(_intro_dialogue_pages[index]).to_lower().contains(ED_ENTERS_CUE):
+		play_oneshot_sound(ED_DOOR_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
 
 
 func _enter_store_ui() -> void:
@@ -211,6 +246,8 @@ func _enter_store_ui() -> void:
 
 
 func _exit_tree() -> void:
+	# The player is leaving the shop — the hum stops with them.
+	_stop_light_bulb_hum()
 	var main: Node = get_tree().current_scene
 	# If the next location already loaded, it owns the shared scene overlay now —
 	# tearing it down here (on our deferred exit) would wipe the incoming scene's
@@ -660,6 +697,35 @@ func _on_money_changed(_v: int) -> void:
 
 func _on_purchased_today_changed(_ids: Array) -> void:
 	_refresh_all_slots()
+
+
+# --- light-bulb hum ambiance ---
+
+func _start_light_bulb_hum() -> void:
+	var stream := load(LIGHT_BULB_HUM_SOUND_PATH) as AudioStream
+	if stream == null:
+		return
+	_set_audio_stream_loop(stream, true)
+	_light_bulb_hum_player = AudioStreamPlayer.new()
+	_light_bulb_hum_player.name = "LightBulbHumAudioPlayer"
+	_light_bulb_hum_player.stream = stream
+	_light_bulb_hum_player.volume_db = linear_to_db(LIGHT_BULB_HUM_VOLUME_SCALE)
+	add_child(_light_bulb_hum_player)
+	_light_bulb_hum_player.play()
+
+
+func _stop_light_bulb_hum() -> void:
+	if _light_bulb_hum_player != null and is_instance_valid(_light_bulb_hum_player):
+		_light_bulb_hum_player.stop()
+
+
+func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
+	if stream == null:
+		return
+	for property in stream.get_property_list():
+		if String(property.get("name", "")) == "loop":
+			stream.set("loop", enabled)
+			return
 
 
 # --- purchase audio ---

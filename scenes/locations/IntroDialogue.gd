@@ -17,9 +17,19 @@ const ROBOT_FIRST_TALK_HELLO_MATCH: String = "hello"
 ## living-room store_outro scene uses the Hawaiian outfit instead.
 const BLUE_SHIRT_UNCLE_STEPS: Array[String] = ["exposition", "evening_room"]
 
+## Regular door close, played in the store_outro when Ed leaves the room (he
+## retreats into his office and locks the door behind him).
+const DOOR_CLOSE_SOUND_PATH: String = "res://assets/sounds/door/door_close.mp3"
+## Lower-cased fragment of the store_outro line where Ed leaves.
+const ED_LEAVES_CUE: String = "retreats"
+
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
 var _intro_key: String = ""
+## Pages of the currently-playing intro dialogue, so a page_advanced index maps
+## back to its prose (used to fire the door close on the "Ed leaves" line).
+var _intro_pages: Array = []
+var _ed_leave_sound_played: bool = false
 var _store_outro_home_visual_applied: bool = false
 var _robot_eyes_open_applied: bool = false
 var _robot_hello_page_index: int = ROBOT_FIRST_TALK_HELLO_PAGE_INDEX
@@ -38,7 +48,8 @@ func _ready() -> void:
 		_show_player_name_prompt()
 		return
 	_apply_intro_visuals(_intro_key)
-	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key, _intro_format_vars()))
+	_intro_pages = Dialogue.get_pages("intro", _intro_key, _intro_format_vars())
+	dialogue_box.play_pages(_intro_pages)
 
 
 ## Placeholders substituted into intro prose. {player_name} is the name the
@@ -128,7 +139,8 @@ func _accept_player_name() -> void:
 	# would otherwise seed a hold-skip and eat the uncle's first line, so make
 	# this Enter act purely as a "click continue" on the newly shown dialogue.
 	dialogue_box.suppress_next_enter_hold()
-	dialogue_box.play_pages(Dialogue.get_pages("intro", _intro_key, _intro_format_vars()))
+	_intro_pages = Dialogue.get_pages("intro", _intro_key, _intro_format_vars())
+	dialogue_box.play_pages(_intro_pages)
 
 
 func _on_name_text_changed(new_text: String) -> void:
@@ -152,6 +164,7 @@ func _on_page_advanced(index: int) -> void:
 		return
 	if _intro_key != "store_outro":
 		return
+	_maybe_play_ed_leaves_door(index)
 	if _store_outro_home_visual_applied:
 		return
 	if index < STORE_OUTRO_HOME_PAGE_INDEX:
@@ -162,6 +175,18 @@ func _on_page_advanced(index: int) -> void:
 		main._play_transition_then(Callable(self, "_show_store_outro_home_visuals"))
 	else:
 		_show_store_outro_home_visuals()
+
+
+## Play the regular door close once, on the store_outro line where Ed leaves the
+## room (retreats into his office and locks the door behind him).
+func _maybe_play_ed_leaves_door(index: int) -> void:
+	if _ed_leave_sound_played:
+		return
+	if index < 0 or index >= _intro_pages.size():
+		return
+	if page_to_text(_intro_pages[index]).to_lower().contains(ED_LEAVES_CUE):
+		_ed_leave_sound_played = true
+		play_oneshot_sound(DOOR_CLOSE_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
 
 
 func _apply_intro_visuals(key: String) -> void:

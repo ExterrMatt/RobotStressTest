@@ -104,6 +104,34 @@ func dlg_line(file_id: String, key: String, fmt: Dictionary = {}) -> String:
 	return out
 
 
+## Flatten one dialogue page (its array of lines) into a single space-joined
+## string, so a page_advanced index can be matched against its prose (e.g. to
+## fire a sound cue on a specific line). Returns "" for an empty page.
+func page_to_text(page) -> String:
+	var out: String = ""
+	for line in page:
+		if out != "":
+			out += " "
+		out += String(line)
+	return out
+
+
+## Fire-and-forget one-shot SFX on a self-freeing AudioStreamPlayer at
+## `volume_scale` (0..1); pass < 0 to use the default SFX level. The master bus
+## already carries the player's volume setting.
+func play_oneshot_sound(sound_path: String, volume_scale: float = -1.0) -> void:
+	var stream := load(sound_path) as AudioStream
+	if stream == null:
+		return
+	var scale: float = volume_scale if volume_scale >= 0.0 else GameState.DEFAULT_SFX_VOLUME_SCALE
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = linear_to_db(scale)
+	add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
+
+
 ## Convenience: build a result dict and emit. Subclasses call this when done.
 ## `contraband` is the display name of anything the player stole this scene
 ## (e.g. "pile of nanobots"); empty means they left clean. The patrol-drone
