@@ -13,3 +13,4 @@ res://scenes/locations/WorkshopMinigame.gd
 res://scenes/ui/InventoryOverlay.gd
 res://scenes/ui/UiSound.gd
 res://scenes/Main.gd
+res://scenes/ui/LoopingSfxPlayer.gd

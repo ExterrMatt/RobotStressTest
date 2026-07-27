@@ -257,10 +257,12 @@ It doesn't take in energy.
 It doesn't reproduce.
 
 [class_disruption.feedback.correct]
-Great job, {player_name}! Yes, fire has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
+Ms. Okorie:  \
+[color=#7fdf7f]Great job, {player_name}![/color] \
+Yes, fire has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
 
 [class_disruption.feedback.wrong]
-That wasn't quite it, {player_name}. The reason fire isn't considered alive is because it has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
+Ms. Okorie: That wasn't quite it, {player_name}. The reason fire isn't considered alive is because it has no inside to regulate. It's all reaction, it has no self. That's the thin line between fire and life.
 
 [class_disruption.after]
 You look back down at your phone. She hung up…
