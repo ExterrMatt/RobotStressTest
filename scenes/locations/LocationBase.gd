@@ -132,6 +132,26 @@ func play_oneshot_sound(sound_path: String, volume_scale: float = -1.0) -> void:
 	player.play()
 
 
+## Like play_oneshot_sound, but parents the player to the PERSISTENT root scene
+## instead of this location, so the clip rings out fully even if this location is
+## freed by a scene transition mid-play (e.g. the school dismissal bell as the
+## scene wipes to the bedroom). Self-frees when done. Takes an already-loaded
+## stream so callers that alternate or pitch clips can build their own.
+func play_oneshot_stream_detached(stream: AudioStream, volume_scale: float = -1.0) -> void:
+	if stream == null:
+		return
+	var host: Node = get_tree().current_scene
+	if host == null:
+		host = get_tree().root
+	var scale: float = volume_scale if volume_scale >= 0.0 else GameState.DEFAULT_SFX_VOLUME_SCALE
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = linear_to_db(scale)
+	host.add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
+
+
 ## Play one-shot SFX back-to-back: each clip starts only when the previous one
 ## finishes, so callers get a real sequence (e.g. unlock -> door, or close ->
 ## lock) rather than an overlapping stack. Fire-and-forget; each player self-frees

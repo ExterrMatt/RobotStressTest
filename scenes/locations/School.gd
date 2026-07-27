@@ -175,7 +175,6 @@ const PHONE_RING_CUE: String = "buzz"
 
 var _clock_audio_player: AudioStreamPlayer = null
 var _bell_sounds: Array[AudioStream] = []
-var _bell_audio_player: AudioStreamPlayer = null
 var _last_bell_index: int = -1
 var _chair_rng := RandomNumberGenerator.new()
 var _chair_sounds: Array[AudioStream] = []
@@ -684,22 +683,17 @@ func _setup_bell_audio() -> void:
 		var stream := load(path) as AudioStream
 		if stream != null:
 			_bell_sounds.append(stream)
-	if _bell_sounds.is_empty():
-		return
-	_bell_audio_player = AudioStreamPlayer.new()
-	_bell_audio_player.name = "BellAudioPlayer"
-	_bell_audio_player.volume_db = linear_to_db(SCHOOL_BELL_VOLUME_SCALE)
-	add_child(_bell_audio_player)
 
 
 ## Ring the school bell, alternating between the two clips each time (when both
-## are available). Volume is fixed at SCHOOL_BELL_VOLUME_SCALE on the player.
+## are available). Played on a detached player parented to the persistent scene
+## so the dismissal bell rings out fully even as the scene wipes to the bedroom
+## (rather than being cut off when this School node is freed).
 func _play_bell() -> void:
-	if _bell_audio_player == null or _bell_sounds.is_empty():
+	if _bell_sounds.is_empty():
 		return
 	_last_bell_index = (_last_bell_index + 1) % _bell_sounds.size()
-	_bell_audio_player.stream = _bell_sounds[_last_bell_index]
-	_bell_audio_player.play()
+	play_oneshot_stream_detached(_bell_sounds[_last_bell_index], SCHOOL_BELL_VOLUME_SCALE)
 
 
 func _setup_chair_audio() -> void:
