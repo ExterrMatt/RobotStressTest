@@ -79,9 +79,19 @@ const DOOR_UNLOCK_SOUND_PATH: String = "res://assets/sounds/door/door_unlock.mp3
 const ED_ENTERS_CUE: String = "appears from the back"
 ## Fluorescent-light buzz that runs the whole time the player is in Ed's shop —
 ## both the normal store scene and the intro cut scene — at 60% so the buzz reads
-## clearly over the scene.
+## clearly over the scene. (IntroDialogue mirrors these for the store_outro; keep
+## the two in sync.)
 const FLUORESCENT_LIGHT_SOUND_PATH: String = "res://assets/sounds/factory_noises/fluorescent_light.mp3"
 const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
+
+## Ed himself, shown as a 500x125 overlay over the ed_shop background once he has
+## unlocked and come through the door (revealed after the unlock/door sequence
+## finishes). He is not shown again once we leave the ed_shop view.
+const ED_OVERLAY_TEXTURE_PATH: String = "res://assets/textures/icons/ed.png"
+## Played together when the intro store swaps from the ed_shop dialogue view to
+## the store table: the floorboards creak and the player turns their head.
+const WOOD_CREAK_SOUND_PATH: String = "res://assets/sounds/wood/wood_creak.mp3"
+const HEAD_TURN_SOUND_PATH: String = "res://assets/sounds/head_turn/head_turn.mp3"
 
 ## Coin indices used by the last COIN_HISTORY_SIZE purchases this session.
 static var _recent_coin_indices: Array[int] = []
@@ -121,8 +131,8 @@ var _grab_sounds: Array[AudioStream] = []
 var _coin_sounds: Array[AudioStream] = []
 var _grab_audio_player: AudioStreamPlayer = null
 var _coin_audio_player: AudioStreamPlayer = null
-## Looping fluorescent-light ambiance for the shop (see FLUORESCENT_LIGHT_*).
-var _fluorescent_light_player: AudioStreamPlayer = null
+## Ed's overlay sprite, mounted over the ed_shop background once he comes in.
+var _ed_overlay: TextureRect = null
 ## Pages of the currently-playing intro dialogue, so a page_advanced index can be
 ## mapped back to its prose (used to fire Ed's door on the "he walks in" line).
 var _intro_dialogue_pages: Array = []
@@ -146,7 +156,7 @@ func _ready() -> void:
 	# the fluorescent-light buzz that underlays the whole visit (normal store and
 	# intro).
 	play_oneshot_sound(STORE_BELL_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
-	_start_fluorescent_light()
+	start_ambient_loop(FLUORESCENT_LIGHT_SOUND_PATH, FLUORESCENT_LIGHT_VOLUME_SCALE)
 
 	Dialogue.load_file("intro", "res://data/dialogue/intro.dlg")
 	if dialogue_box != null:
@@ -193,6 +203,10 @@ func _on_intro_dialogue_finished() -> void:
 	if dialogue_box != null:
 		dialogue_box.visible = false
 	if _intro_dialogue_key == "store_intro":
+		# Swapping from the ed_shop dialogue view to the store table: the player
+		# turns to the goods and the floorboards creak underfoot (played together).
+		play_oneshot_sound(WOOD_CREAK_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
+		play_oneshot_sound(HEAD_TURN_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
 		var main: Node = get_tree().current_scene
 		if main != null and main.has_method("_play_transition_then"):
 			main._play_transition_then(Callable(self, "_enter_store_ui"))
@@ -210,8 +224,13 @@ func _on_store_dialogue_page_advanced(index: int) -> void:
 	if index < 0 or index >= _intro_dialogue_pages.size():
 		return
 	if page_to_text(_intro_dialogue_pages[index]).to_lower().contains(ED_ENTERS_CUE):
-		# He unlocks the door, then comes through it: unlock -> Ed's door.
-		play_oneshot_sequence([DOOR_UNLOCK_SOUND_PATH, ED_DOOR_SOUND_PATH], GameState.DEFAULT_SFX_VOLUME_SCALE)
+		# He unlocks the door, then comes through it: unlock -> Ed's door. Ed
+		# himself is only revealed once that whole sequence has finished.
+		play_oneshot_sequence(
+			[DOOR_UNLOCK_SOUND_PATH, ED_DOOR_SOUND_PATH],
+			GameState.DEFAULT_SFX_VOLUME_SCALE,
+			_reveal_ed_overlay,
+		)
 
 
 func _enter_store_ui() -> void:
@@ -251,8 +270,10 @@ func _enter_store_ui() -> void:
 
 
 func _exit_tree() -> void:
-	# The player is leaving the shop — the light buzz stops with them.
-	_stop_fluorescent_light()
+	# In the intro the buzz keeps going into the store_outro (still Ed's shop);
+	# for a normal store visit this is where the player actually leaves, so the
+	# buzz stops. IntroDialogue restarts/owns it for the outro.
+	stop_ambient_loop()
 	var main: Node = get_tree().current_scene
 	# If the next location already loaded, it owns the shared scene overlay now —
 	# tearing it down here (on our deferred exit) would wipe the incoming scene's
@@ -704,33 +725,31 @@ func _on_purchased_today_changed(_ids: Array) -> void:
 	_refresh_all_slots()
 
 
-# --- fluorescent-light ambiance ---
+# --- Ed overlay ---
 
-func _start_fluorescent_light() -> void:
-	var stream := load(FLUORESCENT_LIGHT_SOUND_PATH) as AudioStream
-	if stream == null:
+## Reveal Ed over the ed_shop background. Called after the unlock/door sequence
+## finishes on the "he walks in" line. Guarded so a fast dialogue skip (which can
+## move us on to the store-table pickup before the sequence ends) never mounts Ed
+## over the wrong background — once the pickup UI is up we simply don't show him.
+func _reveal_ed_overlay() -> void:
+	if _store_active:
 		return
-	_set_audio_stream_loop(stream, true)
-	_fluorescent_light_player = AudioStreamPlayer.new()
-	_fluorescent_light_player.name = "FluorescentLightAudioPlayer"
-	_fluorescent_light_player.stream = stream
-	_fluorescent_light_player.volume_db = linear_to_db(FLUORESCENT_LIGHT_VOLUME_SCALE)
-	add_child(_fluorescent_light_player)
-	_fluorescent_light_player.play()
-
-
-func _stop_fluorescent_light() -> void:
-	if _fluorescent_light_player != null and is_instance_valid(_fluorescent_light_player):
-		_fluorescent_light_player.stop()
-
-
-func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
-	if stream == null:
+	if not GameState.is_intro_step(INTRO_STORE_STEP) or _intro_dialogue_key != "store_intro":
 		return
-	for property in stream.get_property_list():
-		if String(property.get("name", "")) == "loop":
-			stream.set("loop", enabled)
-			return
+	var main: Node = get_tree().current_scene
+	if main == null or not main.has_method("show_scene_overlay"):
+		return
+	var texture := load(ED_OVERLAY_TEXTURE_PATH) as Texture2D
+	if texture == null:
+		return
+	_ed_overlay = TextureRect.new()
+	_ed_overlay.name = "EdOverlay"
+	_ed_overlay.texture = texture
+	_ed_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_ed_overlay.stretch_mode = TextureRect.STRETCH_SCALE
+	_ed_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_ed_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	main.show_scene_overlay(_ed_overlay)
 
 
 # --- purchase audio ---

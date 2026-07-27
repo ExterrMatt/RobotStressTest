@@ -156,16 +156,28 @@ func play_oneshot_stream_detached(stream: AudioStream, volume_scale: float = -1.
 ## finishes, so callers get a real sequence (e.g. unlock -> door, or close ->
 ## lock) rather than an overlapping stack. Fire-and-forget; each player self-frees
 ## as it completes. A clip that fails to load is skipped so the rest still plays.
-func play_oneshot_sequence(sound_paths: Array, volume_scale: float = -1.0) -> void:
-	_play_oneshot_sequence_step(sound_paths, 0, volume_scale)
+## `on_complete`, if valid, is called once after the final clip finishes.
+func play_oneshot_sequence(
+	sound_paths: Array,
+	volume_scale: float = -1.0,
+	on_complete: Callable = Callable(),
+) -> void:
+	_play_oneshot_sequence_step(sound_paths, 0, volume_scale, on_complete)
 
 
-func _play_oneshot_sequence_step(sound_paths: Array, index: int, volume_scale: float) -> void:
+func _play_oneshot_sequence_step(
+	sound_paths: Array,
+	index: int,
+	volume_scale: float,
+	on_complete: Callable,
+) -> void:
 	if index < 0 or index >= sound_paths.size():
+		if on_complete.is_valid():
+			on_complete.call()
 		return
 	var stream := load(String(sound_paths[index])) as AudioStream
 	if stream == null:
-		_play_oneshot_sequence_step(sound_paths, index + 1, volume_scale)
+		_play_oneshot_sequence_step(sound_paths, index + 1, volume_scale, on_complete)
 		return
 	var scale: float = volume_scale if volume_scale >= 0.0 else GameState.DEFAULT_SFX_VOLUME_SCALE
 	var player := AudioStreamPlayer.new()
@@ -174,9 +186,45 @@ func _play_oneshot_sequence_step(sound_paths: Array, index: int, volume_scale: f
 	add_child(player)
 	player.finished.connect(func() -> void:
 		player.queue_free()
-		_play_oneshot_sequence_step(sound_paths, index + 1, volume_scale)
+		_play_oneshot_sequence_step(sound_paths, index + 1, volume_scale, on_complete)
 	)
 	player.play()
+
+
+# --- Looping ambient sound (e.g. Ed's-shop fluorescent buzz) ---
+
+var _ambient_loop_player: AudioStreamPlayer = null
+
+## Start a seamless looping ambient bed at `volume_scale` (0..1). Idempotent: a
+## second call while one is already playing is a no-op, so it isn't restarted.
+func start_ambient_loop(sound_path: String, volume_scale: float) -> void:
+	if _ambient_loop_player != null and is_instance_valid(_ambient_loop_player):
+		return
+	var stream := load(sound_path) as AudioStream
+	if stream == null:
+		return
+	_set_ambient_stream_loop(stream, true)
+	_ambient_loop_player = AudioStreamPlayer.new()
+	_ambient_loop_player.name = "AmbientLoopAudioPlayer"
+	_ambient_loop_player.stream = stream
+	_ambient_loop_player.volume_db = linear_to_db(volume_scale)
+	add_child(_ambient_loop_player)
+	_ambient_loop_player.play()
+
+
+## Stop and tear down the ambient loop if one is playing.
+func stop_ambient_loop() -> void:
+	if _ambient_loop_player != null and is_instance_valid(_ambient_loop_player):
+		_ambient_loop_player.stop()
+		_ambient_loop_player.queue_free()
+	_ambient_loop_player = null
+
+
+func _set_ambient_stream_loop(stream: AudioStream, enabled: bool) -> void:
+	for property in stream.get_property_list():
+		if String(property.get("name", "")) == "loop":
+			stream.set("loop", enabled)
+			return
 
 
 ## Convenience: build a result dict and emit. Subclasses call this when done.

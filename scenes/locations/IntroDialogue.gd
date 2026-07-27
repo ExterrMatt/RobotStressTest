@@ -29,12 +29,21 @@ const DOOR_LOCK_SOUND_PATH: String = "res://assets/sounds/door/door_lock.mp3"
 const ZIP_CLOSING_SOUND_PATH: String = "res://assets/sounds/backpack/zip_closing.mp3"
 const ZIP_OPENING_SOUND_PATH: String = "res://assets/sounds/backpack/zip_opening.mp3"
 const BACKPACK_DROP_SOUND_PATH: String = "res://assets/sounds/backpack/backpack_drop.mp3"
+## The bag-zip in Ed's shop is nudged slightly later so it doesn't land right on
+## top of the door close/lock on the same line.
+const ZIP_CLOSING_DELAY_SECONDS: float = 0.3
 const STORE_OUTRO_SOUND_CUES: Array[Dictionary] = [
-	{"cue": "zipping your bag", "sounds": [ZIP_CLOSING_SOUND_PATH]},
+	{"cue": "zipping your bag", "sounds": [ZIP_CLOSING_SOUND_PATH], "delay": ZIP_CLOSING_DELAY_SECONDS},
 	{"cue": "retreats", "sounds": [DOOR_CLOSE_SOUND_PATH, DOOR_LOCK_SOUND_PATH]},
 	{"cue": "drop everything off", "sounds": [BACKPACK_DROP_SOUND_PATH]},
 	{"cue": "reaches over to the backpack", "sounds": [ZIP_OPENING_SOUND_PATH]},
 ]
+
+## Fluorescent-light buzz kept running through the store_outro's Ed's-shop pages
+## (it started back in the Store scene) and stopped only once the scene actually
+## leaves Ed's for the walk home. Mirrors Store.gd's constants — keep in sync.
+const FLUORESCENT_LIGHT_SOUND_PATH: String = "res://assets/sounds/factory_noises/fluorescent_light.mp3"
+const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
 
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
@@ -62,6 +71,10 @@ func _ready() -> void:
 		_show_player_name_prompt()
 		return
 	_apply_intro_visuals(_intro_key)
+	# The store_outro opens still inside Ed's shop: pick the fluorescent buzz back
+	# up (it was playing in the Store scene) and carry it until we leave for home.
+	if _intro_key == "store_outro":
+		start_ambient_loop(FLUORESCENT_LIGHT_SOUND_PATH, FLUORESCENT_LIGHT_VOLUME_SCALE)
 	_intro_pages = Dialogue.get_pages("intro", _intro_key, _intro_format_vars())
 	dialogue_box.play_pages(_intro_pages)
 
@@ -184,6 +197,8 @@ func _on_page_advanced(index: int) -> void:
 	if index < STORE_OUTRO_HOME_PAGE_INDEX:
 		return
 	_store_outro_home_visual_applied = true
+	# We've now actually left Ed's shop for the walk home — kill the buzz.
+	stop_ambient_loop()
 	var main := get_tree().current_scene
 	if main != null and main.has_method("_play_transition_then"):
 		main._play_transition_then(Callable(self, "_show_store_outro_home_visuals"))
@@ -205,7 +220,22 @@ func _maybe_play_store_outro_sound_cues(index: int) -> void:
 			continue
 		if text.contains(cue):
 			_store_outro_cues_played[cue] = true
-			play_oneshot_sequence(entry["sounds"], GameState.DEFAULT_SFX_VOLUME_SCALE)
+			_fire_store_outro_cue(entry)
+
+
+## Play a matched cue's sound sequence, honouring an optional per-cue "delay"
+## (seconds) before it starts.
+func _fire_store_outro_cue(entry: Dictionary) -> void:
+	var delay: float = float(entry.get("delay", 0.0))
+	if delay > 0.0:
+		await get_tree().create_timer(delay).timeout
+		if not is_inside_tree():
+			return
+	play_oneshot_sequence(entry["sounds"], GameState.DEFAULT_SFX_VOLUME_SCALE)
+
+
+func _exit_tree() -> void:
+	stop_ambient_loop()
 
 
 func _apply_intro_visuals(key: String) -> void:
