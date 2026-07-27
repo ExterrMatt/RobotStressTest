@@ -45,6 +45,14 @@ const STORE_OUTRO_SOUND_CUES: Array[Dictionary] = [
 const FLUORESCENT_LIGHT_SOUND_PATH: String = "res://assets/sounds/factory_noises/fluorescent_light.mp3"
 const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
 
+## The uncle's TV, playing in the background once the store_outro reaches his
+## living room. Dropped in at a random point (as if already running) and kept
+## quiet at 25%. A little runway is left so a random start never lands in the
+## final seconds and goes silent mid-scene.
+const MOVIE_SOUND_PATH: String = "res://assets/sounds/movie/the_invisible_man.mp3"
+const MOVIE_VOLUME_SCALE: float = 0.25
+const MOVIE_MIN_REMAINING_SECONDS: float = 60.0
+
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
 var _intro_key: String = ""
@@ -53,6 +61,8 @@ var _intro_key: String = ""
 var _intro_pages: Array = []
 ## Cues from STORE_OUTRO_SOUND_CUES that have already fired, so each plays once.
 var _store_outro_cues_played: Dictionary = {}
+## The uncle's living-room TV audio (store_outro home portion).
+var _movie_player: AudioStreamPlayer = null
 var _store_outro_home_visual_applied: bool = false
 var _robot_eyes_open_applied: bool = false
 var _robot_hello_page_index: int = ROBOT_FIRST_TALK_HELLO_PAGE_INDEX
@@ -279,6 +289,27 @@ func _show_store_outro_home_visuals() -> void:
 	# The living-room scene later in the intro: Hawaiian outfit, random variant.
 	_set_scene_image(LIVING_ROOM_BACKGROUND_TEXTURE_PATH)
 	_show_uncle_portrait(UncleWardrobe.random_texture(UncleWardrobe.HAWAIIAN))
+	_start_living_room_movie()
+
+
+## Start the uncle's TV in the living room from a random point, quietly (25%).
+func _start_living_room_movie() -> void:
+	if _movie_player != null and is_instance_valid(_movie_player):
+		return
+	var stream := load(MOVIE_SOUND_PATH) as AudioStream
+	if stream == null:
+		return
+	_movie_player = AudioStreamPlayer.new()
+	_movie_player.name = "LivingRoomMovieAudioPlayer"
+	_movie_player.stream = stream
+	_movie_player.volume_db = linear_to_db(MOVIE_VOLUME_SCALE)
+	add_child(_movie_player)
+	# Drop in at a random point, as if the movie's already been playing, but leave
+	# enough runway that it can't land in the last few seconds and go quiet.
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var runway: float = maxf(0.0, stream.get_length() - MOVIE_MIN_REMAINING_SECONDS)
+	_movie_player.play(rng.randf() * runway)
 
 
 func _show_uncle_portrait(texture_path: String) -> void:
