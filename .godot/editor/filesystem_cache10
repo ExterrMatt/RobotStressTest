@@ -46,7 +46,8 @@ door_unlock.mp3::AudioStreamMP3::385832625449725200::1785185418::1785186184::1::
 ed_door.mp3::AudioStreamMP3::1835069163455927210::1785186957::1785186989::1::::<><><>0<>0<>48f60cb6f10eda8829f7a92282702e81<>res://.godot/imported/ed_door.mp3-3fd467e06f39803322a91c9913cef412.mp3str::
 ::res://assets/sounds/emergency_button/::1782787467
 emergency_power_button.mp3::AudioStreamMP3::7956286958573482971::1782705556::1782787467::1::::<><><>0<>0<>8f70ab76c334182c6b094ffd269822f6<>res://.godot/imported/emergency_power_button.mp3-23307681daab85f0c6306e342de310fe.mp3str::
-::res://assets/sounds/factory_noises/::1785272390
+::res://assets/sounds/factory_noises/::1785272766
+box_open.mp3::AudioStreamMP3::4013654047808475810::1785272750::1785272822::1::::<><><>0<>0<>654b674022fec87609dd5b4bf4bb0b2c<>res://.godot/imported/box_open.mp3-832050534f263c08aaf223f106a46430.mp3str::
 box_trip.mp3::AudioStreamMP3::8835960968998848631::1785196249::1785272435::1::::<><><>0<>0<>349be169f401ff65b21dfd142aae135c<>res://.godot/imported/box_trip.mp3-c8672ff945b2cfc6415c888789ad09bb.mp3str::
 factory_coworkers_talking.mp3::AudioStreamMP3::270222183504369880::1785094931::1785094944::1::::<><><>0<>0<>fbd1248777c3787a9d36c0aad764d7b9<>res://.godot/imported/factory_coworkers_talking.mp3-5edb2ed023c46ec84fcff353e06e9778.mp3str::
 fluorescent_light.mp3::AudioStreamMP3::2900258029773469656::1785186016::1785186184::1::::<><><>0<>0<>7f6bd0b528364c51600173f4b66cdb2f<>res://.godot/imported/fluorescent_light.mp3-494ec67e1aaf66acad2ed3034892c3e4.mp3str::
@@ -718,7 +719,7 @@ WindowManager.gd::GDScript::1625301791055686807::1783539142::0::1::::<>Node<><>0
 ::res://data/::1778814803
 ::res://data/dialogue/::1785094932
 DialogueBundle.gd::GDScript::3675699589807389322::1782789783::0::1::::DialogueBundle<>Resource<><>0<>1<><>::
-dialogue_bundle.tres::Resource/DialogueBundle::1566626051498139531::1785272242::0::1::::<><><>0<>0<><>::uid://bsmsh85841wdm::::res://data/dialogue/DialogueBundle.gd
+dialogue_bundle.tres::Resource/DialogueBundle::1566626051498139531::1785272662::0::1::::<><><>0<>0<><>::uid://bsmsh85841wdm::::res://data/dialogue/DialogueBundle.gd
 README.md::TextFile::-1::1782789783::0::1::::<><><>0<>0<><>::
 ::res://resources/::1783359930
 LocationData.gd::GDScript::9192165682144954293::1783359930::0::1::::LocationData<>Resource<><>0<>0<><>::
@@ -740,7 +741,7 @@ Main.tscn::PackedScene::6014830843503735391::1784665652::0::1::::<><><>0<>0<><>:
 Scanlines.tscn::PackedScene::4620079510714485324::1782705557::0::1::::<><><>0<>0<><>::uid://d3k11cw7sxoh6::::res://shaders/scanlines.gdshader
 Transition.gd::GDScript::6657196936549354663::1782705557::0::1::::<>TextureRect<><>0<>0<><>::
 Transition.tscn::PackedScene::5942311429986572456::1778799880::0::1::::<><><>0<>0<><>::res://scenes/Transition.gd<>uid://cexl7748vgoji::::res://assets/textures/backgrounds/load/FlowerLoad.png
-::res://scenes/locations/::1785272081
+::res://scenes/locations/::1785272627
 DraggableItem.gd::GDScript::4351373448739835074::1784622374::0::1::::DraggableItem<>TextureRect<><>0<>0<><>::
 DroneEncounter.gd::GDScript::4955085017189888894::1784923762::0::1::::DroneEncounter<>LocationBase<><>0<>0<><>::
 DroneEncounter.tscn::PackedScene::7060472199048655531::1784832940::0::1::::<><><>0<>0<><>::uid://ccujr5nfd0mwk::::res://scenes/locations/DroneEncounter.gd<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
@@ -777,7 +778,7 @@ StubLocation.tscn::PackedScene::6474183686793253630::1778811889::0::1::::<><><>0
 UncleHangout.gd::GDScript::5568661125409079019::1784622374::0::1::::UncleHangout<>LocationBase<><>0<>0<><>::
 UncleHangout.tscn::PackedScene::7429742523238519555::1784665710::0::1::::<><><>0<>0<><>::uid://cllrbgvkcxdlr::::res://scenes/locations/UncleHangout.gd<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
 UncleWardrobe.gd::GDScript::7369430936900425491::1784622374::0::1::::UncleWardrobe<>RefCounted<><>0<>0<><>::
-Work.gd::GDScript::3642143372528671624::1785272081::0::1::::<>LocationBase<><>0<>0<><>::
+Work.gd::GDScript::3642143372528671624::1785272627::0::1::::<>LocationBase<><>0<>0<><>::
 Work.tscn::PackedScene::8523178736077590333::1778952915::0::1::::<><><>0<>0<><>::uid://br5jtmaxrfegu::::res://scenes/locations/Work.gd<>uid://4sq4i7qirh41::::res://assets/textures/icons/empty_table.png<>uid://ddsxrsuwn8rxx::::res://assets/textures/icons/work_panel_1.png<>uid://ba22xms6g704r::::res://assets/textures/icons/work_shadow_panel_1.png<>uid://caqnawe8nt6ai::::res://assets/textures/icons/gear_panel_1.png<>uid://euqnriph6tkx::::res://assets/textures/icons/arc_panel_1.png<>uid://ba7h5xerc1wbg::::res://assets/textures/icons/tri_panel_1.png<>uid://cmq33204e2x1b::::res://assets/textures/icons/tess_panel_1.png<>uid://1a7lwki0cg0i::::res://scenes/locations/DropSlot.gd<>uid://csahv8rgde8lk::::res://scenes/locations/WorkInventory.tscn<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
 WorkArmMinigame.gd::GDScript::6571160534696330580::1785094932::0::1::::WorkArmMinigame<>Control<><>0<>0<><>::
 WorkArmMinigame.tscn::PackedScene::7564115443253118834::1784622374::0::1::::<><><>0<>0<><>::uid://c0veb3mmq1goq::::res://scenes/locations/WorkArmMinigame.gd<>uid://4sq4i7qirh41::::res://assets/textures/icons/empty_table.png<>uid://cg01f011fwtyo::::res://scenes/locations/WorkshopAssemblySlot.gd<>uid://48i7jx7w0l7j::::res://scenes/locations/WorkshopPiece.gd<>uid://cx2htstj66avq::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_inner_gears.png<>uid://gp5w7cokjnqw::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_inner_gears_outline.png<>uid://c2mma777tshu::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_joint.png<>uid://bi8r64g7vxv2e::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_cap.png<>uid://ddx87g0h11wh7::::res://assets/textures/characters/robot/workshop/workshop robot arm/upper_arm_plate_lower.png<>uid://dd0jtlko3pv2y::::res://assets/textures/characters/robot/workshop/workshop robot arm/upper_arm_plate.png<>uid://c2s1603v1nlh1::::res://assets/textures/characters/robot/workshop/workshop robot arm/bicep.png<>uid://bmippgcdq4eas::::res://assets/textures/characters/robot/workshop/workshop robot arm/tricep.png<>uid://dhrbnpa5glwv1::::res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_pad.png<>uid://3vcvu5yyi6xy::::res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_joint.png
