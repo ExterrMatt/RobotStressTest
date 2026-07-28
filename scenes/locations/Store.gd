@@ -713,6 +713,9 @@ func _on_leave_pressed() -> void:
 	var main: Node = get_tree().current_scene
 	if main and main.has_method("hide_large_scene_end_button"):
 		main.hide_large_scene_end_button()
+	# Ring the shop bell on the way out too — detached so it carries through the
+	# transition that finish() kicks off instead of being cut off with this scene.
+	play_oneshot_stream_detached(load(STORE_BELL_SOUND_PATH) as AudioStream, GameState.DEFAULT_SFX_VOLUME_SCALE)
 	finish(0, 0, 0, {}, false)
 
 

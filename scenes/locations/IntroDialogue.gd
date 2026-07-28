@@ -44,6 +44,9 @@ const STORE_OUTRO_SOUND_CUES: Array[Dictionary] = [
 ## leaves Ed's for the walk home. Mirrors Store.gd's constants — keep in sync.
 const FLUORESCENT_LIGHT_SOUND_PATH: String = "res://assets/sounds/factory_noises/fluorescent_light.mp3"
 const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
+## The shop door bell, rung again as the player leaves Ed's for the walk home
+## (it also rings on entry, back in the Store scene).
+const STORE_BELL_SOUND_PATH: String = "res://assets/sounds/store_bell/store_bell.mp3"
 
 ## The uncle's TV, playing in the background once the store_outro reaches his
 ## living room. Dropped in at a random point (as if already running) and kept
@@ -215,7 +218,9 @@ func _on_page_advanced(index: int) -> void:
 	if index < STORE_OUTRO_HOME_PAGE_INDEX:
 		return
 	_store_outro_home_visual_applied = true
-	# We've now actually left Ed's shop for the walk home — kill the buzz.
+	# We've now actually left Ed's shop for the walk home — ring the door bell on
+	# the way out and kill the buzz.
+	play_oneshot_sound(STORE_BELL_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
 	stop_ambient_loop()
 	var main := get_tree().current_scene
 	if main != null and main.has_method("_play_transition_then"):

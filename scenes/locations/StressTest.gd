@@ -53,6 +53,12 @@ const NIGHT_SPECIAL_MINUTE_SECONDS: float = 60.0
 ## Per-minute odds: the plane has a 1-in-30 chance, each siren roll a 1-in-5.
 const PLANE_CHANCE_ONE_IN: int = 30
 const POLICE_CHANCE_ONE_IN: int = 5
+## Old-house wood creaking, rolled like the sirens but a touch more likely
+## (1-in-4 per minute vs the sirens' 1-in-5). Plays quietly and can recur through
+## the night, but never overlaps itself.
+const WOOD_CREAK_SOUND_PATH: String = "res://assets/sounds/wood/random_creaking.mp3"
+const WOOD_CREAK_VOLUME_SCALE: float = 0.06
+const WOOD_CREAK_CHANCE_ONE_IN: int = 4
 ## A scheduled hit fires at a random point within its minute, kept clear of the
 ## minute's very start and end so it never lands right on a boundary.
 const NIGHT_SPECIAL_MIN_OFFSET: float = 1.0
@@ -338,6 +344,10 @@ var _plane_scheduled_time: float = -1.0
 var _police_sirens_remaining: Array[int] = []
 var _police_scheduled_time: float = -1.0
 var _police_scheduled_index: int = -1
+
+var _wood_creak_sound: AudioStream = null
+var _wood_creak_audio_player: AudioStreamPlayer = null
+var _wood_creak_scheduled_time: float = -1.0
 
 const WINDOW_ALERT_NONE: int = 0
 const WINDOW_ALERT_YELLOW: int = 1
@@ -1161,6 +1171,12 @@ func _initialize_audio_players() -> void:
 		add_child(player)
 		_police_siren_audio_players.append(player)
 
+	_wood_creak_sound = load(WOOD_CREAK_SOUND_PATH) as AudioStream
+	if _wood_creak_sound != null:
+		_wood_creak_audio_player = AudioStreamPlayer.new()
+		_wood_creak_audio_player.name = "NightWoodCreakAudioPlayer"
+		add_child(_wood_creak_audio_player)
+
 
 func _play_rip_cord_full_extend_sound() -> void:
 	if _rip_cord_audio_player == null or _rip_cord_full_extend_sound == null:
@@ -1289,6 +1305,8 @@ func _stop_night_ambient() -> void:
 	for player in _police_siren_audio_players:
 		if player != null:
 			player.stop()
+	if _wood_creak_audio_player != null:
+		_wood_creak_audio_player.stop()
 
 
 ## Clear the plane/siren bookkeeping so each night starts fresh.
@@ -1301,6 +1319,7 @@ func _reset_night_special_sounds() -> void:
 	_police_sirens_remaining.clear()
 	for i in _police_siren_sounds.size():
 		_police_sirens_remaining.append(i)
+	_wood_creak_scheduled_time = -1.0
 
 
 ## Per-frame driver for the one-off night flyover/sirens. Rolls once for each
@@ -1325,6 +1344,10 @@ func _update_night_special_sounds() -> void:
 		_police_scheduled_index = -1
 		_play_night_police_siren(index)
 
+	if _wood_creak_scheduled_time >= 0.0 and _night_elapsed >= _wood_creak_scheduled_time:
+		_wood_creak_scheduled_time = -1.0
+		_play_night_wood_creak()
+
 
 ## Roll the minute's odds. A successful roll schedules the sound at a random moment
 ## inside the minute (never on the boundary). Only one of each can be pending, and
@@ -1343,6 +1366,14 @@ func _roll_night_special_sounds_for_minute(minute: int) -> void:
 			_police_scheduled_index = _police_sirens_remaining[pick_pos]
 			_police_sirens_remaining.remove_at(pick_pos)
 			_police_scheduled_time = minute_start + _rng.randf_range(
+				NIGHT_SPECIAL_MIN_OFFSET, NIGHT_SPECIAL_MAX_OFFSET)
+
+	# Repeatable through the night, but never scheduled while one is already
+	# pending or still creaking (the clip is long), so it can't stack on itself.
+	if _wood_creak_scheduled_time < 0.0 and _wood_creak_audio_player != null \
+			and not _wood_creak_audio_player.playing:
+		if _rng.randi_range(1, WOOD_CREAK_CHANCE_ONE_IN) == 1:
+			_wood_creak_scheduled_time = minute_start + _rng.randf_range(
 				NIGHT_SPECIAL_MIN_OFFSET, NIGHT_SPECIAL_MAX_OFFSET)
 
 
@@ -1366,6 +1397,17 @@ func _play_night_police_siren(index: int) -> void:
 	player.pitch_scale = 1.0
 	player.volume_db = linear_to_db(POLICE_SIREN_VOLUME_SCALE)
 	player.play()
+
+
+func _play_night_wood_creak() -> void:
+	if _wood_creak_audio_player == null or _wood_creak_sound == null:
+		return
+	if _wood_creak_audio_player.playing:
+		return
+	_wood_creak_audio_player.stream = _wood_creak_sound
+	_wood_creak_audio_player.pitch_scale = 1.0
+	_wood_creak_audio_player.volume_db = linear_to_db(WOOD_CREAK_VOLUME_SCALE)
+	_wood_creak_audio_player.play()
 
 
 func _is_loud_night_ambient(path: String) -> bool:
