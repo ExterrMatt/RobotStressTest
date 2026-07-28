@@ -36,11 +36,18 @@ const WORK_SCRAP_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgr
 ## The work-disruption robot call (first upper-arm shift after the intro) plays
 ## over the work-table background, with the stealable upper arm drawn on top.
 const WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work_table.png"
+## Shown (same 500x125 footprint) while the player looks up at the robot's camera
+## and the ceiling lights flash blue — see CAMERA_ABOVE_CUE — until they look back
+## down to pack the arm (WORK_ARM_PACKED_CUE).
+const FACTORY_LIGHTS_BLUE_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_lights_blue.png"
 ## The upper-arm overlay shown over the table (same 500x125 footprint as the
 ## background) until the player pockets it — see WORK_ARM_PACKED_CUE.
 const WORK_ARM_OVERLAY_TEXTURE_PATH: String = "res://assets/textures/icons/work_arm.png"
 ## Lower-cased fragment of the disruption line that hides the arm overlay.
 const WORK_ARM_PACKED_CUE: String = "pack the upper arm"
+## Lower-cased fragment of the disruption line where the player looks up and sees
+## the blue light of the robot's ceiling camera.
+const CAMERA_ABOVE_CUE: String = "camera above"
 ## The robot's phone call opens the disruption with the phone buzzing in the
 ## player's pocket. The ringtone loops while that line is on screen and ends its
 ## loop (current pass rings out) the moment the player advances to the next line.
@@ -390,11 +397,17 @@ func _on_dialogue_page_advanced(index: int) -> void:
 	elif _scene_phase == WorkPhase.WORK_DISRUPTION:
 		if index >= 0 and index < _work_disruption_pages.size():
 			var text := _page_text(_work_disruption_pages[index])
+			var lower := text.to_lower()
 			# Loop the ringtone while the "phone buzzing in your pocket" line is
 			# up; any other line ends the loop (the current ring pass rings out).
 			_update_phone_ring(text)
-			# Once the line says the arm goes in the bag, take it off the table.
-			if text.to_lower().contains(WORK_ARM_PACKED_CUE):
+			# Look up at the robot's camera: the ceiling lights flash blue.
+			if lower.contains(CAMERA_ABOVE_CUE):
+				_look_up_at_camera()
+			# Once the line says the arm goes in the bag, look back down at the
+			# table and take the arm off it (into the bag).
+			if lower.contains(WORK_ARM_PACKED_CUE):
+				_look_back_down_from_camera()
 				_hide_work_arm_overlay()
 
 
@@ -563,6 +576,27 @@ func _show_work_arm_overlay() -> void:
 func _hide_work_arm_overlay() -> void:
 	if _work_arm_overlay != null and is_instance_valid(_work_arm_overlay):
 		_work_arm_overlay.visible = false
+
+
+## The player looks up at the robot's ceiling camera: show the blue factory-lights
+## background (same 500x125 frame, so it's a straight texture swap) and hide the
+## table arm while we're not looking at the table.
+func _look_up_at_camera() -> void:
+	_set_main_scene_image_and_frame(
+		FACTORY_LIGHTS_BLUE_BACKGROUND_TEXTURE_PATH,
+		WORK_DISRUPTION_FRAME_SIZE,
+		WORK_DISRUPTION_FRAME_SIZE.x
+	)
+	_hide_work_arm_overlay()
+
+
+## Look back down at the work table (restores the disruption background).
+func _look_back_down_from_camera() -> void:
+	_set_main_scene_image_and_frame(
+		WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH,
+		WORK_DISRUPTION_FRAME_SIZE,
+		WORK_DISRUPTION_FRAME_SIZE.x
+	)
 
 
 func _start_hallway_footsteps() -> void:
