@@ -101,7 +101,9 @@ const BEDROOM_LOCATION_IDS: Dictionary = {
 const BEDROOM_AMBIENCE_MORNING_PATH: String = "res://assets/sounds/bedroom/morning_bedroom.mp3"
 const BEDROOM_AMBIENCE_EVENING_PATH: String = "res://assets/sounds/bedroom/evening_bedroom.mp3"
 const BEDROOM_AMBIENCE_NIGHT_PATH: String = "res://assets/sounds/bedroom/night_bedroom.mp3"
+## Default bed volume; the evening bed runs quieter.
 const BEDROOM_AMBIENCE_VOLUME_SCALE: float = 0.5
+const BEDROOM_AMBIENCE_EVENING_VOLUME_SCALE: float = 0.1
 
 ## The uncle's TV (The Invisible Man). Started in the store_outro living room from
 ## a random point in the movie's first half, then carried unbroken into the
@@ -2064,12 +2066,14 @@ func _update_bedroom_scene_audio(is_bedroom: bool) -> void:
 ## particular bedroom(Night) -> Sleep keeps the night bed going.
 func _update_bedroom_ambience() -> void:
 	var target: String = ""
+	var target_volume: float = BEDROOM_AMBIENCE_VOLUME_SCALE
 	if _in_bedroom_scene:
 		match GameState.phase:
 			DayCycle.Phase.NIGHT:
 				target = BEDROOM_AMBIENCE_NIGHT_PATH
 			DayCycle.Phase.EVENING:
 				target = BEDROOM_AMBIENCE_EVENING_PATH
+				target_volume = BEDROOM_AMBIENCE_EVENING_VOLUME_SCALE
 			_:
 				target = BEDROOM_AMBIENCE_MORNING_PATH
 	if target == _bedroom_ambience_path:
@@ -2088,7 +2092,7 @@ func _update_bedroom_ambience() -> void:
 	_bedroom_ambience_player = AudioStreamPlayer.new()
 	_bedroom_ambience_player.name = "BedroomAmbienceAudioPlayer"
 	_bedroom_ambience_player.stream = stream
-	_bedroom_ambience_player.volume_db = linear_to_db(BEDROOM_AMBIENCE_VOLUME_SCALE)
+	_bedroom_ambience_player.volume_db = linear_to_db(target_volume)
 	add_child(_bedroom_ambience_player)
 	_bedroom_ambience_player.play()
 
