@@ -53,6 +53,10 @@ const PHONE_RING_CUE: String = "buzz"
 const WORK_AMBIENT_SOUND_PATH: String = "res://assets/sounds/factory_noises/industrial_background_noise.mp3"
 const HALLWAY_AMBIENT_SOUND_PATH: String = "res://assets/sounds/factory_noises/subtle_factory_background_noise.mp3"
 const WORK_AMBIENT_VOLUME_SCALE: float = 0.25
+## The factory runs under the same fluorescent-light buzz as Ed's shop; layer it
+## over the floor ambience for the whole shift at the same level Ed's shop uses.
+const WORK_FLUORESCENT_SOUND_PATH: String = "res://assets/sounds/factory_noises/fluorescent_light.mp3"
+const WORK_FLUORESCENT_VOLUME_SCALE: float = 0.60
 ## Metal footsteps as the player walks the intro hallway. Cut off the instant the
 ## box trips them (they've stopped walking). ~90s clip, so it never loops here.
 const METAL_FOOTSTEPS_SOUND_PATH: String = "res://assets/sounds/metal_thunk/metal_footsteps.mp3"
@@ -108,6 +112,8 @@ var _work_arm_overlay: TextureRect = null
 var _work_disruption_pages: Array = []
 ## Metal-footsteps player for the intro hallway walk (cut on the box-trip line).
 var _footsteps_player: AudioStreamPlayer = null
+## Fluorescent-light buzz layered under the shift (same sound as Ed's shop).
+var _work_fluorescent_player: AudioStreamPlayer = null
 ## Pages of the intro_head_box dialogue, so a page_advanced index maps to prose.
 var _intro_head_box_pages: Array = []
 ## Looping phone ringtone for the robot's disruption call. Loops itself and ends
@@ -131,8 +137,10 @@ func _ready() -> void:
 	dialogue_box.finished.connect(_on_dialogue_finished)
 	dialogue_box.page_advanced.connect(_on_dialogue_page_advanced)
 	_setup_phone_ring_audio()
-	# Factory-floor ambience under the whole shift (the intro hallway swaps it).
+	# Factory-floor ambience under the whole shift (the intro hallway swaps it),
+	# plus the same fluorescent-light buzz Ed's shop runs, layered on top.
 	start_ambient_loop(WORK_AMBIENT_SOUND_PATH, WORK_AMBIENT_VOLUME_SCALE)
+	_start_work_fluorescent()
 
 	_intro_work = _is_intro_work_scene()
 	set_process(false)
@@ -572,6 +580,22 @@ func _start_hallway_footsteps() -> void:
 func _stop_hallway_footsteps() -> void:
 	if _footsteps_player != null and is_instance_valid(_footsteps_player):
 		_footsteps_player.stop()
+
+
+func _start_work_fluorescent() -> void:
+	var stream := load(WORK_FLUORESCENT_SOUND_PATH) as AudioStream
+	if stream == null:
+		return
+	for property in stream.get_property_list():
+		if String(property.get("name", "")) == "loop":
+			stream.set("loop", true)
+			break
+	_work_fluorescent_player = AudioStreamPlayer.new()
+	_work_fluorescent_player.name = "WorkFluorescentAudioPlayer"
+	_work_fluorescent_player.stream = stream
+	_work_fluorescent_player.volume_db = linear_to_db(WORK_FLUORESCENT_VOLUME_SCALE)
+	add_child(_work_fluorescent_player)
+	_work_fluorescent_player.play()
 
 
 func _setup_phone_ring_audio() -> void:

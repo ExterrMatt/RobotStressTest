@@ -101,6 +101,20 @@ const BEDROOM_LOCATION_IDS: Dictionary = {
 const BEDROOM_AMBIENCE_MORNING_PATH: String = "res://assets/sounds/bedroom/morning_bedroom.mp3"
 const BEDROOM_AMBIENCE_NIGHT_PATH: String = "res://assets/sounds/bedroom/night_bedroom.mp3"
 const BEDROOM_AMBIENCE_VOLUME_SCALE: float = 0.5
+
+## The uncle's TV (The Invisible Man). Started in the store_outro living room from
+## a random point in the movie's first half, then carried unbroken into the
+## bedroom and Sleep, and stopped once the player leaves for the next location
+## (Work). Routed through a low-pass + panner "MuffledMovie" bus (feeding Master).
+## In the living room it's quiet and lightly muffled; in the bedroom it's halved
+## again and muffled ~3x harder, as if heard through the wall while falling asleep.
+const MOVIE_SOUND_PATH: String = "res://assets/sounds/movie/the_invisible_man.mp3"
+const MOVIE_LIVING_ROOM_VOLUME_SCALE: float = 0.15
+const MOVIE_BEDROOM_VOLUME_SCALE: float = 0.075
+const MOVIE_PAN: float = 0.4
+const MUFFLED_MOVIE_BUS_NAME: String = "MuffledMovie"
+const MOVIE_LIVING_ROOM_CUTOFF_HZ: float = 400.0
+const MOVIE_BEDROOM_CUTOFF_HZ: float = 133.0
 ## Patrol-drone street inspection that plays after a regular (non-intro) school
 ## or work run: a chance the drone stops the player before the day advances. It
 ## is loaded like a normal dialogue location (its own LocationData below), so it
@@ -391,6 +405,11 @@ var _in_bedroom_scene: bool = false
 ## so we only switch beds when the phase's target actually changes.
 var _bedroom_ambience_player: AudioStreamPlayer = null
 var _bedroom_ambience_path: String = ""
+
+## Uncle's-TV movie playback that outlives the scene it started in.
+enum MovieStage { NONE, LIVING_ROOM, BEDROOM }
+var _movie_player: AudioStreamPlayer = null
+var _movie_stage: MovieStage = MovieStage.NONE
 
 func _ready() -> void:
 	_create_mouse_tooltip()
@@ -2035,6 +2054,7 @@ func _update_bedroom_scene_audio(is_bedroom: bool) -> void:
 		_in_bedroom_scene = is_bedroom
 		_play_door_sound(DOOR_OPEN_SOUND_PATH if is_bedroom else DOOR_CLOSE_SOUND_PATH)
 	_update_bedroom_ambience()
+	_update_movie_across_scenes(is_bedroom)
 
 
 ## Drive the looping bedroom ambience: the morning bed for Morning/Evening, the
@@ -2074,6 +2094,70 @@ func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
 		if String(property.get("name", "")) == "loop":
 			stream.set("loop", enabled)
 			return
+
+
+## Start the uncle's TV in the living room from a random point in the movie's
+## first half, quiet and lightly muffled. Parented to Main (this node) so it keeps
+## playing across the following scene changes; call once at the living-room beat.
+func start_living_room_movie() -> void:
+	if _movie_player != null and is_instance_valid(_movie_player):
+		return
+	var stream := load(MOVIE_SOUND_PATH) as AudioStream
+	if stream == null:
+		return
+	_set_movie_muffle_cutoff(MOVIE_LIVING_ROOM_CUTOFF_HZ)
+	_movie_player = AudioStreamPlayer.new()
+	_movie_player.name = "LivingRoomMovieAudioPlayer"
+	_movie_player.stream = stream
+	_movie_player.volume_db = linear_to_db(MOVIE_LIVING_ROOM_VOLUME_SCALE)
+	_movie_player.bus = MUFFLED_MOVIE_BUS_NAME
+	add_child(_movie_player)
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	_movie_player.play(rng.randf() * (stream.get_length() * 0.5))
+	_movie_stage = MovieStage.LIVING_ROOM
+
+
+## Carry the movie from the living room into the bedroom (halve its volume, muffle
+## it ~3x harder — heard through the wall) and stop it once the player leaves the
+## bedroom for the next location.
+func _update_movie_across_scenes(is_bedroom: bool) -> void:
+	if _movie_stage == MovieStage.LIVING_ROOM and is_bedroom:
+		_movie_stage = MovieStage.BEDROOM
+		if _movie_player != null and is_instance_valid(_movie_player):
+			_movie_player.volume_db = linear_to_db(MOVIE_BEDROOM_VOLUME_SCALE)
+		_set_movie_muffle_cutoff(MOVIE_BEDROOM_CUTOFF_HZ)
+	elif _movie_stage == MovieStage.BEDROOM and not is_bedroom:
+		_stop_movie()
+
+
+func _stop_movie() -> void:
+	if _movie_player != null and is_instance_valid(_movie_player):
+		_movie_player.stop()
+		_movie_player.queue_free()
+	_movie_player = null
+	_movie_stage = MovieStage.NONE
+
+
+## Set the MuffledMovie bus's low-pass cutoff (lower = more muffled), creating the
+## bus (low-pass + right-panner, feeding Master) on first use.
+func _set_movie_muffle_cutoff(hz: float) -> void:
+	var index := AudioServer.get_bus_index(MUFFLED_MOVIE_BUS_NAME)
+	if index == -1:
+		index = AudioServer.bus_count
+		AudioServer.add_bus(index)
+		AudioServer.set_bus_name(index, MUFFLED_MOVIE_BUS_NAME)
+		AudioServer.set_bus_send(index, &"Master")
+		var low_pass := AudioEffectLowPassFilter.new()
+		low_pass.cutoff_hz = hz
+		AudioServer.add_bus_effect(index, low_pass)
+		var panner := AudioEffectPanner.new()
+		panner.pan = MOVIE_PAN
+		AudioServer.add_bus_effect(index, panner)
+		return
+	var effect := AudioServer.get_bus_effect(index, 0)
+	if effect is AudioEffectLowPassFilter:
+		(effect as AudioEffectLowPassFilter).cutoff_hz = hz
 
 
 ## Fires a one-shot door SFX on a self-freeing AudioStreamPlayer, honouring the

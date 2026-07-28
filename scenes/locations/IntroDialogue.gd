@@ -48,22 +48,6 @@ const FLUORESCENT_LIGHT_VOLUME_SCALE: float = 0.60
 ## (it also rings on entry, back in the Store scene).
 const STORE_BELL_SOUND_PATH: String = "res://assets/sounds/store_bell/store_bell.mp3"
 
-## The uncle's TV, playing in the background once the store_outro reaches his
-## living room. Dropped in at a random point (as if already running) and kept
-## quiet at 25%. A little runway is left so a random start never lands in the
-## final seconds and goes silent mid-scene.
-const MOVIE_SOUND_PATH: String = "res://assets/sounds/movie/the_invisible_man.mp3"
-const MOVIE_VOLUME_SCALE: float = 0.15
-const MOVIE_MIN_REMAINING_SECONDS: float = 60.0
-## The TV is muffled (heard across the room): route it through a low-pass +
-## panner bus. Lower cutoff = more muffled. The bus feeds back into Master so the
-## game volume and mute still apply.
-const MUFFLED_MOVIE_BUS_NAME: String = "MuffledMovie"
-const MOVIE_MUFFLE_CUTOFF_HZ: float = 400.0
-## Stereo pan for the TV, -1 (full left) .. 1 (full right). 0.4 puts it at roughly
-## 70% right / 30% left ((pan + 1) / 2 = 0.7 to the right).
-const MOVIE_PAN: float = 0.4
-
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
 var _intro_key: String = ""
@@ -72,8 +56,6 @@ var _intro_key: String = ""
 var _intro_pages: Array = []
 ## Cues from STORE_OUTRO_SOUND_CUES that have already fired, so each plays once.
 var _store_outro_cues_played: Dictionary = {}
-## The uncle's living-room TV audio (store_outro home portion).
-var _movie_player: AudioStreamPlayer = null
 var _store_outro_home_visual_applied: bool = false
 var _robot_eyes_open_applied: bool = false
 var _robot_hello_page_index: int = ROBOT_FIRST_TALK_HELLO_PAGE_INDEX
@@ -302,46 +284,11 @@ func _show_store_outro_home_visuals() -> void:
 	# The living-room scene later in the intro: Hawaiian outfit, random variant.
 	_set_scene_image(LIVING_ROOM_BACKGROUND_TEXTURE_PATH)
 	_show_uncle_portrait(UncleWardrobe.random_texture(UncleWardrobe.HAWAIIAN))
-	_start_living_room_movie()
-
-
-## Start the uncle's TV in the living room from a random point, quietly (25%).
-func _start_living_room_movie() -> void:
-	if _movie_player != null and is_instance_valid(_movie_player):
-		return
-	var stream := load(MOVIE_SOUND_PATH) as AudioStream
-	if stream == null:
-		return
-	_movie_player = AudioStreamPlayer.new()
-	_movie_player.name = "LivingRoomMovieAudioPlayer"
-	_movie_player.stream = stream
-	_movie_player.volume_db = linear_to_db(MOVIE_VOLUME_SCALE)
-	_movie_player.bus = _ensure_muffled_movie_bus()
-	add_child(_movie_player)
-	# Drop in at a random point, as if the movie's already been playing, but leave
-	# enough runway that it can't land in the last few seconds and go quiet.
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	var runway: float = maxf(0.0, stream.get_length() - MOVIE_MIN_REMAINING_SECONDS)
-	_movie_player.play(rng.randf() * runway)
-
-
-## Return the name of a low-pass "muffled" audio bus (feeding Master), creating it
-## on first use. Idempotent — reused across replays rather than re-added.
-func _ensure_muffled_movie_bus() -> String:
-	if AudioServer.get_bus_index(MUFFLED_MOVIE_BUS_NAME) != -1:
-		return MUFFLED_MOVIE_BUS_NAME
-	var index := AudioServer.bus_count
-	AudioServer.add_bus(index)
-	AudioServer.set_bus_name(index, MUFFLED_MOVIE_BUS_NAME)
-	AudioServer.set_bus_send(index, &"Master")
-	var low_pass := AudioEffectLowPassFilter.new()
-	low_pass.cutoff_hz = MOVIE_MUFFLE_CUTOFF_HZ
-	AudioServer.add_bus_effect(index, low_pass)
-	var panner := AudioEffectPanner.new()
-	panner.pan = MOVIE_PAN
-	AudioServer.add_bus_effect(index, panner)
-	return MUFFLED_MOVIE_BUS_NAME
+	# Main owns the TV audio so it can carry it through the bedroom/Sleep scenes
+	# that follow this one and stop it at the next location.
+	var main := get_tree().current_scene
+	if main != null and main.has_method("start_living_room_movie"):
+		main.start_living_room_movie()
 
 
 func _show_uncle_portrait(texture_path: String) -> void:
