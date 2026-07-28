@@ -74,11 +74,23 @@ const METAL_FOOTSTEPS_SOUND_PATH: String = "res://assets/sounds/metal_thunk/meta
 const BOX_TRIP_SOUND_PATH: String = "res://assets/sounds/factory_noises/box_trip.mp3"
 ## Lower-cased fragment of the intro_head_box line where the box trips the player.
 const BOX_TRIP_CUE: String = "nearly trips"
+## One-shot played as the player opens the box to take a peek.
+const BOX_OPEN_SOUND_PATH: String = "res://assets/sounds/factory_noises/box_open.mp3"
+## Lower-cased fragment of the intro_head_box line where they open it for a look.
+const BOX_OPEN_CUE: String = "take a peak"
 const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const WORK_FRAME_OUTER_WIDTH: float = 800.0
-const INTRO_HEAD_BOX_LOOK_PAGE_INDEX: int = 4
+## Lower-cased fragment of the intro_head_box line that cuts to the open-box view
+## (matched by text so added lines can't shift the reveal off its beat).
+const BOX_LOOK_CUE: String = "head segments"
+## Jumpscare sting on the intro_head_box line where the player's heart spikes with
+## fear as they open the box; played at 25%.
+const JUMPSCARE_SOUND_PATH: String = "res://assets/sounds/bass/jumpscare.mp3"
+const JUMPSCARE_VOLUME_SCALE: float = 0.25
+## Lower-cased fragment of that heart-spike line.
+const HEART_SPIKE_CUE: String = "heart spikes"
 const WORK_TIME_LIMIT_SECONDS: float = 60.0
 
 ## Second Work minigame: assemble the robot's upper arm instead of sorting
@@ -388,13 +400,22 @@ func _apply_intro_head_box() -> void:
 
 func _on_dialogue_page_advanced(index: int) -> void:
 	if _scene_phase == WorkPhase.INTRO_HEAD_BOX:
+		if index < 0 or index >= _intro_head_box_pages.size():
+			return
+		var lower := _page_text(_intro_head_box_pages[index]).to_lower()
 		# The player stops walking the instant the box trips them — cut the steps
 		# and play the trip/kick thud.
-		if index >= 0 and index < _intro_head_box_pages.size():
-			if _page_text(_intro_head_box_pages[index]).to_lower().contains(BOX_TRIP_CUE):
-				_stop_hallway_footsteps()
-				play_oneshot_sound(BOX_TRIP_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
-		if index == INTRO_HEAD_BOX_LOOK_PAGE_INDEX and not _intro_box_open_visual_applied:
+		if lower.contains(BOX_TRIP_CUE):
+			_stop_hallway_footsteps()
+			play_oneshot_sound(BOX_TRIP_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
+		# The player pops the box open to take a peek.
+		if lower.contains(BOX_OPEN_CUE):
+			play_oneshot_sound(BOX_OPEN_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
+		# Opening the box spikes their heart with fear — hit the jumpscare sting.
+		if lower.contains(HEART_SPIKE_CUE):
+			play_oneshot_sound(JUMPSCARE_SOUND_PATH, JUMPSCARE_VOLUME_SCALE)
+		# The line describing the contents cuts to the open-box view.
+		if lower.contains(BOX_LOOK_CUE) and not _intro_box_open_visual_applied:
 			_intro_box_open_visual_applied = true
 			var main: Node = get_tree().current_scene
 			if main != null and main.has_method("_play_transition_then"):
