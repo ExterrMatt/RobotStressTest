@@ -95,6 +95,12 @@ const BEDROOM_TEXTURE_MARKER: String = "bedroom"
 const BEDROOM_LOCATION_IDS: Dictionary = {
 	&"sleep": true,
 }
+## Looping bedroom ambience beds, chosen by phase: the morning bed underlays both
+## Morning and Evening, the night bed underlays Night. Because Sleep counts as a
+## bedroom scene (above), the night bed keeps playing straight into it.
+const BEDROOM_AMBIENCE_MORNING_PATH: String = "res://assets/sounds/bedroom/morning_bedroom.mp3"
+const BEDROOM_AMBIENCE_NIGHT_PATH: String = "res://assets/sounds/bedroom/night_bedroom.mp3"
+const BEDROOM_AMBIENCE_VOLUME_SCALE: float = 0.5
 ## Patrol-drone street inspection that plays after a regular (non-intro) school
 ## or work run: a chance the drone stops the player before the day advances. It
 ## is loaded like a normal dialogue location (its own LocationData below), so it
@@ -381,6 +387,10 @@ var _suppress_phase_selection_refresh: bool = false
 ## every same-side swap, e.g. bedroom dialogue -> bedroom hub). Starts false so
 ## the first bedroom scene the game shows opens the door.
 var _in_bedroom_scene: bool = false
+## Looping bedroom-ambience player and the path it's currently playing ("" = none),
+## so we only switch beds when the phase's target actually changes.
+var _bedroom_ambience_player: AudioStreamPlayer = null
+var _bedroom_ambience_path: String = ""
 
 func _ready() -> void:
 	_create_mouse_tooltip()
@@ -2018,11 +2028,52 @@ func _texture_is_bedroom(tex: Texture2D) -> bool:
 ## Plays the door sound whenever the picture crosses between the bedroom and
 ## elsewhere: open on entering a bedroom scene, close on leaving one. No sound
 ## fires for same-side swaps (bedroom dialogue -> hub, or location -> location).
+## Always refreshes the looping ambience bed afterwards (which also picks up
+## phase changes that keep us in the bedroom, e.g. Evening -> Night).
 func _update_bedroom_scene_audio(is_bedroom: bool) -> void:
-	if is_bedroom == _in_bedroom_scene:
+	if is_bedroom != _in_bedroom_scene:
+		_in_bedroom_scene = is_bedroom
+		_play_door_sound(DOOR_OPEN_SOUND_PATH if is_bedroom else DOOR_CLOSE_SOUND_PATH)
+	_update_bedroom_ambience()
+
+
+## Drive the looping bedroom ambience: the morning bed for Morning/Evening, the
+## night bed for Night, silence when not in a bedroom scene. Only switches when
+## the target path changes, so it loops unbroken across same-target swaps — in
+## particular bedroom(Night) -> Sleep keeps the night bed going.
+func _update_bedroom_ambience() -> void:
+	var target: String = ""
+	if _in_bedroom_scene:
+		target = BEDROOM_AMBIENCE_NIGHT_PATH if GameState.phase == DayCycle.Phase.NIGHT \
+			else BEDROOM_AMBIENCE_MORNING_PATH
+	if target == _bedroom_ambience_path:
 		return
-	_in_bedroom_scene = is_bedroom
-	_play_door_sound(DOOR_OPEN_SOUND_PATH if is_bedroom else DOOR_CLOSE_SOUND_PATH)
+	_bedroom_ambience_path = target
+	if _bedroom_ambience_player != null and is_instance_valid(_bedroom_ambience_player):
+		_bedroom_ambience_player.stop()
+		_bedroom_ambience_player.queue_free()
+	_bedroom_ambience_player = null
+	if target.is_empty():
+		return
+	var stream := load(target) as AudioStream
+	if stream == null:
+		return
+	_set_audio_stream_loop(stream, true)
+	_bedroom_ambience_player = AudioStreamPlayer.new()
+	_bedroom_ambience_player.name = "BedroomAmbienceAudioPlayer"
+	_bedroom_ambience_player.stream = stream
+	_bedroom_ambience_player.volume_db = linear_to_db(BEDROOM_AMBIENCE_VOLUME_SCALE)
+	add_child(_bedroom_ambience_player)
+	_bedroom_ambience_player.play()
+
+
+func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
+	if stream == null:
+		return
+	for property in stream.get_property_list():
+		if String(property.get("name", "")) == "loop":
+			stream.set("loop", enabled)
+			return
 
 
 ## Fires a one-shot door SFX on a self-freeing AudioStreamPlayer, honouring the
