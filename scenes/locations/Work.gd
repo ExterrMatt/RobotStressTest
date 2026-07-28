@@ -82,17 +82,10 @@ const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const WORK_FRAME_OUTER_WIDTH: float = 800.0
-## Lower-cased fragment of the intro_head_box line that cuts to the box-on-the-
-## floor view — the same "heart spikes with fear" beat as the jumpscare, so the
-## reveal and the sting land together. Matched by text so added lines can't shift
+## Lower-cased fragment of the intro_head_box line ("heart spikes with fear") that
+## cuts to the box-on-the-floor view. Matched by text so added lines can't shift
 ## it off its beat.
 const BOX_LOOK_CUE: String = "heart spikes"
-## Jumpscare sting on the intro_head_box line where the player's heart spikes with
-## fear as they open the box; played at 25%.
-const JUMPSCARE_SOUND_PATH: String = "res://assets/sounds/bass/jumpscare.mp3"
-const JUMPSCARE_VOLUME_SCALE: float = 0.25
-## Lower-cased fragment of that heart-spike line.
-const HEART_SPIKE_CUE: String = "heart spikes"
 const WORK_TIME_LIMIT_SECONDS: float = 60.0
 
 ## Second Work minigame: assemble the robot's upper arm instead of sorting
@@ -413,10 +406,7 @@ func _on_dialogue_page_advanced(index: int) -> void:
 		# The player pops the box open to take a peek.
 		if lower.contains(BOX_OPEN_CUE):
 			play_oneshot_sound(BOX_OPEN_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
-		# Opening the box spikes their heart with fear — hit the jumpscare sting.
-		if lower.contains(HEART_SPIKE_CUE):
-			play_oneshot_sound(JUMPSCARE_SOUND_PATH, JUMPSCARE_VOLUME_SCALE)
-		# The line describing the contents cuts to the open-box view.
+		# The heart-spike line cuts to the open-box view.
 		if lower.contains(BOX_LOOK_CUE) and not _intro_box_open_visual_applied:
 			_intro_box_open_visual_applied = true
 			var main: Node = get_tree().current_scene
