@@ -59,7 +59,11 @@ var day: int:
 var _phase: int = 0
 var _money: int = 0
 var _brightness_value: float = 50.0
-var _volume_value: float = 100.0
+## Default master volume (0-100). The game starts at 50% (half amplitude on the
+## master bus) rather than full blast; a player who wants the old full-volume mix
+## can raise the slider to 100.
+const DEFAULT_VOLUME_VALUE: float = 50.0
+var _volume_value: float = DEFAULT_VOLUME_VALUE
 var _scanlines_enabled: bool = true
 
 ## Default playback level for any sound effect that does NOT set its own volume.
@@ -718,7 +722,7 @@ func from_dict(data: Dictionary) -> void:
 	drone_caught_last_inspection = bool(data.get("drone_caught_last_inspection", false))
 	_debug_mode_enabled = bool(data.get("debug_mode_enabled", false))
 	_window_mode = clampi(int(data.get("window_mode", WindowMode.WINDOWED)), WindowMode.WINDOWED, WindowMode.FULLSCREEN)
-	_volume_value = clampf(float(data.get("volume_value", 100.0)), 0.0, 100.0)
+	_volume_value = clampf(float(data.get("volume_value", DEFAULT_VOLUME_VALUE)), 0.0, 100.0)
 	_apply_volume()
 	_easy_workshop_enabled = bool(data.get("easy_workshop_enabled", false))
 	_emit_initial_state()
