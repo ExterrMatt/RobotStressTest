@@ -95,10 +95,11 @@ const BEDROOM_TEXTURE_MARKER: String = "bedroom"
 const BEDROOM_LOCATION_IDS: Dictionary = {
 	&"sleep": true,
 }
-## Looping bedroom ambience beds, chosen by phase: the morning bed underlays both
-## Morning and Evening, the night bed underlays Night. Because Sleep counts as a
-## bedroom scene (above), the night bed keeps playing straight into it.
+## Looping bedroom ambience beds, one per phase: morning, evening, and night.
+## Because Sleep counts as a bedroom scene (above), the night bed keeps playing
+## straight into it.
 const BEDROOM_AMBIENCE_MORNING_PATH: String = "res://assets/sounds/bedroom/morning_bedroom.mp3"
+const BEDROOM_AMBIENCE_EVENING_PATH: String = "res://assets/sounds/bedroom/evening_bedroom.mp3"
 const BEDROOM_AMBIENCE_NIGHT_PATH: String = "res://assets/sounds/bedroom/night_bedroom.mp3"
 const BEDROOM_AMBIENCE_VOLUME_SCALE: float = 0.5
 
@@ -2064,8 +2065,13 @@ func _update_bedroom_scene_audio(is_bedroom: bool) -> void:
 func _update_bedroom_ambience() -> void:
 	var target: String = ""
 	if _in_bedroom_scene:
-		target = BEDROOM_AMBIENCE_NIGHT_PATH if GameState.phase == DayCycle.Phase.NIGHT \
-			else BEDROOM_AMBIENCE_MORNING_PATH
+		match GameState.phase:
+			DayCycle.Phase.NIGHT:
+				target = BEDROOM_AMBIENCE_NIGHT_PATH
+			DayCycle.Phase.EVENING:
+				target = BEDROOM_AMBIENCE_EVENING_PATH
+			_:
+				target = BEDROOM_AMBIENCE_MORNING_PATH
 	if target == _bedroom_ambience_path:
 		return
 	_bedroom_ambience_path = target
