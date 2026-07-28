@@ -48,6 +48,16 @@ const PHONE_RING_SOUND_PATH: String = "res://assets/sounds/ringtone/ringtone.mp3
 const PHONE_RING_VOLUME_SCALE: float = 0.5
 ## Lower-cased fragment marking the disruption line where the phone starts ringing.
 const PHONE_RING_CUE: String = "buzz"
+## Factory-floor ambience under the whole Work scene at 25%. The intro hallway
+## (walking to the exit) swaps it for the subtler background noise.
+const WORK_AMBIENT_SOUND_PATH: String = "res://assets/sounds/factory_noises/industrial_background_noise.mp3"
+const HALLWAY_AMBIENT_SOUND_PATH: String = "res://assets/sounds/factory_noises/subtle_factory_background_noise.mp3"
+const WORK_AMBIENT_VOLUME_SCALE: float = 0.25
+## Metal footsteps as the player walks the intro hallway. Cut off the instant the
+## box trips them (they've stopped walking). ~90s clip, so it never loops here.
+const METAL_FOOTSTEPS_SOUND_PATH: String = "res://assets/sounds/metal_thunk/metal_footsteps.mp3"
+## Lower-cased fragment of the intro_head_box line where the box trips the player.
+const BOX_TRIP_CUE: String = "nearly trips"
 const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
@@ -96,6 +106,10 @@ var _arm_minigame: WorkArmMinigame = null
 ## the pages driving that call (so a page index maps back to its text).
 var _work_arm_overlay: TextureRect = null
 var _work_disruption_pages: Array = []
+## Metal-footsteps player for the intro hallway walk (cut on the box-trip line).
+var _footsteps_player: AudioStreamPlayer = null
+## Pages of the intro_head_box dialogue, so a page_advanced index maps to prose.
+var _intro_head_box_pages: Array = []
 ## Looping phone ringtone for the robot's disruption call. Loops itself and ends
 ## its loop gracefully (current pass rings out) — see LoopingSfxPlayer.
 var _phone_ring_player: LoopingSfxPlayer = null
@@ -117,6 +131,8 @@ func _ready() -> void:
 	dialogue_box.finished.connect(_on_dialogue_finished)
 	dialogue_box.page_advanced.connect(_on_dialogue_page_advanced)
 	_setup_phone_ring_audio()
+	# Factory-floor ambience under the whole shift (the intro hallway swaps it).
+	start_ambient_loop(WORK_AMBIENT_SOUND_PATH, WORK_AMBIENT_VOLUME_SCALE)
 
 	_intro_work = _is_intro_work_scene()
 	set_process(false)
@@ -336,15 +352,26 @@ func _apply_intro_head_box() -> void:
 		_default_main_frame_outer_width(main)
 	)
 
+	# The hallway swaps the factory-floor ambience for the subtler background noise
+	# and starts the metal footsteps of the walk toward the exit.
+	stop_ambient_loop()
+	start_ambient_loop(HALLWAY_AMBIENT_SOUND_PATH, WORK_AMBIENT_VOLUME_SCALE)
+	_start_hallway_footsteps()
+
 	_scene_phase = WorkPhase.INTRO_HEAD_BOX
 	_intro_box_open_visual_applied = false
 	_set_node_visible(dialogue_box, true)
 	_set_node_visible(choice_grid, false)
-	dialogue_box.play_pages(Dialogue.get_pages("work", "intro_head_box"))
+	_intro_head_box_pages = Dialogue.get_pages("work", "intro_head_box")
+	dialogue_box.play_pages(_intro_head_box_pages)
 
 
 func _on_dialogue_page_advanced(index: int) -> void:
 	if _scene_phase == WorkPhase.INTRO_HEAD_BOX:
+		# The player stops walking the instant the box trips them — cut the steps.
+		if index >= 0 and index < _intro_head_box_pages.size():
+			if _page_text(_intro_head_box_pages[index]).to_lower().contains(BOX_TRIP_CUE):
+				_stop_hallway_footsteps()
 		if index == INTRO_HEAD_BOX_LOOK_PAGE_INDEX and not _intro_box_open_visual_applied:
 			_intro_box_open_visual_applied = true
 			var main: Node = get_tree().current_scene
@@ -530,6 +557,23 @@ func _hide_work_arm_overlay() -> void:
 		_work_arm_overlay.visible = false
 
 
+func _start_hallway_footsteps() -> void:
+	var stream := load(METAL_FOOTSTEPS_SOUND_PATH) as AudioStream
+	if stream == null:
+		return
+	_footsteps_player = AudioStreamPlayer.new()
+	_footsteps_player.name = "HallwayFootstepsAudioPlayer"
+	_footsteps_player.stream = stream
+	_footsteps_player.volume_db = linear_to_db(GameState.DEFAULT_SFX_VOLUME_SCALE)
+	add_child(_footsteps_player)
+	_footsteps_player.play()
+
+
+func _stop_hallway_footsteps() -> void:
+	if _footsteps_player != null and is_instance_valid(_footsteps_player):
+		_footsteps_player.stop()
+
+
 func _setup_phone_ring_audio() -> void:
 	_phone_ring_player = LoopingSfxPlayer.new()
 	_phone_ring_player.name = "PhoneRingAudioPlayer"
@@ -645,6 +689,8 @@ func _on_dialogue_finished() -> void:
 
 func _exit_tree() -> void:
 	_disable_work_hud_timer()
+	# The player is leaving the factory — the floor ambience stops with them.
+	stop_ambient_loop()
 	# Let the ring's current pass ring out (then self-free) instead of cutting it
 	# off — the player is parented to the persistent scene so it survives us.
 	if _phone_ring_player != null and is_instance_valid(_phone_ring_player):
