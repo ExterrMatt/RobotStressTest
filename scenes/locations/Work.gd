@@ -48,6 +48,9 @@ const WORK_ARM_PACKED_CUE: String = "pack the upper arm"
 ## Lower-cased fragment of the disruption line where the player looks up and sees
 ## the blue light of the robot's ceiling camera.
 const CAMERA_ABOVE_CUE: String = "camera above"
+## Lower-cased fragment of the disruption line where the player looks back down at
+## the table (still with the arm on it, one line before they pocket it).
+const LOOK_BACK_DOWN_CUE: String = "taking you apart"
 ## The robot's phone call opens the disruption with the phone buzzing in the
 ## player's pocket. The ringtone loops while that line is on screen and ends its
 ## loop (current pass rings out) the moment the player advances to the next line.
@@ -404,10 +407,11 @@ func _on_dialogue_page_advanced(index: int) -> void:
 			# Look up at the robot's camera: the ceiling lights flash blue.
 			if lower.contains(CAMERA_ABOVE_CUE):
 				_look_up_at_camera()
-			# Once the line says the arm goes in the bag, look back down at the
-			# table and take the arm off it (into the bag).
-			if lower.contains(WORK_ARM_PACKED_CUE):
+			# Look back down at the table — the arm is still sitting on it.
+			if lower.contains(LOOK_BACK_DOWN_CUE):
 				_look_back_down_from_camera()
+			# The next line pockets the arm: take it off the table.
+			if lower.contains(WORK_ARM_PACKED_CUE):
 				_hide_work_arm_overlay()
 
 
@@ -590,13 +594,16 @@ func _look_up_at_camera() -> void:
 	_hide_work_arm_overlay()
 
 
-## Look back down at the work table (restores the disruption background).
+## Look back down at the work table (restores the disruption background) with the
+## arm still on it — the player hasn't pocketed it yet.
 func _look_back_down_from_camera() -> void:
 	_set_main_scene_image_and_frame(
 		WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH,
 		WORK_DISRUPTION_FRAME_SIZE,
 		WORK_DISRUPTION_FRAME_SIZE.x
 	)
+	if _work_arm_overlay != null and is_instance_valid(_work_arm_overlay):
+		_work_arm_overlay.visible = true
 
 
 func _start_hallway_footsteps() -> void:
