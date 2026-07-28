@@ -82,9 +82,11 @@ const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const WORK_FRAME_SIZE: Vector2 = Vector2(800.0, 640.0)
 const WORK_FRAME_OUTER_WIDTH: float = 800.0
-## Lower-cased fragment of the intro_head_box line that cuts to the open-box view
-## (matched by text so added lines can't shift the reveal off its beat).
-const BOX_LOOK_CUE: String = "head segments"
+## Lower-cased fragment of the intro_head_box line that cuts to the box-on-the-
+## floor view — the same "heart spikes with fear" beat as the jumpscare, so the
+## reveal and the sting land together. Matched by text so added lines can't shift
+## it off its beat.
+const BOX_LOOK_CUE: String = "heart spikes"
 ## Jumpscare sting on the intro_head_box line where the player's heart spikes with
 ## fear as they open the box; played at 25%.
 const JUMPSCARE_SOUND_PATH: String = "res://assets/sounds/bass/jumpscare.mp3"
