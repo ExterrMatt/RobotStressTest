@@ -70,6 +70,8 @@ const WORK_FLUORESCENT_VOLUME_SCALE: float = 0.60
 ## Metal footsteps as the player walks the intro hallway. Cut off the instant the
 ## box trips them (they've stopped walking). ~90s clip, so it never loops here.
 const METAL_FOOTSTEPS_SOUND_PATH: String = "res://assets/sounds/metal_thunk/metal_footsteps.mp3"
+## One-shot played on the line where the box trips the player.
+const BOX_TRIP_SOUND_PATH: String = "res://assets/sounds/factory_noises/box_trip.mp3"
 ## Lower-cased fragment of the intro_head_box line where the box trips the player.
 const BOX_TRIP_CUE: String = "nearly trips"
 const WORK_DISRUPTION_FRAME_SIZE: Vector2 = Vector2(500.0, 125.0)
@@ -386,10 +388,12 @@ func _apply_intro_head_box() -> void:
 
 func _on_dialogue_page_advanced(index: int) -> void:
 	if _scene_phase == WorkPhase.INTRO_HEAD_BOX:
-		# The player stops walking the instant the box trips them — cut the steps.
+		# The player stops walking the instant the box trips them — cut the steps
+		# and play the trip/kick thud.
 		if index >= 0 and index < _intro_head_box_pages.size():
 			if _page_text(_intro_head_box_pages[index]).to_lower().contains(BOX_TRIP_CUE):
 				_stop_hallway_footsteps()
+				play_oneshot_sound(BOX_TRIP_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
 		if index == INTRO_HEAD_BOX_LOOK_PAGE_INDEX and not _intro_box_open_visual_applied:
 			_intro_box_open_visual_applied = true
 			var main: Node = get_tree().current_scene
