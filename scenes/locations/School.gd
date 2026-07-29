@@ -310,6 +310,12 @@ func _pick_teacher_and_question() -> void:
 func _apply_class_background() -> void:
 	if String(_current_teacher.get("id", "")) != GYM_TEACHER_ID:
 		return
+	# Main applies the location's default (school) background in the same swap
+	# call, right AFTER our _ready runs — so wait a frame before overriding it,
+	# otherwise it immediately clobbers the gym texture.
+	await get_tree().process_frame
+	if not is_inside_tree():
+		return
 	var main: Node = get_tree().current_scene
 	if main == null or not ("scene_image" in main):
 		return
