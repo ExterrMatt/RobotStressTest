@@ -17,3 +17,4 @@ res://scenes/ui/LoopingSfxPlayer.gd
 res://scenes/locations/IntroDialogue.gd
 res://scenes/locations/LocationBase.gd
 res://scenes/ui/MainMenu.gd
+res://scenes/locations/Workshop.gd

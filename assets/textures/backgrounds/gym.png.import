@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://8a0gvtnqk5w4"
-path="res://.godot/imported/Gym2.png-1bda9818e84dca1cc69d769e78e4ca93.ctex"
+uid="uid://ggw06iajnvo7"
+path="res://.godot/imported/gym.png-e02890aadddae097649a2af32b27cc0d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/characters/teachers/Gym2.png"
-dest_files=["res://.godot/imported/Gym2.png-1bda9818e84dca1cc69d769e78e4ca93.ctex"]
+source_file="res://assets/textures/backgrounds/gym.png"
+dest_files=["res://.godot/imported/gym.png-e02890aadddae097649a2af32b27cc0d.ctex"]
 
 [params]
 
