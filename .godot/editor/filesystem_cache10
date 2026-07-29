@@ -20,7 +20,7 @@ jumpscare.mp3::AudioStreamMP3::2139999757014739427::1784689853::1784933897::1:::
 pulsing_bass.mp3::AudioStreamMP3::5306990796959501960::1784689819::1784933897::1::::<><><>0<>0<>c118d8cd3e50b36ba6b2b403a38285f1<>res://.godot/imported/pulsing_bass.mp3-f2987004c47f2fbc33680391f0d01676.mp3str::
 ::res://assets/sounds/bed/::1785191892
 laying_on_a_mattress.mp3::AudioStreamMP3::2000686876483661762::1785191385::1785191892::1::::<><><>0<>0<>9ac8180654839fcb6943db78c71a671a<>res://.godot/imported/laying_on_a_mattress.mp3-60af533b99661790b17e3f106051f8ee.mp3str::
-::res://assets/sounds/bedroom/::1785276454
+::res://assets/sounds/bedroom/::1785276458
 evening_bedroom.mp3::AudioStreamMP3::8289020958600714379::1785276418::1785276458::1::::<><><>0<>0<>db071afdd37a2a8ab94bf264c8af489b<>res://.godot/imported/evening_bedroom.mp3-0ccf6f1f79e738a30a72a28264b4af0b.mp3str::
 morning_bedroom.mp3::AudioStreamMP3::1972565416440847623::1785198267::1785201391::1::::<><><>0<>0<>43721159f9621c99812dfeae68bc1e83<>res://.godot/imported/morning_bedroom.mp3-433ede33d3a6533a4dda39101da2e6ab.mp3str::
 night_bedroom.mp3::AudioStreamMP3::2282626131934665657::1785198412::1785201391::1::::<><><>0<>0<>d74972d4964c791dd44d1dea88761782<>res://.godot/imported/night_bedroom.mp3-d61e3a95ec88f000728b3b8a1e28fb12.mp3str::
@@ -170,7 +170,7 @@ zap_2.mp3::AudioStreamMP3::5678955558307946760::1785094932::1785094943::1::::<><
 zap_3.mp3::AudioStreamMP3::8493531306011526555::1785094932::1785094943::1::::<><><>0<>0<>3233fa3c024206ea05a9f3696b4f3b16<>res://.godot/imported/zap_3.mp3-fcaefbac8815984a9f9258f291b38af7.mp3str::
 zap_long.mp3::AudioStreamMP3::5753945952095273596::1785094932::1785094944::1::::<><><>0<>0<>9687be963a1ddd2de2b0e1c9fff254cc<>res://.godot/imported/zap_long.mp3-83de950bd6072cc39878ce913bfdeb89.mp3str::
 ::res://assets/textures/::1779326126
-::res://assets/textures/asepritefiles/::1784932205
+::res://assets/textures/asepritefiles/::1785284646
 (Bed, StressTest) Robot Mouth-B Pre-Done.png::CompressedTexture2D::6428487675829564269::1784677774::1784665697::1::::<><><>0<>0<>469423b5b89dc666ffaa210812bc0fc0<>res://.godot/imported/(Bed, StressTest) Robot Mouth-B Pre-Done.png-c6266d4e2424c4599430e2b9e2e28e30.ctex::
 (Bed, StressTest) Robot Vegetable-Mission Medium Loop.png::CompressedTexture2D::4407109698332461170::1784923762::1784700295::1::::<><><>0<>0<>a8fb40a55342d40f67e3b696589a9323<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission Medium Loop.png-ad7e9b7ed8c8a13ce6f7f7974510d887.ctex::
 (Bed, StressTest) Robot Vegetable-Mission-Intro.png::CompressedTexture2D::5300773249546261467::1782705557::1782787471::1::::<><><>0<>0<>87416b7bccd73139cf24ac912c5abf0b<>res://.godot/imported/(Bed, StressTest) Robot Vegetable-Mission-Intro.png-876f771cdf25f3e28257b0fff1171054.ctex::
@@ -179,7 +179,7 @@ large_workshop_placeholder.png::CompressedTexture2D::7257541348602475801::178270
 Stress Test Bot.png::CompressedTexture2D::6527154148771642737::1782705557::1782787471::1::::<><><>0<>0<>33da11ca9f26f6343669ea54388631ce<>res://.godot/imported/Stress Test Bot.png-eaa0dedb0f105f438d064da463fcad3b.ctex::
 Stress Test Bot_layers.txt::TextFile::-1::1784665644::0::1::::<><><>0<>0<><>::
 Stress Test Shed.png::CompressedTexture2D::5733040214497596::1782705557::1782787471::1::::<><><>0<>0<>951c01dce9f66e954241addb0537db74<>res://.godot/imported/Stress Test Shed.png-49fb5ccc7106881aa742e8e332032df3.ctex::
-::res://assets/textures/backgrounds/::1785272172
+::res://assets/textures/backgrounds/::1785284646
 bedroom_evening.png::CompressedTexture2D::5016043500698100473::1784862243::1784923599::1::::<><><>0<>0<>18997cb137fa485a700645a9ec965f86<>res://.godot/imported/bedroom_evening.png-5d2783d6dd788185447c9940aaa2af38.ctex::
 bedroom_morning.png::CompressedTexture2D::590344480680096236::1784929086::1784930011::1::::<><><>0<>0<>f91af4342c0e1daba29db589d0c81d54<>res://.godot/imported/bedroom_morning.png-c2e0c29321663a4c76065ecd11a92195.ctex::
 bedroom_night.png::CompressedTexture2D::1860716824234239661::1778740332::1782787471::1::::<><><>0<>0<>78f8818fb94781e1748fd191707c0b52<>res://.godot/imported/bedroom_night.png-332efe34657d693e16426d9dd86b614d.ctex::
@@ -189,7 +189,7 @@ factory_box.png::CompressedTexture2D::3528960358723980732::1782705557::178278747
 factory_hallway.png::CompressedTexture2D::2510758955846304797::1782705557::1782787471::1::::<><><>0<>0<>fd99b6da32cc91e9a1fee8132a18548e<>res://.godot/imported/factory_hallway.png-585db32cd0a468a0616b76f3a54e3a51.ctex::
 factory_lights.png::CompressedTexture2D::2123278593701905900::1785205055::1785205059::1::::<><><>0<>0<>7985533513a51173ddc4ad346ab2fa56<>res://.godot/imported/factory_lights.png-06cea39ec714f6c189ab25494fadf8e4.ctex::
 factory_lights_blue.png::CompressedTexture2D::6795823252898639783::1785205044::1785205059::1::::<><><>0<>0<>8b61abce79ad047b1a324199ab03e54e<>res://.godot/imported/factory_lights_blue.png-f089b5dac59fef6c7ebd4d80960a1e16.ctex::
-large_workshop.png::CompressedTexture2D::4215371644567288306::1779157515::1782787471::1::::<><><>0<>0<>8cfa98e1ec075719c61deabae900ac86<>res://.godot/imported/large_workshop.png-fc870eefa14d17cee2c900c9c3f27ed0.ctex::
+large_workshop.png::CompressedTexture2D::4215371644567288306::1785284627::1785284767::1::::<><><>0<>0<>8cfa98e1ec075719c61deabae900ac86<>res://.godot/imported/large_workshop.png-fc870eefa14d17cee2c900c9c3f27ed0.ctex::
 living_room_evening.png::CompressedTexture2D::653991458170351797::1785272150::1785272172::1::::<><><>0<>0<>e6f150f2236e89179ca91d26be365910<>res://.godot/imported/living_room_evening.png-d52ce37c9f719c2614d26fc648928083.ctex::
 mainmenu_background.png::CompressedTexture2D::3546998357962779024::1782705557::1782787471::1::::<><><>0<>0<>e8c16db7820a35121df20327c6dfe778<>res://.godot/imported/mainmenu_background.png-45f540cca23fac6bca8a4aa5d94e4b29.ctex::
 mainmenu_dark_background.png::CompressedTexture2D::4316802343095196574::1782705557::1782787471::1::::<><><>0<>0<>974c4cc8373a16c303499a0c751aca3c<>res://.godot/imported/mainmenu_dark_background.png-6f5bc447a1095175507d06395265cf4d.ctex::
@@ -735,14 +735,14 @@ stress_test.tres::Resource/LocationData::-1::1782705557::0::1::::<><><>0<>0<><>:
 uncle_hangout.tres::Resource/LocationData::2574501452586518950::1784665711::0::1::::<><><>0<>0<><>::uid://d370vjofljuj2::::res://resources/LocationData.gd<>uid://jk2e5guv1u7f::::res://assets/textures/backgrounds/living_room_evening.png
 work.tres::Resource/LocationData::2447899081758880348::1783381648::0::1::::<><><>0<>0<><>::uid://d370vjofljuj2::::res://resources/LocationData.gd<>uid://dw8o41rww4dht::::res://assets/textures/backgrounds/work.png
 workshop.tres::Resource/LocationData::-1::1782705557::0::1::::<><><>0<>0<><>::res://resources/LocationData.gd
-::res://scenes/::1785205065
+::res://scenes/::1785277477
 Background.tscn::PackedScene::1540975147824367689::1782705557::0::1::::<><><>0<>0<><>::uid://c004tumhf8ilm::::res://shaders/space_background.gdshader
-Main.gd::GDScript::2968061091571004146::1785205065::0::1::::<>Control<><>0<>0<><>::
+Main.gd::GDScript::2968061091571004146::1785277477::0::1::::<>Control<><>0<>0<><>::
 Main.tscn::PackedScene::6014830843503735391::1784665652::0::1::::<><><>0<>0<><>::uid://b8fuv3fb4gis8::::res://assets/textures/backgrounds/scene_placeholder.png<>res://scenes/Background.tscn<>res://scenes/Scanlines.tscn<>uid://cqwrabia7ynum::::res://scenes/Transition.tscn<>uid://bij0sdu6ci27g::::res://scenes/Main.gd
 Scanlines.tscn::PackedScene::4620079510714485324::1782705557::0::1::::<><><>0<>0<><>::uid://d3k11cw7sxoh6::::res://shaders/scanlines.gdshader
 Transition.gd::GDScript::6657196936549354663::1782705557::0::1::::<>TextureRect<><>0<>0<><>::
 Transition.tscn::PackedScene::5942311429986572456::1778799880::0::1::::<><><>0<>0<><>::res://scenes/Transition.gd<>uid://cexl7748vgoji::::res://assets/textures/backgrounds/load/FlowerLoad.png
-::res://scenes/locations/::1785272627
+::res://scenes/locations/::1785277180
 DraggableItem.gd::GDScript::4351373448739835074::1784622374::0::1::::DraggableItem<>TextureRect<><>0<>0<><>::
 DroneEncounter.gd::GDScript::4955085017189888894::1784923762::0::1::::DroneEncounter<>LocationBase<><>0<>0<><>::
 DroneEncounter.tscn::PackedScene::7060472199048655531::1784832940::0::1::::<><><>0<>0<><>::uid://ccujr5nfd0mwk::::res://scenes/locations/DroneEncounter.gd<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
@@ -779,7 +779,7 @@ StubLocation.tscn::PackedScene::6474183686793253630::1778811889::0::1::::<><><>0
 UncleHangout.gd::GDScript::5568661125409079019::1784622374::0::1::::UncleHangout<>LocationBase<><>0<>0<><>::
 UncleHangout.tscn::PackedScene::7429742523238519555::1784665710::0::1::::<><><>0<>0<><>::uid://cllrbgvkcxdlr::::res://scenes/locations/UncleHangout.gd<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
 UncleWardrobe.gd::GDScript::7369430936900425491::1784622374::0::1::::UncleWardrobe<>RefCounted<><>0<>0<><>::
-Work.gd::GDScript::3642143372528671624::1785272627::0::1::::<>LocationBase<><>0<>0<><>::
+Work.gd::GDScript::3642143372528671624::1785277180::0::1::::<>LocationBase<><>0<>0<><>::
 Work.tscn::PackedScene::8523178736077590333::1778952915::0::1::::<><><>0<>0<><>::uid://br5jtmaxrfegu::::res://scenes/locations/Work.gd<>uid://4sq4i7qirh41::::res://assets/textures/icons/empty_table.png<>uid://ddsxrsuwn8rxx::::res://assets/textures/icons/work_panel_1.png<>uid://ba22xms6g704r::::res://assets/textures/icons/work_shadow_panel_1.png<>uid://caqnawe8nt6ai::::res://assets/textures/icons/gear_panel_1.png<>uid://euqnriph6tkx::::res://assets/textures/icons/arc_panel_1.png<>uid://ba7h5xerc1wbg::::res://assets/textures/icons/tri_panel_1.png<>uid://cmq33204e2x1b::::res://assets/textures/icons/tess_panel_1.png<>uid://1a7lwki0cg0i::::res://scenes/locations/DropSlot.gd<>uid://csahv8rgde8lk::::res://scenes/locations/WorkInventory.tscn<>uid://b8dlgbox4dlg0::::res://scenes/ui/DialogueBox.tscn
 WorkArmMinigame.gd::GDScript::6571160534696330580::1785094932::0::1::::WorkArmMinigame<>Control<><>0<>0<><>::
 WorkArmMinigame.tscn::PackedScene::7564115443253118834::1784622374::0::1::::<><><>0<>0<><>::uid://c0veb3mmq1goq::::res://scenes/locations/WorkArmMinigame.gd<>uid://4sq4i7qirh41::::res://assets/textures/icons/empty_table.png<>uid://cg01f011fwtyo::::res://scenes/locations/WorkshopAssemblySlot.gd<>uid://48i7jx7w0l7j::::res://scenes/locations/WorkshopPiece.gd<>uid://cx2htstj66avq::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_inner_gears.png<>uid://gp5w7cokjnqw::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_inner_gears_outline.png<>uid://c2mma777tshu::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_joint.png<>uid://bi8r64g7vxv2e::::res://assets/textures/characters/robot/workshop/workshop robot arm/elbow_cap.png<>uid://ddx87g0h11wh7::::res://assets/textures/characters/robot/workshop/workshop robot arm/upper_arm_plate_lower.png<>uid://dd0jtlko3pv2y::::res://assets/textures/characters/robot/workshop/workshop robot arm/upper_arm_plate.png<>uid://c2s1603v1nlh1::::res://assets/textures/characters/robot/workshop/workshop robot arm/bicep.png<>uid://bmippgcdq4eas::::res://assets/textures/characters/robot/workshop/workshop robot arm/tricep.png<>uid://dhrbnpa5glwv1::::res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_pad.png<>uid://3vcvu5yyi6xy::::res://assets/textures/characters/robot/workshop/workshop robot arm/shoulder_joint.png
