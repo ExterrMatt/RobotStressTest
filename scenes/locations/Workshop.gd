@@ -20,7 +20,9 @@ const PAN_IMAGE_PATHS: Array[String] = [
 ]
 
 const PAN_WIDTH: float = 500.0
-const PAN_SOURCE_HEIGHT: float = 650.0
+## Full height of the large_workshop background. The minigame region is anchored
+## to the bottom of it (MINIGAME_REGION_Y below), so this must match the art.
+const PAN_SOURCE_HEIGHT: float = 800.0
 
 const INTRO_REGION_Y: float = 0.0
 const INTRO_REGION_HEIGHT: float = 125.0
