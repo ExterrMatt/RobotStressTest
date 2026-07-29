@@ -99,6 +99,10 @@ const PROMPT_COLOR: String = "#e8c468"
 const DEFAULT_PLAYER_NAME: String = "Noah"
 const INTRO_SCHOOL_STEP: String = "school_first"
 const SCHOOL_CABINET_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/school_cabinet.png"
+## Shown in place of the default classroom background when the gym teacher (the
+## "gym" teacher id) is running the class.
+const GYM_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/gym.png"
+const GYM_TEACHER_ID: String = "gym"
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const HISTORY_TEXTURE_DIR: String = "res://assets/textures/characters/teachers"
 const HISTORY_TEXTURE_MAX_VARIANT: int = 15
@@ -297,6 +301,21 @@ func _pick_teacher_and_question() -> void:
 			_current_teacher["subject"],
 			not _is_intro_school_first()
 		)
+
+	_apply_class_background()
+
+
+## Swap in the gym background when the gym teacher is running the class; every
+## other teacher keeps the default classroom background (the location preview).
+func _apply_class_background() -> void:
+	if String(_current_teacher.get("id", "")) != GYM_TEACHER_ID:
+		return
+	var main: Node = get_tree().current_scene
+	if main == null or not ("scene_image" in main):
+		return
+	var tex := load(GYM_BACKGROUND_TEXTURE_PATH) as Texture2D
+	if tex != null:
+		main.scene_image.texture = tex
 
 
 ## Builds the runtime question dict entirely from its .dlg entries, so every
