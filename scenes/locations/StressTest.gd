@@ -114,6 +114,37 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export var electricity_meter_visual_max_percent: float = 105.0
 @export var electricity_low_end_score_threshold: float = 25.0
 
+## Debug-only "electricity generated" tally shown on the results screen. It counts
+## up while the night runs, at a rate set by the electricity meter's colour:
+## green (safe) generates fastest, red (over-supply) slowest.
+const ELECTRICITY_GENERATED_GREEN_PER_SECOND: float = 20.0
+const ELECTRICITY_GENERATED_YELLOW_PER_SECOND: float = 10.0
+const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
+
+@export_group("Awareness")
+## The robot's awareness of being tampered with. It climbs as the player moves
+## her parts and decays while she is left alone; if it reaches the (doublable)
+## fail threshold the night ends because you woke her up.
+@export var awareness_fail_threshold: float = 100.0
+## Awareness added for an ordinary body-part move, and for the heavier leg lift
+## from the slightly-out pose up to the raised pose.
+@export var awareness_move_gain: float = 10.0
+@export var awareness_leg_raise_gain: float = 20.0
+## Awareness added the moment the emergency power-off button is pressed.
+@export var awareness_emergency_button_gain: float = 15.0
+## Steady climb per second while any body animation (head talk / pelvis lift) plays.
+@export var awareness_animation_gain_per_second: float = 12.0
+## While no animation is playing, awareness decays. The decay accelerates the
+## longer she is left undisturbed: the first stage for its duration, then the
+## second, then the third holds indefinitely.
+@export var awareness_decay_stage1_per_second: float = 3.0
+@export var awareness_decay_stage2_per_second: float = 10.0
+@export var awareness_decay_stage3_per_second: float = 15.0
+@export var awareness_decay_stage1_seconds: float = 4.0
+@export var awareness_decay_stage2_seconds: float = 4.0
+@export var awareness_label_text: String = "Awareness"
+@export var awareness_failure_text: String = "You woke her up."
+
 @export_group("Darkness Effects")
 @export var screw_repair_lights_off_duration_multiplier: float = 2.0
 
@@ -253,6 +284,7 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @onready var electricity_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/ElectricityLabel
 @onready var gas_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/GasLabel
 @onready var uncle_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/UncleLabel
+@onready var awareness_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/AwarenessLabel
 @onready var electricity_meter_groups: VBoxContainer = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups
 @onready var failure_overlay: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay
 @onready var failure_title_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureTitleLabel
@@ -269,6 +301,14 @@ var _stress_test_dark: bool = false
 var _night_elapsed: float = 0.0
 var _night_finished: bool = false
 var _electricity_percent: float = 0.0
+var _awareness: float = 0.0
+## Effective awareness fail threshold for this night (base export times the
+## laptop's doublable multiplier).
+var _awareness_threshold: float = 100.0
+## Seconds since a body animation was last playing, driving the decay stage.
+var _awareness_calm_elapsed: float = 0.0
+## Debug-only running tally shown as "electricity generated" on the results screen.
+var _electricity_generated: float = 0.0
 var _gas_flow_percent: float = 50.0
 var _gas_optimal_percent: float = 50.0
 var _gas_last_change_percent: float = 0.0
@@ -393,6 +433,9 @@ var _drone_event_index: int = 0
 func _ready() -> void:
 	if _is_intro_tutorial_stress_test():
 		night_duration_seconds = intro_tutorial_duration_seconds
+	else:
+		# Laptop debug cheat: extend the real night by any banked bonus seconds.
+		night_duration_seconds += maxf(0.0, GameState.stress_test_bonus_time_seconds)
 	_create_mouse_tooltip()
 	_initialize_audio_players()
 	_initialize_robot_position_state()
@@ -426,6 +469,8 @@ func _process(delta: float) -> void:
 	_update_intro_head_interaction_gate()
 	if not timer_only_speedrun:
 		_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * sim_delta)
+		_update_awareness(sim_delta)
+		_accumulate_electricity_generated(sim_delta)
 	if _electricity_percent <= 0.0 and _emergency_power_shutoff_pressed:
 		_set_emergency_power_shutoff_pressed(false)
 	_update_electricity_summary_time(_night_elapsed - previous_elapsed)
@@ -451,6 +496,9 @@ func _process(delta: float) -> void:
 		return
 	if _electricity_percent > electricity_wake_threshold_percent and not _is_electricity_consequence_paused():
 		_fail_stress_test(electricity_failure_text, true)
+		return
+	if _awareness >= _awareness_threshold:
+		_fail_stress_test(awareness_failure_text, true)
 		return
 	if _night_elapsed >= night_duration_seconds:
 		_handle_night_timer_finished()
@@ -1052,6 +1100,11 @@ func _initialize_robot_position_state() -> void:
 		if not state.is_connected("robot_parts_changed", changed_callable):
 			state.connect("robot_parts_changed", changed_callable)
 
+	if stress_test_robot != null and stress_test_robot.has_signal("body_part_moved"):
+		var moved_callable := Callable(self, "_on_body_part_moved")
+		if not stress_test_robot.is_connected("body_part_moved", moved_callable):
+			stress_test_robot.connect("body_part_moved", moved_callable)
+
 	_apply_robot_head_only_position()
 	_apply_robot_zoom_profile()
 
@@ -1425,6 +1478,11 @@ func _initialize_stress_systems() -> void:
 	_reset_night_special_sounds()
 	_play_random_night_ambient()
 	_electricity_percent = electricity_start_percent
+	_awareness = 0.0
+	_awareness_calm_elapsed = 0.0
+	# Laptop debug cheat: the "double threshold" button scales the fail point.
+	_awareness_threshold = maxf(1.0, awareness_fail_threshold * maxf(0.0, GameState.stress_test_awareness_threshold_multiplier))
+	_electricity_generated = 0.0
 	_gas_flow_percent = gas_start_percent
 	_gas_optimal_percent = gas_optimal_start_percent
 	_gas_last_change_percent = 0.0
@@ -2051,6 +2109,8 @@ func _on_emergency_power_button_pressed() -> void:
 	# Hitting the emergency button drives off a patrol drone at the window,
 	# flashing the electrocution placeholder before it vanishes.
 	_zap_patrol_drone_if_active()
+	# The clunk of the button stirs her toward waking.
+	_add_awareness(awareness_emergency_button_gain)
 	_play_emergency_power_button_sound()
 	if _electricity_percent > 0.001:
 		_play_generator_shutting_off_sound()
@@ -2126,6 +2186,20 @@ func _refresh_stress_hud() -> void:
 		]
 	if uncle_value_label != null:
 		uncle_value_label.text = _format_uncle_meter_text()
+	if awareness_value_label != null:
+		if debug_mode:
+			awareness_value_label.text = "%s: %.0f / %.0f (%+.1f/s)" % [
+				awareness_label_text,
+				_awareness,
+				_awareness_threshold,
+				_current_awareness_rate_per_second(),
+			]
+		else:
+			awareness_value_label.text = "%s: %.0f / %.0f" % [
+				awareness_label_text,
+				_awareness,
+				_awareness_threshold,
+			]
 	_refresh_electricity_meter()
 
 
@@ -2199,6 +2273,80 @@ func _current_electricity_decay_per_second() -> float:
 		return emergency_power_electricity_decay_per_second
 	var multiplier := electricity_lights_off_decay_multiplier if _stress_test_dark else 1.0
 	return electricity_decay_percent_per_second * multiplier
+
+
+## Awareness climbs while a body animation plays and while parts are moved, and
+## decays (at an accelerating rate) while the robot is left undisturbed. Reaching
+## the fail threshold ends the night — the fail check itself lives in _process.
+func _update_awareness(delta: float) -> void:
+	if delta <= 0.0:
+		return
+	if _is_body_animation_playing():
+		_awareness_calm_elapsed = 0.0
+		_awareness += awareness_animation_gain_per_second * delta
+	else:
+		_awareness_calm_elapsed += delta
+		_awareness -= _current_awareness_decay_per_second() * delta
+	_awareness = clampf(_awareness, 0.0, _awareness_threshold)
+
+
+## Signed awareness rate right now (positive while animating, negative decay
+## otherwise), for the debug HUD readout.
+func _current_awareness_rate_per_second() -> float:
+	if _is_body_animation_playing():
+		return awareness_animation_gain_per_second
+	return -_current_awareness_decay_per_second()
+
+
+func _is_body_animation_playing() -> bool:
+	return stress_test_robot != null \
+			and stress_test_robot.has_method("is_body_animation_playing") \
+			and bool(stress_test_robot.call("is_body_animation_playing"))
+
+
+## Decay per second while undisturbed: gentle at first, then progressively faster
+## the longer no animation has played (stage 1 for its duration, then stage 2,
+## then stage 3 indefinitely).
+func _current_awareness_decay_per_second() -> float:
+	var stage1_end := maxf(0.0, awareness_decay_stage1_seconds)
+	var stage2_end := stage1_end + maxf(0.0, awareness_decay_stage2_seconds)
+	if _awareness_calm_elapsed <= stage1_end:
+		return awareness_decay_stage1_per_second
+	if _awareness_calm_elapsed <= stage2_end:
+		return awareness_decay_stage2_per_second
+	return awareness_decay_stage3_per_second
+
+
+## Discrete awareness bump from a player action (a body-part move or the emergency
+## button). Also refreshes the HUD so the jump shows immediately.
+func _add_awareness(amount: float) -> void:
+	if _night_finished:
+		return
+	_awareness = clampf(_awareness + amount, 0.0, _awareness_threshold)
+	_refresh_stress_hud()
+
+
+func _on_body_part_moved(is_leg_raise: bool) -> void:
+	_add_awareness(awareness_leg_raise_gain if is_leg_raise else awareness_move_gain)
+
+
+## Debug-only "electricity generated" tally: adds at a rate keyed to the
+## electricity meter's colour (green fastest, red slowest). Only counts in debug
+## mode, since it is a debug-only readout.
+func _accumulate_electricity_generated(delta: float) -> void:
+	if delta <= 0.0 or not _debug_mode_enabled():
+		return
+	_electricity_generated += _electricity_generation_rate_per_second() * delta
+
+
+func _electricity_generation_rate_per_second() -> float:
+	# Mirror the meter-colour thresholds used by _refresh_electricity_meter.
+	var completed_bar_count := int(floor(_electricity_percent / 20.0))
+	if completed_bar_count >= 6:
+		return ELECTRICITY_GENERATED_RED_PER_SECOND
+	if completed_bar_count >= 5:
+		return ELECTRICITY_GENERATED_YELLOW_PER_SECOND
+	return ELECTRICITY_GENERATED_GREEN_PER_SECOND
 
 
 ## Debug (number-4 give-items): re-derive which limbs expose screws now that new
@@ -2626,6 +2774,8 @@ func _build_summary_text() -> String:
 		_stars_for_score(float(screws["score"])),
 		float(screws["score"]),
 	])
+	if _debug_mode_enabled():
+		lines.append("Electricity Generated: %.0f" % _electricity_generated)
 	return "\n".join(lines)
 
 

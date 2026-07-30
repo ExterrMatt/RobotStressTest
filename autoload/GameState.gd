@@ -74,6 +74,16 @@ var _scanlines_enabled: bool = true
 const DEFAULT_SFX_VOLUME_SCALE: float = 0.5
 var _debug_mode_enabled: bool = false
 var _easy_workshop_enabled: bool = false
+
+# --- Laptop debug cheats ---
+## Set from the hidden bedroom laptop menu (debug only) and read by the next
+## stress test as it starts. They persist until changed again from the laptop.
+## Extra seconds added to the stress test's night clock (the laptop's "+30s"
+## button adds 30 each press).
+var stress_test_bonus_time_seconds: float = 0.0
+## Multiplier applied to the stress test's awareness fail threshold (the laptop's
+## "double threshold" button doubles this each press). 1.0 leaves it at default.
+var stress_test_awareness_threshold_multiplier: float = 1.0
 var _window_mode: int = WindowMode.WINDOWED
 var player_name: String = ""
 var intro_active: bool = true

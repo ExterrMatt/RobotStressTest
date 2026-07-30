@@ -48,6 +48,7 @@ const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
 ]
 const WORK_LOCATION_ID: StringName = &"work"
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
+const LAPTOP_SCENE_PATH: String = "res://scenes/locations/Laptop.tscn"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
 ## Placeholder shown in the selection subtitle when nothing is selected yet,
 ## matching the em-dash the Laptop option shows. Replaced once a choice is made.
@@ -813,11 +814,15 @@ func _debug_jump_for_phase_number(number: int, shift_held: bool, ctrl_held: bool
 	_cancel_active_transitions()
 
 	if shift_held and ctrl_held:
-		if number == 1:
-			_debug_set_phase_for_number(number)
-			_debug_open_location_by_id(&"maintenance")
-		else:
-			_debug_jump_to_bedroom_phase(number)
+		match number:
+			1:
+				_debug_set_phase_for_number(number)
+				_debug_open_location_by_id(&"maintenance")
+			2:
+				_debug_set_phase_for_number(number)
+				_debug_open_laptop()
+			_:
+				_debug_jump_to_bedroom_phase(number)
 		return
 
 	if shift_held:
@@ -878,6 +883,23 @@ func _debug_open_location_by_id(location_id: StringName) -> void:
 			return
 
 	_on_location_picked(target_loc)
+
+
+## Debug: open the hidden laptop cheat scene. Built as an ad-hoc free-action
+## location (like the intro steps) so the bedroom's disabled "Laptop" option is
+## left exactly as-is; only this scene-jump hotkey reaches the real scene.
+func _debug_open_laptop() -> void:
+	_cancel_active_transitions()
+	if _current_location_node and is_instance_valid(_current_location_node) \
+			and _current_location_node.scene_file_path == LAPTOP_SCENE_PATH:
+		return
+	var loc := LocationData.new()
+	loc.id = &"laptop"
+	loc.display_name = "Laptop"
+	loc.scene_path = LAPTOP_SCENE_PATH
+	loc.free_action = true
+	_log("[color=#88aaff]Debug: laptop[/color]")
+	_on_location_picked(loc)
 
 
 func _start_intro_sequence() -> void:

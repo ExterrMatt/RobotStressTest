@@ -5,6 +5,12 @@ signal visual_state_changed
 ## Emitted when the head animation ends and the head returns to its static pose
 ## (e.g. the Sleep scene plays a pillow thud as the robot lowers its head).
 signal head_returned_to_rest
+## Emitted whenever the player physically moves a body part (any hover-box
+## interaction that changes the robot's pose). `is_leg_raise` is true only for
+## the specific leg transition from the slightly-out pose up to the raised pose,
+## which the stress test's awareness meter weights more heavily. Consumers decide
+## how much awareness each move is worth.
+signal body_part_moved(is_leg_raise: bool)
 
 const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
 
@@ -1132,11 +1138,15 @@ func _pose_slot_for_box(box: Control) -> int:
 ## the boxes no longer carry a runtime-active flag of their own. Raising or
 ## lowering a leg re-syncs the pelvis freeze-frame (see _sync_pelvis_to_leg_poses).
 func _cycle_leg_pose(box: Control) -> void:
-	var pose := _next_leg_pose(_leg_pose_for_box(box))
+	var previous_pose := _leg_pose_for_box(box)
+	var pose := _next_leg_pose(previous_pose)
 	_set_leg_pose_for_box(box, pose)
 	_play_wood_creak_sound()
 	_sync_pelvis_to_leg_poses()
 	_apply_visibility_state()
+	# Lifting a leg from slightly-out up to raised is the heavier awareness move.
+	var is_leg_raise := previous_pose == LEG_POSE_SLIGHTLY_OUT and pose == LEG_POSE_RAISED
+	body_part_moved.emit(is_leg_raise)
 
 
 func _next_leg_pose(pose: int) -> int:
@@ -1213,6 +1223,16 @@ func _pelvis_animation_playing() -> bool:
 	return bool(_animation_states[pelvis].get("playing", false))
 
 
+## True while any layered body animation (the head talk or the pelvis lift) is
+## actively playing past its frozen freeze-frame. The stress test's awareness
+## meter climbs while this is true.
+func is_body_animation_playing() -> bool:
+	for state in _animation_states.values():
+		if bool(state.get("playing", false)):
+			return true
+	return false
+
+
 func _is_hair_hover_box(box: Control) -> bool:
 	return box != null and String(box.name) == HAIR_HOVER_BOX_NAME
 
@@ -1224,6 +1244,7 @@ func _cycle_hair_texture() -> void:
 		return
 	_hair_texture_index = (_hair_texture_index + 1) % HAIR_STATIC_OPTIONS.size()
 	_apply_visibility_state()
+	body_part_moved.emit(false)
 
 
 func _is_hand_hover_box(box: Control) -> bool:
@@ -1240,6 +1261,7 @@ func _cycle_hand_texture(box: Control) -> void:
 	elif String(box.name) == RIGHT_HAND_HOVER_BOX_NAME and not RIGHT_HAND_TEXTURE_OPTIONS.is_empty():
 		_right_hand_texture_index = (_right_hand_texture_index + 1) % RIGHT_HAND_TEXTURE_OPTIONS.size()
 	_apply_visibility_state()
+	body_part_moved.emit(false)
 
 
 func _is_shoulder_hover_box(box: Control) -> bool:
@@ -1250,6 +1272,7 @@ func _toggle_box_effect(box: Control) -> void:
 	if box.has_method("toggle_runtime_active"):
 		box.call("toggle_runtime_active")
 	_apply_visibility_state()
+	body_part_moved.emit(false)
 
 
 func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) -> void:
@@ -1271,6 +1294,7 @@ func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) 
 		if not (shift_pressed and _debug_mode_enabled()):
 			_finish_layered_animation(false)
 		_prime_layered_animation(box)
+		body_part_moved.emit(false)
 		return
 
 	var state: Dictionary = _animation_states[box]
@@ -1284,6 +1308,7 @@ func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) 
 			state["pending_outro"] = true
 		else:
 			_finish_animation_for_box(box)
+		body_part_moved.emit(false)
 		return
 
 	if playing:
@@ -1293,6 +1318,7 @@ func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) 
 	state["playing"] = true
 	_play_hand_rub_sound()
 	_apply_visibility_state()
+	body_part_moved.emit(false)
 
 
 func _is_leg_prestage_box(box: Control) -> bool:
@@ -1306,6 +1332,7 @@ func _enter_leg_prestage() -> void:
 	_leg_prestage_active = true
 	_play_wood_creak_sound()
 	_apply_visibility_state()
+	body_part_moved.emit(false)
 
 
 func _prime_layered_animation(box: Control) -> void:

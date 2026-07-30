@@ -561,21 +561,26 @@ func _auto_advance_post_class_prompt(prompt_text: String) -> void:
 func _show_post_class_choices() -> void:
 	_scene_phase = SchoolPhase.POST_CLASS_CHOICES
 	_hide_corner()
+	# The gym class has no supply cabinet to raid, so it offers no steal option —
+	# only the leave button, laid out full-width on its own.
+	var allow_steal := String(_current_teacher.get("id", "")) != GYM_TEACHER_ID
 	_animate_layout_change(func():
 		_clear_choice_buttons()
 		choice_grid.visible = true
 		# Two choices: use two columns so the buttons stretch the full
 		# dialogue width (the grid otherwise keeps its 3-column question
-		# layout, leaving the pair filling only two-thirds).
-		choice_grid.columns = 2
+		# layout, leaving the pair filling only two-thirds). With only the
+		# leave button (gym), a single column keeps it full-width.
+		choice_grid.columns = 2 if allow_steal else 1
 
 		var leave_btn := _build_choice_button(_dlg_text("post_class.leave"))
 		leave_btn.pressed.connect(_on_leave_pressed)
 		choice_grid.add_child(leave_btn)
 
-		var steal_btn := _build_choice_button(_dlg_text("post_class.steal"))
-		steal_btn.pressed.connect(_on_steal_pressed)
-		choice_grid.add_child(steal_btn)
+		if allow_steal:
+			var steal_btn := _build_choice_button(_dlg_text("post_class.steal"))
+			steal_btn.pressed.connect(_on_steal_pressed)
+			choice_grid.add_child(steal_btn)
 		_place_choice_grid_below_dialogue()
 	)
 	call_deferred("_place_choice_grid_below_dialogue")
