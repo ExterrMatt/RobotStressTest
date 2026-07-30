@@ -748,6 +748,24 @@ func _handle_debug_key(event: InputEventKey) -> void:
 	get_viewport().set_input_as_handled()
 
 
+## Public debug entry points mirroring the H-key toggles, so the debug actions
+## panel can drive them by button as well as by hotkey.
+func debug_toggle_human_skin() -> void:
+	_toggle_human_skin()
+
+
+func debug_toggle_squint_eyes() -> void:
+	_toggle_squint_eyes()
+
+
+func debug_swap_head_texture() -> void:
+	_swap_head_texture()
+
+
+func debug_toggle_hand_grip() -> void:
+	_toggle_hand_grip()
+
+
 ## Shows or hides the "human" skin set (stomach_skin + the two chest smooth
 ## overlays). They are authored to be shown together, so they toggle as one.
 func _toggle_human_skin() -> void:

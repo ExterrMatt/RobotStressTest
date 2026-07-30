@@ -28,6 +28,12 @@ const ZAP_VOLUME_SCALE: float = 0.25
 ## looking at the window, as the camera is forced over to the drone.
 const JUMPSCARE_SOUND_PATH := "res://assets/sounds/bass/jumpscare.mp3"
 const JUMPSCARE_VOLUME_SCALE: float = 0.6
+## Gunshot played the instant the patrol drone actually fires.
+const GUNSHOT_SOUND_PATH := "res://assets/sounds/drone/gun_shot.mp3"
+const GUNSHOT_VOLUME_SCALE: float = 0.5
+## The forced camera yank onto the drone pans at this multiple of the normal
+## camera speed (2x = half the usual pan time).
+const FORCED_LOOK_PAN_SPEED_MULTIPLIER: float = 2.0
 ## The running generator hum/chug loops (and the out-of-battery chug) play at 20%.
 const GENERATOR_VOLUME_SCALE: float = 0.2
 ## The manual emergency-button powering-off sound, at 17.5% (half of its old 35%).
@@ -211,12 +217,11 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @export var drone_idle_seconds: float = 5.0
 ## Seconds the drone aims (guns texture) before it fires.
 @export var drone_guns_seconds: float = 3.0
+## Once the drone is locked on and about to fire (aim finished, and the forced
+## camera look-up done if it was needed), it holds this long before the gunshot.
+@export var drone_pre_shot_delay_seconds: float = 0.15
 ## Seconds the shot texture shows before the night is failed.
 @export var drone_shot_seconds: float = 0.1
-## When the drone fires while the player is NOT looking at the window, the camera
-## is yanked over to the drone and the shot lingers this long (instead of
-## drone_shot_seconds) so the player sees the jump scare before the night fails.
-@export var drone_forced_look_seconds: float = 1.0
 ## Seconds the drone shows the electrocution placeholder (id texture) after the
 ## emergency button drives it off, before it disappears. Halved so the zap plays
 ## twice as fast and lasts half as long.
@@ -389,6 +394,8 @@ var _zap_sound: AudioStream = null
 var _zap_audio_player: AudioStreamPlayer = null
 var _jumpscare_sound: AudioStream = null
 var _jumpscare_audio_player: AudioStreamPlayer = null
+var _gunshot_sound: AudioStream = null
+var _gunshot_audio_player: AudioStreamPlayer = null
 var _night_ambient_sounds: Array[AudioStream] = []
 var _night_ambient_paths: Array[String] = []
 var _night_ambient_audio_player: AudioStreamPlayer = null
@@ -452,9 +459,14 @@ var _drone_state: int = DRONE_NONE
 var _drone_elapsed: float = 0.0
 var _drone_event_times: Array[float] = []
 var _drone_event_index: int = 0
-## True while the drone's shot is being held for a forced look (the player was not
-## watching the window when it fired), so the shot lingers before the fail.
+## True while the camera is being forced onto the drone (the player was not
+## watching the window as it readied to fire); the shot is withheld until the
+## forced look-up finishes.
 var _drone_forced_look_active: bool = false
+## Set the instant the drone finishes aiming: it is now locked on and can no
+## longer be fended off with the emergency button, and it counts down the
+## pre-shot hold (plus the forced look-up, if any) before firing.
+var _drone_committed_to_fire: bool = false
 
 
 func _ready() -> void:
@@ -651,7 +663,7 @@ func _set_zoom_level(value: int, focus_position: Vector2) -> void:
 	_interrupt_screw_repairs_if_current_view_requires_it()
 
 
-func _apply_zoom_region(animated: bool) -> void:
+func _apply_zoom_region(animated: bool, duration: float = PAN_DURATION) -> void:
 	var logical_scale := _current_zoom_scale()
 	var target_position := _zoom_position_for_region(_current_zoom_region, logical_scale) if _is_zoomed_in() else _default_canvas_position()
 	var target_scale := logical_scale * _canvas_base_scale
@@ -668,8 +680,8 @@ func _apply_zoom_region(animated: bool) -> void:
 	_pan_tween.set_parallel(true)
 	_pan_tween.set_trans(PAN_TRANS)
 	_pan_tween.set_ease(PAN_EASE)
-	_pan_tween.tween_property(scene_canvas, "scale", target_scale, PAN_DURATION)
-	_pan_tween.tween_property(scene_canvas, "position", target_position, PAN_DURATION)
+	_pan_tween.tween_property(scene_canvas, "scale", target_scale, duration)
+	_pan_tween.tween_property(scene_canvas, "position", target_position, duration)
 
 
 func _zoom_position_for_region(region: Control, scale_value: Vector2) -> Vector2:
@@ -1234,6 +1246,13 @@ func _initialize_audio_players() -> void:
 		_jumpscare_audio_player.volume_db = linear_to_db(JUMPSCARE_VOLUME_SCALE)
 		add_child(_jumpscare_audio_player)
 
+	_gunshot_sound = load(GUNSHOT_SOUND_PATH) as AudioStream
+	if _gunshot_sound != null:
+		_gunshot_audio_player = AudioStreamPlayer.new()
+		_gunshot_audio_player.name = "GunshotAudioPlayer"
+		_gunshot_audio_player.volume_db = linear_to_db(GUNSHOT_VOLUME_SCALE)
+		add_child(_gunshot_audio_player)
+
 	_night_ambient_sounds.clear()
 	_night_ambient_paths.clear()
 	for path in NIGHT_AMBIENT_SOUND_PATHS:
@@ -1578,6 +1597,7 @@ func _initialize_stress_systems() -> void:
 	_drone_elapsed = 0.0
 	_drone_event_index = 0
 	_drone_forced_look_active = false
+	_drone_committed_to_fire = false
 	# Space the drone appearances around the uncle's so the two never overlap.
 	_drone_event_times = _deconflict_drone_schedule(_random_drone_event_times(), _window_alert_event_times)
 	_apply_patrol_drone_visual()
@@ -1836,10 +1856,21 @@ func _update_patrol_drone(delta: float) -> void:
 				_set_drone_state(DRONE_GUNS)
 		DRONE_GUNS:
 			if _drone_elapsed >= maxf(0.0, drone_guns_seconds):
-				_set_drone_state(DRONE_SHOT)
+				# Aim just finished: lock on. If the player is not watching, yank the
+				# camera over first (that time is added to the hold below).
+				if not _drone_committed_to_fire:
+					_drone_committed_to_fire = true
+					if not _is_window_alert_in_camera_view():
+						_begin_forced_drone_look()
+				# Hold the aim for the pre-shot beat (plus the forced look-up), then
+				# fire — so the gunshot lands a moment after the player is looking.
+				var fire_delay := maxf(0.0, drone_pre_shot_delay_seconds)
+				if _drone_forced_look_active:
+					fire_delay += _forced_look_pan_duration()
+				if _drone_elapsed >= maxf(0.0, drone_guns_seconds) + fire_delay:
+					_set_drone_state(DRONE_SHOT)
 		DRONE_SHOT:
-			var shot_duration := drone_forced_look_seconds if _drone_forced_look_active else drone_shot_seconds
-			if _drone_elapsed >= maxf(0.0, shot_duration):
+			if _drone_elapsed >= maxf(0.0, drone_shot_seconds):
 				_fail_stress_test(drone_failure_text, false)
 		DRONE_ZAP:
 			if _drone_elapsed >= maxf(0.0, drone_zap_seconds):
@@ -1855,10 +1886,12 @@ func _start_patrol_drone() -> void:
 
 ## Emergency-button response: if a drone is present (and not already being
 ## driven off), show the electrocution placeholder for a moment before it
-## vanishes instead of clearing it instantly. Once the drone has fired (the shot
-## state) it is too late to fend it off, so the button no longer clears it.
+## vanishes instead of clearing it instantly. Once the drone has committed to
+## firing — the forced look-up has begun, or it is already in the shot state — it
+## is too late to fend it off, so the button no longer clears it.
 func _zap_patrol_drone_if_active() -> void:
-	if _drone_state == DRONE_NONE or _drone_state == DRONE_ZAP or _drone_state == DRONE_SHOT:
+	if _drone_state == DRONE_NONE or _drone_state == DRONE_ZAP \
+			or _drone_state == DRONE_SHOT or _drone_committed_to_fire:
 		return
 	_set_drone_state(DRONE_ZAP)
 	if _zap_audio_player != null and _zap_sound != null:
@@ -1876,6 +1909,7 @@ func _clear_patrol_drone() -> void:
 	_drone_state = DRONE_NONE
 	_drone_elapsed = 0.0
 	_drone_forced_look_active = false
+	_drone_committed_to_fire = false
 	_skip_elapsed_drone_events()
 	_apply_patrol_drone_visual()
 
@@ -1974,25 +2008,28 @@ func _set_drone_state(state: int) -> void:
 	_drone_state = state
 	_drone_elapsed = 0.0
 	if state == DRONE_SHOT:
-		_maybe_force_drone_look()
+		_play_gunshot_sound()
 	_apply_patrol_drone_visual()
 
 
-## The moment the drone fires: if the player is not looking at the window, yank the
-## camera over to it and hit the jump-scare sting so they see the drone catch them
-## before the night fails. When they are already watching, the shot plays out at
-## its normal quick pace.
-func _maybe_force_drone_look() -> void:
-	_drone_forced_look_active = false
-	if _is_window_alert_in_camera_view():
-		return
+## Begins the forced look when the drone is ready to fire but the player is not
+## watching the window: yank the camera over (jump-scare sting), hold the aim, and
+## let _update_patrol_drone fire once the look-up finishes (see the GUNS branch).
+func _begin_forced_drone_look() -> void:
 	_drone_forced_look_active = true
 	_force_camera_to_window()
 	_play_jumpscare_sound()
 
 
-## Snaps the camera onto the window (zoom level 1, centred on the window) so the
-## drone at the window is unmistakably in view for the forced look.
+## How long the forced camera yank onto the window takes — the normal pan time
+## sped up by FORCED_LOOK_PAN_SPEED_MULTIPLIER — which is also how long the shot
+## is withheld so the drone only fires once the player has fully looked up.
+func _forced_look_pan_duration() -> float:
+	return PAN_DURATION / maxf(0.01, FORCED_LOOK_PAN_SPEED_MULTIPLIER)
+
+
+## Yanks the camera onto the window (zoom level 1, centred on the window) at twice
+## the normal pan speed so the drone at the window is unmistakably in view.
 func _force_camera_to_window() -> void:
 	if window_alert_rect == null or scene_canvas == null:
 		return
@@ -2006,7 +2043,7 @@ func _force_camera_to_window() -> void:
 		_pan_tween.kill()
 	if _zoom_tween and _zoom_tween.is_valid():
 		_zoom_tween.kill()
-	_apply_zoom_region(true)
+	_apply_zoom_region(true, _forced_look_pan_duration())
 
 
 func _play_jumpscare_sound() -> void:
@@ -2015,6 +2052,14 @@ func _play_jumpscare_sound() -> void:
 	_jumpscare_audio_player.stream = _jumpscare_sound
 	_jumpscare_audio_player.pitch_scale = 1.0
 	_jumpscare_audio_player.play()
+
+
+func _play_gunshot_sound() -> void:
+	if _gunshot_audio_player == null or _gunshot_sound == null:
+		return
+	_gunshot_audio_player.stream = _gunshot_sound
+	_gunshot_audio_player.pitch_scale = 1.0
+	_gunshot_audio_player.play()
 
 
 ## Resolves every drone layer for the current state and light level. The drone
@@ -2479,6 +2524,45 @@ func debug_recalibrate() -> void:
 	_connect_screw_summary_tracking()
 
 
+# --- Debug actions panel entry points (driven by Main's Shift+Tab menu) ---
+
+## Forces a patrol drone to appear right now (if the night is live and no drone
+## is already on screen).
+func debug_summon_drone() -> void:
+	if _night_finished or _drone_state != DRONE_NONE:
+		return
+	_start_patrol_drone()
+
+
+## Forces an uncle window check right now (if the night is live and no window
+## alert is already running).
+func debug_summon_uncle() -> void:
+	if _night_finished or _window_alert_state != WINDOW_ALERT_NONE:
+		return
+	_start_window_alert()
+
+
+func debug_toggle_human_skin() -> void:
+	_call_robot_debug("debug_toggle_human_skin")
+
+
+func debug_toggle_squint() -> void:
+	_call_robot_debug("debug_toggle_squint_eyes")
+
+
+func debug_swap_head_style() -> void:
+	_call_robot_debug("debug_swap_head_texture")
+
+
+func debug_swap_hand_grip() -> void:
+	_call_robot_debug("debug_toggle_hand_grip")
+
+
+func _call_robot_debug(method: String) -> void:
+	if stress_test_robot != null and stress_test_robot.has_method(method):
+		stress_test_robot.call(method)
+
+
 func _apply_body_part_screw_availability() -> void:
 	var arm_count := _robot_part_count("arm")
 	_set_screw_repair_available(left_arm_screw_repair, arm_count >= 1)
@@ -2829,7 +2913,11 @@ func _begin_stress_test_summary(
 		registers_completion: bool
 ) -> void:
 	_night_finished = true
-	_clear_patrol_drone()
+	# Leave the drone on screen (frozen on its shot pose) when it is the one that
+	# ended the night, so it stays visible through the failure wipe instead of
+	# blinking out on the last frame; clear it for any other cause.
+	if _drone_state != DRONE_SHOT:
+		_clear_patrol_drone()
 	_stop_generator_power_sound()
 	_stop_night_ambient()
 	_stop_screw_repair_audio()

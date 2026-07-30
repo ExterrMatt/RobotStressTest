@@ -45,7 +45,9 @@ door_lock.mp3::AudioStreamMP3::8467810490094670434::1785290917::1785293783::1:::
 door_open.mp3::AudioStreamMP3::1816873212707699831::1785094931::1785094944::1::::<><><>0<>0<>55ceae4847f5569e1527cc7905c013f6<>res://.godot/imported/door_open.mp3-4d7080dd2820c2efb723081fcbb4975a.mp3str::
 door_unlock.mp3::AudioStreamMP3::385832625449725200::1785290917::1785293783::1::::<><><>0<>0<>d8b379d02c6ea8cb5759b5d4bec134c9<>res://.godot/imported/door_unlock.mp3-54e2f16aa0a3f9e65a9c8cc0f8c98835.mp3str::
 ed_door.mp3::AudioStreamMP3::1835069163455927210::1785290917::1785293783::1::::<><><>0<>0<>48f60cb6f10eda8829f7a92282702e81<>res://.godot/imported/ed_door.mp3-3fd467e06f39803322a91c9913cef412.mp3str::
-::res://assets/sounds/drone/::1785439926
+::res://assets/sounds/drone/::1785440125
+9mm_gun_shot.mp3::AudioStreamMP3::8481810278290954924::1785440089::1785440128::1::::<><><>0<>0<>55e712447ad93f8b2d523a4af3ae9e60<>res://.godot/imported/9mm_gun_shot.mp3-6e8772f9eba04805272dfdc47f502894.mp3str::
+gun_cock.mp3::AudioStreamMP3::5535891603992364605::1785440100::1785440128::1::::<><><>0<>0<>757f01603242b3ca7b5d3d6da639676e<>res://.godot/imported/gun_cock.mp3-86d204ec2e24006c6ae996e244af44cb.mp3str::
 gun_shot.mp3::AudioStreamMP3::2796345695083457305::1785439888::1785439929::1::::<><><>0<>0<>63dd685ba11de4b12b043e8ea1202e60<>res://.godot/imported/gun_shot.mp3-14bccfea7a06a70bf603557fdb00b027.mp3str::
 ::res://assets/sounds/emergency_button/::1782787467
 emergency_power_button.mp3::AudioStreamMP3::7956286958573482971::1782705556::1782787467::1::::<><><>0<>0<>8f70ab76c334182c6b094ffd269822f6<>res://.godot/imported/emergency_power_button.mp3-23307681daab85f0c6306e342de310fe.mp3str::

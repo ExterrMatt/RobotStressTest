@@ -354,6 +354,7 @@ expand_mode = 1
 
 [node name="DroneGuns" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420083]
 visible = false
+z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

@@ -285,6 +285,9 @@ var _alt_portrait: bool = false
 ## above every other overlay, and given a live info/legend block above the log.
 var _debug_overlay_layer: CanvasLayer = null
 var _debug_info_label: RichTextLabel = null
+## The Shift+Tab quick-actions panel: a scrollable column of debug buttons on its
+## own canvas layer above everything, rebuilt from the current scene each open.
+var _debug_actions_layer: CanvasLayer = null
 
 ## Base texture path of the currently-shown teacher portrait (no "2" suffix),
 ## so we can swap variants when the toggle changes.
@@ -523,11 +526,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var debug_mode_active := _debug_mode_enabled()
 
-	# Tab toggles the debug menu overlay.
-	if debug_mode_active and key_event.keycode == KEY_TAB:
-		log_overlay.visible = not log_overlay.visible
-		if log_overlay.visible:
-			_refresh_debug_info()
+	# Tab toggles the debug info overlay; Shift+Tab toggles the quick-actions panel
+	# (buttons for every debug hotkey). Shift+Tab can arrive as Backtab on some
+	# platforms, so accept either.
+	if debug_mode_active and (key_event.keycode == KEY_TAB or key_event.keycode == KEY_BACKTAB):
+		if key_event.keycode == KEY_BACKTAB or key_event.shift_pressed:
+			_toggle_debug_actions_panel()
+		else:
+			log_overlay.visible = not log_overlay.visible
+			if log_overlay.visible:
+				_refresh_debug_info()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -1238,6 +1246,201 @@ func _debug_tools_summary() -> String:
 func _refresh_debug_info_if_visible() -> void:
 	if log_overlay != null and log_overlay.visible:
 		_refresh_debug_info()
+
+
+# --- Shift+Tab quick-actions panel ---------------------------------------------
+#
+# A scrollable column of buttons, one per debug hotkey, so the shortcuts don't
+# have to be memorised. Lives on its own canvas layer above everything, is only
+# reachable in debug mode (the Shift+Tab handler is already debug-gated), and is
+# rebuilt from the current scene each time it opens so scene-only buttons (stress
+# test robot toggles, summon drone/uncle, teacher portrait, auto-solve) appear
+# only where they apply.
+
+## One above the Tab debug overlay so it draws over that too.
+const DEBUG_ACTIONS_CANVAS_LAYER: int = 4097
+
+
+func _toggle_debug_actions_panel() -> void:
+	if _debug_actions_open():
+		_close_debug_actions_panel()
+	else:
+		_open_debug_actions_panel()
+
+
+func _debug_actions_open() -> bool:
+	return _debug_actions_layer != null and is_instance_valid(_debug_actions_layer)
+
+
+func _close_debug_actions_panel() -> void:
+	if _debug_actions_layer != null and is_instance_valid(_debug_actions_layer):
+		_debug_actions_layer.queue_free()
+	_debug_actions_layer = null
+
+
+func _open_debug_actions_panel() -> void:
+	if _debug_actions_open():
+		return
+	var layer := CanvasLayer.new()
+	layer.name = "DebugActionsLayer"
+	layer.layer = DEBUG_ACTIONS_CANVAS_LAYER
+	_debug_actions_layer = layer
+	add_child(layer)
+
+	# Light backdrop; a click on it dismisses the panel. Kept faint so the scene
+	# stays visible behind the panel (e.g. a just-summoned drone).
+	var back := ColorRect.new()
+	back.name = "DebugActionsBack"
+	back.color = Color(0.0, 0.0, 0.0, 0.25)
+	back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	back.mouse_filter = Control.MOUSE_FILTER_STOP
+	back.gui_input.connect(func(ev):
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			_close_debug_actions_panel()
+	)
+	layer.add_child(back)
+
+	# Left-hand vertical panel, full height minus a margin, fixed width.
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"OrnateFrameOuter"
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.anchor_left = 0.0
+	panel.anchor_right = 0.0
+	panel.anchor_top = 0.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = 24.0
+	panel.offset_right = 384.0
+	panel.offset_top = 24.0
+	panel.offset_bottom = -24.0
+	back.add_child(panel)
+
+	var inner := PanelContainer.new()
+	inner.theme_type_variation = &"OrnateFrameInner"
+	panel.add_child(inner)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	inner.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "DEBUG ACTIONS"
+	title.add_theme_font_size_override("font_size", 26)
+	vbox.add_child(title)
+
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	var button_vbox := VBoxContainer.new()
+	button_vbox.add_theme_constant_override("separation", 6)
+	button_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(button_vbox)
+	_build_debug_action_buttons(button_vbox)
+
+	var close_btn := Button.new()
+	close_btn.text = "CLOSE  (Shift+Tab)"
+	close_btn.theme_type_variation = &"GoldHudButton"
+	close_btn.pressed.connect(_close_debug_actions_panel)
+	vbox.add_child(close_btn)
+
+
+## Adds a small dim section heading between button groups.
+func _add_debug_section(vbox: VBoxContainer, text: String) -> void:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 16)
+	label.modulate = Color(1, 1, 1, 0.55)
+	vbox.add_child(label)
+
+
+## Adds one action button. `close_after` closes the panel after firing (used for
+## navigation, which swaps the scene out from under the panel); otherwise the
+## panel stays open so several toggles can be flipped in a row.
+func _add_debug_action_button(vbox: VBoxContainer, label: String, action: Callable, close_after: bool = false) -> void:
+	var btn := Button.new()
+	btn.text = label
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.pressed.connect(func():
+		action.call()
+		if close_after:
+			_close_debug_actions_panel()
+		else:
+			_refresh_debug_info_if_visible()
+	)
+	vbox.add_child(btn)
+
+
+## Calls a debug method on the active location node, if it exposes one.
+func _debug_call_location(method: String) -> void:
+	if _current_location_node != null and is_instance_valid(_current_location_node) \
+			and _current_location_node.has_method(method):
+		_current_location_node.call(method)
+
+
+func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
+	# Navigation (closes the panel — the scene changes underneath it).
+	_add_debug_section(vbox, "GO TO")
+	_add_debug_action_button(vbox, "Room — Morning", _debug_jump_for_phase_number.bind(1, false, false), true)
+	_add_debug_action_button(vbox, "Room — Evening", _debug_jump_for_phase_number.bind(2, false, false), true)
+	_add_debug_action_button(vbox, "Room — Night", _debug_jump_for_phase_number.bind(3, false, false), true)
+	_add_debug_action_button(vbox, "School", _debug_jump_for_phase_number.bind(1, true, false), true)
+	_add_debug_action_button(vbox, "Store", _debug_jump_for_phase_number.bind(2, true, false), true)
+	_add_debug_action_button(vbox, "Stress Test", _debug_jump_for_phase_number.bind(3, true, false), true)
+	_add_debug_action_button(vbox, "Work", _debug_jump_for_phase_number.bind(1, false, true), true)
+	_add_debug_action_button(vbox, "Workshop", _debug_jump_for_phase_number.bind(2, false, true), true)
+	_add_debug_action_button(vbox, "Sleep", _debug_jump_for_phase_number.bind(3, false, true), true)
+	_add_debug_action_button(vbox, "Maintenance", _debug_jump_for_phase_number.bind(1, true, true), true)
+	_add_debug_action_button(vbox, "Laptop", _debug_jump_for_phase_number.bind(2, true, true), true)
+
+	# Inventory / money (stay open).
+	_add_debug_section(vbox, "INVENTORY")
+	_add_debug_action_button(vbox, "Give All Items +$1000", func():
+		_debug_give_all_items()
+		_debug_give_money()
+		_debug_recalibrate_current_location()
+	)
+	_add_debug_action_button(vbox, "Give $1000", _debug_give_money)
+	_add_debug_action_button(vbox, "Clear Items + Wipe $", func():
+		_debug_clear_inventory()
+		_debug_clear_money()
+		_debug_recalibrate_current_location()
+	)
+	_add_debug_action_button(vbox, "Wipe Money", _debug_clear_money)
+
+	# Scene-only actions.
+	var has_auto_solve := _current_location_node != null and is_instance_valid(_current_location_node) \
+			and _current_location_node.has_method("debug_auto_solve")
+	if has_auto_solve or _current_location_id == &"school":
+		_add_debug_section(vbox, "SCENE")
+	if has_auto_solve:
+		_add_debug_action_button(vbox, "Auto-Solve Minigame", _debug_auto_solve_current_location)
+	if _current_location_id == &"school":
+		_add_debug_action_button(vbox, "Swap Teacher Portrait", func():
+			_alt_portrait = not _alt_portrait
+			_refresh_teacher_portrait_variant()
+		)
+
+	# Stress-test-only actions (drone/uncle + robot appearance toggles).
+	if _current_location_id == STRESS_TEST_LOCATION_ID:
+		_add_debug_section(vbox, "STRESS TEST")
+		_add_debug_action_button(vbox, "Summon Drone", _debug_call_location.bind("debug_summon_drone"))
+		_add_debug_action_button(vbox, "Summon Uncle", _debug_call_location.bind("debug_summon_uncle"))
+		_add_debug_action_button(vbox, "Toggle Smooth Skin", _debug_call_location.bind("debug_toggle_human_skin"))
+		_add_debug_action_button(vbox, "Toggle Squint Eyes", _debug_call_location.bind("debug_toggle_squint"))
+		_add_debug_action_button(vbox, "Swap Head Style", _debug_call_location.bind("debug_swap_head_style"))
+		_add_debug_action_button(vbox, "Swap Hand Grip", _debug_call_location.bind("debug_swap_hand_grip"))
+
+	# Overlays.
+	_add_debug_section(vbox, "OVERLAYS")
+	_add_debug_action_button(vbox, "Toggle Debug Info (Tab)", func():
+		log_overlay.visible = not log_overlay.visible
+		if log_overlay.visible:
+			_refresh_debug_info()
+	)
 
 
 func _debug_clear_inventory() -> void:
