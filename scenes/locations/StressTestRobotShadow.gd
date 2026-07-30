@@ -159,10 +159,17 @@ func _apply_shadow_materials() -> void:
 
 func _apply_shadow_material_to(node: Node) -> void:
 	for child in node.get_children():
+		# Flatten z-ordering on EVERY canvas item so the whole subtree composites
+		# inside the ShadowComposite CanvasGroup. A descendant left at a non-zero
+		# z_index — e.g. the arms' AnimationArmLayers container (z_index 1), used
+		# while the head is lifted — is drawn outside the group and skips its dark
+		# tint, showing the raw white shadow-shader output. Zeroing only the leaf
+		# sprites is not enough: a parent's z_index still lifts its whole subtree
+		# out of the group (z_index is relative to the parent by default).
+		if child is CanvasItem:
+			(child as CanvasItem).z_index = 0
 		if child is TextureRect or child is Sprite2D:
-			var canvas_item := child as CanvasItem
-			canvas_item.material = _shadow_material
-			canvas_item.z_index = 0
+			(child as CanvasItem).material = _shadow_material
 			if child is Control:
 				(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		elif child is Control:

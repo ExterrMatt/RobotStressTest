@@ -134,16 +134,25 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @export var awareness_emergency_button_gain: float = 15.0
 ## Steady climb per second while any body animation (head talk / pelvis lift) plays.
 @export var awareness_animation_gain_per_second: float = 12.0
-## While no animation is playing, awareness decays. The decay accelerates the
-## longer she is left undisturbed: the first stage for its duration, then the
-## second, then the third holds indefinitely.
-@export var awareness_decay_stage1_per_second: float = 3.0
-@export var awareness_decay_stage2_per_second: float = 10.0
-@export var awareness_decay_stage3_per_second: float = 15.0
-@export var awareness_decay_stage1_seconds: float = 4.0
-@export var awareness_decay_stage2_seconds: float = 4.0
+## While no animation is playing, awareness decays. The decay rate ramps up
+## linearly the longer she is left undisturbed: from the start rate up to the max
+## rate over the ramp duration, then holds at the max rate.
+@export var awareness_decay_start_per_second: float = 3.0
+@export var awareness_decay_max_per_second: float = 15.0
+@export var awareness_decay_ramp_seconds: float = 10.0
 @export var awareness_label_text: String = "Awareness"
 @export var awareness_failure_text: String = "You woke her up."
+
+@export_group("Endurance")
+## Endurance builds while a body animation is actively playing. When it reaches
+## the threshold the animation automatically winds down (its pre-done then done
+## strips), and the counter resets once the animation has finished.
+@export var endurance_threshold: float = 100.0
+@export var endurance_head_gain_per_second: float = 3.0
+@export var endurance_pelvis_gain_per_second: float = 6.0
+## How fast endurance falls while it is not ticking up (no animation building it).
+@export var endurance_decay_per_second: float = 2.0
+@export var endurance_label_text: String = "Endurance"
 
 @export_group("Darkness Effects")
 @export var screw_repair_lights_off_duration_multiplier: float = 2.0
@@ -285,6 +294,7 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @onready var gas_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/GasLabel
 @onready var uncle_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/UncleLabel
 @onready var awareness_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/AwarenessLabel
+@onready var endurance_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud/EnduranceLabel
 @onready var electricity_meter_groups: VBoxContainer = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ElectricityMeter/ElectricityMeterGroups
 @onready var failure_overlay: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay
 @onready var failure_title_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureTitleLabel
@@ -307,6 +317,10 @@ var _awareness: float = 0.0
 var _awareness_threshold: float = 100.0
 ## Seconds since a body animation was last playing, driving the decay stage.
 var _awareness_calm_elapsed: float = 0.0
+## Endurance builds while a body animation plays; at the threshold it auto-winds
+## the animation down, then resets once nothing is animating.
+var _endurance: float = 0.0
+var _endurance_triggered: bool = false
 ## Debug-only running tally shown as "electricity generated" on the results screen.
 var _electricity_generated: float = 0.0
 var _gas_flow_percent: float = 50.0
@@ -470,6 +484,7 @@ func _process(delta: float) -> void:
 	if not timer_only_speedrun:
 		_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * sim_delta)
 		_update_awareness(sim_delta)
+		_update_endurance(sim_delta)
 		_accumulate_electricity_generated(sim_delta)
 	if _electricity_percent <= 0.0 and _emergency_power_shutoff_pressed:
 		_set_emergency_power_shutoff_pressed(false)
@@ -1480,6 +1495,8 @@ func _initialize_stress_systems() -> void:
 	_electricity_percent = electricity_start_percent
 	_awareness = 0.0
 	_awareness_calm_elapsed = 0.0
+	_endurance = 0.0
+	_endurance_triggered = false
 	# Laptop debug cheat: the "double threshold" button scales the fail point.
 	_awareness_threshold = maxf(1.0, awareness_fail_threshold * maxf(0.0, GameState.stress_test_awareness_threshold_multiplier))
 	_electricity_generated = 0.0
@@ -2200,6 +2217,12 @@ func _refresh_stress_hud() -> void:
 				_awareness,
 				_awareness_threshold,
 			]
+	if endurance_value_label != null:
+		endurance_value_label.text = "%s: %.0f / %.0f" % [
+			endurance_label_text,
+			_endurance,
+			endurance_threshold,
+		]
 	_refresh_electricity_meter()
 
 
@@ -2304,17 +2327,12 @@ func _is_body_animation_playing() -> bool:
 			and bool(stress_test_robot.call("is_body_animation_playing"))
 
 
-## Decay per second while undisturbed: gentle at first, then progressively faster
-## the longer no animation has played (stage 1 for its duration, then stage 2,
-## then stage 3 indefinitely).
+## Decay per second while undisturbed: starts at the start rate and ramps up
+## linearly to the max rate over the ramp duration, then holds at the max.
 func _current_awareness_decay_per_second() -> float:
-	var stage1_end := maxf(0.0, awareness_decay_stage1_seconds)
-	var stage2_end := stage1_end + maxf(0.0, awareness_decay_stage2_seconds)
-	if _awareness_calm_elapsed <= stage1_end:
-		return awareness_decay_stage1_per_second
-	if _awareness_calm_elapsed <= stage2_end:
-		return awareness_decay_stage2_per_second
-	return awareness_decay_stage3_per_second
+	var ramp := maxf(0.001, awareness_decay_ramp_seconds)
+	var t := clampf(_awareness_calm_elapsed / ramp, 0.0, 1.0)
+	return lerpf(awareness_decay_start_per_second, awareness_decay_max_per_second, t)
 
 
 ## Discrete awareness bump from a player action (a body-part move or the emergency
@@ -2347,6 +2365,38 @@ func _electricity_generation_rate_per_second() -> float:
 	if completed_bar_count >= 5:
 		return ELECTRICITY_GENERATED_YELLOW_PER_SECOND
 	return ELECTRICITY_GENERATED_GREEN_PER_SECOND
+
+
+## Endurance climbs while a body animation is actively playing (head 3/s, pelvis
+## 6/s, summed when both run), and falls back at endurance_decay_per_second
+## whenever it is not ticking up. At the threshold it auto-winds the animation
+## down once; the trigger re-arms once endurance has fallen back below it.
+func _update_endurance(delta: float) -> void:
+	if delta <= 0.0:
+		return
+	var rate := _endurance_gain_rate_per_second()
+	if rate > 0.0:
+		_endurance = minf(endurance_threshold, _endurance + rate * delta)
+	else:
+		_endurance = maxf(0.0, _endurance - maxf(0.0, endurance_decay_per_second) * delta)
+
+	if _endurance < endurance_threshold:
+		_endurance_triggered = false
+	elif not _endurance_triggered:
+		_endurance_triggered = true
+		if stress_test_robot != null and stress_test_robot.has_method("begin_endurance_wind_down"):
+			stress_test_robot.call("begin_endurance_wind_down")
+
+
+func _endurance_gain_rate_per_second() -> float:
+	if stress_test_robot == null:
+		return 0.0
+	var rate := 0.0
+	if stress_test_robot.has_method("is_head_talk_active") and bool(stress_test_robot.call("is_head_talk_active")):
+		rate += endurance_head_gain_per_second
+	if stress_test_robot.has_method("is_pelvis_lift_active") and bool(stress_test_robot.call("is_pelvis_lift_active")):
+		rate += endurance_pelvis_gain_per_second
+	return rate
 
 
 ## Debug (number-4 give-items): re-derive which limbs expose screws now that new

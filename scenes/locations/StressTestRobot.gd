@@ -142,11 +142,21 @@ const ANIM_CHEST_DETAILS_RIGHT_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBPreOutro/ChestDetailsRight",
 	^"AnimationLayers/MouthBOutro/ChestDetailsRight",
 ]
-## Chest-smooth animation columns per side. Populated once the smooth columns are
-## wired as Sprite2D nodes in each head-animation phase; empty until then, so the
-## smooth overlay currently resolves on the static robot only.
-const ANIM_CHEST_SMOOTH_LEFT_PATHS: Array[NodePath] = []
-const ANIM_CHEST_SMOOTH_RIGHT_PATHS: Array[NodePath] = []
+## Chest-smooth animation columns per side, mirroring the outline/details lists so
+## the human-skin (smooth) chest animates through the head talk the same way. The
+## smooth column lives in the gap the outline/details columns leave in each sheet.
+const ANIM_CHEST_SMOOTH_LEFT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestSmoothLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothLeft",
+	^"AnimationLayers/MouthBOutro/ChestSmoothLeft",
+]
+const ANIM_CHEST_SMOOTH_RIGHT_PATHS: Array[NodePath] = [
+	^"AnimationLayers/ChestSmoothRight",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothRight",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothRight",
+	^"AnimationLayers/MouthBOutro/ChestSmoothRight",
+]
 
 ## Front cover for the neck, shown only while the head is the robot's sole
 ## remaining part (no chest, stomach, arms, hands, or legs). The texture is loaded at
@@ -180,6 +190,8 @@ const SQUINT_STATIC_PATH: NodePath = ^"Head/SquintEyes"
 const SQUINT_ANIM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/SquintEyes",
 	^"AnimationLayers/MouthBLoopMedium/SquintEyes",
+	^"AnimationLayers/MouthBPreOutro/SquintEyes",
+	^"AnimationLayers/MouthBOutro/SquintEyes",
 ]
 
 ## The "human" skin set, toggled by the Ctrl+H debug key. Off by default. It shows
@@ -251,6 +263,8 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"Torso/ChestDetailsRight",
 	^"Torso/ChestOutlineLeft",
 	^"Torso/ChestOutlineRight",
+	^"Torso/ChestSmoothLeft",
+	^"Torso/ChestSmoothRight",
 	^"Torso/BigCoconuts",
 	^"Torso/SmallCoconuts",
 	^"Torso/Balloons",
@@ -276,6 +290,14 @@ const CHEST_PART_PATHS: Array[NodePath] = [
 	^"AnimationLayers/MouthBOutro/ChestDetailsRight",
 	^"AnimationLayers/MouthBOutro/ChestOutlineLeft",
 	^"AnimationLayers/MouthBOutro/ChestOutlineRight",
+	^"AnimationLayers/ChestSmoothLeft",
+	^"AnimationLayers/ChestSmoothRight",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothLeft",
+	^"AnimationLayers/MouthBLoopMedium/ChestSmoothRight",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothLeft",
+	^"AnimationLayers/MouthBPreOutro/ChestSmoothRight",
+	^"AnimationLayers/MouthBOutro/ChestSmoothLeft",
+	^"AnimationLayers/MouthBOutro/ChestSmoothRight",
 	# The leg/vegetable animation now carries its own chest-region columns, so
 	# they are gated on owning a chest just like the static and head-animation
 	# chest sprites — across every phase (intro, loop, pre-outro, outro).
@@ -351,6 +373,14 @@ const BALLOONS_STATIC_TEXTURE_PATH: String = "res://assets/textures/characters/r
 ## syrup, shown on the static torso while the pelvis is lowered.
 const SYRUP_STOMACH_STATIC_PATH: NodePath = ^"Torso/SyrupStomach"
 
+## The syrup-drizzle columns that live inside the done (outro) strips. During an
+## interrupted wind-down the done strip is played without its syrup, so these are
+## force-hidden while a box runs the interrupt outro.
+const OUTRO_SYRUP_ANIM_PATHS: Array[NodePath] = [
+	^"AnimationLayers/MouthBOutro/Syrup",
+	^"AnimationLayers/VegetableMissionOutro/Syrup",
+]
+
 ## The chest sprite is shared when the head and pelvis animations run together:
 ## the head half draws the top of the cell, the pelvis half the bottom.
 const HEAD_CHEST_ANIM_PATHS: Array[NodePath] = [
@@ -371,16 +401,24 @@ const LEFT_ARM_PART_PATHS: Array[NodePath] = [
 	^"Arms/LeftShoulderPad",
 	^"AnimationArmLayers/LeftArm",
 	^"AnimationArmLayers/MouthBLoopMedium/LeftArm",
+	^"AnimationArmLayers/MouthBPreOutro/LeftArm",
+	^"AnimationArmLayers/MouthBOutro/LeftArm",
 	^"AnimationLayers/LeftShoulderPad",
 	^"AnimationLayers/MouthBLoopMedium/LeftShoulderPad",
+	^"AnimationLayers/MouthBPreOutro/LeftShoulderPad",
+	^"AnimationLayers/MouthBOutro/LeftShoulderPad",
 ]
 const RIGHT_ARM_PART_PATHS: Array[NodePath] = [
 	^"Arms/RightArm",
 	^"Arms/RightShoulderPad",
 	^"AnimationArmLayers/RightArm",
 	^"AnimationArmLayers/MouthBLoopMedium/RightArm",
+	^"AnimationArmLayers/MouthBPreOutro/RightArm",
+	^"AnimationArmLayers/MouthBOutro/RightArm",
 	^"AnimationLayers/RightShoulderPad",
 	^"AnimationLayers/MouthBLoopMedium/RightShoulderPad",
+	^"AnimationLayers/MouthBPreOutro/RightShoulderPad",
+	^"AnimationLayers/MouthBOutro/RightShoulderPad",
 ]
 const LEFT_HAND_PART_PATHS: Array[NodePath] = [
 	^"Hands/LeftPalmUp",
@@ -1300,14 +1338,18 @@ func _handle_layered_animation_click(box: Control, shift_pressed: bool = false) 
 	var state: Dictionary = _animation_states[box]
 	var playing := bool(state.get("playing", false))
 	if String(state.get("phase", "")) == ANIMATION_PHASE_LOOP and playing:
-		# Lowering from the talk/lift loop plays the wind-down (pre-outro then
-		# outro) when the box has one; otherwise it snaps straight back to static.
-		# The wind-down does not start on click: it is armed here and begins when
-		# the loop next reaches its fourth frame (see _advance_animation_for_box).
+		# A click during the loop INTERRUPTS the animation: it skips the pre-done
+		# strip and plays only the done strip, beginning at the same frame the
+		# pre-done would have (the loop's fourth-frame boundary), then returns to
+		# the frozen first frame with no syrup. The full pre-done + done wind-down
+		# instead runs automatically once endurance maxes out. Like the old
+		# wind-down, the interrupt is only armed here and begins at that boundary
+		# (see _advance_animation_for_box).
 		if _box_has_outro(box):
-			state["pending_outro"] = true
+			state["pending_interrupt"] = true
+			state["pending_outro"] = false
 		else:
-			_finish_animation_for_box(box)
+			_return_to_frozen_first_frame(box)
 		body_part_moved.emit(false)
 		return
 
@@ -1379,14 +1421,21 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 	var frame_count := _get_phase_frame_count(box, phase)
 
 	# A requested wind-down waits for the loop to play its first three frames and
-	# then, on the fourth frame, hands off to the pre-outro instead of drawing it.
+	# then, on the fourth frame, hands off to the outro instead of drawing it.
 	# "Arming" on any frame before the fourth guarantees the loop is caught at a
-	# genuine 0,1,2 -> 3 boundary even if the click landed later in the cycle.
-	if phase == ANIMATION_PHASE_LOOP and bool(state.get("pending_outro", false)):
+	# genuine 0,1,2 -> 3 boundary even if the request landed later in the cycle.
+	# Two flavours share this boundary: pending_outro plays the full pre-done +
+	# done wind-down (endurance auto-trigger); pending_interrupt plays the done
+	# strip alone (a click), both beginning at this same frame.
+	var winding_down := bool(state.get("pending_outro", false)) or bool(state.get("pending_interrupt", false))
+	if phase == ANIMATION_PHASE_LOOP and winding_down:
 		if frame < LOOP_OUTRO_TRANSITION_FRAME:
 			state["pending_outro_armed"] = true
 		elif bool(state.get("pending_outro_armed", false)):
-			_begin_outro_for_box(box)
+			if bool(state.get("pending_interrupt", false)):
+				_begin_interrupt_outro_for_box(box)
+			else:
+				_begin_outro_for_box(box)
 			return
 
 	if frame >= frame_count:
@@ -1424,7 +1473,12 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 			return
 
 		if phase == ANIMATION_PHASE_OUTRO:
-			_finish_outro_for_box(box)
+			# An interrupted done strip returns to the frozen first frame with no
+			# syrup; a normal wind-down settles to static and drizzles the syrup.
+			if bool(state.get("interrupt", false)):
+				_return_to_frozen_first_frame(box)
+			else:
+				_finish_outro_for_box(box)
 			return
 
 		_finish_animation_for_box(box)
@@ -1455,6 +1509,47 @@ func _begin_outro_for_box(box: Control) -> void:
 	state["pending_outro_armed"] = false
 	_set_animation_frame_for_box(box, phase, 0)
 	_play_hand_rub_sound()
+	_apply_visibility_state()
+
+
+## Starts an INTERRUPTED wind-down: jump straight to the done (outro) strip,
+## skipping the pre-done strip, and mark the state so it finishes back at the
+## frozen first frame (not static) with no syrup. Falls back to snapping to the
+## frozen frame when there is no done strip to play.
+func _begin_interrupt_outro_for_box(box: Control) -> void:
+	if not _animation_states.has(box):
+		return
+	var state: Dictionary = _animation_states[box]
+	if _get_animation_phase_paths(box, ANIMATION_PHASE_OUTRO).is_empty():
+		_return_to_frozen_first_frame(box)
+		return
+	state["phase"] = ANIMATION_PHASE_OUTRO
+	state["elapsed"] = 0.0
+	state["playing"] = true
+	state["interrupt"] = true
+	state["pending_outro"] = false
+	state["pending_interrupt"] = false
+	state["pending_outro_armed"] = false
+	_set_animation_frame_for_box(box, ANIMATION_PHASE_OUTRO, 0)
+	_play_hand_rub_sound()
+	_apply_visibility_state()
+
+
+## Returns a layered animation to its frozen first frame (primed intro frame 0,
+## not playing) WITHOUT drizzling any syrup, leaving the part ready to animate
+## again exactly as if freshly primed. Used by the click-interrupt path.
+func _return_to_frozen_first_frame(box: Control) -> void:
+	if box == null or not is_instance_valid(box):
+		return
+	_animation_states[box] = {
+		"phase": ANIMATION_PHASE_INTRO,
+		"playing": false,
+		"elapsed": 0.0,
+	}
+	if box.has_method("set_runtime_active"):
+		box.call("set_runtime_active", true)
+	_set_animation_frame_for_box(box, ANIMATION_PHASE_INTRO, 0)
+	_refresh_active_animation_frames()
 	_apply_visibility_state()
 
 
@@ -1542,6 +1637,7 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_squint_eyes_state(resolved)
 	_apply_human_skin_state(resolved)
 	_apply_syrup_state(resolved)
+	_apply_interrupt_outro_syrup_hidden(resolved)
 	_apply_robot_part_availability_to_dictionary(resolved)
 	_apply_cosmetic_item_availability_to_dictionary(resolved)
 	_apply_chest_cover_gated_animations(resolved)
@@ -1841,6 +1937,57 @@ func _apply_syrup_state(resolved: Dictionary) -> void:
 	resolved[SYRUP_STOMACH_STATIC_PATH] = _syrup_stomach_enabled and not pelvis_active
 
 
+## Force-hide the done strip's syrup columns while a box runs an interrupted
+## wind-down, so the interrupt plays the done animation with no syrup drizzle.
+func _apply_interrupt_outro_syrup_hidden(resolved: Dictionary) -> void:
+	for box in _animation_states.keys():
+		if box == null or not is_instance_valid(box):
+			continue
+		if not bool((_animation_states[box] as Dictionary).get("interrupt", false)):
+			continue
+		for path in OUTRO_SYRUP_ANIM_PATHS:
+			resolved[path] = false
+
+
+## --- Stress-test endurance hooks ---
+## True while that box's sustained talk / lift animation (intro or loop) is
+## playing. The wind-down phases (pre-done / done) deliberately do not count, so
+## the endurance meter only fills during the active animation.
+func is_head_talk_active() -> bool:
+	return _is_sustained_animation_active("HeadHoverBox")
+
+
+func is_pelvis_lift_active() -> bool:
+	return _is_sustained_animation_active("PelvisHoverBox")
+
+
+func _is_sustained_animation_active(box_name: String) -> bool:
+	var box := _find_hover_box_by_name(box_name)
+	if box == null or not _animation_states.has(box):
+		return false
+	var state: Dictionary = _animation_states[box]
+	if not bool(state.get("playing", false)):
+		return false
+	var phase := String(state.get("phase", ""))
+	return phase == ANIMATION_PHASE_INTRO or phase == ANIMATION_PHASE_LOOP
+
+
+## Endurance auto-trigger: arm the full pre-done + done wind-down on any sustained
+## animation currently playing. This is the automatic counterpart to a click,
+## which plays only the done strip.
+func begin_endurance_wind_down() -> void:
+	for box in _animation_states.keys():
+		if box == null or not is_instance_valid(box):
+			continue
+		var state: Dictionary = _animation_states[box]
+		if not bool(state.get("playing", false)):
+			continue
+		var phase := String(state.get("phase", ""))
+		if phase == ANIMATION_PHASE_INTRO or phase == ANIMATION_PHASE_LOOP:
+			state["pending_outro"] = true
+			state["pending_interrupt"] = false
+
+
 ## Swaps each leg's screws between their default and "slightly out" art to match
 ## the current per-side leg pose, and hides them while the leg is raised. Runs
 ## against the stress-test leg-screw controllers; a no-op in scenes without them.
@@ -2056,13 +2203,19 @@ func _apply_side_chest_overlay(
 		_hide_paths(resolved, anim_pad_paths)
 
 
-## Picks the chest overlay variant for one side from the current toggles.
+## Picks the chest overlay variant for one side from the current toggles, per side
+## independently:
+##   - no arm                     -> outline (no pad can be worn, keep the plate)
+##   - arm with the shoulder pad  -> outline
+##   - arm, pad taken off         -> details
+##   - arm, pad off, smooth debug -> smooth (replaces details only)
+## The smooth (human-skin) set therefore only ever stands in for details; it never
+## overrides the outline shown with a pad on or with no arm.
 func _chest_overlay_mode(pad_removed: bool, side_has_arm: bool) -> int:
-	if _human_skin_enabled:
-		return CHEST_OVERLAY_SMOOTH
-	# No arm (so no pad to wear) keeps the plated outline; a worn pad does too.
 	if not side_has_arm or not pad_removed:
 		return CHEST_OVERLAY_OUTLINE
+	if _human_skin_enabled:
+		return CHEST_OVERLAY_SMOOTH
 	return CHEST_OVERLAY_DETAILS
 
 
