@@ -1139,6 +1139,24 @@ func _find_hover_box_at(global_position: Vector2) -> Control:
 
 
 func _handle_hover_box_click(box: Control, shift_pressed: bool = false) -> void:
+	# The legs are locked while any screw is still on them: neither the pelvis
+	# (vegetable-mission) box nor either leg-pose box responds until the leg
+	# screws have all been driven back in.
+	if (_is_pelvis_box(box) or _is_leg_pose_hover_box(box)) and _legs_have_screws():
+		return
+
+	if _is_hair_hover_box(box):
+		# The hair can't be restyled while the head is raised. If the head is
+		# raised but no longer animating (settled on its frozen first frame), a
+		# hair click instead lowers it back to the default resting pose.
+		var head := _find_hover_box_by_name(HEAD_ANIM_BOX_NAME)
+		if head != null and _animation_states.has(head):
+			if not bool((_animation_states[head] as Dictionary).get("playing", false)):
+				_finish_animation_for_box(head)
+			return
+		_cycle_hair_texture()
+		return
+
 	var action := int(box.get("click_action"))
 	if action == CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION:
 		_handle_layered_animation_click(box, shift_pressed)
@@ -1146,13 +1164,25 @@ func _handle_hover_box_click(box: Control, shift_pressed: bool = false) -> void:
 	if _is_hand_hover_box(box):
 		_cycle_hand_texture(box)
 		return
-	if _is_hair_hover_box(box):
-		_cycle_hair_texture()
-		return
 	if _is_leg_pose_hover_box(box):
 		_cycle_leg_pose(box)
 		return
 	_toggle_box_effect(box)
+
+
+func _is_pelvis_box(box: Control) -> bool:
+	return box != null and String(box.name) == VEG_MISSION_BOX_NAME
+
+
+## True while either leg-screw controller still has a loose screw on it, in any
+## leg pose (the screws stay tracked even when a raised leg hides their art).
+func _legs_have_screws() -> bool:
+	for path in [LEFT_LEG_SCREW_REPAIR_PATH, RIGHT_LEG_SCREW_REPAIR_PATH]:
+		var controller := get_node_or_null(path)
+		if controller != null and controller.has_method("has_loose_screws") \
+				and bool(controller.call("has_loose_screws")):
+			return true
+	return false
 
 
 func _is_leg_pose_hover_box(box: Control) -> bool:
@@ -2006,6 +2036,10 @@ func _apply_single_leg_screw_pose(controller_path: NodePath, side: String, pose:
 	# the player can still raise a leg without repairing its screws first.
 	if controller.has_method("set_screws_force_hidden"):
 		controller.call("set_screws_force_hidden", pose == LEG_POSE_RAISED)
+	# In the slightly-out pose the screw art shifts with the parted leg, so the
+	# controller nudges its screwdriver landing point to match.
+	if controller.has_method("set_slightly_out_pose"):
+		controller.call("set_slightly_out_pose", pose == LEG_POSE_SLIGHTLY_OUT)
 	var suffix := "_slightly_out" if pose == LEG_POSE_SLIGHTLY_OUT else ""
 	for node_name in LEG_SCREW_PART_BY_NODE:
 		var node := controller.get_node_or_null(NodePath(node_name)) as TextureRect

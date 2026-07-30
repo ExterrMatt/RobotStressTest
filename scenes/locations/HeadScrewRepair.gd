@@ -40,6 +40,10 @@ const HAND_SCREW_TEXTURE_PATH: String = "res://assets/textures/icons/hand_horizo
 @export var screwdriver_sprite_path: NodePath = ^"Screwdriver"
 @export var screwdriver_frame_size: Vector2i = Vector2i(48, 24)
 @export var screwdriver_frame_count: int = 2
+## Extra offset applied to every screwdriver landing position while the limb is in
+## the slightly-out leg pose, so the animation lands on the shifted screw art
+## instead of the default-pose spot. Set per leg controller in the scene.
+@export var slightly_out_screwdriver_offset: Vector2 = Vector2.ZERO
 
 @export_group("Manual Screwing")
 ## Animation shown when the player owns no screwdriver and drives the screw by
@@ -91,6 +95,8 @@ var _manual_screwing: bool = false
 ## by the robot rig while a limb is in a pose that has no screw art (e.g. a
 ## raised leg), so screws can stay logically loose without rendering out of place.
 var _screws_force_hidden: bool = false
+## True while the limb is in the slightly-out leg pose (see set_slightly_out_pose).
+var _slightly_out_pose: bool = false
 ## The screwdriver sprite's authored texture, restored when not screwing by hand.
 var _screwdriver_default_texture: Texture2D = null
 ## Resolved bare-hand texture (export or fallback path), or null when missing.
@@ -229,6 +235,20 @@ func is_repairing() -> bool:
 	return not _active_repairs.is_empty()
 
 
+## Whether any screw is currently loose (present) on this controller, regardless
+## of whether its art is force-hidden by the current pose. The stress test uses
+## this to lock the leg-pose and pelvis boxes until the leg screws are repaired.
+func has_loose_screws() -> bool:
+	return not _loose_screw_indices.is_empty()
+
+
+## While true the screws (and the screwdriver/hand animation) are drawn at their
+## slightly-out-pose positions: the screw art shifts with the parted leg, so the
+## screwdriver landing point is nudged by slightly_out_screwdriver_offset to match.
+func set_slightly_out_pose(value: bool) -> void:
+	_slightly_out_pose = value
+
+
 ## Whether a screw on the given side is currently being driven by this
 ## controller. Lets the stress test enforce one repair per side across limbs.
 func is_side_repairing(side: String) -> bool:
@@ -359,6 +379,12 @@ func loosen_screws(count: int) -> int:
 	if Engine.is_editor_hint():
 		return 0
 	if not enabled or not _completion_enabled:
+		return 0
+	# Never loosen a screw whose art is force-hidden by the current pose (a raised
+	# leg): the screw would be invisible and, because the leg boxes lock while any
+	# screw is present, would strand the leg in the raised pose. Screws only ever
+	# appear on the visible default / slightly-out leg poses.
+	if _screws_force_hidden:
 		return 0
 	if _any_blocked_hover_box_active():
 		return 0
@@ -571,14 +597,15 @@ func _set_screw_visible(index: int, value: bool) -> void:
 
 
 func _screwdriver_position_for_index(index: int) -> Vector2:
+	var pose_offset := slightly_out_screwdriver_offset if _slightly_out_pose else Vector2.ZERO
 	if index >= 0 and index < screwdriver_position_paths.size():
 		var marker := get_node_or_null(screwdriver_position_paths[index])
 		if marker is Node2D:
-			return (marker as Node2D).position
+			return (marker as Node2D).position + pose_offset
 		if marker is Control:
 			var control := marker as Control
-			return control.position + control.size * 0.5
-	return size * 0.5
+			return control.position + control.size * 0.5 + pose_offset
+	return size * 0.5 + pose_offset
 
 
 func _available_screw_indices() -> Array:

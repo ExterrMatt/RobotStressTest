@@ -974,7 +974,7 @@ region_rect = Rect2(1000, 0, 250, 350)
 
 [node name="LeftShoulderPad" type="Sprite2D" parent="AnimationLayers" unique_id=1007274430]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
@@ -982,7 +982,7 @@ region_rect = Rect2(1750, 0, 250, 350)
 
 [node name="RightShoulderPad" type="Sprite2D" parent="AnimationLayers" unique_id=1007274431]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("24_mouth_b_intro")
 centered = false
 region_enabled = true
@@ -1256,7 +1256,7 @@ region_rect = Rect2(1000, 0, 250, 350)
 
 [node name="RightShoulderPad" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1174504311]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
@@ -1264,7 +1264,7 @@ region_rect = Rect2(1750, 0, 250, 350)
 
 [node name="LeftShoulderPad" type="Sprite2D" parent="AnimationLayers/MouthBLoopMedium" unique_id=1174504312]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("25_mouth_b_loop_medium")
 centered = false
 region_enabled = true
@@ -1393,7 +1393,7 @@ region_rect = Rect2(1000, 0, 250, 350)
 
 [node name="RightShoulderPad" type="Sprite2D" parent="AnimationLayers/MouthBPreOutro" unique_id=348026175]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("85_mouth_b_pre_outro")
 centered = false
 region_enabled = true
@@ -1401,7 +1401,7 @@ region_rect = Rect2(1750, 0, 250, 350)
 
 [node name="LeftShoulderPad" type="Sprite2D" parent="AnimationLayers/MouthBPreOutro" unique_id=348026176]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("85_mouth_b_pre_outro")
 centered = false
 region_enabled = true
@@ -1530,7 +1530,7 @@ region_rect = Rect2(1000, 0, 250, 350)
 
 [node name="RightShoulderPad" type="Sprite2D" parent="AnimationLayers/MouthBOutro" unique_id=348026195]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("84_mouth_b_outro")
 centered = false
 region_enabled = true
@@ -1538,7 +1538,7 @@ region_rect = Rect2(1750, 0, 250, 350)
 
 [node name="LeftShoulderPad" type="Sprite2D" parent="AnimationLayers/MouthBOutro" unique_id=348026196]
 visible = false
-z_index = 2
+z_index = 0
 texture = ExtResource("84_mouth_b_outro")
 centered = false
 region_enabled = true
