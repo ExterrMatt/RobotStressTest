@@ -27,6 +27,7 @@ Dialogue="*res://autoload/Dialogue.gd"
 IntroTransition="*res://autoload/IntroTransition.gd"
 CursorTheme="*res://autoload/CursorTheme.gd"
 WindowManager="*res://autoload/WindowManager.gd"
+ButtonSounds="*res://autoload/ButtonSounds.gd"
 
 [display]
 

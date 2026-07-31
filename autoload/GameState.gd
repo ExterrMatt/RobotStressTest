@@ -15,6 +15,7 @@ signal phase_changed(new_phase: int)
 signal arrested()
 signal brightness_changed(new_value: float)
 signal volume_changed(new_value: float)
+signal music_volume_changed(new_value: float)
 signal scanlines_enabled_changed(enabled: bool)
 signal debug_mode_changed(enabled: bool)
 signal easy_workshop_changed(enabled: bool)
@@ -64,6 +65,12 @@ var _brightness_value: float = 50.0
 ## can raise the slider to 100.
 const DEFAULT_VOLUME_VALUE: float = 50.0
 var _volume_value: float = DEFAULT_VOLUME_VALUE
+## Music has its own 0-100 slider, on top of the master volume. It starts at 50%.
+const DEFAULT_MUSIC_VOLUME_VALUE: float = 50.0
+## Global ceiling for music: even at a 100% music slider the music plays at this
+## fraction of full amplitude, so the mix sits well under the sound effects.
+const MUSIC_GLOBAL_SCALE: float = 0.33
+var _music_volume_value: float = DEFAULT_MUSIC_VOLUME_VALUE
 var _scanlines_enabled: bool = true
 
 ## Default playback level for any sound effect that does NOT set its own volume.
@@ -149,6 +156,25 @@ var volume_value: float:
 		_volume_value = clamped
 		_apply_volume()
 		volume_changed.emit(_volume_value)
+
+## Music volume as a 0-100 percentage, independent of the master volume slider.
+## Music players read music_player_volume_db() for their level and listen to
+## music_volume_changed to update live as the slider moves.
+var music_volume_value: float:
+	get: return _music_volume_value
+	set(value):
+		var clamped: float = clampf(value, 0.0, 100.0)
+		if is_equal_approx(clamped, _music_volume_value):
+			return
+		_music_volume_value = clamped
+		music_volume_changed.emit(_music_volume_value)
+
+## The volume_db a music player should use: the music slider scaled by the global
+## music ceiling. Returns a deep-silent level at 0 so tracks fully fade out.
+func music_player_volume_db() -> float:
+	if _music_volume_value <= 0.0:
+		return -80.0
+	return linear_to_db((_music_volume_value / 100.0) * MUSIC_GLOBAL_SCALE)
 
 var scanlines_enabled: bool:
 	get: return _scanlines_enabled
@@ -291,6 +317,7 @@ func _emit_initial_state() -> void:
 	phase_changed.emit(_phase)
 	brightness_changed.emit(_brightness_value)
 	volume_changed.emit(_volume_value)
+	music_volume_changed.emit(_music_volume_value)
 	scanlines_enabled_changed.emit(_scanlines_enabled)
 	debug_mode_changed.emit(_debug_mode_enabled)
 	easy_workshop_changed.emit(_easy_workshop_enabled)
@@ -673,6 +700,7 @@ func to_dict() -> Dictionary:
 		"debug_mode_enabled": _debug_mode_enabled,
 		"window_mode": _window_mode,
 		"volume_value": _volume_value,
+		"music_volume_value": _music_volume_value,
 		"easy_workshop_enabled": _easy_workshop_enabled,
 	}
 
@@ -734,5 +762,7 @@ func from_dict(data: Dictionary) -> void:
 	_window_mode = clampi(int(data.get("window_mode", WindowMode.WINDOWED)), WindowMode.WINDOWED, WindowMode.FULLSCREEN)
 	_volume_value = clampf(float(data.get("volume_value", DEFAULT_VOLUME_VALUE)), 0.0, 100.0)
 	_apply_volume()
+	_music_volume_value = clampf(float(data.get("music_volume_value", DEFAULT_MUSIC_VOLUME_VALUE)), 0.0, 100.0)
+	music_volume_changed.emit(_music_volume_value)
 	_easy_workshop_enabled = bool(data.get("easy_workshop_enabled", false))
 	_emit_initial_state()

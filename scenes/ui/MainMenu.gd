@@ -101,6 +101,8 @@ extends Control
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/Main.tscn"
 
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
+## Folder whose .mp3 files form the shuffled main-menu playlist.
+const SONGS_DIR: String = "res://assets/sounds/songs/"
 const SUBJECT_STATUS_PREFIX: String = "UNIT 000-000-001 // STATUS: "
 const SUBJECT_STATUS_NON_ERROR_WORDS: Array[String] = ["ANGRY", "CONFUSED", "COMBATIVE"]
 const SUBJECT_STATUS_TYPE_SECONDS: float = 0.055
@@ -208,6 +210,7 @@ func _ready() -> void:
 	_subject_status_rng.randomize()
 	_start_subject_status_loop()
 	_start_boot_diagnostic_loop()
+	_start_menu_music()
 
 
 func _input(event: InputEvent) -> void:
@@ -616,6 +619,8 @@ func _build_menu_row(id: String, label: String) -> Button:
 	_apply_menu_row_availability(btn, id)
 	_apply_menu_option_button_style(btn)
 
+	# _activate plays this row's click, so keep the global fallback off it.
+	UI_SOUND.mark_has_custom_sound(btn)
 	btn.pressed.connect(_activate.bind(id))
 	btn.mouse_entered.connect(_on_row_hover.bind(btn))
 	btn.mouse_exited.connect(_on_row_unhover.bind(btn))
@@ -734,7 +739,9 @@ func _play_disabled_menu_button_sound_from_event(event: InputEvent) -> bool:
 		var btn := child as Button
 		if btn == null or not btn.disabled:
 			continue
-		if btn.get_global_rect().has_point(mouse_event.global_position):
+		# Hit-test in the button's own local space (robust to the canvas_items
+		# stretch, which offsets the raw event's global_position from get_global_rect).
+		if Rect2(Vector2.ZERO, btn.size).has_point(btn.get_local_mouse_position()):
 			UI_SOUND.play_inaccessible_button(self)
 			return true
 	return false
@@ -744,11 +751,17 @@ func _activate(id: String) -> void:
 	if _current_overlay and is_instance_valid(_current_overlay):
 		return
 
+	# Only enabled rows emit "pressed"; disabled ones route to the inaccessible
+	# sound via _play_disabled_menu_button_sound_from_event. Every menu row - the
+	# SETTINGS row included - is a plain click; the scene-select sound is reserved
+	# for the buttons inside the settings overlay itself.
+	UI_SOUND.play_button(self, true, false)
+
 	match id:
 		"new":      _start_new_game()
 		"endless":  _start_endless()
 		"load":     _open_overlay(_build_load_panel())
-		"settings": _open_overlay(_build_settings_panel())
+		"settings": _open_overlay(_build_settings_panel(), true)
 		"quit":     _open_overlay(_build_quit_confirm())
 		_:          push_warning("MainMenu: unknown menu id '%s'" % id)
 
@@ -789,6 +802,83 @@ func _start_endless() -> void:
 	get_tree().change_scene_to_file(game_scene_path)
 
 
+# =============================================================================
+# MENU MUSIC
+# =============================================================================
+
+var _song_player: AudioStreamPlayer = null
+var _song_playlist: Array[String] = []
+var _song_index: int = 0
+
+## Builds the shuffled playlist from the songs folder and starts it. The player
+## is a child of the menu, so it stops automatically when the scene changes.
+func _start_menu_music() -> void:
+	_song_playlist = _gather_song_paths()
+	if _song_playlist.is_empty():
+		return
+	_song_playlist.shuffle()
+	_song_index = 0
+
+	_song_player = AudioStreamPlayer.new()
+	_song_player.name = "MenuMusicPlayer"
+	_song_player.volume_db = GameState.music_player_volume_db()
+	add_child(_song_player)
+	# When a track ends, advance to the next; wrap back to the top after the last.
+	_song_player.finished.connect(_play_next_song)
+	# Follow the music-volume slider live.
+	GameState.music_volume_changed.connect(_on_music_volume_changed)
+	_play_current_song()
+
+
+func _on_music_volume_changed(_value: float) -> void:
+	if _song_player != null and is_instance_valid(_song_player):
+		_song_player.volume_db = GameState.music_player_volume_db()
+
+
+## Every .mp3 in the songs folder, sorted for a stable pre-shuffle order.
+func _gather_song_paths() -> Array[String]:
+	var paths: Array[String] = []
+	var dir := DirAccess.open(SONGS_DIR)
+	if dir == null:
+		return paths
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir():
+			# In exported builds imported audio can appear as "<name>.mp3.import";
+			# strip that suffix so we resolve to the real resource path.
+			var clean := file_name.trim_suffix(".import").trim_suffix(".remap")
+			if clean.get_extension().to_lower() == "mp3" and not paths.has(SONGS_DIR + clean):
+				paths.append(SONGS_DIR + clean)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	paths.sort()
+	return paths
+
+
+func _play_current_song() -> void:
+	if _song_player == null or _song_playlist.is_empty():
+		return
+	var stream := load(_song_playlist[_song_index]) as AudioStream
+	if stream == null:
+		# Skip a bad entry rather than stalling the playlist.
+		_play_next_song()
+		return
+	# We sequence tracks ourselves, so the clip itself must not loop (or its
+	# "finished" signal would never fire and the playlist would stick).
+	if stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = false
+	_song_player.stream = stream
+	_song_player.play()
+
+
+func _play_next_song() -> void:
+	if _song_playlist.is_empty():
+		return
+	_song_index = (_song_index + 1) % _song_playlist.size()
+	_play_current_song()
+
+
 ## Kept for completeness — used by other parts of the script that may want
 ## to check for an autoload's presence by name.
 func _start_debug_game(number: int, shift_held: bool, ctrl_held: bool) -> void:
@@ -818,10 +908,26 @@ func _has_autoload(autoload_name: String) -> bool:
 # OVERLAYS — Load / Settings / Quit confirm dialogs.
 # =============================================================================
 
-func _open_overlay(panel: Control) -> void:
+func _open_overlay(panel: Control, scene_select_sounds: bool = false) -> void:
 	_close_overlay()
 	_current_overlay = panel
 	add_child(panel)
+	# Settings-overlay buttons use the scene-select sound; the load/quit overlays
+	# are plain menu buttons and keep the click sound.
+	_wire_overlay_button_sounds(panel, scene_select_sounds)
+
+
+## Connects every button within an opened overlay to its button sound. Buttons
+## already assigned a sound (e.g. the CLOSE button, which uses the menu click) are
+## left as-is.
+func _wire_overlay_button_sounds(node: Node, scene_select_sounds: bool) -> void:
+	if node is BaseButton and not node.has_meta(UI_SOUND.CUSTOM_META):
+		UI_SOUND.mark_has_custom_sound(node)
+		(node as BaseButton).pressed.connect(func() -> void:
+			UI_SOUND.play_button(self, true, scene_select_sounds)
+		)
+	for child in node.get_children():
+		_wire_overlay_button_sounds(child, scene_select_sounds)
 
 
 func _close_overlay() -> void:
@@ -970,6 +1076,7 @@ func _build_settings_panel() -> Control:
 		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], _window_mode, _on_window_mode_selected)))
 	content.add_child(_wrap_in_gold_panel(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed)))
 	content.add_child(_wrap_in_gold_panel(_build_slider_row("VOLUME", _current_volume_value(), _on_volume_changed)))
+	content.add_child(_wrap_in_gold_panel(_build_slider_row("MUSIC", _current_music_volume_value(), _on_music_volume_changed_from_slider)))
 	content.add_child(_wrap_in_gold_panel(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled)))
 	content.add_child(_wrap_in_gold_panel(_build_toggle_row("EASY WORKSHOP", _current_easy_workshop_enabled(), _on_easy_workshop_toggled)))
 	content.add_child(_wrap_in_gold_panel(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled)))
@@ -981,6 +1088,9 @@ func _build_settings_panel() -> Control:
 	# Match the gold-bordered LEAVE / END buttons used across the locations.
 	apply_btn.theme_type_variation = &"GoldHudButton"
 	apply_btn.pressed.connect(_close_overlay)
+	# The CLOSE button uses the main-menu click, not the settings scene-select.
+	UI_SOUND.mark_has_custom_sound(apply_btn)
+	apply_btn.pressed.connect(func() -> void: UI_SOUND.play_button_click(self))
 	apply_row.add_child(apply_btn)
 	content.add_child(apply_row)
 
@@ -1109,6 +1219,17 @@ func _on_volume_changed(value: float) -> void:
 	var settings := get_node_or_null("/root/GameState")
 	if settings:
 		settings.volume_value = value
+
+
+func _current_music_volume_value() -> float:
+	var settings := get_node_or_null("/root/GameState")
+	return settings.music_volume_value if settings else GameState.DEFAULT_MUSIC_VOLUME_VALUE
+
+
+func _on_music_volume_changed_from_slider(value: float) -> void:
+	var settings := get_node_or_null("/root/GameState")
+	if settings:
+		settings.music_volume_value = value
 
 
 func _on_scanlines_toggled(enabled: bool) -> void:

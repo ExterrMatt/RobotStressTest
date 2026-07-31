@@ -681,6 +681,7 @@ func _open_runtime_settings_overlay() -> void:
 		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], GameState.window_mode, _on_runtime_window_mode_selected)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("BRIGHTNESS", GameState.brightness_value, _on_runtime_brightness_changed)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("VOLUME", GameState.volume_value, _on_runtime_volume_changed)))
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("MUSIC", GameState.music_volume_value, _on_runtime_music_volume_changed)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("EASY WORKSHOP", GameState.easy_workshop_enabled, _on_runtime_easy_workshop_toggled)))
 
@@ -692,6 +693,9 @@ func _open_runtime_settings_overlay() -> void:
 	# Gold-bordered buttons to match the LEAVE / END buttons used across the game.
 	close_btn.theme_type_variation = &"GoldHudButton"
 	close_btn.pressed.connect(_close_runtime_settings_overlay)
+	# The CLOSE button uses the main-menu click, not the settings scene-select.
+	UI_SOUND.mark_has_custom_sound(close_btn)
+	close_btn.pressed.connect(func() -> void: UI_SOUND.play_button_click(self))
 	button_row.add_child(close_btn)
 	var quit_btn := Button.new()
 	quit_btn.text = "QUIT"
@@ -699,6 +703,21 @@ func _open_runtime_settings_overlay() -> void:
 	quit_btn.pressed.connect(_quit_game)
 	button_row.add_child(quit_btn)
 	vbox.add_child(button_row)
+
+	# Every button in the pause-menu settings uses the scene-select sound.
+	_wire_settings_button_sounds(vbox)
+
+
+## Connects every button in the runtime settings overlay to the scene-select
+## sound, except buttons already assigned one (e.g. CLOSE, which uses the menu click).
+func _wire_settings_button_sounds(node: Node) -> void:
+	if node is BaseButton and not node.has_meta(UI_SOUND.CUSTOM_META):
+		UI_SOUND.mark_has_custom_sound(node)
+		(node as BaseButton).pressed.connect(func() -> void:
+			UI_SOUND.play_scene_select(self)
+		)
+	for child in node.get_children():
+		_wire_settings_button_sounds(child)
 
 
 ## Wrap a runtime settings control in a single-gold-border panel so each row
@@ -773,6 +792,10 @@ func _on_runtime_brightness_changed(value: float) -> void:
 
 func _on_runtime_volume_changed(value: float) -> void:
 	GameState.volume_value = value
+
+
+func _on_runtime_music_volume_changed(value: float) -> void:
+	GameState.music_volume_value = value
 
 
 func _on_runtime_scanlines_toggled(enabled: bool) -> void:
@@ -2458,6 +2481,9 @@ func _add_choice_entry(btn: Button, loc: LocationData) -> void:
 	var index := _choice_entries.size()
 	_choice_entries.append({"button": btn, "loc": loc})
 	btn.mouse_entered.connect(_highlight_choice.bind(index))
+	# Location picks play scene-select (enabled) or inaccessible (disabled) via
+	# their own paths, so keep the global fallback click off every choice button.
+	UI_SOUND.mark_has_custom_sound(btn)
 	if loc != null and not btn.disabled:
 		btn.pressed.connect(_on_location_picked.bind(loc))
 	location_grid.add_child(btn)
@@ -2627,7 +2653,10 @@ func _play_disabled_location_button_sound_from_event(event: InputEvent) -> bool:
 		var btn := child as Button
 		if btn == null or not btn.disabled:
 			continue
-		if btn.get_global_rect().has_point(mouse_event.global_position):
+		# Hit-test in the button's own local space: the selection screen is drawn
+		# inside the scaled scene canvas, so the raw event's global_position does
+		# not line up with the button's get_global_rect().
+		if Rect2(Vector2.ZERO, btn.size).has_point(btn.get_local_mouse_position()):
 			UI_SOUND.play_inaccessible_button(self)
 			return true
 	return false
@@ -2667,6 +2696,9 @@ func _on_location_picked(loc: LocationData) -> void:
 	# Guard against rapid double-click stacking transitions.
 	if _is_any_transition_playing():
 		return
+	# Reachable only for enabled locations (disabled ones play the inaccessible
+	# sound via _play_disabled_location_button_sound_from_event / _confirm_selected_choice).
+	UI_SOUND.play_scene_select(self)
 	_hide_mouse_tooltip()
 
 	# Validate the scene up-front so we can bail before starting the wipe
