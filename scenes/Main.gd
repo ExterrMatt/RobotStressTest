@@ -387,7 +387,12 @@ var _settings_overlay_layer: CanvasLayer = null
 var _fullscreen_transition_layer: CanvasLayer = null
 var _fullscreen_transition: TextureRect = null
 var _expanding_transition_layer: CanvasLayer = null
-var _expanding_scene_border_panel: Panel = null
+## Stand-in for the framed scene's ornate gold double-border, tracking the
+## shrinking/expanding window so the real border isn't seen popping in when the
+## transition ends. Nested PanelContainers reuse the exact frame styles so the
+## geometry matches the real FrameOuter -> FrameInsetDark border.
+var _expanding_scene_border_panel: PanelContainer = null
+var _expanding_scene_border_inner_panel: PanelContainer = null
 var _expanding_transition_clip: Control = null
 var _expanding_transition: TextureRect = null
 var _expanding_transition_tween: Tween = null
@@ -503,6 +508,48 @@ func _process(_delta: float) -> void:
 		_position_bedroom_pills()
 
 
+## Tab / Shift+Tab toggle the debug overlays. Handled here in _input (ahead of the
+## GUI) rather than _unhandled_input so the keys still work while the Shift+Tab
+## actions panel holds focus - otherwise the panel's buttons swallow Tab for focus
+## navigation and it could never be closed with the keyboard.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	var key_event: InputEventKey = event
+	if key_event.keycode != KEY_TAB and key_event.keycode != KEY_BACKTAB:
+		return
+	if not _debug_mode_enabled():
+		return
+	# Shift+Tab arrives as Backtab on some platforms, so accept either.
+	var want_actions := key_event.keycode == KEY_BACKTAB or key_event.shift_pressed
+	_toggle_debug_menus(want_actions)
+	get_viewport().set_input_as_handled()
+
+
+## If either debug overlay is open, any Tab/Shift+Tab just closes everything - it
+## never swaps one menu out for the other. If neither is open, this opens the menu
+## for the pressed key: the info log for Tab, the quick-actions panel for Shift+Tab.
+func _toggle_debug_menus(want_actions: bool) -> void:
+	var info_open := log_overlay != null and log_overlay.visible
+	if _debug_actions_open() or info_open:
+		_close_debug_menus()
+		return
+	if want_actions:
+		_open_debug_actions_panel()
+	else:
+		if log_overlay != null:
+			log_overlay.visible = true
+		_refresh_debug_info()
+
+
+## Closes both debug overlays. Also used as a backstop when a fullscreen results
+## wipe begins, so a lingering panel can't sit on top and block its buttons.
+func _close_debug_menus() -> void:
+	_close_debug_actions_panel()
+	if log_overlay != null:
+		log_overlay.visible = false
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _play_disabled_location_button_sound_from_event(event):
 		get_viewport().set_input_as_handled()
@@ -526,18 +573,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var debug_mode_active := _debug_mode_enabled()
 
-	# Tab toggles the debug info overlay; Shift+Tab toggles the quick-actions panel
-	# (buttons for every debug hotkey). Shift+Tab can arrive as Backtab on some
-	# platforms, so accept either.
-	if debug_mode_active and (key_event.keycode == KEY_TAB or key_event.keycode == KEY_BACKTAB):
-		if key_event.keycode == KEY_BACKTAB or key_event.shift_pressed:
-			_toggle_debug_actions_panel()
-		else:
-			log_overlay.visible = not log_overlay.visible
-			if log_overlay.visible:
-				_refresh_debug_info()
-		get_viewport().set_input_as_handled()
-		return
+	# (Tab / Shift+Tab are handled in _input so they still work while the actions
+	# panel holds keyboard focus - see _input below.)
 
 	# X swaps the alt teacher portrait variant.
 	if debug_mode_active and key_event.keycode == KEY_X:
@@ -2245,6 +2282,11 @@ func _prepare_selection_screen_layout_for_shrink() -> void:
 	hide_scene_overlay()
 	hide_inventory_overlay()
 	_apply_scene_presentation_mode()
+	# Snap the frame straight to the destination texture's size instead of letting
+	# _sync_scene_image_frame_to_texture animate it over the next several frames.
+	# Otherwise the rect measured for the shrink target is captured mid-animation
+	# and lands far smaller than the final framed scene.
+	_set_frame_size_immediate(DEFAULT_FRAME_SIZE, _default_frame_outer_width)
 	_queue_frame_layout()
 
 
@@ -3142,7 +3184,7 @@ func _play_expanding_fullscreen_transition_then(swap_callback: Callable) -> void
 		return
 
 	tr.set("duration_sec", float(tr.get("duration_sec")) * EXPANDING_FULLSCREEN_TRANSITION_DURATION_SCALE)
-	var start_rect := _current_scene_image_global_rect()
+	var start_rect := _current_framed_scene_global_rect()
 	var target_rect := _fullscreen_reveal_scene_rect()
 	var expand_duration := _transition_midpoint_seconds(tr)
 	_expanding_transition_rect = start_rect
@@ -3204,7 +3246,10 @@ func _play_shrinking_fullscreen_transition_after_layout(
 	_queue_frame_layout()
 	await get_tree().process_frame
 	_queue_frame_layout()
-	var target_rect := _outset_rect(_current_scene_image_global_rect(), SHRINKING_FULLSCREEN_TARGET_OUTSET)
+	# Land on the framed scene's outer edge (gold border included) so the wipe
+	# window meets the frame exactly and the stand-in border lines up with the real
+	# one; the old scene-image rect stopped short of the frame and read too small.
+	var target_rect := _current_framed_scene_global_rect()
 	if restore_layout.is_valid():
 		restore_layout.call()
 	_play_shrinking_fullscreen_transition_then(
@@ -3235,12 +3280,23 @@ func _create_expanding_fullscreen_transition() -> TextureRect:
 	_expanding_transition.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_expanding_transition_clip.add_child(_expanding_transition)
 
-	_expanding_scene_border_panel = Panel.new()
+	# The framed scene's ornate gold double-border, rebuilt as an overlay so it
+	# tracks the shrinking/expanding window. Reusing the real frame styles on
+	# nested PanelContainers keeps the outer gold border + inner gold hairline at
+	# the same geometry as FrameOuter -> FrameInsetDark, so nothing shifts when the
+	# transition ends and the real chrome is restored.
+	_expanding_scene_border_panel = PanelContainer.new()
 	_expanding_scene_border_panel.name = "ExpandingSceneImageBorder"
 	_expanding_scene_border_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_expanding_scene_border_panel.z_index = 100
-	_expanding_scene_border_panel.add_theme_stylebox_override("panel", _expanding_scene_border_style())
+	_expanding_scene_border_panel.add_theme_stylebox_override("panel", _expanding_scene_border_outer_style())
 	_expanding_transition_clip.add_child(_expanding_scene_border_panel)
+
+	_expanding_scene_border_inner_panel = PanelContainer.new()
+	_expanding_scene_border_inner_panel.name = "ExpandingSceneImageBorderInner"
+	_expanding_scene_border_inner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_expanding_scene_border_inner_panel.add_theme_stylebox_override("panel", _picture_frame_inner_style())
+	_expanding_scene_border_panel.add_child(_expanding_scene_border_inner_panel)
 	return _expanding_transition
 
 
@@ -3266,6 +3322,7 @@ func _cleanup_expanding_fullscreen_transition() -> void:
 	_expanding_transition = null
 	_expanding_transition_clip = null
 	_expanding_scene_border_panel = null
+	_expanding_scene_border_inner_panel = null
 	if _expanding_transition_layer != null and is_instance_valid(_expanding_transition_layer):
 		_expanding_transition_layer.queue_free()
 	_expanding_transition_layer = null
@@ -3278,12 +3335,15 @@ func _cleanup_expanding_fullscreen_transition() -> void:
 	_scene_image_texture_seen = null
 
 
-func _expanding_scene_border_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
-	style.border_color = Color(0.42, 0.333, 0.196, 1.0)
-	style.set_border_width_all(3)
-	style.set_content_margin_all(0)
+## Outer half of the stand-in gold double-border: the real FrameOuter style with a
+## transparent centre (so the shrinking scene shows through) and no drop-shadow.
+## Its 8px content margin insets the inner hairline PanelContainer, matching the
+## real FrameOuter -> FrameInsetDark spacing exactly.
+func _expanding_scene_border_outer_style() -> StyleBoxFlat:
+	var style := _picture_frame_outer_style()
+	style.draw_center = false
+	style.shadow_size = 0
+	style.shadow_offset = Vector2.ZERO
 	return style
 
 
@@ -3357,6 +3417,15 @@ func _current_scene_image_global_rect() -> Rect2:
 	return scene_image.get_global_rect()
 
 
+## The on-screen rect of the whole framed scene (the gold double-border included),
+## i.e. the FrameOuter extent. This is where an expand starts from and a shrink
+## lands on, so the wipe window and its stand-in border align with the real frame.
+func _current_framed_scene_global_rect() -> Rect2:
+	if frame_outer != null and is_instance_valid(frame_outer):
+		return frame_outer.get_global_rect()
+	return _current_scene_image_global_rect()
+
+
 func _outset_rect(rect: Rect2, amount: float) -> Rect2:
 	var inset := Vector2(amount, amount)
 	return Rect2(rect.position - inset, rect.size + inset * 2.0)
@@ -3395,6 +3464,9 @@ func play_current_fullscreen_transition(
 		at_midpoint: Callable,
 		at_finished: Callable = Callable()
 ) -> bool:
+	# The results screen rides this wipe in. Dismiss any open debug overlay first
+	# so its high-layer, click-blocking panel can't soft-lock the results buttons.
+	_close_debug_menus()
 	var tr := _ensure_fullscreen_transition()
 	if tr == null or not tr.has_method("play"):
 		return false

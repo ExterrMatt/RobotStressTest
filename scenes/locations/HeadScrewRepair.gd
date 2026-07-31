@@ -24,6 +24,8 @@ const SCREW_REPAIR_SOUND_PATHS: Array[String] = [
 const SCREW_PITCH_VARIATION: float = 0.10
 ## All screw sounds (loosen + screw-in) play at 40% volume (reduced by 60%).
 const SCREW_VOLUME_SCALE: float = 0.4
+## Target volume for the end-of-night fade before the sound is hard-stopped.
+const SCREW_AUDIO_SILENCE_DB: float = -60.0
 ## Fallback path for the bare-hand screwing animation, used when the player owns
 ## no screwdriver. Loaded only if hand_screw_texture is left unset in the scene.
 const HAND_SCREW_TEXTURE_PATH: String = "res://assets/textures/icons/hand_horizontal_screwing.png"
@@ -704,6 +706,35 @@ func _stop_screw_repair_sound_loop() -> void:
 ## the results screen.
 func stop_repair_audio() -> void:
 	_stop_screw_repair_sound_loop()
+
+
+## Fade the screw sounds down to silence over `duration`, then stop them. The
+## stress test calls this when the night ends so the loop bleeds out smoothly
+## along with the rest of the night audio instead of cutting off hard. The loop
+## keeps re-playing (at the fading volume) during the fade, then is stopped and
+## its volume restored so a later repair starts at full loudness again.
+func fade_out_audio(duration: float) -> void:
+	if duration <= 0.0:
+		_stop_screw_repair_sound_loop()
+		if _screw_loosen_audio_player != null:
+			_screw_loosen_audio_player.stop()
+		return
+	_fade_out_audio_player(_screw_repair_audio_player, duration, true)
+	_fade_out_audio_player(_screw_loosen_audio_player, duration, false)
+
+
+func _fade_out_audio_player(player: AudioStreamPlayer, duration: float, is_repair_loop: bool) -> void:
+	if player == null or not player.playing:
+		return
+	var base_volume_db := player.volume_db
+	var tween := create_tween()
+	tween.tween_property(player, "volume_db", SCREW_AUDIO_SILENCE_DB, duration)
+	tween.tween_callback(func() -> void:
+		if is_repair_loop:
+			_repair_sound_loop_active = false
+		player.stop()
+		player.volume_db = base_volume_db
+	)
 
 
 ## Toggle the streaming loop flag on an AudioStream (AudioStreamMP3 exposes a

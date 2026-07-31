@@ -31,6 +31,13 @@ const JUMPSCARE_VOLUME_SCALE: float = 0.6
 ## Gunshot played the instant the patrol drone actually fires.
 const GUNSHOT_SOUND_PATH := "res://assets/sounds/drone/gun_shot.mp3"
 const GUNSHOT_VOLUME_SCALE: float = 0.5
+## When the night ends and the results screen wipes in, every night sound fades to
+## silence over this many seconds (starting from whatever was playing) and is then
+## hard-stopped - so nothing bleeds through the wipe or resumes for a sliver when
+## the player continues to the bedroom. Kept under the results wipe's cover time.
+const SUMMARY_AUDIO_FADE_SECONDS: float = 0.4
+## Target volume for the fade: low enough to be inaudible before the hard stop.
+const SUMMARY_AUDIO_SILENCE_DB: float = -60.0
 ## The forced camera yank onto the drone pans at this multiple of the normal
 ## camera speed (2x = half the usual pan time).
 const FORCED_LOOK_PAN_SPEED_MULTIPLIER: float = 2.0
@@ -107,6 +114,9 @@ const TORSO_SCREW_INDEX_RIGHT_WAIST: int = 3
 const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
 @export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
+## Darkening applied to the drone's deployed guns when the lights are off, so the
+## lit gun art reads as part of the dark drone instead of glowing at full bright.
+@export var drone_guns_lights_off_modulate: Color = Color(0.4, 0.4, 0.46, 1.0)
 
 @export_group("Night Timer")
 @export var night_duration_seconds: float = 60.0
@@ -1826,6 +1836,63 @@ func _stop_screw_repair_audio() -> void:
 			repair.call("stop_repair_audio")
 
 
+## Every audio player the night uses, so the end-of-night fade can catch whatever
+## happens to be playing - looping ambience and one-shots alike.
+func _all_night_audio_players() -> Array[AudioStreamPlayer]:
+	var players: Array[AudioStreamPlayer] = [
+		_rip_cord_audio_player,
+		_generator_hum_audio_player,
+		_generator_chug_audio_player,
+		_generator_shutdown_audio_player,
+		_generator_no_power_audio_player,
+		_emergency_power_button_audio_player,
+		_zap_audio_player,
+		_jumpscare_audio_player,
+		_gunshot_audio_player,
+		_night_ambient_audio_player,
+		_plane_audio_player,
+		_wood_creak_audio_player,
+	]
+	players.append_array(_police_siren_audio_players)
+	return players
+
+
+## Fades every currently-playing night sound down to silence over the results
+## wipe, then hard-stops everything. Replaces the old abrupt cut: it keeps loops
+## from bleeding through and, crucially, silences one-shots before the results
+## screen pauses the tree - a paused sound would otherwise resume for a sliver
+## when the player continues to the bedroom.
+func _begin_summary_audio_fadeout() -> void:
+	var fade := maxf(0.0, SUMMARY_AUDIO_FADE_SECONDS)
+	# Screw-repair loops live on the child controllers; let them fade themselves.
+	for repair in _screw_repair_controllers():
+		if repair.has_method("fade_out_audio"):
+			repair.call("fade_out_audio", fade)
+	if fade <= 0.0:
+		_stop_all_night_audio()
+		return
+	var tween := create_tween()
+	tween.set_parallel(true)
+	var faded_any := false
+	for player in _all_night_audio_players():
+		if player != null and player.playing:
+			tween.tween_property(player, "volume_db", SUMMARY_AUDIO_SILENCE_DB, fade)
+			faded_any = true
+	if not faded_any:
+		tween.tween_interval(fade)
+	tween.chain().tween_callback(_stop_all_night_audio)
+
+
+## Hard-stops every night sound once the fade has reached silence.
+func _stop_all_night_audio() -> void:
+	_stop_generator_power_sound()
+	_stop_night_ambient()
+	_stop_screw_repair_audio()
+	for player in _all_night_audio_players():
+		if player != null:
+			player.stop()
+
+
 func _is_uncle_exposure_active() -> bool:
 	return not _stress_test_dark or (_electricity_percent > 0.0 and not _emergency_power_shutoff_pressed)
 
@@ -2102,10 +2169,12 @@ func _apply_patrol_drone_visual() -> void:
 			# but every other dark layer stays on.
 			patrol_drone.texture = DRONE_SHOT_TEXTURE
 		DRONE_GUNS:
+			# The guns use the real lit art in the dark too (the dedicated dark
+			# gun art is too dull to read as guns); a modulate darkens it so it
+			# matches the rest of the dark drone instead of staying full-bright.
+			_show_accessory(DRONE_GUNS_TEXTURE)
 			if dark:
-				_show_node(patrol_drone_guns_dark)
-			else:
-				_show_accessory(DRONE_GUNS_TEXTURE)
+				patrol_drone_accessory.modulate = drone_guns_lights_off_modulate
 		DRONE_ZAP:
 			_show_accessory(_current_zap_texture())
 		_:  # DRONE_IDLE
@@ -2143,6 +2212,7 @@ func _show_accessory(texture: Texture2D) -> void:
 	if patrol_drone_accessory == null:
 		return
 	patrol_drone_accessory.texture = texture
+	patrol_drone_accessory.modulate = Color.WHITE
 	patrol_drone_accessory.visible = true
 
 
@@ -2918,9 +2988,7 @@ func _begin_stress_test_summary(
 	# blinking out on the last frame; clear it for any other cause.
 	if _drone_state != DRONE_SHOT:
 		_clear_patrol_drone()
-	_stop_generator_power_sound()
-	_stop_night_ambient()
-	_stop_screw_repair_audio()
+	_begin_summary_audio_fadeout()
 	_hide_mouse_tooltip()
 	_set_stress_test_interaction_enabled(false)
 	_summary_success = success

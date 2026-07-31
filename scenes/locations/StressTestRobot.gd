@@ -1265,11 +1265,10 @@ func _both_legs_raised() -> bool:
 ## pelvis box "available"; clicking it simply starts the intro playing from that
 ## pose. Dropping either leg out of the raised pose clears the freeze-frame again
 ## (unless the animation is already running, in which case the leg boxes are
-## locked out anyway). The Sleep pre-stage keeps its own leg-lift flow, so this
-## only drives the stress test.
+## locked out anyway). This runs in Sleep too: the pre-stage is only an alternate
+## way to raise the legs from the pelvis box, but raising them by hand with the
+## leg boxes must settle onto the same freeze-frame it does in the stress test.
 func _sync_pelvis_to_leg_poses() -> void:
-	if _leg_slight_out_prestage_enabled:
-		return
 	var pelvis := _find_hover_box_by_name("PelvisHoverBox")
 	if pelvis == null:
 		return
