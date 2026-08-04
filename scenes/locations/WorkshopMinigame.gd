@@ -32,8 +32,19 @@ const CRAFTABLE_PARTS: Dictionary = {
 		"display_name": "Leg",
 		"recipe": {"scrap_metal": 1},
 	},
-	# Placeholder intermediate recipe: nuts & bolts (the forearm) plus a pre-made
-	# upper_arm item (stolen from work). Meant to grow more complex later.
+	# The upper arm is craftable on its own from a single nuts & bolts. It assembles
+	# from the same shoulder/bicep/elbow segments the arm uses (the UPPER_ARM subset
+	# of the arm slots) and produces an intermediate ITEM, not a robot part. The
+	# other way to get one is the intro work cutscene; this recipe is what lets the
+	# player make the second upper arm the robot's other side needs.
+	"upper_arm": {
+		"display_name": "Upper Arm",
+		"recipe": {"nuts_bolts": 1},
+	},
+	# Graft a pre-made upper arm (crafted above, or pocketed during the intro work
+	# scene) together with nuts & bolts (the forearm) into a full arm. This recipe
+	# is a superset of the upper_arm one, so _matching_recipe_part_id prefers it
+	# whenever both an upper arm and nuts & bolts are in the bin.
 	"arm": {
 		"display_name": "Arm",
 		"recipe": {"nuts_bolts": 1, "upper_arm": 1},
@@ -1270,8 +1281,10 @@ func _refit_segment_bounds(segment: WorkshopSegment) -> void:
 func _clear_placed_part_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
 	# Unified-outline parts (stomach, chest) keep their outline art after placement
 	# — a back layer repaints it behind all bases — so never strip it here. The
-	# hand shares the arm art convention: its outlines are pick-up-only hints.
-	if _crafted_part_id != "head" and _crafted_part_id != "arm" and _crafted_part_id != "hand":
+	# hand and the standalone upper arm share the arm art convention: their outlines
+	# are pick-up-only hints, cleared once a piece is placed.
+	if _crafted_part_id != "head" and _crafted_part_id != "arm" \
+			and _crafted_part_id != "hand" and _crafted_part_id != "upper_arm":
 		return
 
 	for child in segment.get_children():
@@ -1768,7 +1781,9 @@ func _configure_assembly_for_part(part_id: String) -> void:
 	if _head_assembly != null:
 		_head_assembly.visible = part_id == "head"
 	if _arm_assembly != null:
-		_arm_assembly.visible = part_id == "arm"
+		# The upper-arm craft reuses the arm assembly, activating only its
+		# shoulder/bicep/elbow slots (see the upper_arm branch below).
+		_arm_assembly.visible = part_id == "arm" or part_id == "upper_arm"
 	if _hand_assembly != null:
 		_hand_assembly.visible = part_id == "hand"
 	if _stomach_assembly != null:
@@ -1783,6 +1798,13 @@ func _configure_assembly_for_part(part_id: String) -> void:
 				_active_assembly_slot_ids.append(id)
 	elif part_id == "arm":
 		for id in ARM_SEGMENT_IDS:
+			if _assembly_slots.has(id):
+				_active_assembly_slot_ids.append(id)
+	elif part_id == "upper_arm":
+		# Only the upper-arm segments (shoulder, bicep, tricep, upper-arm plates,
+		# elbow) — the forearm slots stay inactive, so they neither spawn nor gate
+		# completion.
+		for id in UPPER_ARM_SEGMENT_IDS:
 			if _assembly_slots.has(id):
 				_active_assembly_slot_ids.append(id)
 	elif part_id == "hand":
@@ -1820,12 +1842,23 @@ func _matching_recipe_part_id() -> String:
 			return ""
 		var forced_recipe: Dictionary = forced_data.get("recipe", {})
 		return forced_part_id if _counts_contain_recipe(counts, forced_recipe) else ""
+	# Pick the most specific satisfied recipe — the one consuming the most
+	# ingredients — so a bin holding both nuts & bolts AND an upper arm crafts the
+	# full arm (weight 2) rather than another upper arm (weight 1). Recipes with
+	# distinct ingredients never collide, so this only ever disambiguates the
+	# arm / upper-arm overlap.
+	var best_id: String = ""
+	var best_weight: int = -1
 	for part_id in CRAFTABLE_PARTS:
 		var part_data: Dictionary = CRAFTABLE_PARTS[part_id]
 		var recipe: Dictionary = part_data.get("recipe", {})
-		if _counts_contain_recipe(counts, recipe):
-			return String(part_id)
-	return ""
+		if recipe.is_empty() or not _counts_contain_recipe(counts, recipe):
+			continue
+		var weight: int = _recipe_weight(recipe)
+		if weight > best_weight:
+			best_weight = weight
+			best_id = String(part_id)
+	return best_id
 
 
 func _counts_contain_recipe(counts: Dictionary, recipe: Dictionary) -> bool:
@@ -1833,6 +1866,15 @@ func _counts_contain_recipe(counts: Dictionary, recipe: Dictionary) -> bool:
 		if int(counts.get(String(id_key), 0)) < int(recipe[id_key]):
 			return false
 	return true
+
+
+## Total number of ingredients a recipe requires (sum of its quantities). Used to
+## rank overlapping recipes so the more specific one wins.
+func _recipe_weight(recipe: Dictionary) -> int:
+	var total: int = 0
+	for id_key in recipe:
+		total += int(recipe[id_key])
+	return total
 
 
 func _part_display_name(part_id: String) -> String:

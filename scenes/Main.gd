@@ -1020,6 +1020,14 @@ func _intro_current_step_index() -> int:
 func _set_phase_for_intro_step(phase: int) -> void:
 	if GameState.phase == phase:
 		return
+	# The intro plays out over several in-game days as a linear list of steps.
+	# Whenever a step wraps the phase back to Morning from a later phase (i.e. the
+	# player has slept / a night has ended), a new day has begun — bump the day
+	# counter so the HUD tracks it instead of sitting on Day 1 the whole intro.
+	if _intro_sequence_enabled \
+			and phase == DayCycle.Phase.MORNING \
+			and GameState.phase > DayCycle.Phase.MORNING:
+		GameState.day += 1
 	_suppress_phase_selection_refresh = true
 	GameState.phase = phase
 	_suppress_phase_selection_refresh = false
@@ -1171,6 +1179,52 @@ func _debug_give_all_items() -> void:
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: inventory set to 99 of all items[/color]")
+
+
+## Debug: grant every ingredient and tool — the non-robot-part inventory — while
+## leaving robot parts alone. No legs, arms, stomachs, chests, heads, or hands are
+## added (and cosmetic overlays are left untouched too). Mirrors
+## _debug_give_all_items minus set_all_robot_parts and the cosmetic grants.
+func _debug_give_non_part_items() -> void:
+	for id in GameState.ingredients.keys():
+		# Skip the upper arm: it's an intermediate limb piece (a full arm already
+		# includes one), so it doesn't belong in the plain ingredients-and-tools grant.
+		if String(id) == "upper_arm":
+			continue
+		GameState.ingredients[id] = 99
+	GameState.unlock_tool("taser")
+	GameState.unlock_tool("screwdriver")
+	# Grant both screwdrivers so the two-handed (one-per-side) screwing is usable.
+	GameState.tool_counts["screwdriver"] = 2
+	GameState.unlock_tool("welding_gun")
+	GameState.unlock_tool("sneaky_shoes")
+	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
+		_player_inventory_overlay.call("_refresh")
+	_log("[color=#88ff88]Debug: all ingredients + tools granted (no robot parts)[/color]")
+
+
+## Exactly the robot parts a single complete robot needs — no more. Each limb adds
+## night time to the stress test (see StressTest._total_robot_parts), so handing out
+## 99 of everything wrecks the night's timing; this button sets the real anatomy
+## instead. Upper arms are intentionally absent — a full arm already includes one.
+const DEBUG_FULL_ROBOT_PART_COUNTS: Dictionary = {
+	"arm": 2,
+	"leg": 2,
+	"hand": 2,
+	"chest": 1,   # the torso
+	"stomach": 1,
+	"head": 1,
+}
+
+
+## Debug: set the robot's parts to a single full robot's worth (absolute set, not
+## additive) and nothing else — no ingredients, no tools.
+func _debug_give_robot_parts() -> void:
+	for id in DEBUG_FULL_ROBOT_PART_COUNTS:
+		GameState.set_robot_part_count(String(id), int(DEBUG_FULL_ROBOT_PART_COUNTS[id]))
+	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
+		_player_inventory_overlay.call("_refresh")
+	_log("[color=#88ff88]Debug: robot parts set to one full robot (2 arms/legs/hands, 1 chest/stomach/head)[/color]")
 
 
 func _debug_give_money() -> void:
@@ -1461,6 +1515,14 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 	_add_debug_action_button(vbox, "Give All Items +$1000", func():
 		_debug_give_all_items()
 		_debug_give_money()
+		_debug_recalibrate_current_location()
+	)
+	_add_debug_action_button(vbox, "Give Ingredients + Tools (No Parts)", func():
+		_debug_give_non_part_items()
+		_debug_recalibrate_current_location()
+	)
+	_add_debug_action_button(vbox, "Give Robot Parts (Full Robot)", func():
+		_debug_give_robot_parts()
 		_debug_recalibrate_current_location()
 	)
 	_add_debug_action_button(vbox, "Give $1000", _debug_give_money)

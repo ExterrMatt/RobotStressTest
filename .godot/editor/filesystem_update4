@@ -1,0 +1,8 @@
+res://scenes/Main.gd
+res://scenes/locations/StressTest.gd
+res://scenes/locations/Work.gd
+res://scenes/ui/MainMenu.gd
+res://scenes/locations/School.gd
+res://scenes/locations/WorkArmMinigame.tscn
+res://themes/main_theme.tres
+res://scenes/locations/WorkshopMinigame.gd

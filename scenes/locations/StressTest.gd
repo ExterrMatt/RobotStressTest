@@ -27,10 +27,10 @@ const ZAP_VOLUME_SCALE: float = 0.25
 ## Jump-scare sting played when the patrol drone catches a player who was not
 ## looking at the window, as the camera is forced over to the drone.
 const JUMPSCARE_SOUND_PATH := "res://assets/sounds/bass/jumpscare.mp3"
-const JUMPSCARE_VOLUME_SCALE: float = 0.6
+const JUMPSCARE_VOLUME_SCALE: float = 0.798
 ## Gunshot played the instant the patrol drone actually fires.
 const GUNSHOT_SOUND_PATH := "res://assets/sounds/drone/gun_shot.mp3"
-const GUNSHOT_VOLUME_SCALE: float = 0.5
+const GUNSHOT_VOLUME_SCALE: float = 0.665
 ## When the night ends and the results screen wipes in, every night sound fades to
 ## silence over this many seconds (starting from whatever was playing) and is then
 ## hard-stopped - so nothing bleeds through the wipe or resumes for a sliver when
@@ -109,6 +109,13 @@ const SCREW_REPAIR_SAFE_ZOOM_REGIONS: Array[StringName] = [
 	&"Zoom2_R3_C1",
 	&"Zoom2_R4_C1",
 ]
+## Seconds of extra night time granted per robot part on the robot (any part —
+## legs, arms, hands, torso, head). A bigger robot means a longer stress test.
+## Real nights only; the intro tutorial keeps its fixed length.
+const STRESS_TEST_TIME_PER_LIMB_SECONDS: float = 10.0
+## Awareness fail threshold added for each in-game day that has already passed
+## (Day 1 gets +0, Day 2 +10, and so on). Real nights only.
+const AWARENESS_THRESHOLD_PER_DAY: float = 10.0
 const TORSO_SCREW_INDEX_LEFT_WAIST: int = 2
 const TORSO_SCREW_INDEX_RIGHT_WAIST: int = 3
 const LEG_SCREW_INDEX_INNER_KNEE: int = 2
@@ -485,6 +492,9 @@ func _ready() -> void:
 	else:
 		# Laptop debug cheat: extend the real night by any banked bonus seconds.
 		night_duration_seconds += maxf(0.0, GameState.stress_test_bonus_time_seconds)
+		# The bigger the robot, the longer the night: every part on her (legs,
+		# arms, hands, torso, head) adds a fixed chunk of stress-test time.
+		night_duration_seconds += STRESS_TEST_TIME_PER_LIMB_SECONDS * float(_total_robot_parts())
 	_create_mouse_tooltip()
 	_initialize_audio_players()
 	_initialize_robot_position_state()
@@ -1202,6 +1212,15 @@ func _robot_part_count(id: String) -> int:
 	return 0
 
 
+## Total number of parts fitted to the robot across every part type. Used to
+## scale the stress-test night length (see STRESS_TEST_TIME_PER_LIMB_SECONDS).
+func _total_robot_parts() -> int:
+	var total: int = 0
+	for id in GameState.ROBOT_PART_IDS:
+		total += _robot_part_count(id)
+	return total
+
+
 func _initialize_audio_players() -> void:
 	_rip_cord_full_extend_sound = load(RIP_CORD_FULL_EXTEND_SOUND_PATH) as AudioStream
 	if _rip_cord_full_extend_sound != null:
@@ -1551,8 +1570,14 @@ func _initialize_stress_systems() -> void:
 	_awareness_calm_elapsed = 0.0
 	_endurance = 0.0
 	_endurance_triggered = false
-	# Laptop debug cheat: the "double threshold" button scales the fail point.
-	_awareness_threshold = maxf(1.0, awareness_fail_threshold * maxf(0.0, GameState.stress_test_awareness_threshold_multiplier))
+	# Effective awareness fail point. Every day that passes raises the base
+	# threshold (so she tolerates more tampering the further you get), then the
+	# laptop's "double threshold" debug cheat scales the result. The per-day bonus
+	# only applies to real nights, not the fixed-difficulty intro tutorial.
+	var base_threshold: float = awareness_fail_threshold
+	if not _is_intro_tutorial_stress_test():
+		base_threshold += AWARENESS_THRESHOLD_PER_DAY * float(maxi(0, GameState.day - 1))
+	_awareness_threshold = maxf(1.0, base_threshold * maxf(0.0, GameState.stress_test_awareness_threshold_multiplier))
 	_electricity_generated = 0.0
 	_gas_flow_percent = gas_start_percent
 	_gas_optimal_percent = gas_optimal_start_percent

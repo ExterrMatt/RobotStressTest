@@ -611,6 +611,13 @@ func _on_dialogue_finished() -> void:
 			if _is_intro_school_first():
 				_finish_school()
 				return
+			# The gym class has no supply cabinet to raid, so it gets no
+			# post-class steal opportunity at all — end the day straight from
+			# feedback instead of playing the cabinet beat that would offer
+			# nothing to steal.
+			if _is_gym_class():
+				_finish_school()
+				return
 			_enter_post_class_intro()
 		SchoolPhase.POST_CLASS_INTRO:
 			_enter_post_class_prompt()
@@ -885,6 +892,12 @@ func _set_audio_stream_loop(stream: AudioStream, enabled: bool) -> void:
 
 func _is_intro_school_first() -> bool:
 	return GameState.is_intro_step(INTRO_SCHOOL_STEP)
+
+
+## True when the coach (gym teacher) is running this class. The gym has no supply
+## cabinet, so it skips the post-class steal opportunity entirely.
+func _is_gym_class() -> bool:
+	return String(_current_teacher.get("id", "")) == GYM_TEACHER_ID
 
 
 ## The scripted class-disruption lesson plays exactly once: the first class the

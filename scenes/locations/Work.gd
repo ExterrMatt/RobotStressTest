@@ -849,8 +849,11 @@ func _finish_work_timeout() -> void:
 func _finish_intro_work() -> void:
 	_disable_work_hud_timer()
 	set_process(false)
+	# The intro shift pays out the same base wage as a normal completed shift so
+	# the player actually earns money for the work, rather than finishing broke.
+	var money: int = int(REWARD_COMPLETE.get("money", 0))
 	var ingredients: Dictionary = {"head_segments": 1}
-	finish(0, 0, 0, ingredients, false)
+	finish(money, 0, 0, ingredients, false)
 
 
 func _disable_work_hud_timer() -> void:

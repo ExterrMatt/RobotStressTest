@@ -793,6 +793,12 @@ func _start_endless() -> void:
 	if get_node_or_null("/root/GameState") != null:
 		GameState.reset_for_new_game()
 		GameState.complete_intro()
+		# Endless skips the intro entirely, so the one-time "first school/work
+		# after the intro" scripted robot-call cutscenes have no narrative setup.
+		# Mark them already seen so school and work run their normal random
+		# lessons/shifts from the very first visit instead of the cutscene version.
+		GameState.robot_class_disruption_seen = true
+		GameState.robot_work_disruption_seen = true
 	if get_node_or_null("/root/DayCycle") != null and DayCycle.has_method("reset_for_new_game"):
 		DayCycle.reset_for_new_game()
 
