@@ -49,7 +49,7 @@ const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
 const WORK_LOCATION_ID: StringName = &"work"
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const LAPTOP_SCENE_PATH: String = "res://scenes/locations/Laptop.tscn"
-const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 20
+const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 15
 ## Placeholder shown in the selection subtitle when nothing is selected yet,
 ## matching the em-dash the Laptop option shows. Replaced once a choice is made.
 const NO_SELECTION_SUBTITLE: String = "[center]—[/center]"
@@ -289,6 +289,14 @@ var _debug_info_label: RichTextLabel = null
 ## own canvas layer above everything, rebuilt from the current scene each open.
 var _debug_actions_layer: CanvasLayer = null
 
+## Debug reset chord: three Shift+Tab presses within this window wipe all progress
+## and return to the main menu (also available as the last debug-menu button).
+const DEBUG_RESET_CHORD_PRESSES: int = 3
+const DEBUG_RESET_CHORD_WINDOW_SECONDS: float = 2.0
+const RESET_TO_MAIN_MENU_SCENE_PATH: String = "res://scenes/ui/MainMenu.tscn"
+## Timestamps (seconds) of recent Shift+Tab presses, kept only within the window.
+var _reset_chord_press_times: Array[float] = []
+
 ## Base texture path of the currently-shown teacher portrait (no "2" suffix),
 ## so we can swap variants when the toggle changes.
 var _portrait_base_path: String = ""
@@ -522,8 +530,43 @@ func _input(event: InputEvent) -> void:
 		return
 	# Shift+Tab arrives as Backtab on some platforms, so accept either.
 	var want_actions := key_event.keycode == KEY_BACKTAB or key_event.shift_pressed
+	# Three Shift+Tabs in quick succession trigger a full reset instead of the
+	# usual open/close toggle.
+	if want_actions and _register_reset_chord_press():
+		get_viewport().set_input_as_handled()
+		_reset_game_to_main_menu()
+		return
 	_toggle_debug_menus(want_actions)
 	get_viewport().set_input_as_handled()
+
+
+## Records a Shift+Tab press and reports whether DEBUG_RESET_CHORD_PRESSES of them
+## have now landed inside DEBUG_RESET_CHORD_WINDOW_SECONDS.
+func _register_reset_chord_press() -> bool:
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	_reset_chord_press_times.append(now)
+	# Drop presses that have aged out of the rolling window.
+	while not _reset_chord_press_times.is_empty() \
+			and now - _reset_chord_press_times[0] > DEBUG_RESET_CHORD_WINDOW_SECONDS:
+		_reset_chord_press_times.pop_front()
+	if _reset_chord_press_times.size() >= DEBUG_RESET_CHORD_PRESSES:
+		_reset_chord_press_times.clear()
+		return true
+	return false
+
+
+## Wipes all game progress and returns to the main menu. Settings (volume,
+## brightness, debug mode, etc.) are intentionally left untouched.
+func _reset_game_to_main_menu() -> void:
+	_close_debug_menus()
+	GameState.reset_for_new_game()
+	if DayCycle.has_method("reset_for_new_game"):
+		DayCycle.reset_for_new_game()
+	# Don't leave a queued intro wipe pending for the menu's next New Game.
+	var intro := get_node_or_null("/root/IntroTransition")
+	if intro != null:
+		intro.pending_intro = false
+	get_tree().change_scene_to_file(RESET_TO_MAIN_MENU_SCENE_PATH)
 
 
 ## If either debug overlay is open, any Tab/Shift+Tab just closes everything - it
@@ -674,8 +717,9 @@ func _open_runtime_settings_overlay() -> void:
 	title.add_theme_font_size_override("font_size", 32)
 	vbox.add_child(title)
 	# Display mode is a player-facing comfort setting, not a debug toggle, so it
-	# belongs in the mid-game menu just like it does in the main menu. (DEBUG MODE
-	# is deliberately kept out of the runtime menu so it can't be toggled mid-run.)
+	# belongs in the mid-game menu just like it does in the main menu. DEBUG MODE
+	# can be turned OFF from here (see below) but never ON - the row only appears
+	# while debug is already active, so it can't be enabled mid-run.
 	# Each row gets its own single golden border, mirroring the main menu.
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_option_row("DISPLAY MODE", \
 		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], GameState.window_mode, _on_runtime_window_mode_selected)))
@@ -684,6 +728,9 @@ func _open_runtime_settings_overlay() -> void:
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("MUSIC", GameState.music_volume_value, _on_runtime_music_volume_changed)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("EASY WORKSHOP", GameState.easy_workshop_enabled, _on_runtime_easy_workshop_toggled)))
+	# Only offered while debug is on, so the player can switch it off but never on.
+	if GameState.debug_mode_enabled:
+		vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("DEBUG MODE", true, _on_runtime_debug_mode_toggled)))
 
 	var button_row := HBoxContainer.new()
 	button_row.alignment = BoxContainer.ALIGNMENT_END
@@ -804,6 +851,13 @@ func _on_runtime_scanlines_toggled(enabled: bool) -> void:
 
 func _on_runtime_easy_workshop_toggled(enabled: bool) -> void:
 	GameState.easy_workshop_enabled = enabled
+
+
+## The pause-menu DEBUG MODE row only exists while debug is on, so this only ever
+## turns it off. (It can't be re-enabled from here - reopening the settings drops
+## the row once debug is off.)
+func _on_runtime_debug_mode_toggled(enabled: bool) -> void:
+	GameState.debug_mode_enabled = enabled
 
 
 func _on_runtime_window_mode_selected(index: int) -> void:
@@ -950,7 +1004,8 @@ func _debug_open_location_by_id(location_id: StringName) -> void:
 		if _current_location_node.scene_file_path == target_loc.scene_path:
 			return
 
-	_on_location_picked(target_loc)
+	# Debug scene jump, not a player pick - keep it silent.
+	_on_location_picked(target_loc, false)
 
 
 ## Debug: open the hidden laptop cheat scene. Built as an ad-hoc free-action
@@ -967,7 +1022,8 @@ func _debug_open_laptop() -> void:
 	loc.scene_path = LAPTOP_SCENE_PATH
 	loc.free_action = true
 	_log("[color=#88aaff]Debug: laptop[/color]")
-	_on_location_picked(loc)
+	# Debug scene jump, not a player pick - keep it silent.
+	_on_location_picked(loc, false)
 
 
 func _start_intro_sequence() -> void:
@@ -1048,7 +1104,8 @@ func _open_intro_dialogue_step(step_def: Dictionary, open_immediately: bool = fa
 	if open_immediately:
 		_open_location_immediately(loc)
 	else:
-		_on_location_picked(loc)
+		# Scripted intro advance, not a player pick - keep it silent.
+		_on_location_picked(loc, false)
 
 
 func _open_intro_location_step(location_id: StringName, open_immediately: bool = false) -> void:
@@ -1072,12 +1129,14 @@ func _open_intro_location_step(location_id: StringName, open_immediately: bool =
 		if open_immediately:
 			_open_location_immediately(intro_loc)
 		else:
-			_on_location_picked(intro_loc)
+			# Scripted intro advance, not a player pick - keep it silent.
+			_on_location_picked(intro_loc, false)
 		return
 	if open_immediately:
 		_open_location_immediately(loc)
 	else:
-		_on_location_picked(loc)
+		# Scripted intro advance, not a player pick - keep it silent.
+		_on_location_picked(loc, false)
 
 
 func _open_location_immediately(loc: LocationData) -> void:
@@ -1225,6 +1284,106 @@ func _debug_give_robot_parts() -> void:
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: robot parts set to one full robot (2 arms/legs/hands, 1 chest/stomach/head)[/color]")
+
+
+## Unlockable tools handed out by "Give All Tools" and listed individually under
+## "Give Specific Item". The always-owned mouth/hand aren't included. Add new
+## tools here as they're introduced.
+const DEBUG_GIVE_TOOL_IDS: Array[String] = ["taser", "screwdriver", "welding_gun", "sneaky_shoes"]
+
+
+## Debug: fill every ingredient stack (parts, tools, cosmetics and money untouched).
+func _debug_give_all_ingredients() -> void:
+	for id in GameState.ingredients.keys():
+		GameState.ingredients[id] = 99
+	_refresh_open_inventory_overlay()
+	_log("[color=#88ff88]Debug: all ingredients set to 99[/color]")
+
+
+## Debug: unlock every tool (ingredients, parts, cosmetics and money untouched).
+func _debug_give_all_tools() -> void:
+	for tool_id in DEBUG_GIVE_TOOL_IDS:
+		GameState.unlock_tool(tool_id)
+	# Two screwdrivers so the one-per-side two-handed screwing is usable.
+	GameState.tool_counts["screwdriver"] = 2
+	_refresh_open_inventory_overlay()
+	_log("[color=#88ff88]Debug: all tools unlocked[/color]")
+
+
+## Debug: grant a single named item. Robot parts add one each press (they change
+## the stress-test night length); ingredients fill to a stack; tools unlock;
+## cosmetics are switched on.
+func _debug_give_specific_item(id: String, kind: String) -> void:
+	match kind:
+		"ingredient":
+			if GameState.ingredients.has(id):
+				GameState.ingredients[id] = 99
+		"tool":
+			GameState.unlock_tool(id)
+			if id == "screwdriver":
+				GameState.tool_counts["screwdriver"] = 2
+		"robot_part":
+			GameState.set_robot_part_count(id, GameState.get_robot_part_count(id) + 1)
+		"cosmetic_item":
+			GameState.set_cosmetic_item(id, 1)
+	_refresh_open_inventory_overlay()
+	_debug_recalibrate_current_location()
+	_log("[color=#88ff88]Debug: gave %s[/color]" % id.capitalize())
+
+
+func _refresh_open_inventory_overlay() -> void:
+	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
+		_player_inventory_overlay.call("_refresh")
+
+
+## Replaces the whole debug button column with a "Give <item>" button per item in
+## the game (grouped by kind), plus a Back button that restores the normal menu.
+## Because it iterates the live GameState collections, items added there in future
+## show up here automatically.
+func _show_give_specific_item_menu(vbox: VBoxContainer) -> void:
+	if vbox == null or not is_instance_valid(vbox):
+		return
+	_clear_debug_vbox(vbox)
+	_add_debug_action_button(vbox, "< Back", func():
+		call_deferred("_reopen_debug_action_menu", vbox)
+	)
+	_add_debug_section(vbox, "GIVE SPECIFIC ITEM")
+
+	_add_debug_section(vbox, "Ingredients")
+	for id in GameState.ingredients.keys():
+		_add_give_specific_item_button(vbox, String(id), "ingredient")
+
+	_add_debug_section(vbox, "Tools")
+	for tool_id in DEBUG_GIVE_TOOL_IDS:
+		_add_give_specific_item_button(vbox, tool_id, "tool")
+
+	_add_debug_section(vbox, "Robot Parts")
+	for id in GameState.ROBOT_PART_IDS:
+		_add_give_specific_item_button(vbox, String(id), "robot_part")
+
+	_add_debug_section(vbox, "Cosmetics")
+	for id in GameState.COSMETIC_ITEM_IDS:
+		_add_give_specific_item_button(vbox, String(id), "cosmetic_item")
+
+
+func _add_give_specific_item_button(vbox: VBoxContainer, id: String, kind: String) -> void:
+	_add_debug_action_button(vbox, "Give %s" % id.capitalize(), func():
+		_debug_give_specific_item(id, kind)
+	)
+
+
+## Back out of the "Give Specific Item" list to the normal debug button column.
+func _reopen_debug_action_menu(vbox: VBoxContainer) -> void:
+	if vbox == null or not is_instance_valid(vbox):
+		return
+	_clear_debug_vbox(vbox)
+	_build_debug_action_buttons(vbox)
+
+
+func _clear_debug_vbox(vbox: VBoxContainer) -> void:
+	for child in vbox.get_children():
+		vbox.remove_child(child)
+		child.queue_free()
 
 
 func _debug_give_money() -> void:
@@ -1495,6 +1654,28 @@ func _debug_call_location(method: String) -> void:
 		_current_location_node.call(method)
 
 
+## A self-relabeling button that cycles the stress test's animation loop-slurp
+## sound override. Its label comes from the location (e.g. "Pelvis Sound: Plap 3"),
+## and each press advances the selection and updates the text in place.
+func _add_debug_anim_sound_cycle_button(vbox: VBoxContainer) -> void:
+	var btn := Button.new()
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.text = _debug_anim_sound_label()
+	btn.pressed.connect(func() -> void:
+		_debug_call_location("debug_cycle_anim_sound")
+		btn.text = _debug_anim_sound_label()
+	)
+	vbox.add_child(btn)
+
+
+func _debug_anim_sound_label() -> String:
+	if _current_location_node != null and is_instance_valid(_current_location_node) \
+			and _current_location_node.has_method("debug_anim_sound_label"):
+		return String(_current_location_node.call("debug_anim_sound_label"))
+	return "Anim Sound: Default"
+
+
 func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 	# Navigation (closes the panel — the scene changes underneath it).
 	_add_debug_section(vbox, "GO TO")
@@ -1512,26 +1693,32 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 
 	# Inventory / money (stay open).
 	_add_debug_section(vbox, "INVENTORY")
-	_add_debug_action_button(vbox, "Give All Items +$1000", func():
+	_add_debug_action_button(vbox, "Give All Items", func():
 		_debug_give_all_items()
-		_debug_give_money()
 		_debug_recalibrate_current_location()
 	)
-	_add_debug_action_button(vbox, "Give Ingredients + Tools (No Parts)", func():
-		_debug_give_non_part_items()
+	_add_debug_action_button(vbox, "Give All Ingredients", func():
+		_debug_give_all_ingredients()
 		_debug_recalibrate_current_location()
 	)
-	_add_debug_action_button(vbox, "Give Robot Parts (Full Robot)", func():
+	_add_debug_action_button(vbox, "Give All Tools", func():
+		_debug_give_all_tools()
+		_debug_recalibrate_current_location()
+	)
+	_add_debug_action_button(vbox, "Give All Robot Parts", func():
 		_debug_give_robot_parts()
 		_debug_recalibrate_current_location()
 	)
 	_add_debug_action_button(vbox, "Give $1000", _debug_give_money)
-	_add_debug_action_button(vbox, "Clear Items + Wipe $", func():
+	_add_debug_action_button(vbox, "Clear All Money", _debug_clear_money)
+	_add_debug_action_button(vbox, "Clear All Items", func():
 		_debug_clear_inventory()
-		_debug_clear_money()
 		_debug_recalibrate_current_location()
 	)
-	_add_debug_action_button(vbox, "Wipe Money", _debug_clear_money)
+	# Swaps the whole panel out for a per-item "Give <item>" list (and a Back button).
+	_add_debug_action_button(vbox, "Give Specific Item...", func():
+		call_deferred("_show_give_specific_item_menu", vbox)
+	)
 
 	# Scene-only actions.
 	var has_auto_solve := _current_location_node != null and is_instance_valid(_current_location_node) \
@@ -1556,6 +1743,15 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 		_add_debug_action_button(vbox, "Swap Head Style", _debug_call_location.bind("debug_swap_head_style"))
 		_add_debug_action_button(vbox, "Swap Hand Grip", _debug_call_location.bind("debug_swap_hand_grip"))
 
+	# Animation sound testing — shown wherever the scene's robot exposes it (the
+	# stress test and the Sleep scene), not tied to a specific location id.
+	if _current_location_node != null and is_instance_valid(_current_location_node) \
+			and _current_location_node.has_method("debug_anim_sound_label"):
+		_add_debug_section(vbox, "ANIMATION SOUND")
+		# Cycles the forced loop-slurp sound for the last-played animation (pelvis or
+		# head): Default -> each sound -> Default. Relabels itself on each press.
+		_add_debug_anim_sound_cycle_button(vbox)
+
 	# Overlays.
 	_add_debug_section(vbox, "OVERLAYS")
 	_add_debug_action_button(vbox, "Toggle Debug Info (Tab)", func():
@@ -1563,6 +1759,11 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 		if log_overlay.visible:
 			_refresh_debug_info()
 	)
+
+	# Full reset — always the last option. Wipes all progress and returns to the
+	# main menu (same as tapping Shift+Tab three times within two seconds).
+	_add_debug_section(vbox, "RESET")
+	_add_debug_action_button(vbox, "Reset Game → Main Menu  (Shift+Tab ×3)", _reset_game_to_main_menu, true)
 
 
 func _debug_clear_inventory() -> void:
@@ -2754,13 +2955,19 @@ func _disabled_bedroom_options_for_phase(phase: int) -> Array[String]:
 	return []
 
 
-func _on_location_picked(loc: LocationData) -> void:
+## `play_select_sound` must stay true only for genuine player picks (clicking a
+## location button, or confirming a highlighted choice by keyboard). Scripted
+## navigation - the intro auto-advancing between steps, debug scene jumps - passes
+## false, otherwise the scene-select click plays on transitions the player never
+## triggered (e.g. the last intro line handing off to the Sleep scene).
+func _on_location_picked(loc: LocationData, play_select_sound: bool = true) -> void:
 	# Guard against rapid double-click stacking transitions.
 	if _is_any_transition_playing():
 		return
 	# Reachable only for enabled locations (disabled ones play the inaccessible
 	# sound via _play_disabled_location_button_sound_from_event / _confirm_selected_choice).
-	UI_SOUND.play_scene_select(self)
+	if play_select_sound:
+		UI_SOUND.play_scene_select(self)
 	_hide_mouse_tooltip()
 
 	# Validate the scene up-front so we can bail before starting the wipe

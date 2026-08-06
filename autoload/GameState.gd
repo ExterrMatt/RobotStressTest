@@ -39,6 +39,15 @@ const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
 const ARREST_THRESHOLD: int = 100  # tweak later; suspicion at/above this triggers arrest event
 const DEFAULT_PLAYER_NAME: String = "Noah"
+## Names offered as the pre-filled suggestion when the player is asked to name
+## themselves. One is picked at random each time the name prompt appears, instead
+## of always suggesting the same name.
+const DEFAULT_PLAYER_NAMES: Array[String] = [
+	"Adam", "Ben", "Clyde", "Derek", "Evan", "Fabian", "George", "Harry",
+	"Isiah", "Josh", "Kenny", "Lamar", "Mark", "Noah", "Oscar", "Patrick",
+	"Quincy", "Ramon", "Stanley", "Thomas", "Ulrich", "Vernon", "Walrus",
+	"Xylophone", "Zuko",
+]
 const LEGACY_TOOL_ID_MAP: Dictionary = {
 	"electric_prod": "taser",
 }
@@ -241,18 +250,17 @@ var robot_parts: Dictionary = {
 # --- cosmetic chest items ---
 ## Optional chest overlays the robot can wear. Unlike robot_parts these are
 ## purely cosmetic: they gate the matching chest-region sprites (static and in
-## the leg/vegetable animation) but never affect part counts. Owning big
-## coconuts and the big chest cover is the default look; small coconuts is an
-## alternative that starts unowned. The big chest cover is contoured for big
-## coconuts specifically (a separate small chest cover is planned for the small
-## coconuts). Balloons are a third mutually-exclusive chest fill (like the
-## coconut variants) and also start unowned.
+## the leg/vegetable animation) but never affect part counts. NOTHING is owned by
+## default: the big coconuts and big chest cover are granted together the moment a
+## chest (torso) is first acquired (see _grant_torso_cosmetics), so a fresh game -
+## debug or not, endless or not - starts with a bare chest. Small coconuts and
+## balloons are alternative fills that stay unowned until obtained.
 const COSMETIC_ITEM_IDS: Array[String] = ["big_coconuts", "small_coconuts", "balloons", "big_chest_cover"]
 const COSMETIC_ITEM_DEFAULTS: Dictionary = {
-	"big_coconuts": 1,
+	"big_coconuts": 0,
 	"small_coconuts": 0,
 	"balloons": 0,
-	"big_chest_cover": 1,
+	"big_chest_cover": 0,
 }
 
 var cosmetic_items: Dictionary = COSMETIC_ITEM_DEFAULTS.duplicate()
@@ -459,8 +467,12 @@ func add_robot_part(id: String, amount: int = 1) -> void:
 	if not is_robot_part_id(id):
 		push_warning("Unknown robot part id: %s" % id)
 		return
+	var had_chest := get_robot_part_count("chest") >= 1
 	robot_parts[id] = max(0, int(robot_parts.get(id, 0)) + amount)
 	_sync_legacy_limb_count()
+	# Crafting a chest (the torso) is what grants the coconuts + chest cover.
+	if id == "chest" and not had_chest and get_robot_part_count("chest") >= 1:
+		_grant_torso_cosmetics()
 	robot_parts_changed.emit(robot_parts.duplicate())
 
 
@@ -468,8 +480,11 @@ func set_robot_part_count(id: String, amount: int) -> void:
 	if not is_robot_part_id(id):
 		push_warning("Unknown robot part id: %s" % id)
 		return
+	var had_chest := get_robot_part_count("chest") >= 1
 	robot_parts[id] = max(0, amount)
 	_sync_legacy_limb_count()
+	if id == "chest" and not had_chest and get_robot_part_count("chest") >= 1:
+		_grant_torso_cosmetics()
 	robot_parts_changed.emit(robot_parts.duplicate())
 
 
@@ -492,14 +507,33 @@ func has_torso() -> bool:
 
 
 func set_all_robot_parts(amount: int) -> void:
+	var had_chest := get_robot_part_count("chest") >= 1
 	for id in ROBOT_PART_IDS:
 		robot_parts[id] = max(0, amount)
 	_sync_legacy_limb_count()
+	if not had_chest and get_robot_part_count("chest") >= 1:
+		_grant_torso_cosmetics()
 	robot_parts_changed.emit(robot_parts.duplicate())
 
 
 func _sync_legacy_limb_count() -> void:
 	equipped_limbs = get_robot_part_count("leg")
+
+
+## The big coconuts and big chest cover come with the torso: they are granted
+## together the first time a chest is acquired (crafted), rather than being owned
+## from the start. Only fills empties, so it never fights a debug removal made
+## while a chest is already owned.
+func _grant_torso_cosmetics() -> void:
+	if get_robot_part_count("chest") < 1:
+		return
+	var changed := false
+	for id in ["big_coconuts", "big_chest_cover"]:
+		if int(cosmetic_items.get(id, 0)) < 1:
+			cosmetic_items[id] = 1
+			changed = true
+	if changed:
+		cosmetic_items_changed.emit(cosmetic_items.duplicate())
 
 
 # --- cosmetic chest items ---
@@ -633,6 +667,14 @@ func complete_intro() -> void:
 	intro_active = false
 	intro_step = ""
 	intro_changed.emit(intro_active, intro_step)
+
+
+## A random name from DEFAULT_PLAYER_NAMES, used as the suggested default in the
+## name prompt. Falls back to DEFAULT_PLAYER_NAME if the list is somehow empty.
+func random_default_player_name() -> String:
+	if DEFAULT_PLAYER_NAMES.is_empty():
+		return DEFAULT_PLAYER_NAME
+	return DEFAULT_PLAYER_NAMES.pick_random()
 
 
 func set_player_name(value: String) -> void:

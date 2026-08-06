@@ -58,6 +58,13 @@ func _ready() -> void:
 	if bot_placeholder.has_signal("head_returned_to_rest"):
 		bot_placeholder.connect("head_returned_to_rest", _on_head_returned_to_rest)
 
+	_apply_bed_occupancy()
+
+
+## Lays out the bed for whether a robot is in it (has legs). Extracted from _ready
+## so it can be re-run when parts are granted mid-sleep (see debug_recalibrate),
+## making a robot that gains limbs appear in the bed instead of staying hidden.
+func _apply_bed_occupancy() -> void:
 	_has_robot_in_bed = GameState.equipped_limbs > 0
 	end_button.visible = _has_robot_in_bed
 	end_button.disabled = not _has_robot_in_bed
@@ -89,6 +96,32 @@ func _ready() -> void:
 	_configure_head_hover_pillow_toggle()
 	if bot_placeholder.has_method("set_leg_slight_out_prestage_enabled"):
 		bot_placeholder.set_leg_slight_out_prestage_enabled(true)
+
+
+## Forwarded from the Shift+Tab debug menu: cycle / read the robot's animation
+## loop-slurp sound override (for auditioning the pelvis/head sounds). Present so
+## the sound-test control appears in the Sleep scene as well as the stress test.
+func debug_cycle_anim_sound() -> void:
+	if bot_placeholder != null and bot_placeholder.has_method("debug_cycle_anim_sound"):
+		bot_placeholder.call("debug_cycle_anim_sound")
+
+
+func debug_anim_sound_label() -> String:
+	if bot_placeholder != null and bot_placeholder.has_method("debug_anim_sound_label"):
+		return String(bot_placeholder.call("debug_anim_sound_label"))
+	return "Anim Sound: Default"
+
+
+## Driven by Main's Shift+Tab debug grants (e.g. the number-4 give-all-items): when
+## robot parts are added mid-sleep, re-lay-out the bed so a now-limbed robot appears
+## (it was hidden if the scene opened with an empty bed), then rebuild the robot so
+## newly granted limbs/cosmetics show. Mirrors the stress test's own recalibrate.
+func debug_recalibrate() -> void:
+	if (GameState.equipped_limbs > 0) != _has_robot_in_bed:
+		_apply_bed_occupancy()
+	if bot_placeholder != null and is_instance_valid(bot_placeholder) \
+			and bot_placeholder.has_method("_refresh_configuration"):
+		bot_placeholder.call("_refresh_configuration")
 
 
 ## Debug speedrun: while Enter is held, mirror the two bed clicks — first lower

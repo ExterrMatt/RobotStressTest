@@ -5,6 +5,11 @@
 [name_prompt]
 What is your name?
 
+# The confirmation shown after the player enters their name (Yes / No). The
+# {player_name} slot is filled in code with the name wrapped in gold quotes.
+[name_confirm]
+Is {player_name} your name?
+
 [exposition]
 Uncle: You're up early.
 You: Yeah, I've gotta get to class.

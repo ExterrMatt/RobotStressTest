@@ -45,13 +45,19 @@ const HAND_RUB_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/hands/hand_rub_loud.mp3",
 ]
 # Sounds synced to the head (talk) and pelvis (vegetable-mission) animations:
-#   intro + each loop cycle -> a "slurp" (veg = slip_1..3, head = glug_1..3)
+#   intro + each loop cycle -> a "slurp" (veg = plap_1..6 + plap_wet_1, head = glug_1..5)
 #   pre-outro ("pre done")  -> a random pump_1..3
 #   outro ("done")          -> the done clip
-const SLIP_SOUND_PATHS: Array[String] = [
-	"res://assets/sounds/slip/slip_1.mp3",
-	"res://assets/sounds/slip/slip_2.mp3",
-	"res://assets/sounds/slip/slip_3.mp3",
+# The debug menu can force a specific slurp sound from these sets for testing (see
+# debug_cycle_anim_sound / _debug_anim_sound_override).
+const PLAP_SOUND_PATHS: Array[String] = [
+	"res://assets/sounds/plap/plap_1.mp3",
+	"res://assets/sounds/plap/plap_2.mp3",
+	"res://assets/sounds/plap/plap_3.mp3",
+	"res://assets/sounds/plap/plap_4.mp3",
+	"res://assets/sounds/plap/plap_5.mp3",
+	"res://assets/sounds/plap/plap_6.mp3",
+	"res://assets/sounds/plap/plap_wet_1.mp3",
 ]
 const GLUG_SOUND_PATHS: Array[String] = [
 	"res://assets/sounds/glug/glug_1.mp3",
@@ -80,6 +86,9 @@ const ANIM_SOUND_LOOP_FRAME: int = 1       # authored frame 3
 const ANIM_SOUND_PRE_DONE_FRAME: int = 4   # authored frame 5
 const ANIM_SOUND_VEG_DONE_FRAME: int = 0   # authored frame 1
 const ANIM_SOUND_HEAD_DONE_FRAME: int = 1  # authored frame 2
+## The pelvis (plap) intro/loop slurp fires this many frames later than the head's
+## glug, so the plap lands a frame after its cue instead of on it.
+const PLAP_SOUND_DELAY_FRAMES: int = 1
 
 ## Chest overlays swapped by the per-side shoulder-pad toggles: each side shows
 ## its chest outline while that side's pad is on, and its chest details while
@@ -337,6 +346,16 @@ const BIG_COCONUTS_ITEM_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionPreOutro/BigCoconuts",
 	^"AnimationLayers/VegetableMissionOutro/BigCoconuts",
 ]
+## Pepperonis are the big-coconuts' partner overlay: they always show and hide
+## together with the big coconuts, so they're gated on the same ownership rather
+## than merely on owning a chest.
+const PEPPERONIS_ITEM_PATHS: Array[NodePath] = [
+	^"Torso/Pepperonis",
+	^"AnimationLayers/VegetableMissionIntro/Pepperonis",
+	^"AnimationLayers/VegetableMissionLoopMedium/Pepperonis",
+	^"AnimationLayers/VegetableMissionPreOutro/Pepperonis",
+	^"AnimationLayers/VegetableMissionOutro/Pepperonis",
+]
 const SMALL_COCONUTS_ITEM_PATHS: Array[NodePath] = [
 	^"Torso/SmallCoconuts",
 	^"AnimationLayers/VegetableMissionIntro/SmallCoconuts",
@@ -396,29 +415,48 @@ const STOMACH_PART_PATHS: Array[NodePath] = [
 	^"Torso/TorsoBase",
 	^"Torso/TorsoCrunch",
 ]
-const LEFT_ARM_PART_PATHS: Array[NodePath] = [
+# An arm can be present two ways: as just an upper-arm sub-assembly (the upper_arm
+# ingredient - a partial arm) or as a full arm (the arm part). The upper-arm sprite,
+# its shoulder pad and its chest detail show for EITHER; the forearm and the animated
+# whole-arm columns need a full arm. So each side's paths are split three ways:
+#   *_UPPER_ARM_PATHS   - the arm container + upper-arm sprite (any arm, full/partial)
+#   *_ARM_SHOULDER_PATHS - the shoulder pad columns (any arm; pad toggle then decides)
+#   *_FULL_ARM_PATHS    - the forearm sprite + animated whole-arm columns (full arm only)
+const LEFT_UPPER_ARM_PATHS: Array[NodePath] = [
 	^"Arms/LeftArm",
+	^"Arms/LeftArm/UpperArm",
+]
+const RIGHT_UPPER_ARM_PATHS: Array[NodePath] = [
+	^"Arms/RightArm",
+	^"Arms/RightArm/UpperArm",
+]
+const LEFT_ARM_SHOULDER_PATHS: Array[NodePath] = [
 	^"Arms/LeftShoulderPad",
-	^"AnimationArmLayers/LeftArm",
-	^"AnimationArmLayers/MouthBLoopMedium/LeftArm",
-	^"AnimationArmLayers/MouthBPreOutro/LeftArm",
-	^"AnimationArmLayers/MouthBOutro/LeftArm",
 	^"AnimationLayers/LeftShoulderPad",
 	^"AnimationLayers/MouthBLoopMedium/LeftShoulderPad",
 	^"AnimationLayers/MouthBPreOutro/LeftShoulderPad",
 	^"AnimationLayers/MouthBOutro/LeftShoulderPad",
 ]
-const RIGHT_ARM_PART_PATHS: Array[NodePath] = [
-	^"Arms/RightArm",
+const RIGHT_ARM_SHOULDER_PATHS: Array[NodePath] = [
 	^"Arms/RightShoulderPad",
-	^"AnimationArmLayers/RightArm",
-	^"AnimationArmLayers/MouthBLoopMedium/RightArm",
-	^"AnimationArmLayers/MouthBPreOutro/RightArm",
-	^"AnimationArmLayers/MouthBOutro/RightArm",
 	^"AnimationLayers/RightShoulderPad",
 	^"AnimationLayers/MouthBLoopMedium/RightShoulderPad",
 	^"AnimationLayers/MouthBPreOutro/RightShoulderPad",
 	^"AnimationLayers/MouthBOutro/RightShoulderPad",
+]
+const LEFT_FULL_ARM_PATHS: Array[NodePath] = [
+	^"Arms/LeftArm/ForearmDown",
+	^"AnimationArmLayers/LeftArm",
+	^"AnimationArmLayers/MouthBLoopMedium/LeftArm",
+	^"AnimationArmLayers/MouthBPreOutro/LeftArm",
+	^"AnimationArmLayers/MouthBOutro/LeftArm",
+]
+const RIGHT_FULL_ARM_PATHS: Array[NodePath] = [
+	^"Arms/RightArm/ForearmDown",
+	^"AnimationArmLayers/RightArm",
+	^"AnimationArmLayers/MouthBLoopMedium/RightArm",
+	^"AnimationArmLayers/MouthBPreOutro/RightArm",
+	^"AnimationArmLayers/MouthBOutro/RightArm",
 ]
 const LEFT_HAND_PART_PATHS: Array[NodePath] = [
 	^"Hands/LeftPalmUp",
@@ -662,16 +700,22 @@ var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
 var _wood_creak_audio_player: AudioStreamPlayer = null
 var _hand_rub_audio_player: AudioStreamPlayer = null
-var _slip_sounds: Array[AudioStream] = []
+var _plap_sounds: Array[AudioStream] = []
 var _glug_sounds: Array[AudioStream] = []
 var _pump_sounds: Array[AudioStream] = []
 var _done_sound: AudioStream = null
-var _slip_audio_player: AudioStreamPlayer = null
+var _plap_audio_player: AudioStreamPlayer = null
 var _glug_audio_player: AudioStreamPlayer = null
 var _pump_audio_player: AudioStreamPlayer = null
 var _done_audio_player: AudioStreamPlayer = null
 ## Glug indices used by the last GLUG_HISTORY_SIZE plays, to avoid repeats.
 var _recent_glug_indices: Array[int] = []
+## Debug loop-slurp override for sound testing: forces a specific slurp sound on
+## the intro/loop cue instead of the usual random pick. Keyed by animation
+## ("head"/"veg"); -1 means Default (normal random). The single debug control
+## cycles the override for whichever animation most recently played its slurp.
+var _debug_anim_sound_override: Dictionary = {"head": -1, "veg": -1}
+var _debug_anim_sound_target: String = "veg"
 ## Sides ("left"/"right") whose player hand is currently hidden because that
 ## hand is holding the screwdriver on that side during a stress-test repair.
 var _repair_hidden_hand_sides: Dictionary = {}
@@ -1256,6 +1300,16 @@ func _both_legs_raised() -> bool:
 	return _left_leg_pose == LEG_POSE_RAISED and _right_leg_pose == LEG_POSE_RAISED
 
 
+## Drops any leg that is currently raised back to the slightly-out pose. Used when
+## the head animation is activated (the head talk lowers raised legs). The caller
+## is expected to refresh the visibility state afterwards.
+func _lower_raised_legs_to_slightly_out() -> void:
+	if _left_leg_pose == LEG_POSE_RAISED:
+		_left_leg_pose = LEG_POSE_SLIGHTLY_OUT
+	if _right_leg_pose == LEG_POSE_RAISED:
+		_right_leg_pose = LEG_POSE_SLIGHTLY_OUT
+
+
 ## Keeps the pelvis (vegetable-mission) animation in step with the leg poses.
 ##
 ## Raising both legs to the up pose recreates, by hand, the vegetable-mission
@@ -1432,6 +1486,9 @@ func _prime_layered_animation(box: Control) -> void:
 	# showing right through the vegetable-mission animation.
 	if String(box.name) == "HeadHoverBox":
 		_syrup_enabled = false
+		# Activating the head animation (even just its frozen first frame) drops any
+		# raised legs back down to their slightly-out pose.
+		_lower_raised_legs_to_slightly_out()
 	elif String(box.name) == "PelvisHoverBox":
 		_syrup_stomach_enabled = false
 	_animation_states[box] = {
@@ -1692,6 +1749,8 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_chest_overlay_state(resolved)
 	_apply_neck_front_state(resolved)
+	_apply_torso_crunch_state(resolved)
+	_apply_partial_arm_static_override(resolved)
 	_apply_resolved_visibility(resolved)
 	_apply_squint_eyes_offset()
 
@@ -2097,9 +2156,14 @@ func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 	_apply_paths_available(resolved, CHEST_PART_PATHS, _robot_part_count("chest") >= 1)
 	_apply_paths_available(resolved, STOMACH_PART_PATHS, _robot_part_count("stomach") >= 1)
 
-	var arm_count := _robot_part_count("arm")
-	_apply_paths_available(resolved, LEFT_ARM_PART_PATHS, arm_count >= 1)
-	_apply_paths_available(resolved, RIGHT_ARM_PART_PATHS, arm_count >= 2)
+	# Upper arm + shoulder pad show for any arm (a full arm OR a loose upper-arm
+	# sub-assembly); the forearm and the animated whole-arm columns need a full arm.
+	_apply_paths_available(resolved, LEFT_UPPER_ARM_PATHS, _side_has_upper_arm(0))
+	_apply_paths_available(resolved, LEFT_ARM_SHOULDER_PATHS, _side_has_upper_arm(0))
+	_apply_paths_available(resolved, LEFT_FULL_ARM_PATHS, _side_has_full_arm(0))
+	_apply_paths_available(resolved, RIGHT_UPPER_ARM_PATHS, _side_has_upper_arm(1))
+	_apply_paths_available(resolved, RIGHT_ARM_SHOULDER_PATHS, _side_has_upper_arm(1))
+	_apply_paths_available(resolved, RIGHT_FULL_ARM_PATHS, _side_has_full_arm(1))
 
 	var hand_count := _robot_part_count("hand")
 	_apply_paths_available(resolved, LEFT_HAND_PART_PATHS, hand_count >= 1)
@@ -2125,6 +2189,8 @@ func _apply_cosmetic_item_availability_to_dictionary(resolved: Dictionary) -> vo
 	var show_small := has_small and not has_big
 	var show_balloons := has_balloons and not has_big and not has_small
 	_apply_paths_available(resolved, BIG_COCONUTS_ITEM_PATHS, show_big)
+	# Pepperonis ride along with the big coconuts - shown and hidden as a pair.
+	_apply_paths_available(resolved, PEPPERONIS_ITEM_PATHS, show_big)
 	_apply_paths_available(resolved, SMALL_COCONUTS_ITEM_PATHS, show_small)
 	_apply_paths_available(resolved, BALLOONS_ITEM_PATHS, show_balloons)
 	_apply_paths_available(resolved, CHEST_COVER_ITEM_PATHS, _cosmetic_item_owned("big_chest_cover"))
@@ -2165,7 +2231,8 @@ func _apply_repair_hidden_hands_to_dictionary(resolved: Dictionary) -> void:
 ## its own per-phase column (the head half owns the chest overlay while it plays),
 ## so the two never draw the variant twice.
 func _apply_chest_overlay_state(resolved: Dictionary) -> void:
-	var arm_count := _robot_part_count("arm")
+	# "Has an arm" for the shoulder pad + chest detail/outline counts a loose upper
+	# arm too, so a partial (upper-only) arm still gets its pad and chest detail.
 	# The static overlay carries the active variant whenever the chest exists and a
 	# head animation is not driving its own overlay columns. A pelvis-only animation
 	# therefore keeps the default-pose variant, while a head animation takes over.
@@ -2174,7 +2241,7 @@ func _apply_chest_overlay_state(resolved: Dictionary) -> void:
 		resolved,
 		overlay_visible,
 		_is_named_box_effect_active(LEFT_SHOULDER_HOVER_BOX_NAME),
-		arm_count >= 1,
+		_side_has_upper_arm(0),
 		LEFT_SHOULDER_PAD_PATH,
 		CHEST_OUTLINE_LEFT_PATH,
 		CHEST_DETAILS_LEFT_PATH,
@@ -2188,7 +2255,7 @@ func _apply_chest_overlay_state(resolved: Dictionary) -> void:
 		resolved,
 		overlay_visible,
 		_is_named_box_effect_active(RIGHT_SHOULDER_HOVER_BOX_NAME),
-		arm_count >= 2,
+		_side_has_upper_arm(1),
 		RIGHT_SHOULDER_PAD_PATH,
 		CHEST_OUTLINE_RIGHT_PATH,
 		CHEST_DETAILS_RIGHT_PATH,
@@ -2282,6 +2349,39 @@ func _apply_paths_available(resolved: Dictionary, paths: Array[NodePath], availa
 		resolved[path] = false
 
 
+## Whenever both legs are held raised, the torso reads as crunched, so show the
+## static crunch overlay (needs a stomach to draw on). While the pelvis animation
+## is actively playing it draws its own moving crunched torso through the
+## animation layers, so this defers to that and only drives the static sprite.
+## A partial arm (upper arm, no forearm) has no animated whole-arm column, so an
+## animation that hides the static arm (the head talk) would make it vanish. This
+## runs last and forces the static upper arm back on for any side that is a partial
+## arm, so it stays put through the animation. Full arms are untouched (they swap to
+## their animated column normally); sides with no arm stay hidden.
+func _apply_partial_arm_static_override(resolved: Dictionary) -> void:
+	if Engine.is_editor_hint():
+		return
+	_apply_side_partial_arm_static(resolved, 0, ^"Arms/LeftArm", ^"Arms/LeftArm/UpperArm")
+	_apply_side_partial_arm_static(resolved, 1, ^"Arms/RightArm", ^"Arms/RightArm/UpperArm")
+
+
+func _apply_side_partial_arm_static(resolved: Dictionary, side_index: int, container_path: NodePath, upper_arm_path: NodePath) -> void:
+	if not _side_has_upper_arm(side_index) or _side_has_full_arm(side_index):
+		return
+	resolved[container_path] = true
+	resolved[upper_arm_path] = true
+
+
+func _apply_torso_crunch_state(resolved: Dictionary) -> void:
+	if Engine.is_editor_hint():
+		return
+	if not _both_legs_raised() or _robot_part_count("stomach") < 1:
+		return
+	if _pelvis_animation_playing():
+		return
+	resolved[^"Torso/TorsoCrunch"] = true
+
+
 ## Shows the neck's front cover while the head is the robot's only remaining
 ## part; any other equipped part (or the raised-head animation) hides it.
 func _apply_neck_front_state(resolved: Dictionary) -> void:
@@ -2318,8 +2418,12 @@ func _initialize_balloons_static_texture() -> void:
 func _add_robot_part_managed_paths() -> void:
 	_add_managed_paths(CHEST_PART_PATHS)
 	_add_managed_paths(STOMACH_PART_PATHS)
-	_add_managed_paths(LEFT_ARM_PART_PATHS)
-	_add_managed_paths(RIGHT_ARM_PART_PATHS)
+	_add_managed_paths(LEFT_UPPER_ARM_PATHS)
+	_add_managed_paths(LEFT_ARM_SHOULDER_PATHS)
+	_add_managed_paths(LEFT_FULL_ARM_PATHS)
+	_add_managed_paths(RIGHT_UPPER_ARM_PATHS)
+	_add_managed_paths(RIGHT_ARM_SHOULDER_PATHS)
+	_add_managed_paths(RIGHT_FULL_ARM_PATHS)
 	_add_managed_paths(LEFT_HAND_PART_PATHS)
 	_add_managed_paths(RIGHT_HAND_PART_PATHS)
 	_add_managed_paths(LEFT_LEG_PART_PATHS)
@@ -2337,6 +2441,35 @@ func _robot_part_count(id: String) -> int:
 	if id == "leg":
 		return int(state.get("equipped_limbs"))
 	return 0
+
+
+## Loose upper-arm sub-assemblies the player is carrying (the upper_arm ingredient).
+func _upper_arm_inventory_count() -> int:
+	if Engine.is_editor_hint():
+		return 0
+	var state := get_node_or_null("/root/GameState")
+	if state == null:
+		return 0
+	var ingredients = state.get("ingredients")
+	if ingredients is Dictionary:
+		return maxi(0, int(ingredients.get("upper_arm", 0)))
+	return 0
+
+
+## Number of sides (0-2) that have at least an upper arm: full arms plus loose
+## upper-arm sub-assemblies, filled left side first (like the full-arm count).
+func _upper_arm_side_count() -> int:
+	return mini(2, _robot_part_count("arm") + _upper_arm_inventory_count())
+
+
+## side_index 0 = left, 1 = right.
+func _side_has_upper_arm(side_index: int) -> bool:
+	return _upper_arm_side_count() > side_index
+
+
+## A full arm (upper arm + forearm) is present on this side.
+func _side_has_full_arm(side_index: int) -> bool:
+	return _robot_part_count("arm") > side_index
 
 
 func _is_hover_box_available(box: Control) -> bool:
@@ -2357,8 +2490,14 @@ func _is_hover_box_available(box: Control) -> bool:
 		if _leg_slight_out_prestage_enabled or _animation_states.has(box):
 			return true
 		return _both_legs_raised()
-	if box.name == "ChestCoverHoverBox" or _is_shoulder_hover_box(box):
+	# The chest cover sits on the chest, so it needs one.
+	if box.name == "ChestCoverHoverBox":
 		return _robot_part_count("chest") >= 1
+	# A shoulder pad belongs to its own arm, not the chest: it's removable whenever
+	# that side has an arm at all (a full arm OR just an upper arm).
+	if _is_shoulder_hover_box(box):
+		var side_index := 0 if String(box.name) == LEFT_SHOULDER_HOVER_BOX_NAME else 1
+		return _side_has_upper_arm(side_index)
 	if box.name == LEFT_HAND_HOVER_BOX_NAME:
 		return _robot_part_count("hand") >= 1
 	if box.name == RIGHT_HAND_HOVER_BOX_NAME:
@@ -2599,12 +2738,12 @@ func _initialize_interaction_sounds() -> void:
 		_hand_rub_audio_player.name = "HandRubAudioPlayer"
 		add_child(_hand_rub_audio_player)
 
-	_slip_sounds = _load_audio_streams(SLIP_SOUND_PATHS)
+	_plap_sounds = _load_audio_streams(PLAP_SOUND_PATHS)
 	_glug_sounds = _load_audio_streams(GLUG_SOUND_PATHS)
 	_pump_sounds = _load_audio_streams(PUMP_SOUND_PATHS)
 	_done_sound = load(DONE_SOUND_PATH) as AudioStream
-	if not _slip_sounds.is_empty():
-		_slip_audio_player = _make_anim_sound_player("SlipAudioPlayer")
+	if not _plap_sounds.is_empty():
+		_plap_audio_player = _make_anim_sound_player("PlapAudioPlayer")
 	if not _glug_sounds.is_empty():
 		_glug_audio_player = _make_anim_sound_player("GlugAudioPlayer")
 	if not _pump_sounds.is_empty():
@@ -2661,6 +2800,9 @@ func _maybe_play_animation_sound(box: Control, phase: String, frame: int) -> voi
 	match phase:
 		ANIMATION_PHASE_INTRO, ANIMATION_PHASE_LOOP:
 			target = ANIM_SOUND_INTRO_FRAME if phase == ANIMATION_PHASE_INTRO else ANIM_SOUND_LOOP_FRAME
+			# The pelvis (plap) slurp lands one frame later than the head's glug.
+			if is_veg:
+				target += PLAP_SOUND_DELAY_FRAMES
 		ANIMATION_PHASE_PRE_OUTRO:
 			target = ANIM_SOUND_PRE_DONE_FRAME
 		ANIMATION_PHASE_OUTRO:
@@ -2670,9 +2812,11 @@ func _maybe_play_animation_sound(box: Control, phase: String, frame: int) -> voi
 		match phase:
 			ANIMATION_PHASE_INTRO, ANIMATION_PHASE_LOOP:
 				if is_head:
-					_play_avoiding_recent(_glug_audio_player, _glug_sounds, _recent_glug_indices, GLUG_HISTORY_SIZE)
+					_debug_anim_sound_target = "head"
+					_play_loop_slurp(_glug_audio_player, _glug_sounds, int(_debug_anim_sound_override["head"]), _recent_glug_indices, GLUG_HISTORY_SIZE)
 				else:
-					_play_random_anim_sound(_slip_audio_player, _slip_sounds)
+					_debug_anim_sound_target = "veg"
+					_play_loop_slurp(_plap_audio_player, _plap_sounds, int(_debug_anim_sound_override["veg"]), _recent_glug_indices, 0)
 			ANIMATION_PHASE_PRE_OUTRO:
 				_play_random_anim_sound(_pump_audio_player, _pump_sounds)
 			ANIMATION_PHASE_OUTRO:
@@ -2684,6 +2828,48 @@ func _play_random_anim_sound(player: AudioStreamPlayer, sounds: Array[AudioStrea
 	if player == null or sounds.is_empty():
 		return
 	_play_anim_sound(player, sounds[_rng.randi_range(0, sounds.size() - 1)])
+
+
+## Plays the intro/loop slurp. If a debug override is set (override_index >= 0) it
+## forces that exact sound for testing; otherwise it picks normally (avoiding the
+## last `history` picks when history > 0).
+func _play_loop_slurp(player: AudioStreamPlayer, sounds: Array[AudioStream], override_index: int, recent: Array[int], history: int) -> void:
+	if override_index >= 0 and override_index < sounds.size():
+		_play_anim_sound(player, sounds[override_index])
+		return
+	if history > 0:
+		_play_avoiding_recent(player, sounds, recent, history)
+	else:
+		_play_random_anim_sound(player, sounds)
+
+
+# --- Debug: loop-slurp sound override (for auditioning animation sounds) --------
+
+## Sound-file paths for the current override target's slurp set: the head talk
+## animation uses the glug set, the pelvis (vegetable-mission) uses the plap set.
+func _debug_anim_sound_paths() -> Array:
+	return GLUG_SOUND_PATHS if _debug_anim_sound_target == "head" else PLAP_SOUND_PATHS
+
+
+## Debug: advance the override for whichever animation last played its slurp:
+## Default -> first sound -> ... -> last sound -> Default.
+func debug_cycle_anim_sound() -> void:
+	var count := _debug_anim_sound_paths().size()
+	var idx := int(_debug_anim_sound_override.get(_debug_anim_sound_target, -1)) + 1
+	if idx >= count:
+		idx = -1
+	_debug_anim_sound_override[_debug_anim_sound_target] = idx
+
+
+## Debug: a label for the current selection, e.g. "Pelvis Sound: Plap 3" or
+## "Head Sound: Default". Read by the Shift+Tab menu button.
+func debug_anim_sound_label() -> String:
+	var anim := "Head" if _debug_anim_sound_target == "head" else "Pelvis"
+	var idx := int(_debug_anim_sound_override.get(_debug_anim_sound_target, -1))
+	var paths := _debug_anim_sound_paths()
+	if idx < 0 or idx >= paths.size():
+		return "%s Sound: Default" % anim
+	return "%s Sound: %s" % [anim, String(paths[idx]).get_file().get_basename().capitalize()]
 
 
 ## Play a random sound whose index isn't among the last `history` picks (tracked

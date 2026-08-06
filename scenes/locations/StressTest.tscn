@@ -1821,7 +1821,6 @@ offset_bottom = 260.0
 grow_horizontal = 0
 mouse_filter = 2
 theme_override_constants/separation = 4
-alignment = 2
 
 [node name="TimerLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/StressHud" unique_id=1505966969]
 layout_mode = 2
@@ -2159,6 +2158,11 @@ theme_override_font_sizes/font_size = 22
 text = "Result: Stress test completed."
 horizontal_alignment = 1
 autowrap_mode = 3
+
+[node name="AngerValueLabel" type="Label" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox" unique_id=900894647]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
 
 [node name="FailureContinueButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox" unique_id=687398279]
 custom_minimum_size = Vector2(160, 48)

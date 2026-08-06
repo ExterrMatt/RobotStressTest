@@ -259,7 +259,11 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @export var summary_success_text: String = "Stress test completed."
 @export var electricity_target_min_percent: float = 70.0
 @export var electricity_target_max_percent: float = 110.0
-@export_range(0.0, 1.0, 0.01) var electricity_five_star_required_ratio: float = 0.8
+## Leeway on the electricity result. The theoretical maximum electricity a night
+## could generate (peak rate held in range the whole night) is discounted by this
+## fraction before it counts as 100%, so the player does not have to play a
+## literally flawless night to top out the meter. 0.15 = a 15% cushion.
+@export_range(0.0, 1.0, 0.01) var electricity_result_leeway_ratio: float = 0.15
 @export var screw_spawn_start_buffer_seconds: float = 5.0
 @export var screw_spawn_end_buffer_seconds: float = 5.0
 @export var screw_batch_interval_min_seconds: float = 10.0
@@ -268,9 +272,6 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @export_range(0.0, 1.0, 0.01) var screw_electrical_pull_chance: float = 0.25
 @export var screw_response_grace_seconds: float = 7.0
 @export var screw_late_penalty_percent: float = 5.0
-@export var screw_unrepaired_penalty_percent: float = 20.0
-@export_range(0.0, 1.0, 0.01) var screw_completion_target_ratio: float = 0.8
-@export var screw_completion_penalty_step_percent: float = 10.0
 
 @export_group("Manual Screwing")
 ## Foundational nudge for the bare-hand screwing animation, in base scene
@@ -329,6 +330,7 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @onready var failure_overlay: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay
 @onready var failure_title_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureTitleLabel
 @onready var failure_reason_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureReasonLabel
+@onready var anger_value_label: Label = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/AngerValueLabel
 @onready var failure_continue_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/FailureOverlay/FailurePanel/FailureVBox/FailureContinueButton
 @onready var end_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton
 
@@ -379,6 +381,12 @@ var _intro_failure_restart_pending: bool = false
 var _intro_head_interaction_unlocked: bool = true
 var _summary_result: Dictionary = {}
 var _summary_registers_completion: bool = false
+## True when the night was ended by the player pressing the end button rather
+## than running out the clock. The results then measure against the full night
+## that was supposed to elapse (predicted screws, full-night electricity target)
+## instead of the short time actually played, so bailing out early can't buy a
+## cheap perfect score.
+var _ended_early: bool = false
 var _summary_success: bool = false
 var _summary_reason: String = ""
 var _electricity_target_elapsed: float = 0.0
@@ -548,15 +556,10 @@ func _process(delta: float) -> void:
 	_refresh_stress_hud()
 	_update_hover_box_tooltip()
 
-	if _gas_flow_percent >= gas_high_failure_percent:
-		_fail_stress_test(gas_high_failure_text, true)
-		return
-	if _gas_flow_percent <= gas_low_failure_percent:
-		_fail_stress_test(gas_low_failure_text, true)
-		return
-	if _electricity_percent > electricity_wake_threshold_percent and not _is_electricity_consequence_paused():
-		_fail_stress_test(electricity_failure_text, true)
-		return
+	# Failures: the uncle catching you (window alert) and the drone shooting you
+	# (both handled where they occur), plus the robot waking up once her awareness
+	# maxes out. Gas pressure and an electricity over-supply no longer end the night
+	# - they only feed the electricity/screw scoring - so otherwise it runs the clock.
 	if _awareness >= _awareness_threshold:
 		_fail_stress_test(awareness_failure_text, true)
 		return
@@ -652,8 +655,15 @@ func _move_zoom_region(direction: Vector2i) -> void:
 	_interrupt_screw_repairs_if_current_view_requires_it()
 
 
+## The furthest-out zoom the player may reach. Only debug mode allows the fully
+## zoomed-out (ZOOM_LEVEL_OUT) view; in normal play the player stays zoomed into
+## the scene (first level and closer).
+func _min_zoom_level() -> int:
+	return ZOOM_LEVEL_OUT if _debug_mode_enabled() else ZOOM_LEVEL_FIRST
+
+
 func _set_zoom_level(value: int, focus_position: Vector2) -> void:
-	var next_zoom_level := clampi(value, ZOOM_LEVEL_OUT, MAX_ZOOM_LEVEL)
+	var next_zoom_level := clampi(value, _min_zoom_level(), MAX_ZOOM_LEVEL)
 	if _zoom_level == next_zoom_level:
 		return
 
@@ -1602,6 +1612,7 @@ func _initialize_stress_systems() -> void:
 	_intro_head_interaction_unlocked = not _is_intro_tutorial_stress_test()
 	_summary_result = {}
 	_summary_registers_completion = false
+	_ended_early = false
 	_electricity_target_elapsed = 0.0
 	_electricity_consequence_pause_until = 0.0
 	_consequence_pause_intervals.clear()
@@ -2412,8 +2423,15 @@ func _refresh_stress_hud() -> void:
 			_gas_last_change_percent,
 		]
 	if uncle_value_label != null:
-		uncle_value_label.text = _format_uncle_meter_text()
+		# The light/uncle readout is a debug-only diagnostic now: the player is not
+		# told how long the light lingers, so hide it entirely outside debug mode.
+		uncle_value_label.visible = debug_mode
+		if debug_mode:
+			uncle_value_label.text = _format_uncle_meter_text()
+	# The intro tutorial hides the awareness and endurance readouts (like the light).
+	var show_awareness_endurance := not _is_intro_tutorial_stress_test()
 	if awareness_value_label != null:
+		awareness_value_label.visible = show_awareness_endurance
 		if debug_mode:
 			awareness_value_label.text = "%s: %.0f / %.0f (%+.1f/s)" % [
 				awareness_label_text,
@@ -2428,6 +2446,7 @@ func _refresh_stress_hud() -> void:
 				_awareness_threshold,
 			]
 	if endurance_value_label != null:
+		endurance_value_label.visible = show_awareness_endurance
 		endurance_value_label.text = "%s: %.0f / %.0f" % [
 			endurance_label_text,
 			_endurance,
@@ -2436,13 +2455,13 @@ func _refresh_stress_hud() -> void:
 	_refresh_electricity_meter()
 
 
+## The full light/uncle diagnostic, shown only in debug mode (see _refresh_stress_hud,
+## which hides the label entirely otherwise - the player is never told the timing).
 func _format_uncle_meter_text() -> String:
 	var light_text := "--"
 	if _window_alert_state == WINDOW_ALERT_YELLOW:
 		var light_remaining := maxf(0.0, _window_alert_light_duration - _window_alert_elapsed)
 		light_text = "%.1fs" % light_remaining
-	if not _debug_mode_enabled():
-		return "Light: %s" % light_text
 	var seen_limit := maxf(0.0, window_alert_seen_failure_seconds)
 	var leave_text := "--"
 	if _window_alert_state == WINDOW_ALERT_RED and not _is_uncle_exposure_active():
@@ -2653,15 +2672,38 @@ func debug_swap_hand_grip() -> void:
 	_call_robot_debug("debug_toggle_hand_grip")
 
 
+## Cycle the animation loop-slurp sound override on the robot (Default -> each
+## sound -> Default) for whichever animation last played.
+func debug_cycle_anim_sound() -> void:
+	_call_robot_debug("debug_cycle_anim_sound")
+
+
+## Current override label for the debug menu button (e.g. "Pelvis Sound: Plap 3").
+func debug_anim_sound_label() -> String:
+	if stress_test_robot != null and stress_test_robot.has_method("debug_anim_sound_label"):
+		return String(stress_test_robot.call("debug_anim_sound_label"))
+	return "Anim Sound: Default"
+
+
 func _call_robot_debug(method: String) -> void:
 	if stress_test_robot != null and stress_test_robot.has_method(method):
 		stress_test_robot.call(method)
 
 
+## Sides (0-2) with at least an upper arm: full arms plus loose upper-arm
+## sub-assemblies (the upper_arm ingredient), filled left side first.
+func _upper_arm_side_count() -> int:
+	var ingredients: Dictionary = GameState.ingredients if GameState.ingredients is Dictionary else {}
+	return mini(2, _robot_part_count("arm") + maxi(0, int(ingredients.get("upper_arm", 0))))
+
+
 func _apply_body_part_screw_availability() -> void:
 	var arm_count := _robot_part_count("arm")
-	_set_screw_repair_available(left_arm_screw_repair, arm_count >= 1)
-	_set_screw_repair_available(right_arm_screw_repair, arm_count >= 2)
+	# The arm screws all sit on the upper arm, so they're reachable whenever a side
+	# has any arm - including a loose upper-arm sub-assembly with no forearm.
+	var upper_arm_sides := _upper_arm_side_count()
+	_set_screw_repair_available(left_arm_screw_repair, upper_arm_sides >= 1)
+	_set_screw_repair_available(right_arm_screw_repair, upper_arm_sides >= 2)
 	# The torso screw plate spans both mid-body parts, so it is reachable if
 	# either the chest or the stomach is attached. The two waist screws sit on the
 	# stomach, so they additionally require it (and stay hidden under an arm).
@@ -2915,7 +2957,7 @@ func _complete_stress_test_success() -> void:
 		{
 			"money_delta": 0,
 			"suspicion_delta": 0,
-			"anger_delta": -10,
+			"anger_delta": _stress_test_anger_delta(),
 			"ingredients": {},
 			"skip_advance": false,
 		},
@@ -2928,10 +2970,8 @@ func _handle_night_timer_finished() -> void:
 	if _is_intro_tutorial_stress_test():
 		_finish_intro_tutorial_stress_test()
 		return
-	var electricity := _electricity_summary()
-	if float(electricity.get("score", 0.0)) < electricity_low_end_score_threshold:
-		_fail_stress_test(electricity_low_end_failure_text, false)
-		return
+	# Only the uncle catching you or the drone shooting you is a failure now; simply
+	# running out the clock always completes the night, whatever the electricity was.
 	_complete_stress_test_success()
 
 
@@ -3043,13 +3083,44 @@ func _begin_stress_test_summary(
 	_on_failure_transition_finished()
 
 
+## The dialog's own good/bad text colours (see the .dlg files): green for a
+## positive outcome, red for a negative one. Reused here so a drop in anger reads
+## green and a rise reads red, matching the rest of the game.
+const SUMMARY_ANGER_GOOD_COLOR := Color("7fdf7f")
+const SUMMARY_ANGER_BAD_COLOR := Color("df7f7f")
+
+
 func _update_summary_text() -> void:
 	if failure_title_label != null:
 		failure_title_label.text = "You failed" if _intro_failure_restart_pending else summary_title_text
 	if failure_reason_label != null:
 		failure_reason_label.text = _build_summary_text()
+	_update_anger_summary_label()
 	if failure_continue_button != null:
 		failure_continue_button.text = "RETRY" if _intro_failure_restart_pending else "CONTINUE"
+
+
+## Fills the anger line as its own label so it can be coloured on its own: green
+## when the night removes anger, red when it adds anger, and the default text
+## colour (white) when it is a wash. Only shown on a completed stress test.
+func _update_anger_summary_label() -> void:
+	if anger_value_label == null:
+		return
+	if _intro_failure_restart_pending or not _summary_success:
+		anger_value_label.visible = false
+		return
+
+	anger_value_label.visible = true
+	var anger_delta := _stress_test_anger_delta()
+	if anger_delta == 0:
+		anger_value_label.text = "Anger: no change"
+		anger_value_label.remove_theme_color_override("font_color")
+	else:
+		anger_value_label.text = "Anger: %+d" % anger_delta
+		anger_value_label.add_theme_color_override(
+			"font_color",
+			SUMMARY_ANGER_GOOD_COLOR if anger_delta < 0 else SUMMARY_ANGER_BAD_COLOR
+		)
 
 
 func _build_summary_text() -> String:
@@ -3057,64 +3128,148 @@ func _build_summary_text() -> String:
 		return _summary_reason if not _summary_reason.is_empty() else "The stress test has to be repeated."
 
 	var lines: Array[String] = []
-	if _summary_success:
-		lines.append("Result: %s" % summary_success_text)
-	else:
+	if not _summary_success:
+		# A failure (uncle caught you / drone shot you) shows only the reason - the
+		# electricity and screw scores are irrelevant to a night that was cut short.
 		lines.append("Result: Failed")
 		if not _summary_reason.is_empty():
 			lines.append("Reason: %s" % _summary_reason)
+		return "\n".join(lines)
+
+	lines.append("Result: %s" % summary_success_text)
 
 	var electricity := _electricity_summary()
-	lines.append("Electricity Flow: %s  %.0f%% in range" % [
-		_stars_for_score(float(electricity["score"])),
-		float(electricity["target_ratio"]) * 100.0,
+	var electricity_percent := float(electricity["percent"])
+	lines.append("Electricity: %s  %.0f%%" % [
+		_stars_for_score(electricity_percent),
+		electricity_percent,
 	])
 
 	var screws := _screw_summary()
-	lines.append("Screws: %s  %.0f%% score" % [
-		_stars_for_score(float(screws["score"])),
-		float(screws["score"]),
+	lines.append("Screws: %s  %d / %d  (%.0f%%)" % [
+		_stars_for_score(float(screws["percent"])),
+		int(screws["repaired"]),
+		int(screws["total"]),
+		float(screws["percent"]),
 	])
-	if _debug_mode_enabled():
-		lines.append("Electricity Generated: %.0f" % _electricity_generated)
+
 	return "\n".join(lines)
 
 
+## Electricity result, as a percentage of the electricity a flawless night could
+## have generated. She only draws power while the meter sits inside its proper
+## range (electricity_target_min..max), where the generator runs at its peak
+## rate, so the theoretical maximum is that rate sustained across the WHOLE
+## night. Crucially, the denominator is always the full intended night length -
+## never the time actually played - so ending early cannot dodge the power the
+## rest of the night would have demanded. A leeway discount means the player need
+## not be literally perfect to reach 100%.
 func _electricity_summary() -> Dictionary:
-	var duration := maxf(0.001, minf(_night_elapsed, night_duration_seconds))
-	var target_ratio := clampf(_electricity_target_elapsed / duration, 0.0, 1.0)
-	var required_ratio := maxf(0.001, electricity_five_star_required_ratio)
-	var score := clampf((target_ratio / required_ratio) * 100.0, 0.0, 100.0)
+	var full_night := maxf(0.001, night_duration_seconds)
+	var optimal_generated := ELECTRICITY_GENERATED_GREEN_PER_SECOND * full_night
+	var target_generated := optimal_generated * (1.0 - clampf(electricity_result_leeway_ratio, 0.0, 1.0))
+	# Power is only credited for the time she was kept inside the proper range.
+	var generated := ELECTRICITY_GENERATED_GREEN_PER_SECOND * _electricity_target_elapsed
+	var percent := clampf(generated / maxf(0.001, target_generated), 0.0, 1.0) * 100.0
 	return {
-		"target_ratio": target_ratio,
-		"score": score,
+		"percent": percent,
+		"generated": generated,
+		"optimal_generated": optimal_generated,
 	}
 
 
+## Screw result: a clean percentage of how many screws were screwed back in out
+## of how many total loosened over the night. When the night is ended early the
+## screws that had appeared so far are not a fair total (bail out at second one
+## and zero screws would read as a free 100%), so the denominator becomes the
+## night's average predicted screw count instead.
 func _screw_summary() -> Dictionary:
-	var expected_count := maxi(0, _screw_started_count)
-	var unrepaired_count := _screw_active_events.size()
-	var score := 100.0
-	score -= _screw_late_penalty_total
-	score -= float(unrepaired_count) * maxf(0.0, screw_unrepaired_penalty_percent)
-
-	if expected_count > 0:
-		var completion_ratio := clampf(float(_screw_repaired_count) / float(expected_count), 0.0, 1.0)
-		var target_ratio := clampf(screw_completion_target_ratio, 0.0, 1.0)
-		if completion_ratio < target_ratio:
-			var step := maxf(0.1, screw_completion_penalty_step_percent)
-			var deficit_percent := (target_ratio - completion_ratio) * 100.0
-			score -= ceil(deficit_percent / step) * step
-
+	var repaired := maxi(0, _screw_repaired_count)
+	var total: int
+	if _ended_early:
+		total = maxi(_screw_started_count, int(round(_predicted_total_screws())))
+	else:
+		total = maxi(0, _screw_started_count)
+	var percent := 100.0
+	if total > 0:
+		percent = clampf(float(repaired) / float(total), 0.0, 1.0) * 100.0
 	return {
-		"score": clampf(score, 0.0, 100.0),
-		"expected_count": expected_count,
-		"repaired_count": _screw_repaired_count,
-		"late_count": _screw_late_count,
-		"unrepaired_count": unrepaired_count,
+		"percent": percent,
+		"repaired": repaired,
+		"total": total,
 	}
 
 
+## Average number of screws a full night would loosen: batches fire once per
+## random interval across the spawn window, and every exposed limb loosens a
+## random 0..max screws each batch. Used only to fill in a fair screw total when
+## the player ends the night early, before the real screws could appear.
+func _predicted_total_screws() -> float:
+	var spawn_window := maxf(0.0,
+		night_duration_seconds
+		- maxf(0.0, screw_spawn_start_buffer_seconds)
+		- maxf(0.0, screw_spawn_end_buffer_seconds))
+	if spawn_window <= 0.0:
+		return 0.0
+	var avg_interval := maxf(0.1,
+		(maxf(0.1, screw_batch_interval_min_seconds)
+		+ maxf(0.1, screw_batch_interval_max_seconds)) * 0.5)
+	var expected_batches := spawn_window / avg_interval
+	var avg_per_limb_per_batch := float(maxi(0, screw_batch_max_per_limb)) * 0.5
+	return expected_batches * float(_active_screw_limb_count()) * avg_per_limb_per_batch
+
+
+## Number of screw-bearing limbs currently exposed on the robot (an unattached or
+## covered part has its repair controller disabled and loosens nothing).
+func _active_screw_limb_count() -> int:
+	var count := 0
+	for repair in _screw_repair_controllers():
+		if bool(repair.get("enabled")):
+			count += 1
+	return count
+
+
+## A stress test where BOTH electricity and screws come in at 10% or lower applies
+## this fixed anger delta instead of the graduated calculation.
+const ANGER_MINIMAL_EFFORT_THRESHOLD_PERCENT: float = 10.0
+const ANGER_MINIMAL_EFFORT_DELTA: int = -15
+
+
+## Total anger the completed stress test applies, from the two results. A perfect
+## night removes six anger (five from electricity, one from screws); a worst-case
+## night adds seven (five from zero electricity, two from the screw bracket). The
+## anger stat itself is floored at zero by GameState, so it never runs negative.
+func _stress_test_anger_delta() -> int:
+	var electricity_percent := float(_electricity_summary()["percent"])
+	var screw_percent := float(_screw_summary()["percent"])
+	if electricity_percent <= ANGER_MINIMAL_EFFORT_THRESHOLD_PERCENT \
+			and screw_percent <= ANGER_MINIMAL_EFFORT_THRESHOLD_PERCENT:
+		return ANGER_MINIMAL_EFFORT_DELTA
+	return _electricity_anger_delta(electricity_percent) + _screw_anger_delta(screw_percent)
+
+
+## Electricity anger, pivoting on 50%: every full 10 points below 50 adds one
+## anger (up to +5 at 0%), every full 10 points above 50 removes one (down to -5
+## at 100%).
+func _electricity_anger_delta(percent: float) -> int:
+	if percent < 50.0:
+		return int(floor((50.0 - percent) / 10.0))
+	return -int(floor((percent - 50.0) / 10.0))
+
+
+## Screw anger bracket: a flawless 100% pulls one anger off; 80-99% is neutral;
+## 40-79% adds one; 39% or lower adds two.
+func _screw_anger_delta(percent: float) -> int:
+	if percent >= 100.0:
+		return -1
+	if percent >= 80.0:
+		return 0
+	if percent >= 40.0:
+		return 1
+	return 2
+
+
+## A five-star rating from a 0-100 percentage: one filled star per 20 points.
 func _stars_for_score(score: float) -> String:
 	var full_count := clampi(int(floor(clampf(score, 0.0, 100.0) / 20.0)), 0, 5)
 	var stars := ""
@@ -3172,6 +3327,10 @@ func _finish_stress_test_summary() -> void:
 func _on_end_button_pressed() -> void:
 	if _is_intro_tutorial_stress_test():
 		return
+	# Ending the night manually still scores as if the full night had run: the
+	# results predict the screws that would have appeared and measure electricity
+	# against the whole intended night (see _screw_summary / _electricity_summary).
+	_ended_early = true
 	_complete_stress_test_success()
 
 
@@ -3209,15 +3368,9 @@ func _restart_intro_tutorial_stress_test() -> void:
 
 
 func _update_intro_head_interaction_gate() -> void:
-	if not _is_intro_tutorial_stress_test():
-		return
-	if _intro_head_interaction_unlocked:
-		return
-	var remaining := maxf(0.0, night_duration_seconds - _night_elapsed)
-	if remaining > maxf(0.0, intro_head_interaction_unlock_remaining_seconds):
-		return
-	_intro_head_interaction_unlocked = true
-	_set_robot_interaction_enabled(true)
+	# The intro tutorial keeps the robot un-animatable for its entire length. There
+	# is no longer a final-seconds unlock, so the player can never animate her here.
+	pass
 
 
 func _set_robot_interaction_enabled(value: bool) -> void:

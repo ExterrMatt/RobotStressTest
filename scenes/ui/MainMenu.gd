@@ -786,6 +786,7 @@ func _start_new_game() -> void:
 	var intro: Node = get_node_or_null("/root/IntroTransition")
 	if intro:
 		intro.pending_intro = true
+	_fade_out_menu_music()
 	get_tree().change_scene_to_file(game_scene_path)
 
 
@@ -799,12 +800,16 @@ func _start_endless() -> void:
 		# lessons/shifts from the very first visit instead of the cutscene version.
 		GameState.robot_class_disruption_seen = true
 		GameState.robot_work_disruption_seen = true
+		# The head is normally crafted during the intro; endless skips the intro, so
+		# grant it up front so the player starts with the robot's head.
+		GameState.set_robot_part_count("head", 1)
 	if get_node_or_null("/root/DayCycle") != null and DayCycle.has_method("reset_for_new_game"):
 		DayCycle.reset_for_new_game()
 
 	var intro: Node = get_node_or_null("/root/IntroTransition")
 	if intro:
 		intro.pending_intro = false
+	_fade_out_menu_music()
 	get_tree().change_scene_to_file(game_scene_path)
 
 
@@ -812,9 +817,21 @@ func _start_endless() -> void:
 # MENU MUSIC
 # =============================================================================
 
+## Deep-silent level the menu music fades down to before its player is freed
+## (matches GameState's own "fully faded out" music level).
+const MENU_MUSIC_SILENCE_DB: float = -80.0
+## How long the menu music takes to fade out when the player leaves the menu.
+const MENU_MUSIC_FADE_OUT_SECONDS: float = 4.0
+## How long the menu music eases up from silence the first time it starts - i.e.
+## the opening seconds after the game is launched and the menu appears.
+const MENU_MUSIC_FADE_IN_SECONDS: float = 2.0
+
 var _song_player: AudioStreamPlayer = null
 var _song_playlist: Array[String] = []
 var _song_index: int = 0
+## The launch fade-in tween, tracked so it can be stopped if the player leaves the
+## menu (and its fade-out takes over) before it finishes.
+var _music_fade_in_tween: Tween = null
 
 ## Builds the shuffled playlist from the songs folder and starts it. The player
 ## is a child of the menu, so it stops automatically when the scene changes.
@@ -827,18 +844,51 @@ func _start_menu_music() -> void:
 
 	_song_player = AudioStreamPlayer.new()
 	_song_player.name = "MenuMusicPlayer"
-	_song_player.volume_db = GameState.music_player_volume_db()
+	# Start silent - the launch fade-in below ramps it up to the configured level.
+	_song_player.volume_db = MENU_MUSIC_SILENCE_DB
 	add_child(_song_player)
 	# When a track ends, advance to the next; wrap back to the top after the last.
 	_song_player.finished.connect(_play_next_song)
 	# Follow the music-volume slider live.
 	GameState.music_volume_changed.connect(_on_music_volume_changed)
 	_play_current_song()
+	# Ease the very first track up from silence over the opening seconds.
+	_fade_in_menu_music()
+
+
+## Ramps the menu music from silence up to its configured level. Called once when
+## the menu first opens (game launch) so the soundtrack fades in over the opening
+## seconds; later tracks in the playlist just start at full volume.
+func _fade_in_menu_music() -> void:
+	if _song_player == null or not is_instance_valid(_song_player):
+		return
+	if _music_fade_in_tween != null and _music_fade_in_tween.is_valid():
+		_music_fade_in_tween.kill()
+	_song_player.volume_db = MENU_MUSIC_SILENCE_DB
+	_music_fade_in_tween = _song_player.create_tween()
+	_music_fade_in_tween.tween_property(
+		_song_player, "volume_db", GameState.music_player_volume_db(), MENU_MUSIC_FADE_IN_SECONDS)
+	# When the fade ends, sync to the live music level in case the slider moved
+	# during it (see _on_music_volume_changed, which deliberately stays hands-off
+	# while the fade runs).
+	_music_fade_in_tween.tween_callback(_sync_music_player_volume)
+
+
+func _sync_music_player_volume() -> void:
+	if _song_player != null and is_instance_valid(_song_player):
+		_song_player.volume_db = GameState.music_player_volume_db()
 
 
 func _on_music_volume_changed(_value: float) -> void:
-	if _song_player != null and is_instance_valid(_song_player):
-		_song_player.volume_db = GameState.music_player_volume_db()
+	# Leave the player alone while the launch fade-in is running. The fade already
+	# ramps toward the current music level, and snapping volume_db here would abort
+	# it - which is exactly what made the music blast in at full volume on start,
+	# since GameState fires this once at startup (its deferred initial-state emit)
+	# right after the fade begins. Any change made mid-fade is applied by the fade's
+	# end callback (_sync_music_player_volume).
+	if _music_fade_in_tween != null and _music_fade_in_tween.is_valid():
+		return
+	_sync_music_player_volume()
 
 
 ## Every .mp3 in the songs folder, sorted for a stable pre-shuffle order.
@@ -885,12 +935,50 @@ func _play_next_song() -> void:
 	_play_current_song()
 
 
+## Called when the player leaves the menu for the game. The music player lives
+## under this scene, so a scene change would cut it dead; instead we sever its
+## ties to this (about-to-be-freed) scene, reparent it to the tree root so it
+## survives the change, and fade it to silence over MENU_MUSIC_FADE_OUT_SECONDS
+## before freeing it. Safe to call more than once (only the first call detaches).
+func _fade_out_menu_music() -> void:
+	var player := _song_player
+	_song_player = null
+	# If the launch fade-in is still running, stop it so it can't fight the
+	# fade-out for control of the player's volume.
+	if _music_fade_in_tween != null and _music_fade_in_tween.is_valid():
+		_music_fade_in_tween.kill()
+	_music_fade_in_tween = null
+	if player == null or not is_instance_valid(player):
+		return
+
+	# Stop the playlist advancing and stop tracking the volume slider, so nothing
+	# calls back into this scene once it is gone.
+	if player.finished.is_connected(_play_next_song):
+		player.finished.disconnect(_play_next_song)
+	if GameState.music_volume_changed.is_connected(_on_music_volume_changed):
+		GameState.music_volume_changed.disconnect(_on_music_volume_changed)
+
+	if not player.playing:
+		player.queue_free()
+		return
+
+	# Reparent above the current scene so change_scene_to_file (which frees this
+	# scene) leaves the player alive to finish its fade.
+	player.reparent(get_tree().root)
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
+
+	var tween := player.create_tween()
+	tween.tween_property(player, "volume_db", MENU_MUSIC_SILENCE_DB, MENU_MUSIC_FADE_OUT_SECONDS)
+	tween.tween_callback(player.queue_free)
+
+
 ## Kept for completeness — used by other parts of the script that may want
 ## to check for an autoload's presence by name.
 func _start_debug_game(number: int, shift_held: bool, ctrl_held: bool) -> void:
 	var intro: Node = get_node_or_null("/root/IntroTransition")
 	if intro and intro.has_method("request_debug_jump"):
 		intro.call("request_debug_jump", number, shift_held, ctrl_held)
+	_fade_out_menu_music()
 	get_tree().change_scene_to_file(game_scene_path)
 
 
