@@ -110,6 +110,11 @@ var _hand_screw_offset: Vector2 = Vector2.ZERO
 ## only one screw is driven at a time (or one per side with two screwdrivers).
 ## Receives the screw's side ("left"/"right"/"") and returns whether to allow it.
 var _repair_gate: Callable = Callable()
+## Optional decider installed by the stress test that returns, per side, whether a
+## starting repair should be driven by hand instead of a screwdriver - screwdrivers
+## are a shared, limited resource across the whole robot. Falls back to the
+## component-wide _manual_screwing flag when unset (e.g. in the editor).
+var _manual_decider: Callable = Callable()
 
 
 func _ready() -> void:
@@ -263,6 +268,30 @@ func set_repair_gate(gate: Callable) -> void:
 	_repair_gate = gate
 
 
+## Installs the per-side hand-vs-screwdriver decider (see _manual_decider).
+func set_manual_decider(decider: Callable) -> void:
+	_manual_decider = decider
+
+
+## How many of this controller's in-progress repairs are currently driven with a
+## screwdriver rather than by hand. The stress test sums this across all
+## controllers to see how many of the shared screwdrivers are already in use.
+func active_screwdriver_side_count() -> int:
+	var count := 0
+	for side in _active_repairs:
+		if not bool(_active_repairs[side].get("manual", _manual_screwing)):
+			count += 1
+	return count
+
+
+## Whether a repair starting on the given side should be driven by hand. Uses the
+## installed decider (shared screwdriver budget) or the component-wide fallback.
+func _decide_manual_for_side(side: String) -> bool:
+	if _manual_decider.is_valid():
+		return bool(_manual_decider.call(side))
+	return _manual_screwing
+
+
 func _can_begin_repair(index: int) -> bool:
 	if not _repair_gate.is_valid():
 		return true
@@ -336,8 +365,8 @@ func set_hand_screw_offset(offset: Vector2) -> void:
 ## the bare-hand animation is showing. The offset is authored against the left
 ## side; the right side's animation is mirrored, so its horizontal component is
 ## negated to keep the correction consistent.
-func _hand_screw_alignment_offset_for_screw(index: int) -> Vector2:
-	if not _uses_hand_visuals():
+func _hand_screw_alignment_offset_for_screw(index: int, manual: bool) -> Vector2:
+	if not _uses_hand_visuals(manual):
 		return Vector2.ZERO
 	var offset := _hand_screw_offset
 	if side_for_screw(index) == "right":
@@ -345,12 +374,12 @@ func _hand_screw_alignment_offset_for_screw(index: int) -> Vector2:
 	return offset
 
 
-func _uses_hand_visuals() -> bool:
-	return _manual_screwing and _hand_screw_texture_resolved != null
+func _uses_hand_visuals(manual: bool) -> bool:
+	return manual and _hand_screw_texture_resolved != null
 
 
-func _active_frame_size() -> Vector2i:
-	if not _uses_hand_visuals():
+func _active_frame_size(manual: bool) -> Vector2i:
+	if not _uses_hand_visuals(manual):
 		return screwdriver_frame_size
 	# Guard against a scene that serialized these exports as zero/null.
 	if hand_screw_frame_size.x > 0 and hand_screw_frame_size.y > 0:
@@ -358,16 +387,16 @@ func _active_frame_size() -> Vector2i:
 	return Vector2i(48, 48)
 
 
-func _active_frame_count() -> int:
-	if not _uses_hand_visuals():
+func _active_frame_count(manual: bool) -> int:
+	if not _uses_hand_visuals(manual):
 		return screwdriver_frame_count
 	return hand_screw_frame_count if hand_screw_frame_count > 0 else 4
 
 
-func _apply_active_screw_texture(screwdriver: Sprite2D) -> void:
+func _apply_active_screw_texture(screwdriver: Sprite2D, manual: bool) -> void:
 	if screwdriver == null:
 		return
-	screwdriver.texture = _hand_screw_texture_resolved if _uses_hand_visuals() else _screwdriver_default_texture
+	screwdriver.texture = _hand_screw_texture_resolved if _uses_hand_visuals(manual) else _screwdriver_default_texture
 
 
 func set_screw_available(index: int, value: bool) -> void:
@@ -419,29 +448,32 @@ func _start_repair_animation(screw_index: int) -> void:
 	var side := hand_side_for_screw(screw_index)
 	if _active_repairs.is_empty():
 		_start_screw_repair_sound_loop()
-	_active_repairs[side] = {"index": screw_index, "elapsed": 0.0}
+	# Lock in the tool for this screw now: with one screwdriver the first concurrent
+	# screw takes it and the second falls back to a hand (see _decide_manual_for_side).
+	var manual := _decide_manual_for_side(side)
+	_active_repairs[side] = {"index": screw_index, "elapsed": 0.0, "manual": manual}
 	repair_started.emit(screw_index)
 	var sprite := _side_sprite(side)
 	if sprite != null:
-		_apply_active_screw_texture(sprite)
+		_apply_active_screw_texture(sprite, manual)
 		sprite.position = _screwdriver_position_for_index(screw_index)
 		_apply_screwdriver_orientation(sprite, screw_index)
 		sprite.visible = true
-		_set_sprite_frame(sprite, screw_index, 0)
+		_set_sprite_frame(sprite, screw_index, 0, manual)
 
 
 func _update_repair_animation(delta: float) -> void:
 	var completed_sides: Array = []
-	var animation_seconds := _current_repair_animation_seconds()
 	for side in _active_repairs.keys():
 		var slot: Dictionary = _active_repairs[side]
+		var manual := bool(slot.get("manual", _manual_screwing))
 		slot["elapsed"] = float(slot["elapsed"]) + delta
 		var screw_index := int(slot["index"])
-		var frame := int(floor(float(slot["elapsed"]) * maxf(0.1, repair_animation_fps))) % maxi(1, _active_frame_count())
+		var frame := int(floor(float(slot["elapsed"]) * maxf(0.1, repair_animation_fps))) % maxi(1, _active_frame_count(manual))
 		var sprite := _side_sprite(side)
 		if sprite != null:
-			_set_sprite_frame(sprite, screw_index, frame)
-		if _completion_enabled and float(slot["elapsed"]) >= animation_seconds:
+			_set_sprite_frame(sprite, screw_index, frame, manual)
+		if _completion_enabled and float(slot["elapsed"]) >= _current_repair_animation_seconds(manual):
 			completed_sides.append(side)
 
 	for side in completed_sides:
@@ -473,10 +505,10 @@ func _find_clicked_loose_screw(global_position: Vector2) -> int:
 	return nearest_index
 
 
-func _current_repair_animation_seconds() -> float:
+func _current_repair_animation_seconds(manual: bool) -> float:
 	# Fall back to 2x if the export was serialized as zero/null in the scene.
 	var manual_multiplier := 1.0
-	if _manual_screwing:
+	if manual:
 		manual_multiplier = manual_repair_duration_multiplier if manual_repair_duration_multiplier > 0.0 else 2.0
 	return repair_animation_seconds * _repair_animation_duration_multiplier * manual_multiplier
 
@@ -491,7 +523,7 @@ func _configure_screwdriver() -> void:
 		_hand_screw_texture_resolved = _resolve_hand_screw_texture()
 	screwdriver.centered = false
 	screwdriver.region_enabled = true
-	_set_sprite_frame(screwdriver, -1, 0)
+	_set_sprite_frame(screwdriver, -1, 0, _manual_screwing)
 	screwdriver.visible = false
 
 
@@ -503,19 +535,19 @@ func _resolve_hand_screw_texture() -> Texture2D:
 	return null
 
 
-func _set_sprite_frame(sprite: Sprite2D, screw_index: int, frame: int) -> void:
+func _set_sprite_frame(sprite: Sprite2D, screw_index: int, frame: int, manual: bool) -> void:
 	if sprite == null:
 		return
-	var active_frame_size := _active_frame_size()
+	var active_frame_size := _active_frame_size(manual)
 	var frame_size := Vector2(
 		float(maxi(1, active_frame_size.x)),
 		float(maxi(1, active_frame_size.y))
 	)
-	var frame_count := maxi(1, _active_frame_count())
+	var frame_count := maxi(1, _active_frame_count(manual))
 	var clamped_frame := posmod(frame, frame_count)
 	sprite.region_rect = Rect2(Vector2(0.0, float(clamped_frame) * frame_size.y), frame_size)
 	var pivot_x := -frame_size.x if sprite.flip_h else 0.0
-	var alignment_offset := _hand_screw_alignment_offset_for_screw(screw_index)
+	var alignment_offset := _hand_screw_alignment_offset_for_screw(screw_index, manual)
 	sprite.offset = Vector2(pivot_x, -frame_size.y * 0.5) + alignment_offset
 
 
@@ -761,4 +793,4 @@ func _refresh_editor_preview() -> void:
 		if screwdriver.visible:
 			screwdriver.position = _screwdriver_position_for_index(editor_preview_screw_index)
 			_apply_screwdriver_orientation(screwdriver, editor_preview_screw_index)
-			_set_sprite_frame(screwdriver, editor_preview_screw_index, 0)
+			_set_sprite_frame(screwdriver, editor_preview_screw_index, 0, _manual_screwing)

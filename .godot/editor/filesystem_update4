@@ -14,3 +14,4 @@ res://scenes/ui/MainMenu.tscn
 res://scenes/locations/StressTestRobot.gd
 res://scenes/locations/Sleep.gd
 res://scenes/locations/StressTest.tscn
+res://scenes/locations/HeadScrewRepair.gd

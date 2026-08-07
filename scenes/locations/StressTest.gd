@@ -284,6 +284,14 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 
 @export_group("Robot Position")
 @export var head_only_drop_px: float = 57.0
+## Vertical camera shift for the "new" head-camera framing: the panned-back
+## "robot on the table" view (the Zoom2_R3_C1 region). Applied only when the
+## robot has grown past a bare head into the chest / upper-arm stage but has not
+## yet reached the full-body camera (no stomach/legs/forearm/hand) — see
+## _robot_uses_new_head_camera(). Added to the framed view's screen-space Y:
+## negative pushes the camera view down, positive up. A bare head and the
+## full-body robot are both unaffected.
+@export var head_only_camera_drop_px: float = -100.0
 
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
@@ -583,6 +591,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton and event.pressed:
 		var mouse_event := event as InputEventMouseButton
+		# While the pointer is over the Shift+Tab debug menu, the wheel scrolls that
+		# menu - don't also zoom the camera underneath it.
+		if mouse_event.button_index in [MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP] \
+				and _is_pointer_over_debug_menu():
+			return
 		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_set_zoom_level(_zoom_level - 1, _global_to_scene_source(mouse_event.global_position))
 			get_viewport().set_input_as_handled()
@@ -616,6 +629,18 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	_move_zoom_region(direction)
 	get_viewport().set_input_as_handled()
+
+
+## True when the Shift+Tab debug menu panel is open and the mouse is over it, so
+## the wheel should scroll that menu instead of zooming the camera. The panel adds
+## itself to this group while open (see Main.DEBUG_POINTER_BLOCK_GROUP).
+func _is_pointer_over_debug_menu() -> bool:
+	for node in get_tree().get_nodes_in_group(&"debug_pointer_block"):
+		var control := node as Control
+		if control != null and control.is_visible_in_tree() \
+				and control.get_global_rect().has_point(control.get_global_mouse_position()):
+			return true
+	return false
 
 
 func _initialize_zoom() -> void:
@@ -694,6 +719,8 @@ func _set_zoom_level(value: int, focus_position: Vector2) -> void:
 
 
 func _apply_zoom_region(animated: bool, duration: float = PAN_DURATION) -> void:
+	if _current_zoom_region != null:
+		print("[ZoomDebug] region=", _current_zoom_region.name, " level=", _zoom_level, " head_only=", _is_head_only_robot(), " new_head_cam=", _robot_uses_new_head_camera())
 	var logical_scale := _current_zoom_scale()
 	var target_position := _zoom_position_for_region(_current_zoom_region, logical_scale) if _is_zoomed_in() else _default_canvas_position()
 	var target_scale := logical_scale * _canvas_base_scale
@@ -720,7 +747,10 @@ func _zoom_position_for_region(region: Control, scale_value: Vector2) -> Vector2
 
 	var display_scale := scale_value * _canvas_base_scale
 	var region_center := _region_center(region)
-	return camera_window.size * 0.5 - region_center * display_scale
+	var position := camera_window.size * 0.5 - region_center * display_scale
+	if _robot_uses_new_head_camera() and StringName(String(region.name)) == HEAD_ONLY_TABLE_ZOOM_REGION:
+		position.y += head_only_camera_drop_px
+	return position
 
 
 func _on_camera_window_resized() -> void:
@@ -1203,12 +1233,26 @@ func _apply_robot_head_only_position() -> void:
 		stress_test_robot_shadow.position = _robot_shadow_base_position + offset + shadow_profile_offset
 
 
+## True while the robot still uses the head-centric camera profile. This covers
+## more than a bare head: a chest and/or a loose upper-arm sub-assembly keep the
+## robot on this profile. Only a stomach, leg, full arm (which brings a forearm /
+## "lower arm") or hand switches it to the full-body camera. The bare-head vs
+## chest/upper-arm split *within* this profile is decided by
+## _robot_uses_new_head_camera().
 func _is_head_only_robot() -> bool:
-	return _robot_part_count("chest") <= 0 \
-			and _robot_part_count("stomach") <= 0 \
+	return _robot_part_count("stomach") <= 0 \
 			and _robot_part_count("arm") <= 0 \
 			and _robot_part_count("hand") <= 0 \
 			and _robot_part_count("leg") <= 0
+
+
+## Within the head-centric camera profile, true once the robot has grown past a
+## bare head — a chest and/or at least one upper arm is attached. This sub-state
+## gets the lowered "new" camera framing (head_only_camera_drop_px); a bare head
+## keeps the original framing.
+func _robot_uses_new_head_camera() -> bool:
+	return _is_head_only_robot() \
+			and (_robot_part_count("chest") >= 1 or _upper_arm_side_count() >= 1)
 
 
 func _robot_part_count(id: String) -> int:
@@ -2757,6 +2801,10 @@ func _connect_screw_summary_tracking() -> void:
 			repair.call("set_repair_gate", Callable(self, "_can_begin_screw_repair"))
 		if repair.has_method("set_manual_screwing"):
 			repair.call("set_manual_screwing", manual_screwing)
+		# Per-screw tool choice: screwdrivers are a shared budget across all limbs,
+		# so a starting repair uses one only if a screwdriver is still free.
+		if repair.has_method("set_manual_decider"):
+			repair.call("set_manual_decider", Callable(self, "_screw_repair_should_use_hand"))
 		if repair.has_method("set_hand_screw_offset"):
 			repair.call("set_hand_screw_offset", hand_screw_animation_offset)
 		_connect_screw_signal(repair, "screw_loosened", "_on_screw_loosened")
@@ -2765,16 +2813,36 @@ func _connect_screw_summary_tracking() -> void:
 		_connect_screw_signal(repair, "screw_repaired", "_on_screw_repaired")
 
 
-## Permission gate handed to each screw repair controller. Two hands are free
-## when the player either owns two or more screwdrivers or owns none at all and
-## screws bare-handed, so one left-side and one right-side repair may run at
-## once (but never two on the same side). With exactly one screwdriver a single
-## hand is occupied holding it, so only one screw may be driven at a time.
+## Permission gate handed to each screw repair controller. Concurrency is bounded
+## by the player's two hands: one left-side and one right-side repair may run at
+## once, never two on the same side - regardless of screwdriver count. The tool
+## each repair uses (screwdriver vs bare hand) is decided separately, see
+## _screw_repair_should_use_hand.
 func _can_begin_screw_repair(side: String) -> bool:
+	return not _is_side_screw_repair_active(side)
+
+
+## Per-screw tool choice for a repair about to start on the given side. The player
+## owns _screwdriver_count() screwdrivers, shared across the whole robot; each is
+## used by at most one in-progress repair. When they're all busy (or the player
+## owns none) the repair is driven by hand instead. So: two screwdrivers drive two
+## screws at once; a single screwdriver drives the first while the second uses a
+## hand; zero screwdrivers means hands only.
+func _screw_repair_should_use_hand(_side: String) -> bool:
 	var screwdriver_count := _screwdriver_count()
-	if screwdriver_count >= 2 or screwdriver_count <= 0:
-		return not _is_side_screw_repair_active(side)
-	return not _is_screw_repair_animation_active()
+	if screwdriver_count <= 0:
+		return true
+	return _active_screwdriver_repair_count() >= screwdriver_count
+
+
+## How many in-progress repairs across every limb are currently using a screwdriver
+## (rather than a hand). Used to see whether a free screwdriver remains.
+func _active_screwdriver_repair_count() -> int:
+	var count := 0
+	for repair in _screw_repair_controllers():
+		if repair.has_method("active_screwdriver_side_count"):
+			count += int(repair.call("active_screwdriver_side_count"))
+	return count
 
 
 func _is_side_screw_repair_active(side: String) -> bool:
@@ -2973,13 +3041,6 @@ func _handle_night_timer_finished() -> void:
 	# Only the uncle catching you or the drone shooting you is a failure now; simply
 	# running out the clock always completes the night, whatever the electricity was.
 	_complete_stress_test_success()
-
-
-func _is_screw_repair_animation_active() -> bool:
-	for repair in _screw_repair_controllers():
-		if repair.has_method("is_repairing") and bool(repair.call("is_repairing")):
-			return true
-	return false
 
 
 func _fail_robot_wake() -> void:

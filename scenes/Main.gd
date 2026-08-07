@@ -1317,11 +1317,21 @@ func _debug_give_specific_item(id: String, kind: String) -> void:
 	match kind:
 		"ingredient":
 			if GameState.ingredients.has(id):
-				GameState.ingredients[id] = 99
+				if id == "upper_arm":
+					# The upper arm is an intermediate limb piece and a robot only
+					# has two sides, so hand it out one at a time instead of the
+					# bulk 99 the other ingredients use.
+					GameState.ingredients[id] = mini(2, int(GameState.ingredients[id]) + 1)
+				else:
+					GameState.ingredients[id] = 99
 		"tool":
 			GameState.unlock_tool(id)
 			if id == "screwdriver":
-				GameState.tool_counts["screwdriver"] = 2
+				# Two hands cap the usable screwdrivers at two, so hand them out one
+				# per press (unlock_tool already added one) instead of jumping to the
+				# full two. This lets the single-screwdriver case - one screwdriver
+				# plus one hand - actually be tested.
+				GameState.tool_counts["screwdriver"] = mini(2, int(GameState.tool_counts.get("screwdriver", 1)))
 		"robot_part":
 			GameState.set_robot_part_count(id, GameState.get_robot_part_count(id) + 1)
 		"cosmetic_item":
@@ -1351,6 +1361,10 @@ func _show_give_specific_item_menu(vbox: VBoxContainer) -> void:
 
 	_add_debug_section(vbox, "Ingredients")
 	for id in GameState.ingredients.keys():
+		# The upper arm is a limb sub-assembly, so it's listed under Robot Parts
+		# below rather than with the raw ingredients.
+		if String(id) == "upper_arm":
+			continue
 		_add_give_specific_item_button(vbox, String(id), "ingredient")
 
 	_add_debug_section(vbox, "Tools")
@@ -1358,8 +1372,18 @@ func _show_give_specific_item_menu(vbox: VBoxContainer) -> void:
 		_add_give_specific_item_button(vbox, tool_id, "tool")
 
 	_add_debug_section(vbox, "Robot Parts")
+	# Head goes first so it isn't sitting right next to Hand (they read alike and
+	# are easy to misclick when adjacent).
+	if "head" in GameState.ROBOT_PART_IDS:
+		_add_give_specific_item_button(vbox, "head", "robot_part")
 	for id in GameState.ROBOT_PART_IDS:
+		if String(id) == "head":
+			continue
 		_add_give_specific_item_button(vbox, String(id), "robot_part")
+	# The upper arm is stored as an ingredient but is really a robot part in the
+	# making; its give button hands out one at a time (see _debug_give_specific_item).
+	if GameState.ingredients.has("upper_arm"):
+		_add_give_specific_item_button(vbox, "upper_arm", "ingredient")
 
 	_add_debug_section(vbox, "Cosmetics")
 	for id in GameState.COSMETIC_ITEM_IDS:
@@ -1533,6 +1557,11 @@ func _refresh_debug_info_if_visible() -> void:
 ## One above the Tab debug overlay so it draws over that too.
 const DEBUG_ACTIONS_CANVAS_LAYER: int = 4097
 
+## Group the Shift+Tab debug menu panel joins while open, so scenes can detect the
+## pointer is over it and pause their own mouse-wheel handling. Kept in sync with
+## the same literal in StressTest.gd (_is_pointer_over_debug_menu).
+const DEBUG_POINTER_BLOCK_GROUP: StringName = &"debug_pointer_block"
+
 
 func _toggle_debug_actions_panel() -> void:
 	if _debug_actions_open():
@@ -1585,6 +1614,9 @@ func _open_debug_actions_panel() -> void:
 	panel.offset_right = 384.0
 	panel.offset_top = 24.0
 	panel.offset_bottom = -24.0
+	# Tag so other scenes (e.g. the stress test) can tell the pointer is over this
+	# menu and suppress their own wheel handling while the player scrolls it.
+	panel.add_to_group(DEBUG_POINTER_BLOCK_GROUP)
 	back.add_child(panel)
 
 	var inner := PanelContainer.new()
