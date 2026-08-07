@@ -99,6 +99,9 @@ var _manual_screwing: bool = false
 var _screws_force_hidden: bool = false
 ## True while the limb is in the slightly-out leg pose (see set_slightly_out_pose).
 var _slightly_out_pose: bool = false
+## Per-screw slightly-out nudges keyed by screw node name (see
+## set_slightly_out_screw_offsets). Empty for controllers that don't part (head).
+var _slightly_out_screw_offsets: Dictionary = {}
 ## The screwdriver sprite's authored texture, restored when not screwing by hand.
 var _screwdriver_default_texture: Texture2D = null
 ## Resolved bare-hand texture (export or fallback path), or null when missing.
@@ -250,10 +253,21 @@ func has_loose_screws() -> bool:
 
 
 ## While true the screws (and the screwdriver/hand animation) are drawn at their
-## slightly-out-pose positions: the screw art shifts with the parted leg, so the
-## screwdriver landing point is nudged by slightly_out_screwdriver_offset to match.
+## slightly-out-pose positions: the screw art shifts with the parted leg, so each
+## screw's landing point / click hitbox is nudged to match. The per-screw nudges in
+## _slightly_out_screw_offsets take precedence; slightly_out_screwdriver_offset is
+## the uniform fallback for any screw without one.
 func set_slightly_out_pose(value: bool) -> void:
 	_slightly_out_pose = value
+
+
+## Per-screw landing/hitbox nudges for the slightly-out leg pose, keyed by screw
+## node name (e.g. "ScrewFoot"). Each leg screw shifts a different amount when the
+## leg parts (the hip barely moves, the foot swings ~22px), so a single uniform
+## offset cannot line them all up. The robot rig measures each screw's art shift
+## and supplies them here.
+func set_slightly_out_screw_offsets(offsets: Dictionary) -> void:
+	_slightly_out_screw_offsets = offsets.duplicate()
 
 
 ## Whether a screw on the given side is currently being driven by this
@@ -631,7 +645,7 @@ func _set_screw_visible(index: int, value: bool) -> void:
 
 
 func _screwdriver_position_for_index(index: int) -> Vector2:
-	var pose_offset := slightly_out_screwdriver_offset if _slightly_out_pose else Vector2.ZERO
+	var pose_offset := _slightly_out_offset_for_index(index) if _slightly_out_pose else Vector2.ZERO
 	if index >= 0 and index < screwdriver_position_paths.size():
 		var marker := get_node_or_null(screwdriver_position_paths[index])
 		if marker is Node2D:
@@ -640,6 +654,19 @@ func _screwdriver_position_for_index(index: int) -> Vector2:
 			var control := marker as Control
 			return control.position + control.size * 0.5 + pose_offset
 	return size * 0.5 + pose_offset
+
+
+## The slightly-out landing/hitbox nudge for one screw: its own measured shift if
+## the robot rig supplied one (keyed by the screw node's name), otherwise the
+## uniform slightly_out_screwdriver_offset fallback.
+func _slightly_out_offset_for_index(index: int) -> Vector2:
+	if index >= 0 and index < screw_nodes.size():
+		var node := get_node_or_null(screw_nodes[index])
+		if node != null:
+			var key := String(node.name)
+			if _slightly_out_screw_offsets.has(key):
+				return _slightly_out_screw_offsets[key]
+	return slightly_out_screwdriver_offset
 
 
 func _available_screw_indices() -> Array:

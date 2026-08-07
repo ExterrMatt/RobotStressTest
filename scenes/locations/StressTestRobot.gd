@@ -695,6 +695,9 @@ var _syrup_enabled: bool = false
 var _syrup_stomach_enabled: bool = false
 ## Cache of loaded leg-screw textures keyed by file name.
 var _leg_screw_texture_cache: Dictionary = {}
+## Per-side cache of each leg screw's slightly-out landing/hitbox nudge, measured
+## once from the art (screw node name -> Vector2). Keyed by "left"/"right".
+var _leg_screw_out_offsets_by_side: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
@@ -1012,13 +1015,12 @@ func hovered_hover_box_description() -> String:
 	if _is_shoulder_hover_box(box):
 		return "Equip Shoulder Pad" if _is_box_effect_active(box) else "Remove Shoulder Pad"
 	if _is_leg_pose_hover_box(box):
+		# Only standing <-> slightly-out remains; the raised pose was removed.
 		match _leg_pose_for_box(box):
 			LEG_POSE_DEFAULT:
 				return "Spread Leg"
-			LEG_POSE_SLIGHTLY_OUT:
-				return "Raise Leg"
 			_:
-				return "Lower Leg"
+				return "Return Leg"
 	if _is_hand_hover_box(box):
 		return "Switch Hand"
 	if _is_hair_hover_box(box):
@@ -1262,25 +1264,25 @@ func _pose_slot_for_box(box: Control) -> int:
 	return int(LEG_HOVER_BOX_POSE_BY_NAME.get(String(box.name), LEG_POSE_DEFAULT))
 
 
-## Advances the clicked leg one step through its pose cycle
-## (standing -> slightly-out -> raised -> standing). The pose is tracked per side,
-## and the current pose decides which of that side's three hover boxes is live, so
-## the boxes no longer carry a runtime-active flag of their own. Raising or
-## lowering a leg re-syncs the pelvis freeze-frame (see _sync_pelvis_to_leg_poses).
+## Advances the clicked leg one step through its pose cycle. The raised pose has
+## been removed, so this is now just standing <-> slightly-out (back and forth).
+## The pose is tracked per side, and the current pose decides which of that side's
+## hover boxes is live, so the boxes no longer carry a runtime-active flag of their
+## own.
 func _cycle_leg_pose(box: Control) -> void:
 	var previous_pose := _leg_pose_for_box(box)
 	var pose := _next_leg_pose(previous_pose)
 	_set_leg_pose_for_box(box, pose)
 	_play_wood_creak_sound()
-	_sync_pelvis_to_leg_poses()
 	_apply_visibility_state()
-	# Lifting a leg from slightly-out up to raised is the heavier awareness move.
-	var is_leg_raise := previous_pose == LEG_POSE_SLIGHTLY_OUT and pose == LEG_POSE_RAISED
-	body_part_moved.emit(is_leg_raise)
+	# There is no leg raise anymore, so a leg move is always the lighter cue.
+	body_part_moved.emit(false)
 
 
+## Toggles between standing and slightly-out only. The raised pose is unreachable
+## (see requirement to remove it), so the cycle never advances past slightly-out.
 func _next_leg_pose(pose: int) -> int:
-	return (pose + 1) % LEG_POSE_COUNT
+	return LEG_POSE_SLIGHTLY_OUT if pose == LEG_POSE_DEFAULT else LEG_POSE_DEFAULT
 
 
 func _leg_pose_for_box(box: Control) -> int:
@@ -2112,10 +2114,14 @@ func _apply_single_leg_screw_pose(controller_path: NodePath, side: String, pose:
 	# the player can still raise a leg without repairing its screws first.
 	if controller.has_method("set_screws_force_hidden"):
 		controller.call("set_screws_force_hidden", pose == LEG_POSE_RAISED)
-	# In the slightly-out pose the screw art shifts with the parted leg, so the
-	# controller nudges its screwdriver landing point to match.
+	# In the slightly-out pose the screw art shifts with the parted leg, and each
+	# screw shifts by a different amount, so hand the controller a per-screw nudge
+	# measured from the art (see _leg_screw_slightly_out_offsets) to keep every
+	# landing point / click hitbox on its screw.
 	if controller.has_method("set_slightly_out_pose"):
 		controller.call("set_slightly_out_pose", pose == LEG_POSE_SLIGHTLY_OUT)
+	if controller.has_method("set_slightly_out_screw_offsets"):
+		controller.call("set_slightly_out_screw_offsets", _leg_screw_slightly_out_offsets(side))
 	var suffix := "_slightly_out" if pose == LEG_POSE_SLIGHTLY_OUT else ""
 	for node_name in LEG_SCREW_PART_BY_NODE:
 		var node := controller.get_node_or_null(NodePath(node_name)) as TextureRect
@@ -2136,6 +2142,43 @@ func _leg_screw_texture(file_name: String) -> Texture2D:
 		texture = load(path) as Texture2D
 	_leg_screw_texture_cache[file_name] = texture
 	return texture
+
+
+## Per-screw landing/hitbox nudge for one leg's slightly-out pose, keyed by screw
+## node name (e.g. "ScrewFoot"). Each screw shifts differently as the leg parts, so
+## the nudge is the difference between where the screw's art sits in the
+## slightly-out sprite and where it sits in the default sprite. Measured once from
+## the art (both are the same full-canvas size) and cached per side.
+func _leg_screw_slightly_out_offsets(side: String) -> Dictionary:
+	if _leg_screw_out_offsets_by_side.has(side):
+		return _leg_screw_out_offsets_by_side[side]
+	var offsets: Dictionary = {}
+	for node_name in LEG_SCREW_PART_BY_NODE:
+		var part: String = LEG_SCREW_PART_BY_NODE[node_name]
+		var default_center: Variant = _leg_screw_art_center(_leg_screw_texture("screw_%s_%s.png" % [side, part]))
+		var out_center: Variant = _leg_screw_art_center(_leg_screw_texture("screw_%s_%s_slightly_out.png" % [side, part]))
+		if default_center == null or out_center == null:
+			continue
+		var d: Vector2 = default_center
+		var s: Vector2 = out_center
+		offsets[String(node_name)] = s - d
+	_leg_screw_out_offsets_by_side[side] = offsets
+	return offsets
+
+
+## Centre of a screw sprite's visible (non-transparent) pixels, or null when the
+## texture is missing or empty. Both pose sprites share the same canvas, so the
+## difference between two centres is exactly how far that screw moved.
+func _leg_screw_art_center(texture: Texture2D) -> Variant:
+	if texture == null:
+		return null
+	var img := texture.get_image()
+	if img == null:
+		return null
+	var used := img.get_used_rect()
+	if used.size.x <= 0 or used.size.y <= 0:
+		return null
+	return Vector2(used.position) + Vector2(used.size) * 0.5
 
 
 ## Nudges the static squint eyes down one pixel while the head_2 style is shown
@@ -2165,7 +2208,10 @@ func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 	_apply_paths_available(resolved, RIGHT_ARM_SHOULDER_PATHS, _side_has_upper_arm(1))
 	_apply_paths_available(resolved, RIGHT_FULL_ARM_PATHS, _side_has_full_arm(1))
 
-	var hand_count := _robot_part_count("hand")
+	# A full arm is treated as also carrying a hand: each arm counts as a hand on
+	# its side (left-first, exactly how the arms themselves fill) without ever
+	# granting a real "hand" robot part. So any side with a full arm shows its hand.
+	var hand_count := maxi(_robot_part_count("hand"), _robot_part_count("arm"))
 	_apply_paths_available(resolved, LEFT_HAND_PART_PATHS, hand_count >= 1)
 	_apply_paths_available(resolved, RIGHT_HAND_PART_PATHS, hand_count >= 2)
 
@@ -2477,31 +2523,19 @@ func _is_hover_box_available(box: Control) -> bool:
 		return false
 	if _is_hover_box_blocked_by_repair(box):
 		return false
-	# Pelvis (leg animation) needs a stomach; the chest cover and shoulder pads
-	# sit on the chest, so they need a chest.
+	# The pelvis (leg-raise) animation has been removed entirely: its box never
+	# accepts interaction, so the vegetable-mission animation can never start.
 	if box.name == "PelvisHoverBox":
-		if _robot_part_count("stomach") < 1:
-			return false
-		# The Sleep pre-stage keeps the old behaviour where the pelvis itself
-		# raises the legs; the stress test instead requires both legs to already
-		# be raised individually before the pelvis can begin the animation. Once
-		# the animation is running the box stays available so it can be advanced
-		# or stopped.
-		if _leg_slight_out_prestage_enabled or _animation_states.has(box):
-			return true
-		return _both_legs_raised()
-	# The chest cover sits on the chest, so it needs one.
+		return false
+	# The big chest cover is permanently equipped — it can no longer be removed.
 	if box.name == "ChestCoverHoverBox":
-		return _robot_part_count("chest") >= 1
-	# A shoulder pad belongs to its own arm, not the chest: it's removable whenever
-	# that side has an arm at all (a full arm OR just an upper arm).
+		return false
+	# Shoulder pads are permanently equipped — they can no longer be removed.
 	if _is_shoulder_hover_box(box):
-		var side_index := 0 if String(box.name) == LEFT_SHOULDER_HOVER_BOX_NAME else 1
-		return _side_has_upper_arm(side_index)
-	if box.name == LEFT_HAND_HOVER_BOX_NAME:
-		return _robot_part_count("hand") >= 1
-	if box.name == RIGHT_HAND_HOVER_BOX_NAME:
-		return _robot_part_count("hand") >= 2
+		return false
+	# The hands' resting positions are fixed — they can no longer be cycled.
+	if box.name == LEFT_HAND_HOVER_BOX_NAME or box.name == RIGHT_HAND_HOVER_BOX_NAME:
+		return false
 	if _is_leg_pose_hover_box(box):
 		# Need the leg itself (left needs one leg, right needs two).
 		var needed := 1 if _is_left_leg_box(box) else 2

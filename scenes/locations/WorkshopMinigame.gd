@@ -20,8 +20,9 @@ const EASY_MODE_OFFER_SECONDS: float = 60.0
 @export var head_assembly_offset: Vector2 = Vector2.ZERO
 @export var arm_assembly_offset: Vector2 = Vector2.ZERO
 @export var hand_assembly_offset: Vector2 = Vector2.ZERO
-@export var stomach_assembly_offset: Vector2 = Vector2.ZERO
-@export var chest_assembly_offset: Vector2 = Vector2.ZERO
+## The chest and stomach are crafted together as a single "torso" limb, built into
+## one assembly (see _build_torso_assembly). This nudges the whole torso.
+@export var torso_assembly_offset: Vector2 = Vector2.ZERO
 
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
@@ -32,34 +33,20 @@ const CRAFTABLE_PARTS: Dictionary = {
 		"display_name": "Leg",
 		"recipe": {"scrap_metal": 1},
 	},
-	# The upper arm is craftable on its own from a single nuts & bolts. It assembles
-	# from the same shoulder/bicep/elbow segments the arm uses (the UPPER_ARM subset
-	# of the arm slots) and produces an intermediate ITEM, not a robot part. The
-	# other way to get one is the intro work cutscene; this recipe is what lets the
-	# player make the second upper arm the robot's other side needs.
-	"upper_arm": {
-		"display_name": "Upper Arm",
-		"recipe": {"nuts_bolts": 1},
-	},
-	# Graft a pre-made upper arm (crafted above, or pocketed during the intro work
-	# scene) together with nuts & bolts (the forearm) into a full arm. This recipe
-	# is a superset of the upper_arm one, so _matching_recipe_part_id prefers it
-	# whenever both an upper arm and nuts & bolts are in the bin.
+	# The whole arm is crafted from a single nuts & bolts. It builds the full arm
+	# (shoulder + upper arm + forearm) from all ARM_SEGMENT_IDS at once. The upper
+	# arm is no longer a separate craftable intermediate; the work cutscene now
+	# hands out a finished arm directly.
 	"arm": {
 		"display_name": "Arm",
-		"recipe": {"nuts_bolts": 1, "upper_arm": 1},
+		"recipe": {"nuts_bolts": 1},
 	},
-	"hand": {
-		"display_name": "Hand",
-		"recipe": {"nanobots": 1},
-	},
-	"stomach": {
-		"display_name": "Stomach",
+	# Chest and stomach are homogenized into one "torso" limb: crafting it spawns
+	# every chest AND stomach segment together (see _build_torso_assembly), and
+	# collecting it grants both the chest and stomach robot parts.
+	"torso": {
+		"display_name": "Torso",
 		"recipe": {"synth_skin": 1},
-	},
-	"chest": {
-		"display_name": "Chest",
-		"recipe": {"electronics": 1},
 	},
 }
 
@@ -211,6 +198,10 @@ const CHEST_SEGMENT_IDS: Array[StringName] = [
 	&"turtle",
 	&"neck",
 ]
+## The torso limb is the chest and stomach combined. Both art sets are authored on
+## the same 337x337 canvas, so loading them into one assembly at their used-rect
+## positions lines the chest up on top of the stomach with no per-part nudging.
+const TORSO_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
 const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"scrap_metal":   "res://assets/textures/icons/scrap_metal_shadow.png",
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts_shadow.png",
@@ -241,14 +232,12 @@ var _head_slot_placement_offsets: Dictionary = {}
 var _head_assembly: Control = null
 var _arm_assembly: Control = null
 var _hand_assembly: Control = null
-var _stomach_assembly: Control = null
-var _chest_assembly: Control = null
-## Slot ids actually built for the procedural hand/stomach/chest assemblies.
-## Chest keys are namespaced (see the key_prefix in _build_segmented_assembly) so
-## a shared segment name like "neck" can't collide with the head's slot.
+var _torso_assembly: Control = null
+## Slot ids actually built for the procedural hand/torso assemblies. The torso's
+## chest keys are namespaced (a "chest_" prefix, see _build_torso_assembly) so a
+## shared segment name like "neck" can't collide with the head's slot.
 var _hand_assembly_slot_ids: Array[StringName] = []
-var _stomach_assembly_slot_ids: Array[StringName] = []
-var _chest_assembly_slot_ids: Array[StringName] = []
+var _torso_assembly_slot_ids: Array[StringName] = []
 ## Back outline layers (one per unified-outline assembly) that repaint every
 ## placed piece's outline behind all base art.
 var _unified_outline_layers: Array = []
@@ -307,12 +296,7 @@ func _ready() -> void:
 		"AssemblyHand", HAND_TEXTURE_DIR, HAND_SEGMENT_IDS, HAND_ASSEMBLY_SIZE,
 		hand_assembly_offset, false, "hand_", _hand_assembly_slot_ids,
 		HAND_PERSISTENT_OUTLINE_IDS)
-	_stomach_assembly = _build_segmented_assembly(
-		"AssemblyStomach", STOMACH_TEXTURE_DIR, STOMACH_SEGMENT_IDS, STOMACH_ASSEMBLY_SIZE,
-		stomach_assembly_offset, true, "", _stomach_assembly_slot_ids)
-	_chest_assembly = _build_segmented_assembly(
-		"AssemblyChest", CHEST_TEXTURE_DIR, CHEST_SEGMENT_IDS, CHEST_ASSEMBLY_SIZE,
-		chest_assembly_offset, true, "chest_", _chest_assembly_slot_ids)
+	_torso_assembly = _build_torso_assembly()
 	_configure_assembly_for_part("")
 
 	# Set up global shadow rendering layer (drawn entirely behind pieces)
@@ -565,7 +549,7 @@ func _show_segment_placement_hints(segments: Array) -> void:
 			continue
 		if not _head_prerequisites_met(segment.segment_id):
 			continue
-		for slot in _slots_for_segment(segment):
+		for slot in _hint_slots_for_segment(segment):
 			if slot == null or slot.filled:
 				continue
 			var slot_xform: Transform2D = slot.get_global_transform()
@@ -618,16 +602,24 @@ func _flash_all_placement_hints_once() -> void:
 
 
 ## Find an as-yet-unused segment sitting in the craft bin that this slot accepts.
+## Prefers a segment whose id matches the slot exactly (so the left-eye socket
+## previews the left eye, not the interchangeable right eye) and only falls back to
+## any other accepted segment when no exact-side match is left.
 func _find_bin_segment_for_slot(slot: WorkshopAssemblySlot, used: Dictionary) -> WorkshopSegment:
+	var fallback: WorkshopSegment = null
 	for child in craft_bin.get_children():
 		if not (child is WorkshopSegment):
 			continue
 		var segment := child as WorkshopSegment
 		if used.has(segment) or segment.locked:
 			continue
-		if _slot_accepts_segment(slot, segment):
+		if not _slot_accepts_segment(slot, segment):
+			continue
+		if segment.segment_id == slot.accepts_segment_id:
 			return segment
-	return null
+		if fallback == null:
+			fallback = segment
+	return fallback
 
 
 func _show_placement_hint_layer() -> void:
@@ -1018,6 +1010,28 @@ func _slots_for_segment(segment: WorkshopSegment) -> Array[WorkshopAssemblySlot]
 		if slot != null and _slot_accepts_segment(slot, segment):
 			slots.append(slot)
 	return slots
+
+
+## The slots a drag-time placement hint should light up for this segment. Normally
+## that is every slot it accepts (almost always exactly one). The eyes are the
+## exception: each eye accepts EITHER socket, so the raw list is both eye slots —
+## which flashes a ghost eye at the far socket while you drag one eye, reading as an
+## eye sitting off to the side. For an eye, show a single target: its own-side
+## socket if still open, otherwise the first open eye socket.
+func _hint_slots_for_segment(segment: WorkshopSegment) -> Array[WorkshopAssemblySlot]:
+	var slots := _slots_for_segment(segment)
+	if _crafted_part_id != "head" or not HEAD_EYE_SEGMENT_IDS.has(segment.segment_id):
+		return slots
+	var single: Array[WorkshopAssemblySlot] = []
+	var own: WorkshopAssemblySlot = _assembly_slots.get(segment.segment_id)
+	if own != null and not own.filled:
+		single.append(own)
+		return single
+	for slot in slots:
+		if slot != null and not slot.filled:
+			single.append(slot)
+			return single
+	return single
 
 
 func _slot_accepts_segment(slot: WorkshopAssemblySlot, segment: WorkshopSegment) -> bool:
@@ -1694,6 +1708,93 @@ func _build_segmented_assembly(
 	return node
 
 
+## Builds the combined torso assembly — every stomach segment AND every chest
+## segment in one node. Both art sets are authored on the same 337x337 canvas, so
+## placing each piece at its used-rect position lines the chest up over the
+## stomach automatically. Like the stomach/chest were individually, the torso uses
+## a unified outline (all "_outline" layers repainted behind every base). Chest
+## keys are namespaced with a "chest_" prefix so shared names (e.g. "neck") don't
+## collide with the head's slot.
+func _build_torso_assembly() -> Control:
+	var node := Control.new()
+	node.name = "AssemblyTorso"
+	node.size = TORSO_ASSEMBLY_SIZE
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	node.visible = false
+
+	var outline_layer := Control.new()
+	outline_layer.name = "OutlineLayer"
+	outline_layer.size = TORSO_ASSEMBLY_SIZE
+	outline_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# First child -> drawn behind every slot's base art.
+	node.add_child(outline_layer)
+	outline_layer.draw.connect(_draw_unified_outline_layer.bind(outline_layer, node))
+	_unified_outline_layers.append(outline_layer)
+
+	var groups: Array = [
+		{"dir": STOMACH_TEXTURE_DIR, "ids": STOMACH_SEGMENT_IDS, "prefix": ""},
+		{"dir": CHEST_TEXTURE_DIR, "ids": CHEST_SEGMENT_IDS, "prefix": "chest_"},
+	]
+
+	var content_bounds: Rect2 = Rect2()
+	var found_any: bool = false
+
+	for group in groups:
+		var texture_dir: String = group["dir"]
+		var key_prefix: String = group["prefix"]
+		for segment_id in group["ids"]:
+			var tex: Texture2D = _load_texture("%s/%s.png" % [texture_dir, segment_id])
+			if tex == null:
+				push_warning("Workshop: missing torso layer '%s' in %s." % [segment_id, texture_dir])
+				continue
+
+			var seg_key: StringName = StringName(key_prefix + String(segment_id)) if key_prefix != "" else segment_id
+
+			var used_rect: Rect2 = _used_rect_for_texture(tex)
+			if used_rect.size.x > 0.0 and used_rect.size.y > 0.0:
+				if not found_any:
+					content_bounds = used_rect
+					found_any = true
+				else:
+					content_bounds = content_bounds.merge(used_rect)
+
+			var slot := WorkshopAssemblySlot.new()
+			slot.name = "%sSlot" % String(seg_key).capitalize().replace(" ", "")
+			slot.accepts_segment_id = seg_key
+			slot.position = Vector2.ZERO
+			slot.size = TORSO_ASSEMBLY_SIZE
+			slot.hitbox_rect = used_rect
+			slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var placed_callable := Callable(self, "_on_slot_placed")
+			if not slot.placed.is_connected(placed_callable):
+				slot.placed.connect(placed_callable)
+			node.add_child(slot)
+			_assembly_slots[seg_key] = slot
+			_torso_assembly_slot_ids.append(seg_key)
+			_segments[seg_key] = {
+				"pieces": [
+					{
+						"id": seg_key,
+						"texture": tex,
+						"outline": _load_texture("%s/%s_outline.png" % [texture_dir, segment_id]),
+						"shadow": null,
+						"unified_outline": true,
+						"persistent_outline": false,
+					}
+				]
+			}
+
+	if not found_any:
+		content_bounds = Rect2(Vector2.ZERO, TORSO_ASSEMBLY_SIZE)
+	# Centre the whole torso's visible art (chest + stomach as one block) in the
+	# assembly area, then apply the editor nudge.
+	var content_center: Vector2 = content_bounds.position + content_bounds.size * 0.5
+	node.position = assembly.size * 0.5 - content_center + torso_assembly_offset
+
+	assembly.add_child.call_deferred(node)
+	return node
+
+
 ## Repaints every placed (locked) unified-outline piece's outline behind all the
 ## base art. Walks the owning assembly and draws each piece's outline at the
 ## piece's global transform, so the result matches the authored "all outlines
@@ -1786,10 +1887,8 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		_arm_assembly.visible = part_id == "arm" or part_id == "upper_arm"
 	if _hand_assembly != null:
 		_hand_assembly.visible = part_id == "hand"
-	if _stomach_assembly != null:
-		_stomach_assembly.visible = part_id == "stomach"
-	if _chest_assembly != null:
-		_chest_assembly.visible = part_id == "chest"
+	if _torso_assembly != null:
+		_torso_assembly.visible = part_id == "torso"
 
 	_active_assembly_slot_ids.clear()
 	if part_id == "head":
@@ -1809,10 +1908,8 @@ func _configure_assembly_for_part(part_id: String) -> void:
 				_active_assembly_slot_ids.append(id)
 	elif part_id == "hand":
 		_active_assembly_slot_ids.assign(_hand_assembly_slot_ids)
-	elif part_id == "stomach":
-		_active_assembly_slot_ids.assign(_stomach_assembly_slot_ids)
-	elif part_id == "chest":
-		_active_assembly_slot_ids.assign(_chest_assembly_slot_ids)
+	elif part_id == "torso":
+		_active_assembly_slot_ids.assign(_torso_assembly_slot_ids)
 	elif part_id == "leg":
 		_active_assembly_slot_ids.assign(_leg_assembly_slot_ids)
 

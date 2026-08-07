@@ -329,7 +329,14 @@ func debug_recalibrate() -> void:
 
 
 func _on_minigame_collected(part_id: String) -> void:
-	var ingredients: Dictionary = {part_id: 1}
+	# The torso is a single crafted limb that homogenizes the chest and stomach, so
+	# collecting it grants both underlying robot parts at once. Everything else maps
+	# straight to its own part id.
+	var ingredients: Dictionary = {}
+	if part_id == "torso":
+		ingredients = {"chest": 1, "stomach": 1}
+	else:
+		ingredients = {part_id: 1}
 	finish(
 		0,
 		0,

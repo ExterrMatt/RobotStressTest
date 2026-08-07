@@ -832,9 +832,10 @@ func _finish_work_arm_disruption() -> void:
 	var money: int = int(REWARD_COMPLETE.get("money", 0))
 	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0)) + int(REWARD_STEAL.get("suspicion", 0))
 	var ingredients: Dictionary = _copy_ingredients(REWARD_COMPLETE.get("ingredients", {}))
-	# The pocketed arm is a real inventory item now (shows up in the workshop).
-	ingredients["upper_arm"] = int(ingredients.get("upper_arm", 0)) + 1
-	finish(money, suspicion, 0, ingredients, false, "upper arm")
+	# The pocketed arm is a finished, whole arm now: "arm" is a robot part id, so it
+	# is added straight to the robot's arms rather than the upper-arm ingredient.
+	ingredients["arm"] = int(ingredients.get("arm", 0)) + 1
+	finish(money, suspicion, 0, ingredients, false, "arm")
 
 
 func _finish_work_timeout() -> void:

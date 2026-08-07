@@ -94,8 +94,10 @@ func _apply_bed_occupancy() -> void:
 	pillow_slightly_indented.visible = false
 	blanket.visible = false
 	_configure_head_hover_pillow_toggle()
+	# The pelvis (leg-raise) animation has been removed entirely, so the bedroom no
+	# longer arms its leg-raise pre-stage.
 	if bot_placeholder.has_method("set_leg_slight_out_prestage_enabled"):
-		bot_placeholder.set_leg_slight_out_prestage_enabled(true)
+		bot_placeholder.set_leg_slight_out_prestage_enabled(false)
 
 
 ## Forwarded from the Shift+Tab debug menu: cycle / read the robot's animation
