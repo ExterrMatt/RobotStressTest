@@ -565,7 +565,7 @@ func _show_segment_placement_hints(segments: Array) -> void:
 			continue
 		if not _head_prerequisites_met(segment.segment_id):
 			continue
-		for slot in _slots_for_segment(segment):
+		for slot in _hint_slots_for_segment(segment):
 			if slot == null or slot.filled:
 				continue
 			var slot_xform: Transform2D = slot.get_global_transform()
@@ -618,16 +618,23 @@ func _flash_all_placement_hints_once() -> void:
 
 
 ## Find an as-yet-unused segment sitting in the craft bin that this slot accepts.
+## Prefer an exact segment-id match so each eye socket previews its own-side eye art
+## (eyes accept either socket); fall back to any accepted segment if none matches.
 func _find_bin_segment_for_slot(slot: WorkshopAssemblySlot, used: Dictionary) -> WorkshopSegment:
+	var fallback: WorkshopSegment = null
 	for child in craft_bin.get_children():
 		if not (child is WorkshopSegment):
 			continue
 		var segment := child as WorkshopSegment
 		if used.has(segment) or segment.locked:
 			continue
-		if _slot_accepts_segment(slot, segment):
+		if not _slot_accepts_segment(slot, segment):
+			continue
+		if segment.segment_id == slot.accepts_segment_id:
 			return segment
-	return null
+		if fallback == null:
+			fallback = segment
+	return fallback
 
 
 func _show_placement_hint_layer() -> void:
@@ -1018,6 +1025,29 @@ func _slots_for_segment(segment: WorkshopSegment) -> Array[WorkshopAssemblySlot]
 		if slot != null and _slot_accepts_segment(slot, segment):
 			slots.append(slot)
 	return slots
+
+
+## Slots to flash while dragging a segment. For every normal part this is the one
+## slot it fits. Eyes are the exception: they accept both sockets, so hinting both
+## would ghost a second eye at the far socket while you only hold one (the "eye too
+## far right" the head tutorial showed). For an eye we return a single target: its
+## own-side socket if open, otherwise the first other open eye socket.
+func _hint_slots_for_segment(segment: WorkshopSegment) -> Array[WorkshopAssemblySlot]:
+	var slots: Array[WorkshopAssemblySlot] = _slots_for_segment(segment)
+	if not (_crafted_part_id == "head" and HEAD_EYE_SEGMENT_IDS.has(segment.segment_id)):
+		return slots
+	var own_side: Array[WorkshopAssemblySlot] = []
+	var fallback: Array[WorkshopAssemblySlot] = []
+	for slot in slots:
+		if slot == null or slot.filled:
+			continue
+		if slot.accepts_segment_id == segment.segment_id:
+			own_side.append(slot)
+		elif fallback.is_empty():
+			fallback.append(slot)
+	if not own_side.is_empty():
+		return own_side
+	return fallback
 
 
 func _slot_accepts_segment(slot: WorkshopAssemblySlot, segment: WorkshopSegment) -> bool:

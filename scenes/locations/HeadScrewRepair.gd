@@ -99,6 +99,11 @@ var _manual_screwing: bool = false
 var _screws_force_hidden: bool = false
 ## True while the limb is in the slightly-out leg pose (see set_slightly_out_pose).
 var _slightly_out_pose: bool = false
+## Per-screw slightly-out landing nudges, keyed by screw node name (e.g. "ScrewCheek").
+## The leg pivots near the hip, so each screw's art shifts by a different amount when
+## the leg parts; the robot measures those shifts and supplies them here. Any screw
+## not present falls back to the shared slightly_out_screwdriver_offset.
+var _slightly_out_screw_offsets: Dictionary = {}
 ## The screwdriver sprite's authored texture, restored when not screwing by hand.
 var _screwdriver_default_texture: Texture2D = null
 ## Resolved bare-hand texture (export or fallback path), or null when missing.
@@ -254,6 +259,13 @@ func has_loose_screws() -> bool:
 ## screwdriver landing point is nudged by slightly_out_screwdriver_offset to match.
 func set_slightly_out_pose(value: bool) -> void:
 	_slightly_out_pose = value
+
+
+## Supplies per-screw slightly-out landing nudges keyed by screw node name. See
+## _slightly_out_screw_offsets. Passed in by the robot, measured from the art so
+## each screw's hitbox follows exactly how far its sprite moved.
+func set_slightly_out_screw_offsets(offsets: Dictionary) -> void:
+	_slightly_out_screw_offsets = offsets
 
 
 ## Whether a screw on the given side is currently being driven by this
@@ -631,7 +643,7 @@ func _set_screw_visible(index: int, value: bool) -> void:
 
 
 func _screwdriver_position_for_index(index: int) -> Vector2:
-	var pose_offset := slightly_out_screwdriver_offset if _slightly_out_pose else Vector2.ZERO
+	var pose_offset := _slightly_out_offset_for_index(index) if _slightly_out_pose else Vector2.ZERO
 	if index >= 0 and index < screwdriver_position_paths.size():
 		var marker := get_node_or_null(screwdriver_position_paths[index])
 		if marker is Node2D:
@@ -640,6 +652,16 @@ func _screwdriver_position_for_index(index: int) -> Vector2:
 			var control := marker as Control
 			return control.position + control.size * 0.5 + pose_offset
 	return size * 0.5 + pose_offset
+
+
+## The slightly-out landing nudge for one screw: its own art-measured offset if the
+## robot supplied one, otherwise the shared uniform slightly_out_screwdriver_offset.
+func _slightly_out_offset_for_index(index: int) -> Vector2:
+	if index >= 0 and index < screw_nodes.size():
+		var node := get_node_or_null(screw_nodes[index])
+		if node != null and _slightly_out_screw_offsets.has(String(node.name)):
+			return _slightly_out_screw_offsets[String(node.name)]
+	return slightly_out_screwdriver_offset
 
 
 func _available_screw_indices() -> Array:

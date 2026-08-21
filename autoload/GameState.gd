@@ -29,6 +29,9 @@ signal robot_parts_changed(parts: Dictionary)
 ## Emitted when the set of owned cosmetic chest items changes, so the robot
 ## visuals re-resolve without polling.
 signal cosmetic_items_changed(items: Dictionary)
+## Emitted when the set of limbs the player has prepared (via the laptop build app)
+## changes. Carries a duplicate of prepared_limbs.
+signal prepared_limbs_changed(limbs: Array)
 signal intro_changed(active: bool, step: String)
 
 ## Display/window fit options, exposed in the settings menu. Persisted as an
@@ -297,6 +300,21 @@ var tool_counts: Dictionary = {}
 ## "one of each item per day". Cleared by DayCycle.end_day().
 var purchased_today: Array[String] = []
 
+# --- laptop: limbs prepared for assembly ---
+## Limb ids the player has "unlocked for preparation" from the laptop build app's
+## success screen (e.g. "arm", "leg", "torso", "head"). The maintenance laptop's
+## assembly screen reads this to list what is ready to slot onto the robot.
+var prepared_limbs: Array[String] = []
+
+# --- laptop assembly locks (simplified first pass) ---
+## Whether the prepared arm's lock is open. Both this and torso_socket_lock_open
+## must be open before the arm can be connected to the torso socket.
+var arm_lock_open: bool = false
+## Whether the torso socket's lock is open.
+var torso_socket_lock_open: bool = false
+## Whether the arm has been slotted into the torso (both locks were open).
+var arm_connected: bool = false
+
 
 func _ready() -> void:
 	# Apply the persisted audio volume up front so startup sounds honour it.
@@ -355,6 +373,10 @@ func reset_for_new_game() -> void:
 	owned_tools = ["mouth", "hand"]
 	tool_counts.clear()
 	purchased_today.clear()
+	prepared_limbs.clear()
+	arm_lock_open = false
+	torso_socket_lock_open = false
+	arm_connected = false
 
 	intro_active = true
 	intro_completed = false
@@ -552,6 +574,21 @@ func has_cosmetic_item(id: String) -> bool:
 	return get_cosmetic_item_count(id) >= 1
 
 
+# --- laptop: prepared limbs ---
+
+## Mark a limb as prepared (unlocked for assembly) via the laptop build app. Safe
+## to call repeatedly; only the first call for a given limb emits the change.
+func prepare_limb(limb_id: String) -> void:
+	if limb_id == "" or prepared_limbs.has(limb_id):
+		return
+	prepared_limbs.append(limb_id)
+	prepared_limbs_changed.emit(prepared_limbs.duplicate())
+
+
+func is_limb_prepared(limb_id: String) -> bool:
+	return prepared_limbs.has(limb_id)
+
+
 func set_cosmetic_item(id: String, amount: int) -> void:
 	if not is_cosmetic_item_id(id):
 		push_warning("Unknown cosmetic item id: %s" % id)
@@ -729,6 +766,10 @@ func to_dict() -> Dictionary:
 		"owned_tools": owned_tools.duplicate(),
 		"tool_counts": tool_counts.duplicate(),
 		"purchased_today": purchased_today.duplicate(),
+		"prepared_limbs": prepared_limbs.duplicate(),
+		"arm_lock_open": arm_lock_open,
+		"torso_socket_lock_open": torso_socket_lock_open,
+		"arm_connected": arm_connected,
 		"player_name": player_name,
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
@@ -790,6 +831,10 @@ func from_dict(data: Dictionary) -> void:
 	if had_legacy_sneaky_shoes:
 		unlock_tool("sneaky_shoes")
 	purchased_today.assign(data.get("purchased_today", []))
+	prepared_limbs.assign(data.get("prepared_limbs", []))
+	arm_lock_open = bool(data.get("arm_lock_open", false))
+	torso_socket_lock_open = bool(data.get("torso_socket_lock_open", false))
+	arm_connected = bool(data.get("arm_connected", false))
 	set_player_name(String(data.get("player_name", DEFAULT_PLAYER_NAME)))
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))

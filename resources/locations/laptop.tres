@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/LocationData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"laptop"
+display_name = "Laptop"
+description = "Scan limbs and prepare them for assembly."
+allowed_phases = [1]
+scene_path = "res://scenes/locations/Laptop.tscn"
+fullscreen_scene = true
+free_action = true
+consequence_text = "Check parts and prep limbs. Costs nothing."

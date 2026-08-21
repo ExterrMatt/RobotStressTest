@@ -695,6 +695,8 @@ var _syrup_enabled: bool = false
 var _syrup_stomach_enabled: bool = false
 ## Cache of loaded leg-screw textures keyed by file name.
 var _leg_screw_texture_cache: Dictionary = {}
+## Cache of per-screw slightly-out offsets keyed by side ("left"/"right").
+var _leg_screw_slightly_out_offsets_cache: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _wood_creak_sounds: Array[AudioStream] = []
 var _hand_rub_sounds: Array[AudioStream] = []
@@ -2116,6 +2118,10 @@ func _apply_single_leg_screw_pose(controller_path: NodePath, side: String, pose:
 	# controller nudges its screwdriver landing point to match.
 	if controller.has_method("set_slightly_out_pose"):
 		controller.call("set_slightly_out_pose", pose == LEG_POSE_SLIGHTLY_OUT)
+	# Each leg screw shifts by a different amount when the leg parts, so hand the
+	# controller per-screw offsets measured from the art instead of one uniform nudge.
+	if controller.has_method("set_slightly_out_screw_offsets"):
+		controller.call("set_slightly_out_screw_offsets", _leg_screw_slightly_out_offsets(side))
 	var suffix := "_slightly_out" if pose == LEG_POSE_SLIGHTLY_OUT else ""
 	for node_name in LEG_SCREW_PART_BY_NODE:
 		var node := controller.get_node_or_null(NodePath(node_name)) as TextureRect
@@ -2136,6 +2142,45 @@ func _leg_screw_texture(file_name: String) -> Texture2D:
 		texture = load(path) as Texture2D
 	_leg_screw_texture_cache[file_name] = texture
 	return texture
+
+
+## Per-screw slightly-out offsets for one leg, keyed by screw node name. Measured
+## from the art: how far each screw's visible pixels move from the default sprite to
+## the _slightly_out sprite. The leg pivots near the hip, so each screw shifts by a
+## different amount (hip ~0px, foot ~22px) and a single uniform offset can't line
+## them all up. Cached per side; a screw is skipped if its art can't be read (the
+## controller then falls back to its uniform slightly_out_screwdriver_offset).
+func _leg_screw_slightly_out_offsets(side: String) -> Dictionary:
+	if _leg_screw_slightly_out_offsets_cache.has(side):
+		return _leg_screw_slightly_out_offsets_cache[side]
+	var offsets: Dictionary = {}
+	for node_name in LEG_SCREW_PART_BY_NODE:
+		var part: String = LEG_SCREW_PART_BY_NODE[node_name]
+		var default_center: Variant = _screw_art_center(
+			_leg_screw_texture("screw_%s_%s.png" % [side, part]))
+		var out_center: Variant = _screw_art_center(
+			_leg_screw_texture("screw_%s_%s_slightly_out.png" % [side, part]))
+		if default_center is Vector2 and out_center is Vector2:
+			var default_vec: Vector2 = default_center
+			var out_vec: Vector2 = out_center
+			offsets[node_name] = out_vec - default_vec
+	_leg_screw_slightly_out_offsets_cache[side] = offsets
+	return offsets
+
+
+## Center of a screw texture's visible (non-transparent) pixels, or null if the
+## image can't be read. Default and slightly-out sprites share the full leg canvas,
+## so the difference of two centers is exactly how far the screw art moved.
+func _screw_art_center(texture: Texture2D) -> Variant:
+	if texture == null:
+		return null
+	var image := texture.get_image()
+	if image == null:
+		return null
+	var used := image.get_used_rect()
+	if used.size.x <= 0 or used.size.y <= 0:
+		return null
+	return Vector2(used.position) + Vector2(used.size) * 0.5
 
 
 ## Nudges the static squint eyes down one pixel while the head_2 style is shown

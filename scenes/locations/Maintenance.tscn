@@ -274,4 +274,18 @@ grow_vertical = 0
 mouse_default_cursor_shape = 2
 text = "LEAVE"
 
+[node name="LaptopButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1377351769]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = -216.0
+offset_right = 103.0
+offset_bottom = -159.0
+grow_horizontal = 1
+grow_vertical = 0
+mouse_default_cursor_shape = 2
+text = "LAPTOP"
+
 [connection signal="pressed" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton" to="." method="_on_end_button_pressed"]

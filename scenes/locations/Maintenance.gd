@@ -1,6 +1,7 @@
 extends LocationBase
 
 const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
+const LAPTOP_SCENE: PackedScene = preload("res://scenes/locations/Laptop.tscn")
 
 const PAN_DURATION: float = 0.35
 const PAN_TRANS: int = Tween.TRANS_SINE
@@ -29,6 +30,10 @@ const END_BUTTON_PADDING_SCALE: float = 1.5  # Main.LARGE_SCENE_END_BUTTON_SIZE_
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
 @onready var robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/RobotLayer/PersonalityTestRobot
 @onready var end_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton
+@onready var laptop_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/LaptopButton
+
+## The laptop overlay while it is open (assembly app); null when closed.
+var _laptop_overlay: Node = null
 
 var _robot_bbox_local: Rect2 = Rect2()
 var _hover_box: Control = null
@@ -56,7 +61,10 @@ func _ready() -> void:
 	_spawn_hover_box()
 	_spawn_drop_slots()
 	_spawn_scrub_bar()
-	_style_end_button_like_workshop()
+	_style_button_like_workshop(end_button)
+	_style_button_like_workshop(laptop_button)
+	if laptop_button != null and not laptop_button.pressed.is_connected(_on_laptop_button_pressed):
+		laptop_button.pressed.connect(_on_laptop_button_pressed)
 	call_deferred("_cache_scrub_item")
 
 
@@ -65,17 +73,17 @@ func _ready() -> void:
 ## changes: the button keeps its authored bottom-right anchor and offsets, and
 ## since it grows toward the top-left (grow direction BEGIN) its bottom-right
 ## corner stays exactly where it is while the larger design expands up and left.
-func _style_end_button_like_workshop() -> void:
-	if end_button == null:
+func _style_button_like_workshop(btn: Button) -> void:
+	if btn == null:
 		return
-	end_button.theme_type_variation = &"GoldHudButton"
-	end_button.focus_mode = Control.FOCUS_NONE
-	end_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	end_button.add_theme_font_size_override("font_size", END_BUTTON_FONT_SIZE)
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_font_size_override("font_size", END_BUTTON_FONT_SIZE)
 	# Scale each state's stylebox padding to match the enlarged font while leaving
 	# the theme's border width untouched (so it stays crisp, like Main's button).
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var base := end_button.get_theme_stylebox(state)
+		var base := btn.get_theme_stylebox(state)
 		if base == null:
 			continue
 		var sb := base.duplicate() as StyleBox
@@ -83,7 +91,30 @@ func _style_end_button_like_workshop() -> void:
 		sb.content_margin_top = base.get_margin(SIDE_TOP) * END_BUTTON_PADDING_SCALE
 		sb.content_margin_right = base.get_margin(SIDE_RIGHT) * END_BUTTON_PADDING_SCALE
 		sb.content_margin_bottom = base.get_margin(SIDE_BOTTOM) * END_BUTTON_PADDING_SCALE
-		end_button.add_theme_stylebox_override(state, sb)
+		btn.add_theme_stylebox_override(state, sb)
+
+
+## Open the laptop (assembly app) as a fullscreen overlay on top of maintenance —
+## the same "instantiate the scene and show it over this one" approach the workshop
+## uses for its minigame. While it is up, maintenance's own robot input is paused so
+## clicks belong to the laptop; closing it restores everything.
+func _on_laptop_button_pressed() -> void:
+	if _laptop_overlay != null and is_instance_valid(_laptop_overlay):
+		return
+	var laptop: Node = LAPTOP_SCENE.instantiate()
+	# Laptop.gd has no class_name, so drive it dynamically.
+	laptop.set("overlay_mode", true)
+	laptop.set("app_mode", "assembly")
+	_laptop_overlay = laptop
+	set_process_input(false)
+	if laptop.has_signal("closed"):
+		laptop.connect("closed", _on_laptop_overlay_closed)
+	add_child(laptop)
+
+
+func _on_laptop_overlay_closed() -> void:
+	_laptop_overlay = null
+	set_process_input(true)
 
 
 func _input(event: InputEvent) -> void:

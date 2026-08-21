@@ -29,6 +29,7 @@ const LOCATION_RESOURCE_PATHS: Array[String] = [
 	"res://resources/locations/stress_test.tres",
 	"res://resources/locations/sleep.tres",
 	"res://resources/locations/personality_training.tres",
+	"res://resources/locations/laptop.tres",
 ]
 
 ## Background shown on the selection screen for each phase.
@@ -40,12 +41,9 @@ const PHASE_BACKGROUNDS: Dictionary = {
 	2: preload("res://assets/textures/backgrounds/bedroom_night.png"),
 }
 const DISABLED_LOCATION_IDS: Dictionary = {
-	&"maintenance": true,
 	&"personality_training": true,
 }
-const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = [
-	"Laptop",
-]
+const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = []
 const WORK_LOCATION_ID: StringName = &"work"
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const LAPTOP_SCENE_PATH: String = "res://scenes/locations/Laptop.tscn"
@@ -1008,9 +1006,9 @@ func _debug_open_location_by_id(location_id: StringName) -> void:
 	_on_location_picked(target_loc, false)
 
 
-## Debug: open the hidden laptop cheat scene. Built as an ad-hoc free-action
-## location (like the intro steps) so the bedroom's disabled "Laptop" option is
-## left exactly as-is; only this scene-jump hotkey reaches the real scene.
+## Debug: jump straight to the laptop scene via the scene-jump hotkey. The laptop
+## is now a real bedroom option too (resources/locations/laptop.tres, evening); this
+## builds an ad-hoc free-action location so the hotkey can reach it from any phase.
 func _debug_open_laptop() -> void:
 	_cancel_active_transitions()
 	if _current_location_node and is_instance_valid(_current_location_node) \
@@ -1021,6 +1019,9 @@ func _debug_open_laptop() -> void:
 	loc.display_name = "Laptop"
 	loc.scene_path = LAPTOP_SCENE_PATH
 	loc.free_action = true
+	# The laptop draws its own fullscreen CanvasLayer (background, animation, screen
+	# content), so it uses the fullscreen presentation rather than the picture frame.
+	loc.fullscreen_scene = true
 	_log("[color=#88aaff]Debug: laptop[/color]")
 	# Debug scene jump, not a player pick - keep it silent.
 	_on_location_picked(loc, false)
