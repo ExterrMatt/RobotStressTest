@@ -23,6 +23,7 @@ const TEXTURE_PATHS: Dictionary = {
 	"nanobots": "res://assets/textures/icons/nanobots.png",
 	"head_segments": "res://assets/textures/icons/head_segments.png",
 	"oil": "res://assets/textures/icons/oil.png",
+	"battery": "res://assets/textures/icons/battery.png",
 	"sneaky_shoes": "res://assets/textures/icons/sneaky_shoes.png",
 	"leg": "res://assets/textures/icons/leg.png",
 	"arm": "res://assets/textures/icons/arm.png",
@@ -36,8 +37,16 @@ const TEXTURE_PATHS: Dictionary = {
 	"small_coconuts": "res://assets/textures/icons/small_coconuts.png",
 	"balloons": "res://assets/textures/icons/balloons.png",
 	"big_chest_cover": "res://assets/textures/icons/chest_cover.png",
-	# Upper arm — a pre-made arm sub-assembly craftable in the workshop.
+	# Limb sub-assemblies — pre-made segments craftable in the workshop (thigh art is
+	# thighs.png).
 	"upper_arm": "res://assets/textures/icons/upper_arm.png",
+	"forearm": "res://assets/textures/icons/forearm.png",
+	"thigh": "res://assets/textures/icons/thighs.png",
+	"shin": "res://assets/textures/icons/shin.png",
+	"foot": "res://assets/textures/icons/foot.png",
+	"ribcage": "res://assets/textures/icons/ribcage.png",
+	"upper_plating": "res://assets/textures/icons/upper_plating.png",
+	"lower_plating": "res://assets/textures/icons/lower_plating.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
@@ -45,6 +54,7 @@ const TEXTURE_PATHS: Dictionary = {
 	"taser": "res://assets/textures/icons/taser.png",
 	"foam_spray": "res://assets/textures/icons/foam_spray.png",
 	"welding_gun": "res://assets/textures/icons/welding_gun.png",
+	"curtains": "res://assets/textures/icons/curtains.png",
 }
 
 const PLACEHOLDER_TEXTURE_PATH: String = "res://assets/textures/icons/placeholder_item.png"
@@ -74,6 +84,13 @@ const DISPLAY_NAMES: Dictionary = {
 	"small_coconuts": "Small Coconuts",
 	"balloons": "Balloons",
 	"upper_arm": "Upper Arm",
+	"forearm": "Forearm",
+	"thigh": "Thigh",
+	"shin": "Shin",
+	"foot": "Foot",
+	"ribcage": "Rib Cage",
+	"upper_plating": "Upper Plating",
+	"lower_plating": "Lower Plating",
 	"big_chest_cover": "Big Chest Cover",
 	"screwdriver": "Screwdriver",
 	"crank": "Crank",

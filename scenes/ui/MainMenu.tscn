@@ -18,6 +18,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_iwbf0")
+title_image_scale = 1.4
+title_image_offset_x = 7.0
+title_image_offset_y = -7.0
 
 [node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=777788677]
 layer = -10
@@ -142,6 +145,7 @@ alignment = 2
 
 [node name="SubjectTagLabel" type="Label" parent="UI/HBox/RightColumn/SubjectTagWrap" unique_id=168954299]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 theme_type_variation = &"HUDLabel"
 theme_override_colors/font_color = Color(0.55, 0.84, 1, 1)
@@ -234,7 +238,7 @@ layout_mode = 2
 theme_type_variation = &"HUDLabel"
 theme_override_colors/font_color = Color(1, 0.64, 0.26, 1)
 theme_override_font_sizes/font_size = 18
-text = "v0.1.0 // IN DEVELOPMENT"
+text = "v0.3.0 // IN DEVELOPMENT"
 horizontal_alignment = 2
 script = ExtResource("6_glowing_label")
 glow_color = Color(1, 0.24, 0, 1)

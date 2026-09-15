@@ -94,6 +94,13 @@ const DEFAULT_SFX_VOLUME_SCALE: float = 0.5
 var _debug_mode_enabled: bool = false
 var _easy_workshop_enabled: bool = false
 
+## Camera-feel settings, toggled from the pause/settings menu and polled by the stress
+## test each frame. Persisted with the other settings; both default on.
+## The camera roll (tilt) during the curved table/window <-> generator pans.
+var camera_roll_enabled: bool = true
+## The subtle mouse-follow "sway" that drifts the camera toward the cursor.
+var camera_mouse_follow_enabled: bool = true
+
 # --- Laptop debug cheats ---
 ## Set from the hidden bedroom laptop menu (debug only) and read by the next
 ## stress test as it starts. They persist until changed again from the laptop.
@@ -268,6 +275,11 @@ const COSMETIC_ITEM_DEFAULTS: Dictionary = {
 
 var cosmetic_items: Dictionary = COSMETIC_ITEM_DEFAULTS.duplicate()
 
+## Hair-front style the robot last wore in the stress test, so other scenes (the
+## maintenance robot) can match it. Index into the stress test's hair options:
+## 0 = normal, 1 = swing, 2 = bangs. Defaults to swing.
+var robot_hair_style: int = 1
+
 # --- inventory (stubbed - list of ingredient string IDs for now) ---
 var ingredients: Dictionary = {
 	"scrap_metal": 0,
@@ -277,9 +289,20 @@ var ingredients: Dictionary = {
 	"nanobots": 0,
 	"head_segments": 0,
 	"oil": 0,
-	# Pre-made upper-arm sub-assembly, pocketed during the work arm-steal call and
-	# brought to the workshop to graft onto an arm.
+	# Pre-made limb sub-assemblies — intermediate items crafted in the workshop (or, for
+	# the upper arm, pocketed during the work arm-steal call). Each can be crafted on its
+	# own and later dropped into the craft bin as a substitute for a limb's raw ingredients
+	# (see WorkshopMinigame.CRAFTABLE_PARTS). The upper arm is the template for the rest.
 	"upper_arm": 0,
+	"forearm": 0,
+	"thigh": 0,
+	"shin": 0,
+	"foot": 0,
+	"ribcage": 0,
+	"upper_plating": 0,
+	"lower_plating": 0,
+	# Spare battery used in maintenance (dragged onto the robot).
+	"battery": 0,
 }
 
 # --- unlocked skills (string IDs from design doc) ---
@@ -314,6 +337,17 @@ var arm_lock_open: bool = false
 var torso_socket_lock_open: bool = false
 ## Whether the arm has been slotted into the torso (both locks were open).
 var arm_connected: bool = false
+
+# --- stress-test history (for the laptop's history app) ---
+## One entry per completed stress-test night, oldest first. Each entry:
+##   {day:int, success:bool, reason:String, electricity:int, screws:int}
+## Recorded by StressTest via record_stress_test_result().
+var stress_test_history: Array = []
+## Keep the log from growing without bound.
+const STRESS_TEST_HISTORY_MAX: int = 60
+
+# --- save file ---
+const SAVE_PATH: String = "user://savegame.json"
 
 
 func _ready() -> void:
@@ -377,6 +411,7 @@ func reset_for_new_game() -> void:
 	arm_lock_open = false
 	torso_socket_lock_open = false
 	arm_connected = false
+	stress_test_history.clear()
 
 	intro_active = true
 	intro_completed = false
@@ -472,11 +507,20 @@ func add_anger(delta: int) -> void:
 
 # --- ingredients ---
 
+## Ingredients that cap at a maximum the player can ever hold at once. The spare
+## battery used in maintenance is single-use and capped at one - buying or being
+## granted more never stocks past one.
+const INGREDIENT_MAX := {"battery": 1}
+
+
 func add_ingredient(id: String, amount: int = 1) -> void:
 	if not ingredients.has(id):
 		push_warning("Unknown ingredient id: %s" % id)
 		return
-	ingredients[id] = max(0, ingredients[id] + amount)
+	var new_value: int = max(0, int(ingredients[id]) + amount)
+	if INGREDIENT_MAX.has(id):
+		new_value = min(new_value, int(INGREDIENT_MAX[id]))
+	ingredients[id] = new_value
 
 
 # --- robot parts ---
@@ -745,6 +789,58 @@ func normalize_player_name(value: String) -> String:
 	return cleaned.substr(0, 1).to_upper() + cleaned.substr(1)
 
 
+# --- stress-test history ---
+
+## Appends one night's result to the history log (oldest first), trimming to the cap.
+## Called by StressTest when a real night concludes.
+func record_stress_test_result(entry: Dictionary) -> void:
+	var record := {
+		"day": int(entry.get("day", _day)),
+		"success": bool(entry.get("success", false)),
+		"reason": String(entry.get("reason", "")),
+		"electricity": int(round(float(entry.get("electricity", 0.0)))),
+		"screws": int(round(float(entry.get("screws", 0.0)))),
+	}
+	stress_test_history.append(record)
+	while stress_test_history.size() > STRESS_TEST_HISTORY_MAX:
+		stress_test_history.remove_at(0)
+
+
+# --- save / load (JSON snapshot on disk) ---
+
+## Writes the full to_dict() snapshot to SAVE_PATH as JSON. Returns true on success.
+func save_game() -> bool:
+	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if f == null:
+		push_warning("save_game: could not open %s (err %d)" % [SAVE_PATH, FileAccess.get_open_error()])
+		return false
+	f.store_string(JSON.stringify(to_dict(), "\t"))
+	f.close()
+	return true
+
+
+## True if a save file exists on disk.
+func has_save() -> bool:
+	return FileAccess.file_exists(SAVE_PATH)
+
+
+## Loads and applies the saved snapshot. Returns true on success.
+func load_game() -> bool:
+	if not has_save():
+		return false
+	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if f == null:
+		return false
+	var text := f.get_as_text()
+	f.close()
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		push_warning("load_game: save file is not valid JSON")
+		return false
+	from_dict(parsed)
+	return true
+
+
 # --- serialization stubs for future save system ---
 ## Returns a dictionary snapshot of all persistent state. Future save system
 ## can write this to disk; from_dict() reverses the operation.
@@ -761,6 +857,7 @@ func to_dict() -> Dictionary:
 		"equipped_limbs": equipped_limbs,
 		"robot_parts": robot_parts.duplicate(),
 		"cosmetic_items": cosmetic_items.duplicate(),
+		"robot_hair_style": robot_hair_style,
 		"ingredients": ingredients.duplicate(),
 		"skills": skills.duplicate(),
 		"owned_tools": owned_tools.duplicate(),
@@ -770,6 +867,7 @@ func to_dict() -> Dictionary:
 		"arm_lock_open": arm_lock_open,
 		"torso_socket_lock_open": torso_socket_lock_open,
 		"arm_connected": arm_connected,
+		"stress_test_history": stress_test_history.duplicate(true),
 		"player_name": player_name,
 		"intro_active": intro_active,
 		"intro_completed": intro_completed,
@@ -785,6 +883,8 @@ func to_dict() -> Dictionary:
 		"volume_value": _volume_value,
 		"music_volume_value": _music_volume_value,
 		"easy_workshop_enabled": _easy_workshop_enabled,
+		"camera_roll_enabled": camera_roll_enabled,
+		"camera_mouse_follow_enabled": camera_mouse_follow_enabled,
 	}
 
 
@@ -819,9 +919,12 @@ func from_dict(data: Dictionary) -> void:
 	for id in COSMETIC_ITEM_IDS:
 		if loaded_cosmetics.has(id):
 			cosmetic_items[id] = max(0, int(loaded_cosmetics[id]))
+	robot_hair_style = int(data.get("robot_hair_style", 1))
 	ingredients = data.get("ingredients", {}).duplicate()
-	for id in ["scrap_metal", "synth_skin", "nuts_bolts", "electronics", "nanobots", "head_segments", "oil"]:
+	for id in ["scrap_metal", "synth_skin", "nuts_bolts", "electronics", "nanobots", "head_segments", "oil", "battery"]:
 		ingredients[id] = max(0, int(ingredients.get(id, 0)))
+		if INGREDIENT_MAX.has(id):
+			ingredients[id] = min(int(ingredients[id]), int(INGREDIENT_MAX[id]))
 	var had_legacy_sneaky_shoes: bool = int(ingredients.get("sneaky_shoes", 0)) > 0
 	ingredients.erase("sneaky_shoes")
 	skills.assign(data.get("skills", []))
@@ -835,6 +938,7 @@ func from_dict(data: Dictionary) -> void:
 	arm_lock_open = bool(data.get("arm_lock_open", false))
 	torso_socket_lock_open = bool(data.get("torso_socket_lock_open", false))
 	arm_connected = bool(data.get("arm_connected", false))
+	stress_test_history = (data.get("stress_test_history", []) as Array).duplicate(true)
 	set_player_name(String(data.get("player_name", DEFAULT_PLAYER_NAME)))
 	intro_completed = bool(data.get("intro_completed", false))
 	intro_active = bool(data.get("intro_active", not intro_completed))
@@ -852,4 +956,6 @@ func from_dict(data: Dictionary) -> void:
 	_music_volume_value = clampf(float(data.get("music_volume_value", DEFAULT_MUSIC_VOLUME_VALUE)), 0.0, 100.0)
 	music_volume_changed.emit(_music_volume_value)
 	_easy_workshop_enabled = bool(data.get("easy_workshop_enabled", false))
+	camera_roll_enabled = bool(data.get("camera_roll_enabled", true))
+	camera_mouse_follow_enabled = bool(data.get("camera_mouse_follow_enabled", true))
 	_emit_initial_state()

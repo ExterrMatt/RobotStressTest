@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://ufk426roxtdo"]
 
 [ext_resource type="Script" uid="uid://8i77rppng4bl" path="res://scenes/locations/StressTest.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bn0geh48q1hrs" path="res://assets/textures/backgrounds/palceholder_stress_test_dark.png" id="3_dark"]
 [ext_resource type="PackedScene" uid="uid://dawhy3fb082em" path="res://scenes/locations/StressTestRobot.tscn" id="4_robot"]
 [ext_resource type="Script" uid="uid://cvbl2j3xth0hm" path="res://scenes/locations/StressTestRobotShadow.gd" id="5_shadow"]
 [ext_resource type="Texture2D" uid="uid://db72lm17w1lqc" path="res://assets/textures/icons/pull_string.png" id="6_pull_string"]
@@ -68,13 +67,30 @@
 [ext_resource type="Texture2D" uid="uid://ca68pj836p1h2" path="res://assets/textures/backgrounds/stress_test/darkness/dark2.png" id="67_dark2"]
 [ext_resource type="Texture2D" uid="uid://dnn78kemxu1hk" path="res://assets/textures/backgrounds/stress_test/darkness/dark3.png" id="68_dark3"]
 [ext_resource type="Texture2D" uid="uid://chhxfe0hlshor" path="res://assets/textures/characters/drone/drone.png" id="69_patrol_drone"]
-[ext_resource type="Texture2D" uid="uid://c4ct1o0wcdup6" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_lights_off.png" id="70_drone_lights_off"]
-[ext_resource type="Texture2D" uid="uid://c6b3wuykwt17v" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_guns.png" id="71_drone_guns_dark"]
-[ext_resource type="Texture2D" uid="uid://cmvla7av3iohi" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_1.png" id="72_drone_dark_1"]
-[ext_resource type="Texture2D" uid="uid://ctbiha7fysvn1" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_glow.png" id="73_drone_glow"]
-[ext_resource type="Texture2D" uid="uid://dl20u1itkh3vd" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_2.png" id="74_drone_dark_2"]
-[ext_resource type="Texture2D" uid="uid://bp2molap737b5" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_3.png" id="75_drone_dark_3"]
-[ext_resource type="Texture2D" uid="uid://dy6y46e5jyaii" path="res://assets/textures/backgrounds/stress_test/darkness/dark_drone_4.png" id="76_drone_dark_4"]
+[ext_resource type="Texture2D" uid="uid://bd3i270i5crev" path="res://assets/textures/backgrounds/stress_test/window/drone_lights_off.png" id="70_drone_lights_off"]
+[ext_resource type="Texture2D" uid="uid://u1xmqn5ilpcf" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_guns.png" id="71_drone_guns_dark"]
+[ext_resource type="Texture2D" uid="uid://cgye1q32jlcl3" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_1.png" id="72_drone_dark_1"]
+[ext_resource type="Texture2D" uid="uid://bdbhq6nfjcysn" path="res://assets/textures/backgrounds/stress_test/window/lens_glow.png" id="73_drone_glow"]
+[ext_resource type="Texture2D" uid="uid://sxbfyre8tnv3" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_2.png" id="74_drone_dark_2"]
+[ext_resource type="Texture2D" uid="uid://bwhdee1foo8dg" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_3.png" id="75_drone_dark_3"]
+[ext_resource type="Texture2D" uid="uid://coeokd1s11xq0" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_4.png" id="76_drone_dark_4"]
+[ext_resource type="Texture2D" uid="uid://b5mfhwj35qphd" path="res://assets/textures/backgrounds/stress_test/background.png" id="77_background"]
+[ext_resource type="Texture2D" uid="uid://c47yebl85u7o8" path="res://assets/textures/backgrounds/stress_test/dark_shed.png" id="78_dark_shed"]
+[ext_resource type="Texture2D" uid="uid://bhfi4gj5wuxn7" path="res://assets/textures/backgrounds/stress_test/floor/table_4.png" id="79_table_4"]
+[ext_resource type="Texture2D" uid="uid://bj0sex5efiyq2" path="res://assets/textures/backgrounds/stress_test/darkness/dark4.png" id="80_dark4"]
+[ext_resource type="Texture2D" uid="uid://b40ghkxvrnw5v" path="res://assets/textures/backgrounds/stress_test/darkness/dark5.png" id="81_dark5"]
+[ext_resource type="Texture2D" uid="uid://dwhbq3qx8lrgc" path="res://assets/textures/backgrounds/stress_test/darkness/dark6.png" id="82_dark6"]
+[ext_resource type="Texture2D" uid="uid://m5oas3rxmiio" path="res://assets/textures/backgrounds/stress_test/curtain_bar.png" id="83_curtain_bar"]
+[ext_resource type="Texture2D" uid="uid://c8q742tju34ju" path="res://assets/textures/backgrounds/stress_test/curtain_closed.png" id="84_curtain_closed"]
+[ext_resource type="Texture2D" uid="uid://dp8bq0sdau5k5" path="res://assets/textures/backgrounds/stress_test/curtain_opened.png" id="85_curtain_opened"]
+[ext_resource type="Texture2D" uid="uid://crrn2dg4028gu" path="res://assets/textures/backgrounds/stress_test/engine/engine_wall.png" id="86_engine_wall"]
+[ext_resource type="Texture2D" uid="uid://dt6edfbqt2hn1" path="res://assets/textures/backgrounds/stress_test/engine/engine_wires.png" id="87_engine_wires"]
+[ext_resource type="Texture2D" uid="uid://d3et6q0euxfb0" path="res://assets/textures/backgrounds/stress_test/engine/engine3.png" id="88_engine3"]
+[ext_resource type="Texture2D" uid="uid://dnfp433u2hoxc" path="res://assets/textures/backgrounds/stress_test/engine/engine2.png" id="89_engine2"]
+[ext_resource type="Texture2D" uid="uid://bbd2f7pyys613" path="res://assets/textures/backgrounds/stress_test/engine/engine1.png" id="90_engine1"]
+[ext_resource type="Texture2D" uid="uid://cx66qu2mubdqn" path="res://assets/textures/backgrounds/stress_test/engine/engine_details.png" id="91_engine_details"]
+[ext_resource type="Texture2D" uid="uid://iqqdod8uq084" path="res://assets/textures/backgrounds/stress_test/dark_engine.png" id="92_dark_engine"]
+[ext_resource type="Texture2D" uid="uid://c4gm7j1qirv5u" path="res://assets/textures/backgrounds/stress_test/darkness/dark7.png" id="93_dark7"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -106,6 +122,21 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_script")
 hand_screw_animation_offset = Vector2(3, -4)
+curved_pan_bow_strength = 0.3
+table_to_generator_rotation_1 = -4.0
+table_to_generator_rotation_2 = 6.0
+table_to_generator_keyframe_1 = 0.3
+window_to_generator_rotation_1 = 1.0
+window_to_generator_rotation_2 = 3.0
+window_to_generator_keyframe_1 = 0.35
+rotation_settle = 1.02
+curved_pan_bounce = 0.01
+mouse_follow_strength_table = 10.0
+mouse_follow_strength_generator = 16.0
+mouse_follow_strength_window = 12.0
+mouse_follow_horizontal_strength = 1.4
+table_window_pan_duration = 0.39999999999999997
+table_window_mid_speedup = 2.7
 
 [node name="FullscreenLayer" type="CanvasLayer" parent="." unique_id=2013108336]
 layer = 20
@@ -144,11 +175,11 @@ layout_mode = 2
 mouse_filter = 2
 
 [node name="SceneCanvas" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=730907543]
-custom_minimum_size = Vector2(800, 600)
+custom_minimum_size = Vector2(1200, 800)
 layout_mode = 1
 anchors_preset = 0
-offset_right = 800.0
-offset_bottom = 600.0
+offset_right = 1200.0
+offset_bottom = 800.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -161,6 +192,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="Background" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1054355600]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("77_background")
+expand_mode = 1
 
 [node name="ShedBackground" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1054355615]
 layout_mode = 1
@@ -272,6 +314,18 @@ mouse_filter = 2
 texture = ExtResource("28_table")
 expand_mode = 1
 
+[node name="Table4" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1712345477]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("79_table_4")
+expand_mode = 1
+
 [node name="WindowOg" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1284097159]
 layout_mode = 1
 anchors_preset = 15
@@ -354,7 +408,6 @@ expand_mode = 1
 
 [node name="DroneGuns" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420083]
 visible = false
-z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -425,39 +478,6 @@ mouse_filter = 2
 texture = ExtResource("73_drone_glow")
 expand_mode = 1
 
-[node name="BulbOverWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=100411321]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("34_bulb_over_window")
-expand_mode = 1
-
-[node name="Light" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=415680127]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("35_light")
-expand_mode = 1
-
-[node name="Bulb" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1141615490]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("36_bulb")
-expand_mode = 1
-
 [node name="GasThing6" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000006]
 layout_mode = 1
 anchors_preset = 15
@@ -524,6 +544,84 @@ mouse_filter = 2
 texture = ExtResource("60_gas_thing_1")
 expand_mode = 1
 
+[node name="EngineWall" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000001]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("86_engine_wall")
+expand_mode = 1
+
+[node name="EngineWires" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("87_engine_wires")
+expand_mode = 1
+
+[node name="Engine3" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000003]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("88_engine3")
+expand_mode = 1
+
+[node name="Engine2" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000004]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("89_engine2")
+expand_mode = 1
+
+[node name="Engine1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000005]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("90_engine1")
+expand_mode = 1
+
+[node name="EngineDetails" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000006]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("91_engine_details")
+expand_mode = 1
+
+[node name="DarkEngine" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000007]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("92_dark_engine")
+expand_mode = 1
+
 [node name="Dark1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000001]
 layout_mode = 1
 anchors_preset = 15
@@ -557,6 +655,51 @@ mouse_filter = 2
 texture = ExtResource("68_dark3")
 expand_mode = 1
 
+[node name="Dark4" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000004]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("80_dark4")
+expand_mode = 1
+
+[node name="Dark5" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000005]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("81_dark5")
+expand_mode = 1
+
+[node name="Dark6" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000006]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("82_dark6")
+expand_mode = 1
+
+[node name="Dark7" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000007]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("93_dark7")
+expand_mode = 1
+
 [node name="DarkPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1297079992]
 visible = false
 layout_mode = 1
@@ -566,7 +709,83 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("3_dark")
+texture = ExtResource("78_dark_shed")
+expand_mode = 1
+
+[node name="Curtains" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1600000020]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CurtainBar" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains" unique_id=1600000001]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("83_curtain_bar")
+expand_mode = 1
+
+[node name="CurtainClosed" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains" unique_id=1600000002]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("84_curtain_closed")
+expand_mode = 1
+
+[node name="CurtainOpened" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains" unique_id=1600000003]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("85_curtain_opened")
+expand_mode = 1
+
+[node name="BulbOverWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=100411321]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("34_bulb_over_window")
+expand_mode = 1
+
+[node name="Light" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=415680127]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("35_light")
+expand_mode = 1
+
+[node name="Bulb" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1141615490]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("36_bulb")
 expand_mode = 1
 
 [node name="StressTestRobotShadow" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1305825547]
@@ -576,10 +795,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -237.00002
-offset_top = -91.00006
-offset_right = 13.0
-offset_bottom = 259.0
+offset_left = -437.00003
+offset_top = 8.99994
+offset_right = -187.0
+offset_bottom = 359.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(1.08, 1)
@@ -606,10 +825,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -237.0
-offset_top = -103.0
-offset_right = 13.0
-offset_bottom = 247.0
+offset_left = -437.0
+offset_top = -3.0
+offset_right = -187.0
+offset_bottom = 347.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -1193,10 +1412,10 @@ pull_toggle_radius_scale = 1.3
 
 [node name="ElectricalCord" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=455465457]
 anchors_preset = 0
-offset_left = 573.0
-offset_top = 204.0
-offset_right = 586.0
-offset_bottom = 254.0
+offset_left = 1081.0
+offset_top = 191.0
+offset_right = 1094.0
+offset_bottom = 241.0
 mouse_filter = 2
 mouse_default_cursor_shape = 13
 script = ExtResource("7_pull_cord")
@@ -1246,8 +1465,8 @@ script = ExtResource("16_emergency_power_button")
 layout_mode = 1
 offset_left = -466.0
 offset_top = -80.0
-offset_right = 334.0
-offset_bottom = 520.0
+offset_right = 734.0
+offset_bottom = 720.0
 mouse_filter = 2
 texture = ExtResource("29_button")
 expand_mode = 1
@@ -1257,8 +1476,8 @@ visible = false
 layout_mode = 1
 offset_left = -466.0
 offset_top = -80.0
-offset_right = 334.0
-offset_bottom = 520.0
+offset_right = 734.0
+offset_bottom = 720.0
 mouse_filter = 2
 texture = ExtResource("30_button_pressed")
 expand_mode = 1
@@ -1285,18 +1504,28 @@ text = "GAS"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="CurtainToggle" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1600000010]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 120.0
+offset_top = 20.0
+offset_right = 460.0
+offset_bottom = 200.0
+mouse_filter = 1
+mouse_default_cursor_shape = 2
+
 [node name="ZoomRegions" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1696741873]
 layout_mode = 1
 anchors_preset = 0
-offset_right = 800.0
-offset_bottom = 600.0
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
 
 [node name="ZoomLevel1" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions" unique_id=293772681]
 layout_mode = 1
 anchors_preset = 0
-offset_right = 800.0
-offset_bottom = 600.0
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
 
 [node name="Zoom1_R0_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=581718332]
@@ -1372,9 +1601,9 @@ active = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 80.0
-offset_top = 186.0
+offset_top = 386.0
 offset_right = 480.0
-offset_bottom = 486.0
+offset_bottom = 686.0
 mouse_filter = 2
 script = ExtResource("9_zoom_region")
 
@@ -1391,13 +1620,13 @@ script = ExtResource("9_zoom_region")
 active = false
 
 [node name="Zoom1_R1_C3" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel1" unique_id=911905836]
-visible = false
 layout_mode = 1
 anchors_preset = 0
-offset_left = 400.0
-offset_top = 87.0
-offset_right = 800.0
-offset_bottom = 387.0
+offset_left = 720.0
+offset_top = 19.000122
+offset_right = 1120.0
+offset_bottom = 319.00012
+scale = Vector2(1.2, 1.2)
 mouse_filter = 2
 script = ExtResource("9_zoom_region")
 
@@ -1487,9 +1716,9 @@ active = false
 layout_mode = 1
 anchors_preset = 0
 offset_left = 80.0
-offset_top = 281.0
+offset_top = 481.0
 offset_right = 480.0
-offset_bottom = 581.0
+offset_bottom = 781.0
 mouse_filter = 2
 script = ExtResource("9_zoom_region")
 
@@ -1532,8 +1761,8 @@ active = false
 [node name="ZoomLevel2" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions" unique_id=1965746315]
 layout_mode = 1
 anchors_preset = 0
-offset_right = 800.0
-offset_bottom = 600.0
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
 
 [node name="Zoom2_R0_C0" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2" unique_id=1837681401]
@@ -1663,9 +1892,9 @@ fill_color = Color(0.22, 0.82, 1, 0.07)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 150.0
-offset_top = 190.00014
+offset_top = 390.00015
 offset_right = 416.667
-offset_bottom = 390.00012
+offset_bottom = 590.0001
 scale = Vector2(1.302, 1.302)
 pivot_offset = Vector2(133.334, 0)
 mouse_filter = 2
@@ -1718,9 +1947,9 @@ fill_color = Color(0.22, 0.82, 1, 0.07)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 149.778
-offset_top = 227.25
+offset_top = 427.25
 offset_right = 416.445
-offset_bottom = 427.25
+offset_bottom = 627.25
 mouse_filter = 2
 script = ExtResource("9_zoom_region")
 border_color = Color(0.22, 0.82, 1, 0.95)
@@ -1771,9 +2000,9 @@ fill_color = Color(0.22, 0.82, 1, 0.07)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 150.0
-offset_top = 341.00012
+offset_top = 541.0001
 offset_right = 416.667
-offset_bottom = 541.0001
+offset_bottom = 741.0001
 scale = Vector2(1.11, 1.11)
 pivot_offset = Vector2(133.334, 0)
 mouse_filter = 2

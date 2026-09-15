@@ -73,6 +73,9 @@ const INTRO_STEPS: Array[Dictionary] = [
 
 const INVENTORY_OVERLAY_SCENE: PackedScene = preload("res://scenes/ui/InventoryOverlay.tscn")
 const TRANSITION_SCENE: PackedScene = preload("res://scenes/Transition.tscn")
+## Single door half for the DoorLoad transition (256x512); drawn as-is on the
+## left and mirrored on the right by Transition.gd.
+const DOOR_LOAD_TEXTURE: Texture2D = preload("res://assets/textures/backgrounds/load/DoorLoad.png")
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 const UI_SOUND := preload("res://scenes/ui/UiSound.gd")
 
@@ -215,6 +218,33 @@ const LARGE_SCENE_HUD_NAME_COLOR: Color = Color(0.784, 0.8, 0.878)
 @export_category("Debug")
 @export var debug_hotkeys_enabled: bool = true
 
+## Loading-transition tuning. These live on the Main (root) node of Main.tscn -
+## select it and look in the Inspector under Debug > "Load Transition". They are
+## the single source of truth: Main applies them to the transition node on every
+## play, so editing duration_sec / door_fps / door_ease on the Transition node
+## itself does nothing. They are also live-editable from the Shift+Tab debug menu.
+##
+## Style is automatic, not a toggle: the DoorLoad wipe is reserved for crossing
+## the fullscreen boundary (framed <-> fullscreen), acting as a loading cover for
+## those heavy scene swaps; the FlowerLoad wipe plays for everything else (in-frame
+## swaps and fullscreen -> fullscreen).
+enum LoadStyle { FLOWER, DOORS }
+
+@export_group("Load Transition")
+## Door wipe playback speed. 1.0 = base; higher is faster, lower is slower.
+## The actual length is door_base_duration / this.
+@export_range(0.1, 6.0, 0.05) var door_transition_speed: float = 1.0
+## Base door wipe length in seconds at speed 1.0.
+@export_range(0.1, 3.0, 0.05) var door_transition_base_duration: float = 0.9
+## Stepped door playback: 0 plays smooth; higher snaps the slide to that many
+## frames per second, like a hand-drawn sprite.
+@export_range(0.0, 30.0, 1.0) var door_transition_fps: float = 0.0
+## Door open/close easing. 0 = perfectly linear; 1 = full ease-in-out.
+@export_range(0.0, 1.0, 0.05) var door_transition_ease: float = 0.5
+## FlowerLoad wipe length in seconds (used when style is Flower).
+@export_range(0.1, 3.0, 0.05) var flower_transition_duration: float = 0.75
+@export_group("")
+
 # HUD labels
 @onready var ui_margin: MarginContainer = $UI
 @onready var hud_bar: PanelContainer = %HUDBar
@@ -258,8 +288,11 @@ const LARGE_SCENE_HUD_NAME_COLOR: Color = Color(0.784, 0.8, 0.878)
 @onready var log_overlay: PanelContainer = %LogOverlay
 @onready var event_log: RichTextLabel = %EventLog
 
-# In-frame FlowerLoad wipe (TextureRect parented inside the picture box).
+# In-frame scene wipe (TextureRect parented inside the picture box). Always the
+# FlowerLoad sprite-sheet wipe; the DoorLoad slide is reserved for the fullscreen
+# boundary transitions (see _apply_load_transition_style).
 @onready var transition: TextureRect = %Transition
+
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 
 var _locations: Array[LocationData] = []
@@ -286,6 +319,15 @@ var _debug_info_label: RichTextLabel = null
 ## The Shift+Tab quick-actions panel: a scrollable column of debug buttons on its
 ## own canvas layer above everything, rebuilt from the current scene each open.
 var _debug_actions_layer: CanvasLayer = null
+
+## Universal punch-animation preview overlay (a debug toy). Lives on its own canvas layer
+## as a child of Main so it works in every scene, not just maintenance.
+var _punch_overlay: CanvasLayer = null
+
+## The most recent debug-opened laptop overlay, tracked so the "Close Laptop" debug
+## button can dismiss it. May go stale on its own (the overlay frees itself when
+## clicked off), so always guard with is_instance_valid.
+var _debug_laptop_overlay: Node = null
 
 ## Debug reset chord: three Shift+Tab presses within this window wipe all progress
 ## and return to the main menu (also available as the last debug-menu button).
@@ -726,6 +768,8 @@ func _open_runtime_settings_overlay() -> void:
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("MUSIC", GameState.music_volume_value, _on_runtime_music_volume_changed)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled)))
 	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("EASY WORKSHOP", GameState.easy_workshop_enabled, _on_runtime_easy_workshop_toggled)))
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("CAMERA TILT", GameState.camera_roll_enabled, _on_runtime_camera_roll_toggled)))
+	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("CAMERA SWAY", GameState.camera_mouse_follow_enabled, _on_runtime_camera_mouse_follow_toggled)))
 	# Only offered while debug is on, so the player can switch it off but never on.
 	if GameState.debug_mode_enabled:
 		vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("DEBUG MODE", true, _on_runtime_debug_mode_toggled)))
@@ -849,6 +893,14 @@ func _on_runtime_scanlines_toggled(enabled: bool) -> void:
 
 func _on_runtime_easy_workshop_toggled(enabled: bool) -> void:
 	GameState.easy_workshop_enabled = enabled
+
+
+func _on_runtime_camera_roll_toggled(enabled: bool) -> void:
+	GameState.camera_roll_enabled = enabled
+
+
+func _on_runtime_camera_mouse_follow_toggled(enabled: bool) -> void:
+	GameState.camera_mouse_follow_enabled = enabled
 
 
 ## The pause-menu DEBUG MODE row only exists while debug is on, so this only ever
@@ -1236,6 +1288,9 @@ func _debug_give_all_items() -> void:
 	GameState.tool_counts["screwdriver"] = 2
 	GameState.unlock_tool("welding_gun")
 	GameState.unlock_tool("sneaky_shoes")
+	# The stress-test window curtains: an unlockable ability rather than a held tool,
+	# but granted through the same owned_tools ledger so debug can hand it out.
+	GameState.unlock_tool("curtains")
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: inventory set to 99 of all items[/color]")
@@ -1247,9 +1302,9 @@ func _debug_give_all_items() -> void:
 ## _debug_give_all_items minus set_all_robot_parts and the cosmetic grants.
 func _debug_give_non_part_items() -> void:
 	for id in GameState.ingredients.keys():
-		# Skip the upper arm: it's an intermediate limb piece (a full arm already
-		# includes one), so it doesn't belong in the plain ingredients-and-tools grant.
-		if String(id) == "upper_arm":
+		# Skip limb sub-assemblies (upper arm, forearm, thigh, …): they're intermediate
+		# limb pieces, not plain ingredients, so they don't belong in this grant.
+		if DEBUG_LIMB_SUBASSEMBLY_CAPS.has(String(id)):
 			continue
 		GameState.ingredients[id] = 99
 	GameState.unlock_tool("taser")
@@ -1290,7 +1345,23 @@ func _debug_give_robot_parts() -> void:
 ## Unlockable tools handed out by "Give All Tools" and listed individually under
 ## "Give Specific Item". The always-owned mouth/hand aren't included. Add new
 ## tools here as they're introduced.
-const DEBUG_GIVE_TOOL_IDS: Array[String] = ["taser", "screwdriver", "welding_gun", "sneaky_shoes"]
+const DEBUG_GIVE_TOOL_IDS: Array[String] = ["taser", "screwdriver", "welding_gun", "sneaky_shoes", "curtains"]
+
+## Ingredient ids that are really pre-made limb sub-assemblies (crafted in the workshop and
+## dropped into the craft bin as substitutes for a limb's raw ingredients). They're grouped
+## with the robot parts in the debug give menu rather than the raw ingredients, and handed
+## out only a few at a time — a robot needs at most this many of each. The upper arm is the
+## template; the rest were added with the segment-crafting system.
+const DEBUG_LIMB_SUBASSEMBLY_CAPS: Dictionary = {
+	"upper_arm": 2,
+	"forearm": 2,
+	"thigh": 2,
+	"shin": 2,
+	"foot": 2,
+	"ribcage": 1,
+	"upper_plating": 1,
+	"lower_plating": 1,
+}
 
 
 ## Debug: fill every ingredient stack (parts, tools, cosmetics and money untouched).
@@ -1318,11 +1389,12 @@ func _debug_give_specific_item(id: String, kind: String) -> void:
 	match kind:
 		"ingredient":
 			if GameState.ingredients.has(id):
-				if id == "upper_arm":
-					# The upper arm is an intermediate limb piece and a robot only
-					# has two sides, so hand it out one at a time instead of the
-					# bulk 99 the other ingredients use.
-					GameState.ingredients[id] = mini(2, int(GameState.ingredients[id]) + 1)
+				if DEBUG_LIMB_SUBASSEMBLY_CAPS.has(id):
+					# Limb sub-assemblies are intermediate limb pieces and a robot only
+					# needs so many of each, so hand them out one at a time up to that cap
+					# instead of the bulk 99 the raw ingredients use.
+					GameState.ingredients[id] = mini(
+						int(DEBUG_LIMB_SUBASSEMBLY_CAPS[id]), int(GameState.ingredients[id]) + 1)
 				else:
 					GameState.ingredients[id] = 99
 		"tool":
@@ -1362,9 +1434,9 @@ func _show_give_specific_item_menu(vbox: VBoxContainer) -> void:
 
 	_add_debug_section(vbox, "Ingredients")
 	for id in GameState.ingredients.keys():
-		# The upper arm is a limb sub-assembly, so it's listed under Robot Parts
-		# below rather than with the raw ingredients.
-		if String(id) == "upper_arm":
+		# Limb sub-assemblies get their own section below rather than sitting with the raw
+		# ingredients.
+		if DEBUG_LIMB_SUBASSEMBLY_CAPS.has(String(id)):
 			continue
 		_add_give_specific_item_button(vbox, String(id), "ingredient")
 
@@ -1381,10 +1453,13 @@ func _show_give_specific_item_menu(vbox: VBoxContainer) -> void:
 		if String(id) == "head":
 			continue
 		_add_give_specific_item_button(vbox, String(id), "robot_part")
-	# The upper arm is stored as an ingredient but is really a robot part in the
-	# making; its give button hands out one at a time (see _debug_give_specific_item).
-	if GameState.ingredients.has("upper_arm"):
-		_add_give_specific_item_button(vbox, "upper_arm", "ingredient")
+
+	# Limb sub-assemblies are stored as ingredients but are really limb pieces in the making;
+	# their give buttons hand out a few at a time (see _debug_give_specific_item).
+	_add_debug_section(vbox, "Limb Sub-Assemblies")
+	for id in DEBUG_LIMB_SUBASSEMBLY_CAPS:
+		if GameState.ingredients.has(String(id)):
+			_add_give_specific_item_button(vbox, String(id), "ingredient")
 
 	_add_debug_section(vbox, "Cosmetics")
 	for id in GameState.COSMETIC_ITEM_IDS:
@@ -1680,6 +1755,94 @@ func _add_debug_action_button(vbox: VBoxContainer, label: String, action: Callab
 	vbox.add_child(btn)
 
 
+## Adds several action buttons side by side on one row (an HBox), sharing the width
+## equally. Each entry is {"label": String, "action": Callable, "close_after": bool?}.
+## Used to sit related actions (e.g. Open/Close Laptop) next to each other.
+func _add_debug_action_button_row(vbox: VBoxContainer, entries: Array) -> void:
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for entry in entries:
+		var action: Callable = entry["action"]
+		var close_after: bool = entry.get("close_after", false)
+		var btn := Button.new()
+		btn.text = String(entry["label"])
+		btn.theme_type_variation = &"GoldHudButton"
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.pressed.connect(func():
+			action.call()
+			if close_after:
+				_close_debug_actions_panel()
+			else:
+				_refresh_debug_info_if_visible()
+		)
+		row.add_child(btn)
+	vbox.add_child(row)
+
+
+## Toggles the universal punch-animation preview. Two hands (one flipped, left/right click)
+## pinned to the bottom of the screen; works in any scene. Click to play each.
+func _debug_toggle_punch() -> void:
+	if _punch_overlay != null and is_instance_valid(_punch_overlay):
+		_punch_overlay.queue_free()
+		_punch_overlay = null
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 45
+	add_child(layer)
+	_punch_overlay = layer
+	# Spread the two hands one fist-width apart so they sit side by side at whatever pixel
+	# ratio the maintenance background scales to (a fist renders 256px * this cover * 1.05).
+	var vp := get_viewport().get_visible_rect().size
+	var cover: float = maxf(vp.x / 500.0, vp.y / 400.0)
+	var spread: int = int(round(128.0 * cover * 1.05))
+	for spec in [{"flip": false, "off": spread, "btn": PunchTest.TriggerButton.RIGHT},
+			{"flip": true, "off": -spread, "btn": PunchTest.TriggerButton.LEFT}]:
+		var punch := PunchTest.new()
+		punch.anchor_left = 0.5
+		punch.anchor_right = 0.5
+		punch.offset_left = -128 + int(spec["off"])
+		punch.offset_right = 128 + int(spec["off"])
+		punch.lock_to_bottom = true
+		punch.flip_h = bool(spec["flip"])
+		punch.trigger_button = int(spec["btn"])
+		# Keep the fists at the same pixel ratio they had matched to the maintenance
+		# background, even though this overlay isn't inside any scene canvas.
+		punch.match_design_canvas = true
+		layer.add_child(punch)
+		punch.visible = true
+
+
+## Opens the laptop as an overlay on top of the current location (used by the debug menu to
+## bring the laptop up during the stress test). The laptop closes itself when clicked off.
+func _debug_open_laptop_overlay() -> void:
+	if _current_location_node == null or not is_instance_valid(_current_location_node):
+		return
+	var packed := load(LAPTOP_SCENE_PATH) as PackedScene
+	if packed == null:
+		return
+	var laptop := packed.instantiate()
+	laptop.set("overlay_mode", true)
+	# Debug-opened laptop has admin privileges: the full app grid, not the restricted menu.
+	laptop.set("desktop_context", "admin")
+	_current_location_node.add_child(laptop)
+	_debug_laptop_overlay = laptop
+
+
+## Closes the debug-opened laptop overlay (mirrors the "Open Laptop" button). Plays the
+## laptop's own close animation via LEAVE when available, otherwise frees it outright.
+## No-op if nothing is open (it may have already closed itself when clicked off).
+func _debug_close_laptop_overlay() -> void:
+	if _debug_laptop_overlay == null or not is_instance_valid(_debug_laptop_overlay):
+		_debug_laptop_overlay = null
+		return
+	var laptop := _debug_laptop_overlay
+	_debug_laptop_overlay = null
+	if laptop.has_method("_on_leave_pressed"):
+		laptop.call("_on_leave_pressed")
+	else:
+		laptop.queue_free()
+
+
 ## Calls a debug method on the active location node, if it exposes one.
 func _debug_call_location(method: String) -> void:
 	if _current_location_node != null and is_instance_valid(_current_location_node) \
@@ -1775,6 +1938,12 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 		_add_debug_action_button(vbox, "Toggle Squint Eyes", _debug_call_location.bind("debug_toggle_squint"))
 		_add_debug_action_button(vbox, "Swap Head Style", _debug_call_location.bind("debug_swap_head_style"))
 		_add_debug_action_button(vbox, "Swap Hand Grip", _debug_call_location.bind("debug_swap_hand_grip"))
+		# Bring the laptop up over the running stress test (to watch the drone monitor etc.),
+		# with a matching Close button beside it to dismiss the overlay.
+		_add_debug_action_button_row(vbox, [
+			{"label": "Open Laptop", "action": _debug_open_laptop_overlay},
+			{"label": "Close Laptop", "action": _debug_close_laptop_overlay},
+		])
 
 	# Animation sound testing — shown wherever the scene's robot exposes it (the
 	# stress test and the Sleep scene), not tied to a specific location id.
@@ -1787,6 +1956,8 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 
 	# Overlays.
 	_add_debug_section(vbox, "OVERLAYS")
+	# Universal punch-animation preview - available in every scene, not just maintenance.
+	_add_debug_action_button(vbox, "Toggle Punch Anim", _debug_toggle_punch)
 	_add_debug_action_button(vbox, "Toggle Debug Info (Tab)", func():
 		log_overlay.visible = not log_overlay.visible
 		if log_overlay.visible:
@@ -3003,6 +3174,20 @@ func _on_location_picked(loc: LocationData, play_select_sound: bool = true) -> v
 		UI_SOUND.play_scene_select(self)
 	_hide_mouse_tooltip()
 
+	# Entering a fullscreen scene from the framed view is the heavy case. Defer the
+	# scene load() itself (not just the instantiate) until the wipe has fully shut,
+	# so the load hitch is hidden behind the cover instead of stalling BEFORE the
+	# doors close. Only a cheap path check runs up-front here.
+	if loc != null and loc.fullscreen_scene and not _current_location_fullscreen:
+		if loc.scene_path.is_empty():
+			_log("ERROR: could not load %s" % loc.scene_path)
+			return
+		_log("[b]→ %s[/b]" % loc.display_name)
+		_play_expanding_fullscreen_transition_then(
+			_load_and_apply_fullscreen_location_pick_swap.bind(loc)
+		)
+		return
+
 	# Validate the scene up-front so we can bail before starting the wipe
 	# if something's wrong. The actual instantiation + swap-in happens at
 	# the midpoint so the player doesn't see the location UI snap in.
@@ -3013,10 +3198,8 @@ func _on_location_picked(loc: LocationData, play_select_sound: bool = true) -> v
 
 	_log("[b]→ %s[/b]" % loc.display_name)
 	if loc.fullscreen_scene:
-		if _current_location_fullscreen:
-			_play_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed, false))
-		else:
-			_play_expanding_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed, false))
+		# Fullscreen -> fullscreen (the framed -> fullscreen case returned above).
+		_play_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(loc, packed, false))
 	else:
 		if _current_location_fullscreen:
 			if _uses_exact_frame_size(loc):
@@ -3100,6 +3283,24 @@ func _apply_fullscreen_location_pick_swap(
 	_apply_location_pick_swap(loc, packed, play_lift, play_lift)
 	if play_lift:
 		_play_fullscreen_lift()
+
+
+## Swap callback for the framed -> fullscreen wipe. Runs behind the fully-shut
+## doors (see _on_expanding_fullscreen_transition_closed): the heavy load() and
+## instantiate happen here, hidden by the cover, so no hitch is visible before the
+## wipe closes.
+func _load_and_apply_fullscreen_location_pick_swap(loc: LocationData) -> void:
+	var packed := _load_location_scene(loc)
+	if packed == null:
+		_log("ERROR: could not load %s" % loc.scene_path)
+		return
+	_apply_fullscreen_location_pick_swap(loc, packed, false)
+	# Freeze the freshly-instantiated scene so its simulation (e.g. the stress
+	# test's night clock) does not run while it sits hidden behind the shut doors
+	# during the load hitch. _on_expanding_fullscreen_transition_closed unfreezes
+	# it as the doors begin to open, so the scene starts the moment it's revealed.
+	if _current_location_node != null and is_instance_valid(_current_location_node):
+		_current_location_node.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 func _location_frame_size(loc: LocationData) -> Vector2:
@@ -3499,21 +3700,50 @@ func _finish_slide_animation(old_global_pos: Vector2) -> void:
 
 # --- transitions ---
 
-## Play the FlowerLoad wipe, invoking `swap_callback` at frame 9/17 (when
+## Play the in-frame FlowerLoad wipe, invoking `swap_callback` at frame 9/17 (when
 ## the picture is fully covered). Falls back to immediate invocation if
 ## the transition node isn't ready / missing for any reason.
 func _play_transition_then(swap_callback: Callable) -> void:
 	if transition == null or not transition.has_method("play"):
 		swap_callback.call()
 		return
+	# In-frame swaps always use the flower wipe; doors are reserved for crossing
+	# the fullscreen boundary.
+	_apply_load_transition_style(transition, LoadStyle.FLOWER)
 	transition.play(swap_callback)
+
+
+## Configures a transition node for the given load style just before it plays. For
+## doors it also hands over the tunables and the background's native pixel size so
+## the doors can match its on-screen pixel ratio.
+func _apply_load_transition_style(tr: Object, style: LoadStyle) -> void:
+	if tr == null:
+		return
+	if style == LoadStyle.DOORS:
+		tr.set("style", 1)  # Transition.Style.DOORS
+		tr.set("door_half", DOOR_LOAD_TEXTURE)
+		tr.set("door_fps", door_transition_fps)
+		tr.set("door_ease", door_transition_ease)
+		tr.set("background_native_size", _active_background_native_size())
+		tr.set("duration_sec", door_transition_base_duration / maxf(0.05, door_transition_speed))
+	else:
+		tr.set("style", 0)  # Transition.Style.SHEET
+		tr.set("duration_sec", flower_transition_duration)
+
+
+## Native pixel size of the background currently in the picture frame, so the
+## door wipe can render at the same pixel ratio. Zero when unknown.
+func _active_background_native_size() -> Vector2:
+	if scene_image != null and scene_image.texture != null:
+		return _texture_display_source_size(scene_image.texture)
+	return Vector2.ZERO
 
 
 func _play_expanding_fullscreen_transition_then(swap_callback: Callable) -> void:
 	_cleanup_expanding_fullscreen_transition()
 
 	var tr := _create_expanding_fullscreen_transition()
-	if tr == null or not tr.has_method("play"):
+	if tr == null or not tr.has_method("play_close_and_hold"):
 		swap_callback.call()
 		return
 
@@ -3523,6 +3753,11 @@ func _play_expanding_fullscreen_transition_then(swap_callback: Callable) -> void
 	var expand_duration := _transition_midpoint_seconds(tr)
 	_expanding_transition_rect = start_rect
 
+	# Phase 1: expand the wipe window to fullscreen while the wipe closes over it.
+	# We do NOT load the scene at the midpoint; instead the wipe holds fully
+	# covered and emits `closed`, and _on_expanding_fullscreen_transition_closed
+	# loads the heavy scene behind the cover before opening. This makes the wipe
+	# act as a loading screen that hides instantiation lag.
 	_expanding_transition_tween = create_tween()
 	_expanding_transition_tween.set_trans(ANIM_TRANS)
 	_expanding_transition_tween.set_ease(ANIM_EASE)
@@ -3533,7 +3768,72 @@ func _play_expanding_fullscreen_transition_then(swap_callback: Callable) -> void
 		expand_duration
 	)
 	tr.connect("finished", Callable(self, "_cleanup_expanding_fullscreen_transition"), CONNECT_ONE_SHOT)
-	tr.play(swap_callback)
+	tr.connect("closed", _on_expanding_fullscreen_transition_closed.bind(tr, swap_callback), CONNECT_ONE_SHOT)
+	tr.play_close_and_hold()
+
+
+## Runs once the expanding wipe is fully covering the screen. Lets the covered
+## frame paint, loads the new fullscreen scene behind the cover (so any hitch is
+## hidden), then opens the wipe to reveal it.
+func _on_expanding_fullscreen_transition_closed(tr: TextureRect, swap_callback: Callable) -> void:
+	# Present a couple of fully-covered frames before we block on loading, so the
+	# cover is guaranteed on screen while the load stalls the main thread.
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	# The transition may have been torn down while we waited (e.g. a reset).
+	if tr == null or not is_instance_valid(tr):
+		return
+
+	if swap_callback.is_valid():
+		swap_callback.call()
+
+	# Keep the doors shut until the load hitch has actually passed - the heavy
+	# instantiate plus the new scene's first-frame costs (shader compiles, layout)
+	# land over the next few frames. Waiting for the frame pacing to recover means
+	# the reveal animation plays smoothly instead of being jumped forward by the
+	# giant post-load frame delta.
+	await _await_frame_pacing_recovered()
+
+	if tr == null or not is_instance_valid(tr) or not tr.has_method("play_lift_from_midpoint"):
+		_resume_held_location()
+		_cleanup_expanding_fullscreen_transition()
+		return
+
+	# Start the scene's simulation exactly as the doors begin to open, so its clock
+	# (e.g. the stress test night timer) begins when the player can see it - not
+	# during the load hold.
+	_resume_held_location()
+	tr.play_lift_from_midpoint()
+
+
+## Un-freezes the location node held by _load_and_apply_fullscreen_location_pick_swap.
+func _resume_held_location() -> void:
+	if _current_location_node != null and is_instance_valid(_current_location_node):
+		_current_location_node.process_mode = Node.PROCESS_MODE_INHERIT
+
+
+## Awaits until the main thread is pacing frames normally again after a load
+## hitch: it returns once a few consecutive frames each render within a normal
+## budget, or after a hard cap so it can never hang.
+func _await_frame_pacing_recovered(
+		normal_frames_needed: int = 2,
+		max_frames: int = 90,
+		normal_frame_msec: int = 40
+) -> void:
+	var consecutive_normal := 0
+	var frames := 0
+	var last_msec := Time.get_ticks_msec()
+	while frames < max_frames and consecutive_normal < normal_frames_needed:
+		await get_tree().process_frame
+		var now := Time.get_ticks_msec()
+		var frame_msec := now - last_msec
+		last_msec = now
+		frames += 1
+		if frame_msec <= normal_frame_msec:
+			consecutive_normal += 1
+		else:
+			consecutive_normal = 0
 
 
 func _play_shrinking_fullscreen_transition_then(swap_callback: Callable, target_rect: Rect2) -> void:
@@ -3547,6 +3847,13 @@ func _play_shrinking_fullscreen_transition_then(swap_callback: Callable, target_
 	tr.set("duration_sec", float(tr.get("duration_sec")) * EXPANDING_FULLSCREEN_TRANSITION_DURATION_SCALE)
 	_expanding_transition_rect = _fullscreen_reveal_scene_rect()
 
+	# This is a fullscreen-boundary transition, so it always uses the doors. The
+	# doors stay fullscreen (see _start_shrinking_...) rather than collapsing into
+	# the picture frame, so the stand-in frame border that would otherwise ring the
+	# screen is not wanted.
+	if _expanding_scene_border_panel != null and is_instance_valid(_expanding_scene_border_panel):
+		_expanding_scene_border_panel.visible = false
+
 	tr.connect("finished", Callable(self, "_cleanup_expanding_fullscreen_transition"), CONNECT_ONE_SHOT)
 	tr.play(_start_shrinking_fullscreen_transition.bind(swap_callback, target_rect, tr))
 
@@ -3558,16 +3865,14 @@ func _start_shrinking_fullscreen_transition(
 ) -> void:
 	if swap_callback.is_valid():
 		swap_callback.call()
-	var shrink_duration := _transition_remaining_seconds(tr)
-	_expanding_transition_tween = create_tween()
-	_expanding_transition_tween.set_trans(ANIM_TRANS)
-	_expanding_transition_tween.set_ease(ANIM_EASE)
-	_expanding_transition_tween.tween_property(
-		self,
-		"_expanding_transition_rect",
-		target_rect,
-		shrink_duration
-	)
+
+	# This fullscreen-boundary transition always uses doors, which open across the
+	# whole screen instead of collapsing into the picture frame. Restore the real
+	# framed chrome (revealed behind the still-covering doors) and leave the wipe
+	# window fullscreen - no shrink tween.
+	_set_source_frame_chrome_hidden(false)
+	if _expanding_scene_border_panel != null and is_instance_valid(_expanding_scene_border_panel):
+		_expanding_scene_border_panel.visible = false
 
 
 func _play_shrinking_fullscreen_transition_after_layout(
@@ -3612,6 +3917,10 @@ func _create_expanding_fullscreen_transition() -> TextureRect:
 		return null
 	_expanding_transition.name = "ExpandingFullscreenTransition"
 	_expanding_transition.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# The fullscreen-boundary wipe is always the door "loading cover". Apply it (and
+	# its base duration) before the callers read/scale duration_sec for the
+	# expand/shrink tween.
+	_apply_load_transition_style(_expanding_transition, LoadStyle.DOORS)
 	_expanding_transition_clip.add_child(_expanding_transition)
 
 	# The framed scene's ornate gold double-border, rebuilt as an overlay so it
@@ -3631,6 +3940,11 @@ func _create_expanding_fullscreen_transition() -> TextureRect:
 	_expanding_scene_border_inner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_expanding_scene_border_inner_panel.add_theme_stylebox_override("panel", _picture_frame_inner_style())
 	_expanding_scene_border_panel.add_child(_expanding_scene_border_inner_panel)
+
+	# This node is only ever the fullscreen door wipe, which overlays ABOVE the gold
+	# border (a full-screen cover) - so lift it past the border's z_index of 100.
+	_expanding_transition.z_index = 101
+
 	return _expanding_transition
 
 
@@ -3791,6 +4105,9 @@ func _play_fullscreen_transition_then(swap_callback: Callable) -> void:
 	if tr == null or not tr.has_method("play"):
 		swap_callback.call()
 		return
+	# Fullscreen -> fullscreen does not cross the framed boundary, so it uses the
+	# flower wipe like the other non-boundary swaps.
+	_apply_load_transition_style(tr, LoadStyle.FLOWER)
 	tr.play(swap_callback)
 
 
@@ -3854,6 +4171,11 @@ func _is_any_transition_playing() -> bool:
 			return true
 	if _expanding_transition != null and is_instance_valid(_expanding_transition):
 		if _expanding_transition.has_method("is_playing") and _expanding_transition.is_playing():
+			return true
+		# The expanding wipe holds fully covered (still visible) between its close
+		# and open halves while the scene loads; treat that as playing too so a
+		# rapid second pick can't slip in during the load.
+		if _expanding_transition.visible:
 			return true
 	return false
 

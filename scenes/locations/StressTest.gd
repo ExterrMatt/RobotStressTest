@@ -4,15 +4,42 @@ const ZOOM_LEVEL_OUT: int = 0
 const ZOOM_LEVEL_FIRST: int = 1
 const ZOOM_LEVEL_SECOND: int = 2
 const MAX_ZOOM_LEVEL: int = ZOOM_LEVEL_SECOND
-const FIRST_ZOOM_SCALE: Vector2 = Vector2(2.0, 2.0)
-const SECOND_ZOOM_SCALE: Vector2 = Vector2(3.0, 3.0)
+# Fallback zoom scales for a level when no specific region is active. Scaled to the
+# square 800-tall base so they match the old 4:3 framing (800/300 and 800/200); the
+# named region cameras compute their own scale in _zoom_scale_for_region.
+const FIRST_ZOOM_SCALE: Vector2 = Vector2(2.6667, 2.6667)
+const SECOND_ZOOM_SCALE: Vector2 = Vector2(4.0, 4.0)
 const ZOOMED_OUT_SCALE: Vector2 = Vector2.ONE
-const BASE_SCENE_SIZE: Vector2 = Vector2(800.0, 600.0)
+const BASE_SCENE_SIZE: Vector2 = Vector2(1200.0, 800.0)
 ## How much the debug speedrun accelerates the night.
 const DEBUG_SPEEDRUN_TIME_SCALE: float = 10.0
 const PAN_DURATION: float = 0.35
 const PAN_TRANS: int = Tween.TRANS_SINE
 const PAN_EASE: int = Tween.EASE_IN_OUT
+## The camera views that look at the robot on the table (head, body, torso, legs),
+## across both zoom levels (the vertical navigation between them mixes levels).
+const TABLE_VIEW_ZOOM_REGIONS: Array[StringName] = [
+	&"Zoom1_R1_C1",
+	&"Zoom1_R3_C1",
+	&"Zoom2_R2_C1",
+	&"Zoom2_R3_C1",
+	&"Zoom2_R4_C1",
+]
+## The engine (generator) camera, over on the right. Panning between it and any of
+## the table views swings along a curved path (see _curved_pan_to_region) that bows
+## down toward the scene's bottom-right corner instead of tracking a straight diagonal.
+const ENGINE_ZOOM_REGION: StringName = &"Zoom1_R1_C3"
+## The window camera (top-left). Panning between it and the engine also curves, but
+## bows the opposite way - up toward the top-right corner - so it hugs the top.
+const WINDOW_ZOOM_REGION: StringName = &"Zoom1_R0_C1"
+## Which curved-pan hop a transition is (see _curved_pan_hop): each kind picks its own
+## corner to bow toward and its own pair of roll angles.
+const CURVED_PAN_NONE: int = 0
+const CURVED_PAN_TABLE_GENERATOR: int = 1
+const CURVED_PAN_WINDOW_GENERATOR: int = 2
+## Peak of pow(p, 6) * (1 - p) (at p = 6/7), used to normalise the arrival overshoot
+## bump so curved_pan_bounce reads as roughly the fraction of overshoot past the target.
+const OVERSHOOT_BUMP_PEAK: float = 0.0566578
 const ZOOM_DURATION: float = 0.35
 const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 const RIP_CORD_FULL_EXTEND_SOUND_PATH := "res://assets/sounds/rip_cord/ripcord.mp3"
@@ -121,9 +148,21 @@ const TORSO_SCREW_INDEX_RIGHT_WAIST: int = 3
 const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 @export var robot_lights_on_modulate: Color = Color(1.0, 1.0, 1.0, 1.0)
 @export var robot_lights_off_modulate: Color = Color(0.3, 0.3, 0.3, 1.0)
-## Darkening applied to the drone's deployed guns when the lights are off, so the
-## lit gun art reads as part of the dark drone instead of glowing at full bright.
-@export var drone_guns_lights_off_modulate: Color = Color(0.4, 0.4, 0.46, 1.0)
+## Darkening applied to the whole curtain group when the lights are off. The curtains
+## render above the dark_shed overlay (so a closed curtain covers the window instead
+## of showing through its hole), so they are dimmed here to sink into the dark room
+## rather than staying lit. Kept darker than the robot so the fabric reads as shadow.
+@export var curtain_lights_off_modulate: Color = Color(0.12, 0.12, 0.14, 1.0)
+## Darkening applied to the bulb (and its socket) when the lights are off, so the
+## deactivated bulb still reads as a dim shape hanging in front of the window rather
+## than glowing. The glow layer (Light) is hidden outright when off instead.
+@export var bulb_lights_off_modulate: Color = Color(0.32, 0.32, 0.36, 1.0)
+## Darkening applied to the drone's deployed guns whenever they are out. The lit gun
+## art reads clearly as guns but pops over the drone's shading at full bright, while
+## the dedicated dark art is too dull to read - so the lit guns are dimmed to this
+## level (in both light states, since the drone is shaded whenever present) to stay
+## legible while sitting within the shadows.
+@export var drone_guns_dim_modulate: Color = Color(0.5, 0.5, 0.52, 1.0)
 
 @export_group("Night Timer")
 @export var night_duration_seconds: float = 60.0
@@ -292,6 +331,67 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 ## negative pushes the camera view down, positive up. A bare head and the
 ## full-body robot are both unaffected.
 @export var head_only_camera_drop_px: float = -100.0
+@export_group("Camera Curved Pan")
+## How far the curved table<->generator and window<->generator pans bow toward their
+## corner (bottom-right for the table hop, top-right for the window hop). 0 = a straight
+## line; 1.0 puts the route's midpoint halfway to that corner; higher bows it further.
+@export var curved_pan_bow_strength: float = 1.0
+## Table<->generator roll: degrees the view tilts to at the first keyframe.
+@export var table_to_generator_rotation_1: float = 30.0
+## Table<->generator roll: degrees the view tilts to at the second keyframe (then eases
+## back to 0 by the end of the pan).
+@export var table_to_generator_rotation_2: float = -30.0
+## Table<->generator: progress (0-1) of the first roll keyframe - the roll reaches
+## rotation_1 here (default a third of the way through the pan).
+@export_range(0.0, 1.0, 0.01) var table_to_generator_keyframe_1: float = 0.33
+## Table<->generator: progress (0-1) of the second roll keyframe - reaches rotation_2
+## here, then eases to 0 (default two thirds through). Keep it above keyframe_1.
+@export_range(0.0, 1.0, 0.01) var table_to_generator_keyframe_2: float = 0.66
+## Window<->generator roll: degrees the view tilts to at the first keyframe.
+@export var window_to_generator_rotation_1: float = 30.0
+## Window<->generator roll: degrees the view tilts to at the second keyframe.
+@export var window_to_generator_rotation_2: float = -30.0
+## Window<->generator: progress (0-1) of the first roll keyframe.
+@export_range(0.0, 1.0, 0.01) var window_to_generator_keyframe_1: float = 0.33
+## Window<->generator: progress (0-1) of the second roll keyframe. Keep above keyframe_1.
+@export_range(0.0, 1.0, 0.01) var window_to_generator_keyframe_2: float = 0.66
+## When the roll finishes relative to the camera's arrival (both hops). 1.0 = the roll
+## returns to level exactly as the camera settles; below 1 finishes it early (then holds
+## level); above 1 delays it, letting the roll keep settling for a moment after the
+## camera has arrived (the pan runs proportionally longer to make room).
+@export_range(0.25, 2.0, 0.01) var rotation_settle: float = 1.0
+## Arrival bounce (both hops). 0 = the camera eases cleanly into place; higher makes it
+## sail a little past the target along its route and spring back, so it never snaps dead.
+@export_range(0.0, 0.6, 0.01) var curved_pan_bounce: float = 0.0
+
+@export_group("Camera Mouse Follow")
+## A subtle sway: while the camera rests on a view it drifts toward the mouse. These set
+## how far (pixels) it drifts at full pull for each kind of view. 0 disables it for that
+## view. The whole effect is also gated by the CAMERA SWAY setting.
+@export var mouse_follow_strength_table: float = 24.0
+## Drift while looking at the generator.
+@export var mouse_follow_strength_generator: float = 24.0
+## Drift while looking at the window.
+@export var mouse_follow_strength_window: float = 24.0
+## Universal multiplier on the horizontal (left-right) sway only, applied on top of every
+## view's strength above. 1 = same as vertical; below 1 damps side-to-side drift; 0 makes
+## the sway vertical-only; above 1 exaggerates it. Applies to all camera views.
+@export_range(0.0, 3.0, 0.05) var mouse_follow_horizontal_strength: float = 1.0
+## Edge softness: higher makes the pull toward the mouse saturate sooner, so it tapers
+## off (exponentially) as the cursor approaches the screen edge - a natural smoothing so
+## the camera never lurches when the mouse reaches the border.
+@export_range(0.5, 8.0, 0.1) var mouse_follow_edge_falloff: float = 2.5
+## How quickly the camera eases toward the mouse-follow target, per second. Higher is
+## snappier, lower is floatier.
+@export_range(1.0, 30.0, 0.5) var mouse_follow_smoothing: float = 8.0
+
+@export_group("Camera Table-Window Pan")
+## How long the look between the table and the window takes, in seconds. Lower = faster.
+@export_range(0.05, 2.0, 0.01) var table_window_pan_duration: float = 0.35
+## How much the pan speeds up through its midpoint (a smooth ease-in-out power): 1 = a
+## straight, constant-speed move; 2 = quadratic (slow ends, fast middle); higher makes
+## the ends slower and the midpoint punch through faster still.
+@export_range(1.0, 6.0, 0.1) var table_window_mid_speedup: float = 2.5
 
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
@@ -299,6 +399,9 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @onready var second_zoom_regions: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ZoomRegions/ZoomLevel2
 @onready var light_placeholder: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder
 @onready var dark_placeholder: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/DarkPlaceholder
+## Lights-off overlay for the engine (the engine's equivalent of dark_shed), shown
+## alongside it when the generator is switched off.
+@onready var dark_engine: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/DarkEngine
 @onready var window_light_on: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/WindowLightOn
 @onready var uncle_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/UncleWindow
 @onready var patrol_drone: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/PatrolDrone
@@ -312,9 +415,23 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 	$FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/DroneDark3,
 	$FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/DroneDark4,
 ]
-@onready var shed_light: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Light
-@onready var shed_bulb: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Bulb
-@onready var bulb_over_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/BulbOverWindow
+# The bulb/lighting group renders above the curtains and the darkness overlays, so
+# the lit bulb hangs in front of a closed curtain and the deactivated bulb is not
+# clipped by the window hole in the dark_shed overlay.
+@onready var shed_light: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Light
+@onready var shed_bulb: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Bulb
+@onready var bulb_over_window: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/BulbOverWindow
+## Curtain layers live above the lights-off dark overlay (dark_shed) so the closed
+## curtain covers the window instead of showing through its transparent hole. The
+## whole group is dimmed as one when the lights go out.
+@onready var curtains_root: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains
+@onready var curtain_opened: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains/CurtainOpened
+@onready var curtain_closed: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains/CurtainClosed
+## The curtain rod's shadow overlay (Dark6). It belongs to the curtains, so it is
+## shown whenever the player owns them - in both the open and closed states - and
+## hidden entirely when they do not.
+@onready var curtain_dark_overlay: CanvasItem = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder/Dark6
+@onready var curtain_toggle: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/CurtainToggle
 @onready var pull_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/PullCord
 @onready var electrical_cord: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/ElectricalCord
 @onready var stress_test_robot_shadow: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobotShadow
@@ -347,7 +464,13 @@ var _current_zoom_region: Control = null
 var _pan_tween: Tween = null
 var _zoom_tween: Tween = null
 var _canvas_base_scale: float = 1.0
+## Current smoothed mouse-follow (sway) offset added on top of the resting camera
+## position; eased toward the mouse target each frame and back to zero during pans.
+var _mouse_follow_offset: Vector2 = Vector2.ZERO
 var _stress_test_dark: bool = false
+## Whether the window curtain is drawn open (true) or pulled closed (false).
+## Closing it hides the window and layers the Dark6 shadow overlay on the room.
+var _curtain_open: bool = true
 var _night_elapsed: float = 0.0
 var _night_finished: bool = false
 var _electricity_percent: float = 0.0
@@ -503,6 +626,8 @@ var _drone_committed_to_fire: bool = false
 
 
 func _ready() -> void:
+	# So the laptop's drone-monitor app can find the live stress test to visualize it.
+	add_to_group("stress_test_scene")
 	if _is_intro_tutorial_stress_test():
 		night_duration_seconds = intro_tutorial_duration_seconds
 	else:
@@ -517,6 +642,7 @@ func _ready() -> void:
 	_initialize_pull_cord()
 	_initialize_stress_systems()
 	_initialize_emergency_power_button()
+	_initialize_curtain()
 	call_deferred("_initialize_zoom")
 
 
@@ -563,6 +689,7 @@ func _process(delta: float) -> void:
 		_update_patrol_drone(sim_delta)
 	_refresh_stress_hud()
 	_update_hover_box_tooltip()
+	_update_camera_mouse_follow(delta)
 
 	# Failures: the uncle catching you (window alert) and the drone shooting you
 	# (both handled where they occur), plus the robot waking up once her awareness
@@ -672,11 +799,12 @@ func _move_zoom_region(direction: Vector2i) -> void:
 	if next_region == null or next_region == _current_zoom_region:
 		return
 
+	var from_region := _current_zoom_region
 	_zoom_level = _zoom_level_for_region(next_region)
 	_current_zoom_region = next_region
 	if _zoom_tween and _zoom_tween.is_valid():
 		_zoom_tween.kill()
-	_apply_zoom_region(true)
+	_apply_zoom_region(true, PAN_DURATION, from_region)
 	_interrupt_screw_repairs_if_current_view_requires_it()
 
 
@@ -709,16 +837,21 @@ func _set_zoom_level(value: int, focus_position: Vector2) -> void:
 	var target_scale := _current_zoom_scale()
 	var target_position := _zoom_position_for_region(_current_zoom_region, target_scale) if _is_zoomed_in() else _default_canvas_position()
 
+	# Driven through _step_linear_pan so the zoom rides the live sway offset and levels any
+	# leftover roll, settling on centre + sway instead of centre then re-adjusting.
+	var start_position := scene_canvas.position - _mouse_follow_offset
+	var start_scale := scene_canvas.scale
+	var start_rotation := scene_canvas.rotation
 	_zoom_tween = create_tween()
-	_zoom_tween.set_parallel(true)
 	_zoom_tween.set_trans(PAN_TRANS)
 	_zoom_tween.set_ease(PAN_EASE)
-	_zoom_tween.tween_property(scene_canvas, "scale", target_scale * _canvas_base_scale, ZOOM_DURATION)
-	_zoom_tween.tween_property(scene_canvas, "position", target_position, ZOOM_DURATION)
+	_zoom_tween.tween_method(
+		_step_linear_pan.bind(start_position, target_position, start_scale, target_scale * _canvas_base_scale, start_rotation),
+		0.0, 1.0, ZOOM_DURATION)
 	_interrupt_screw_repairs_if_current_view_requires_it()
 
 
-func _apply_zoom_region(animated: bool, duration: float = PAN_DURATION) -> void:
+func _apply_zoom_region(animated: bool, duration: float = PAN_DURATION, from_region: Control = null) -> void:
 	if _current_zoom_region != null:
 		print("[ZoomDebug] region=", _current_zoom_region.name, " level=", _zoom_level, " head_only=", _is_head_only_robot(), " new_head_cam=", _robot_uses_new_head_camera())
 	var logical_scale := _current_zoom_scale()
@@ -730,15 +863,298 @@ func _apply_zoom_region(animated: bool, duration: float = PAN_DURATION) -> void:
 
 	if not animated:
 		scene_canvas.scale = target_scale
-		scene_canvas.position = target_position
+		scene_canvas.position = target_position + _mouse_follow_offset
+		scene_canvas.rotation = 0.0
 		return
 
+	# The engine<->table and engine<->window hops swing along a curved path instead of a
+	# straight diagonal, each bowing toward its own corner with its own roll (see
+	# _curved_pan_hop / _curved_pan_to_region).
+	var hop := _curved_pan_hop(from_region, _current_zoom_region)
+	if from_region != null and hop != CURVED_PAN_NONE:
+		_curved_pan_to_region(target_position, target_scale, duration, hop)
+		return
+
+	# Looking between the table and the window uses its own duration and a stronger
+	# ease-in-out (slow at the ends, fastest through the midpoint).
+	if from_region != null and _is_table_window_pan(from_region, _current_zoom_region):
+		_eased_pan_to_region(target_position, target_scale)
+		return
+
+	# Plain straight pan, driven through _step_linear_pan so it too rides the live sway
+	# offset (and eases any leftover roll from an interrupted curved pan back to level).
+	var start_position := scene_canvas.position - _mouse_follow_offset
+	var start_scale := scene_canvas.scale
+	var start_rotation := scene_canvas.rotation
 	_pan_tween = create_tween()
-	_pan_tween.set_parallel(true)
 	_pan_tween.set_trans(PAN_TRANS)
 	_pan_tween.set_ease(PAN_EASE)
-	_pan_tween.tween_property(scene_canvas, "scale", target_scale, duration)
-	_pan_tween.tween_property(scene_canvas, "position", target_position, duration)
+	_pan_tween.tween_method(
+		_step_linear_pan.bind(start_position, target_position, start_scale, target_scale, start_rotation),
+		0.0, 1.0, duration)
+
+
+## Which curved-pan hop this transition is (or CURVED_PAN_NONE for a straight line):
+## the table<->generator hop or the window<->generator hop, in either direction. Every
+## other hop stays straight.
+func _curved_pan_hop(from_region: Control, to_region: Control) -> int:
+	if from_region == null or to_region == null:
+		return CURVED_PAN_NONE
+	var from_name := StringName(String(from_region.name))
+	var to_name := StringName(String(to_region.name))
+	var from_engine := from_name == ENGINE_ZOOM_REGION
+	var to_engine := to_name == ENGINE_ZOOM_REGION
+	var from_table := from_name in TABLE_VIEW_ZOOM_REGIONS
+	var to_table := to_name in TABLE_VIEW_ZOOM_REGIONS
+	if (from_table and to_engine) or (from_engine and to_table):
+		return CURVED_PAN_TABLE_GENERATOR
+	if (from_name == WINDOW_ZOOM_REGION and to_engine) or (from_engine and to_name == WINDOW_ZOOM_REGION):
+		return CURVED_PAN_WINDOW_GENERATOR
+	return CURVED_PAN_NONE
+
+
+## Pan the canvas to target_position along a quadratic Bezier for the given curved-pan
+## `hop`. The control point pulls the route's midpoint toward that hop's corner (the
+## table hop bows to the bottom-right, the window hop to the top-right), so the camera
+## swings out toward the corner and then in to the target instead of tracking a straight
+## diagonal. Scale eases in parallel and the view rolls through the hop's two configured
+## angles; the same TRANS/EASE drive the whole thing.
+func _curved_pan_to_region(target_position: Vector2, target_scale: Vector2, duration: float, hop: int) -> void:
+	var corner: Vector2
+	var rotation_1: float
+	var rotation_2: float
+	var keyframe_1: float
+	var keyframe_2: float
+	if hop == CURVED_PAN_WINDOW_GENERATOR:
+		corner = Vector2(BASE_SCENE_SIZE.x, 0.0)  # top-right
+		rotation_1 = window_to_generator_rotation_1
+		rotation_2 = window_to_generator_rotation_2
+		keyframe_1 = window_to_generator_keyframe_1
+		keyframe_2 = window_to_generator_keyframe_2
+	else:
+		corner = Vector2(BASE_SCENE_SIZE.x, BASE_SCENE_SIZE.y)  # bottom-right
+		rotation_1 = table_to_generator_rotation_1
+		rotation_2 = table_to_generator_rotation_2
+		keyframe_1 = table_to_generator_keyframe_1
+		keyframe_2 = table_to_generator_keyframe_2
+
+	# Start from the resting base (strip the current sway offset); the step re-adds it, so
+	# the pan interpolates centre-to-centre and the sway rides continuously on top.
+	var start_position := scene_canvas.position - _mouse_follow_offset
+	var start_scale := scene_canvas.scale
+	var midpoint := (start_position + target_position) * 0.5
+	# The canvas position that centers `corner` in the camera. Pulling the route's
+	# midpoint toward it bows the path toward that corner; at strength 1.0 the midpoint
+	# sits halfway between the straight route and the corner. Use the average of the
+	# start and target scales (not just the target) so the corner - and the whole curve -
+	# is identical whichever direction the pan runs, keeping the two routes symmetric.
+	var average_scale := (start_scale + target_scale) * 0.5
+	var corner_position := camera_window.size * 0.5 - corner * average_scale
+	var control := midpoint + (corner_position - midpoint) * curved_pan_bow_strength
+
+	# Driven by a LINEAR 0..1 progress; each channel (position + its bounce, scale, and the
+	# roll with its own settle timing) applies its own easing inside _step_curved_pan. A
+	# rotation_settle above 1 stretches the tween so the roll can keep settling after the
+	# camera has already arrived and parked at the target.
+	_pan_tween = create_tween()
+	_pan_tween.tween_method(
+		_step_curved_pan.bind(start_position, control, target_position, start_scale, target_scale, rotation_1, rotation_2, keyframe_1, keyframe_2),
+		0.0, 1.0, duration * maxf(1.0, rotation_settle))
+
+
+## One frame of the curved pan. `t` is linear 0..1 over the (possibly stretched) tween.
+## The camera position/scale run over the first part and settle (with the arrival bounce)
+## while the roll runs over its own share so it can finish early or on a delay; the roll
+## pivots around the camera-window centre so the framed subject stays centred.
+func _step_curved_pan(t: float, start_position: Vector2, control: Vector2, target_position: Vector2, start_scale: Vector2, target_scale: Vector2, rotation_1_deg: float, rotation_2_deg: float, keyframe_1: float, keyframe_2: float) -> void:
+	var view_center := camera_window.size * 0.5
+	var settle := clampf(rotation_settle, 0.25, 4.0)
+	var settle_factor := maxf(1.0, settle)
+	# The camera motion occupies the first 1/settle_factor of the tween; the roll occupies
+	# settle/settle_factor. When settle == 1 both are the whole tween (finish together).
+	var position_progress := clampf(t * settle_factor, 0.0, 1.0)
+	var roll_progress := clampf(t * settle_factor / settle, 0.0, 1.0)
+	var bezier_position := _quadratic_bezier(start_position, control, target_position, _bounce_progress(position_progress))
+	# The camera tilt is an optional setting; when off the pan keeps the same curved path
+	# and bounce but never rolls.
+	var roll := _pan_roll_at(roll_progress, rotation_1_deg, rotation_2_deg, keyframe_1, keyframe_2) if _camera_roll_enabled() else 0.0
+	scene_canvas.scale = start_scale.lerp(target_scale, smoothstep(0.0, 1.0, position_progress))
+	scene_canvas.rotation = roll
+	scene_canvas.position = view_center - (view_center - bezier_position).rotated(roll) + _mouse_follow_offset
+
+
+## Eased progress along the camera route for a linear 0..1 `p`: a smooth ease-in-out,
+## plus (when curved_pan_bounce > 0) an overshoot bump near the end that pushes the value
+## briefly past 1 - so the Bezier sails past the target - before settling back to exactly
+## 1 at the end. The bump is 0 at both ends, so the start and final frame are unaffected.
+func _bounce_progress(p: float) -> float:
+	var base := smoothstep(0.0, 1.0, p)
+	if curved_pan_bounce <= 0.0:
+		return base
+	return base + curved_pan_bounce * (pow(p, 6.0) * (1.0 - p) / OVERSHOOT_BUMP_PEAK)
+
+
+## Camera roll in radians at pan progress t: eased from 0 up to rotation_1_deg by
+## keyframe_1, smoothly to rotation_2_deg by keyframe_2, then smoothly back to 0 by the
+## end. keyframe_1/keyframe_2 are this hop's own slider positions.
+func _pan_roll_at(t: float, rotation_1_deg: float, rotation_2_deg: float, keyframe_1: float, keyframe_2: float) -> float:
+	# Clamp the keyframes into a valid, strictly increasing order so no segment has zero
+	# length (which would divide by zero) however the sliders are set.
+	var k1 := clampf(keyframe_1, 0.0001, 0.9998)
+	var k2 := clampf(keyframe_2, k1 + 0.0001, 0.9999)
+	if t <= k1:
+		return deg_to_rad(lerpf(0.0, rotation_1_deg, smoothstep(0.0, 1.0, t / k1)))
+	if t <= k2:
+		return deg_to_rad(lerpf(rotation_1_deg, rotation_2_deg, smoothstep(0.0, 1.0, (t - k1) / (k2 - k1))))
+	return deg_to_rad(lerpf(rotation_2_deg, 0.0, smoothstep(0.0, 1.0, (t - k2) / (1.0 - k2))))
+
+
+func _quadratic_bezier(p0: Vector2, control: Vector2, p1: Vector2, t: float) -> Vector2:
+	var u := 1.0 - t
+	return u * u * p0 + 2.0 * u * t * control + t * t * p1
+
+
+## True for the straight look between a table/robot view and the window view (either
+## direction), which gets the stronger, tunable ease-in-out.
+func _is_table_window_pan(from_region: Control, to_region: Control) -> bool:
+	if from_region == null or to_region == null:
+		return false
+	var from_name := StringName(String(from_region.name))
+	var to_name := StringName(String(to_region.name))
+	var from_table := from_name in TABLE_VIEW_ZOOM_REGIONS
+	var to_table := to_name in TABLE_VIEW_ZOOM_REGIONS
+	return (from_table and to_name == WINDOW_ZOOM_REGION) \
+			or (from_name == WINDOW_ZOOM_REGION and to_table)
+
+
+## Straight-line pan to the target using table_window_pan_duration and a power ease-in-out
+## whose strength (table_window_mid_speedup) sets how much faster the midpoint is than the
+## slow ends. Driven linearly with the ease applied inside so the speed-up is smooth.
+func _eased_pan_to_region(target_position: Vector2, target_scale: Vector2) -> void:
+	var start_position := scene_canvas.position - _mouse_follow_offset
+	var start_scale := scene_canvas.scale
+	var start_rotation := scene_canvas.rotation
+	_pan_tween = create_tween()
+	_pan_tween.tween_method(
+		_step_eased_pan.bind(start_position, target_position, start_scale, target_scale, start_rotation),
+		0.0, 1.0, table_window_pan_duration)
+
+
+func _step_eased_pan(t: float, start_position: Vector2, target_position: Vector2, start_scale: Vector2, target_scale: Vector2, start_rotation: float) -> void:
+	var eased := _power_ease_in_out(t, table_window_mid_speedup)
+	scene_canvas.position = start_position.lerp(target_position, eased) + _mouse_follow_offset
+	scene_canvas.scale = start_scale.lerp(target_scale, eased)
+	# Level out any leftover roll from an interrupted curved pan over the same ease.
+	scene_canvas.rotation = lerpf(start_rotation, 0.0, eased)
+
+
+## Symmetric ease-in-out raised to `power`: power 1 is linear (constant speed); higher
+## powers hold the ends slower and make the midpoint (t = 0.5, its fastest point) punch
+## through faster. Continuous in value and speed, so the acceleration stays smooth.
+func _power_ease_in_out(t: float, power: float) -> float:
+	var p := maxf(1.0, power)
+	if t < 0.5:
+		return 0.5 * pow(2.0 * t, p)
+	return 1.0 - 0.5 * pow(2.0 * (1.0 - t), p)
+
+
+## One frame of a plain straight pan/zoom (position, scale, roll-to-level), driven from
+## the tween's eased 0..1 value, with the live mouse-follow sway offset added so the move
+## settles directly on centre + sway rather than snapping to centre first.
+func _step_linear_pan(t: float, start_position: Vector2, target_position: Vector2, start_scale: Vector2, target_scale: Vector2, start_rotation: float) -> void:
+	scene_canvas.position = start_position.lerp(target_position, t) + _mouse_follow_offset
+	scene_canvas.scale = start_scale.lerp(target_scale, t)
+	scene_canvas.rotation = lerpf(start_rotation, 0.0, t)
+
+
+## Whether the CAMERA TILT setting (the roll during curved pans) is on. Defaults to on
+## if GameState is somehow unavailable.
+func _camera_roll_enabled() -> bool:
+	var state := get_node_or_null("/root/GameState")
+	return state == null or bool(state.get("camera_roll_enabled"))
+
+
+## Whether the CAMERA SWAY setting (mouse-follow drift) is on.
+func _camera_mouse_follow_enabled() -> bool:
+	var state := get_node_or_null("/root/GameState")
+	return state == null or bool(state.get("camera_mouse_follow_enabled"))
+
+
+## True while a pan or zoom tween is animating the camera, so the mouse-follow sway
+## should stand down and let the tween own the position.
+func _camera_transition_active() -> bool:
+	return (_pan_tween != null and _pan_tween.is_running()) \
+			or (_zoom_tween != null and _zoom_tween.is_running())
+
+
+## Called every frame: while the camera rests on a view, drift it toward the mouse by a
+## small, edge-softened offset added on top of the resting position. During a pan (or
+## when the setting is off) the offset eases back to zero so nothing fights the pan.
+func _update_camera_mouse_follow(delta: float) -> void:
+	if camera_window == null or scene_canvas == null:
+		return
+	var smoothing := 1.0 - exp(-mouse_follow_smoothing * maxf(0.0, delta))
+	# Track the sway toward the current view's mouse target every frame - including during
+	# a pan, where _current_zoom_region is already the destination. Pans add this offset in
+	# their step, so the camera flows straight to (centre + sway) instead of snapping to
+	# centre and then re-adjusting.
+	var following := _camera_mouse_follow_enabled() and _is_zoomed_in() and _current_zoom_region != null
+	var target := _mouse_follow_target() if following else Vector2.ZERO
+	_mouse_follow_offset = _mouse_follow_offset.lerp(target, smoothing)
+	# While a pan runs its step applies the offset; at rest we apply it here.
+	if not _camera_transition_active() and _is_zoomed_in() and _current_zoom_region != null:
+		_apply_resting_camera_position()
+
+
+## Place the canvas at its resting position for the current view plus the current sway
+## offset. (Rotation is 0 at rest, so the offset is a plain screen-space translation.)
+func _apply_resting_camera_position() -> void:
+	var base := _zoom_position_for_region(_current_zoom_region, _current_zoom_scale())
+	scene_canvas.position = base + _mouse_follow_offset
+
+
+## The sway offset the current mouse position calls for. The pull toward the cursor grows
+## from the view centre and tapers exponentially toward the edges (via _mouse_follow_falloff)
+## so it never lurches; scaled by this view's configured strength.
+func _mouse_follow_target() -> Vector2:
+	var strength := _mouse_follow_strength_for_current_view()
+	if strength == 0.0:
+		return Vector2.ZERO
+	var view_size := camera_window.size
+	if view_size.x <= 0.0 or view_size.y <= 0.0:
+		return Vector2.ZERO
+	var center := view_size * 0.5
+	var mouse := camera_window.get_local_mouse_position()
+	var normalized := Vector2((mouse.x - center.x) / center.x, (mouse.y - center.y) / center.y)
+	var pull := Vector2(_mouse_follow_falloff(normalized.x), _mouse_follow_falloff(normalized.y))
+	# Negative: shifting the canvas the opposite way moves the *view* toward the cursor,
+	# so the camera drifts with the mouse. The universal horizontal multiplier scales only
+	# the left-right drift on top of this view's strength.
+	var offset := -pull * strength
+	offset.x *= mouse_follow_horizontal_strength
+	return offset
+
+
+## Signed, saturating edge falloff for one axis: near the centre it grows ~linearly with
+## the cursor's distance; toward the edge each extra bit of distance adds exponentially
+## less, so the pull eases off smoothly (never snapping at the border).
+func _mouse_follow_falloff(x: float) -> float:
+	return signf(x) * (1.0 - exp(-absf(x) * mouse_follow_edge_falloff))
+
+
+## The sway strength for the kind of view the camera is currently on (table/robot,
+## generator, or window); other views do not sway.
+func _mouse_follow_strength_for_current_view() -> float:
+	if _current_zoom_region == null:
+		return 0.0
+	var region_name := StringName(String(_current_zoom_region.name))
+	if region_name == WINDOW_ZOOM_REGION:
+		return mouse_follow_strength_window
+	if region_name == ENGINE_ZOOM_REGION:
+		return mouse_follow_strength_generator
+	if region_name in TABLE_VIEW_ZOOM_REGIONS:
+		return mouse_follow_strength_table
+	return 0.0
 
 
 func _zoom_position_for_region(region: Control, scale_value: Vector2) -> Vector2:
@@ -766,10 +1182,12 @@ func _on_camera_window_resized() -> void:
 func _apply_default_canvas_transform() -> void:
 	if camera_window == null or scene_canvas == null or camera_window.size == Vector2.ZERO:
 		return
-	_canvas_base_scale = minf(
-		camera_window.size.x / BASE_SCENE_SIZE.x,
-		camera_window.size.y / BASE_SCENE_SIZE.y
-	)
+	# Lock the base scale to the scene's height, not min(width, height). The world is
+	# wider than the 4:3 camera (1200x800), so a min() would fit the full width and
+	# shrink every framed camera when the scene grew sideways. Height-fit keeps all the
+	# existing (left-side) cameras framed exactly as before; the extra width to the
+	# right is simply panned into view by the zoom regions that live out there.
+	_canvas_base_scale = camera_window.size.y / BASE_SCENE_SIZE.y
 	scene_canvas.size = BASE_SCENE_SIZE
 
 
@@ -800,10 +1218,14 @@ func _zoom_scale_for_region(region: Control) -> Vector2:
 	if region_size.x <= 0.001 or region_size.y <= 0.001:
 		return _base_zoom_scale_for_level(_zoom_level)
 
-	return Vector2(
-		BASE_SCENE_SIZE.x / region_size.x,
-		BASE_SCENE_SIZE.y / region_size.y
-	)
+	# The scene world is square (800x800) but the camera window stays 4:3, so lock the
+	# zoom to the region's height - the axis that fills the 4:3 view - and keep it
+	# uniform so the scene is never stretched. A region's width only sets how much
+	# horizontal context is centered around it (the 4:3 view shows more than the
+	# region's own width). This keeps every framed camera at its authored zoom
+	# regardless of BASE_SCENE_SIZE's height.
+	var factor := BASE_SCENE_SIZE.y / region_size.y
+	return Vector2(factor, factor)
 
 
 func _is_zoomed_in() -> bool:
@@ -1121,6 +1543,64 @@ func _on_pull_cord_max_pull_reached() -> void:
 	_set_stress_test_dark(not _stress_test_dark)
 
 
+func _initialize_curtain() -> void:
+	if curtain_toggle != null:
+		var gui_callable := Callable(self, "_on_curtain_toggle_gui_input")
+		if not curtain_toggle.gui_input.is_connected(gui_callable):
+			curtain_toggle.gui_input.connect(gui_callable)
+	_apply_curtain_availability()
+	_apply_curtain_state()
+
+
+## True when the player owns the curtains upgrade. Curtains are an unlockable
+## ability tracked in GameState's owned_tools ledger; a fresh game does not have
+## them until they are bought (or granted via the debug give-item menu).
+func _player_has_curtains() -> bool:
+	var state := get_node_or_null("/root/GameState")
+	return state != null and state.has_method("has_tool") and bool(state.call("has_tool", "curtains"))
+
+
+## Show or hide the whole curtain feature based on whether the player owns it. With
+## no curtains there is nothing to see and the window is not clickable; the Dark6
+## rod-shadow overlay is also gated on ownership (it belongs to the curtains, and is
+## present for both the open and closed states). Safe to call again at runtime, e.g.
+## after the debug menu grants the item mid-night.
+func _apply_curtain_availability() -> void:
+	var owned := _player_has_curtains()
+	if curtains_root != null:
+		curtains_root.visible = owned
+	if curtain_toggle != null:
+		curtain_toggle.visible = owned
+		curtain_toggle.mouse_filter = Control.MOUSE_FILTER_PASS if owned else Control.MOUSE_FILTER_IGNORE
+	if curtain_dark_overlay != null:
+		curtain_dark_overlay.visible = owned
+
+
+func _on_curtain_toggle_gui_input(event: InputEvent) -> void:
+	if _night_finished or not _player_has_curtains():
+		return
+	if event is InputEventMouseButton and event.pressed \
+			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		_set_curtain_open(not _curtain_open)
+		curtain_toggle.accept_event()
+
+
+func _set_curtain_open(value: bool) -> void:
+	if _curtain_open == value:
+		return
+	_curtain_open = value
+	_apply_curtain_state()
+
+
+## Show the open or closed curtain art for the current toggle state. Only meaningful
+## while the player owns curtains (otherwise curtains_root is hidden as a whole).
+func _apply_curtain_state() -> void:
+	if curtain_opened != null:
+		curtain_opened.visible = _curtain_open
+	if curtain_closed != null:
+		curtain_closed.visible = not _curtain_open
+
+
 func _set_stress_test_dark(value: bool) -> void:
 	var was_dark := _stress_test_dark
 	_stress_test_dark = value
@@ -1142,6 +1622,19 @@ func _apply_lights_off_modulate() -> void:
 		electrical_cord.modulate = lights_modulate
 	if emergency_power_button != null:
 		emergency_power_button.modulate = lights_modulate
+	# The curtains sit above the dark_shed overlay, so they are not darkened by it -
+	# dim the whole curtain group here instead so a closed curtain reads just as dark
+	# as the rest of the room (no bright rectangle over the window) when the lights
+	# are off, while an open curtain still lets the window show through its gap.
+	if curtains_root != null:
+		curtains_root.modulate = curtain_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
+	# The bulb stays on screen when switched off (see _apply_background_light_state);
+	# dim it here so it reads as a dead bulb rather than a lit one.
+	var bulb_modulate := bulb_lights_off_modulate if _stress_test_dark else robot_lights_on_modulate
+	if shed_bulb != null:
+		shed_bulb.modulate = bulb_modulate
+	if bulb_over_window != null:
+		bulb_over_window.modulate = bulb_modulate
 	# The drone is not dimmed by modulate: it swaps to dedicated lights-off art
 	# (silhouette + lens glow) instead, handled in _apply_patrol_drone_visual.
 
@@ -1151,12 +1644,17 @@ func _apply_background_light_state() -> void:
 		light_placeholder.visible = true
 	if dark_placeholder != null:
 		dark_placeholder.visible = _stress_test_dark
+	if dark_engine != null:
+		dark_engine.visible = _stress_test_dark
+	# Only the glow disappears when the bulb is switched off; the bulb itself (and its
+	# socket) stay visible - dimmed via _apply_lights_off_modulate - so the deactivated
+	# bulb still hangs in front of the window instead of vanishing behind it.
 	if shed_light != null:
 		shed_light.visible = not _stress_test_dark
 	if shed_bulb != null:
-		shed_bulb.visible = not _stress_test_dark
+		shed_bulb.visible = true
 	if bulb_over_window != null:
-		bulb_over_window.visible = not _stress_test_dark
+		bulb_over_window.visible = true
 
 
 func _create_mouse_tooltip() -> void:
@@ -2159,6 +2657,13 @@ func _set_drone_state(state: int) -> void:
 	_apply_patrol_drone_visual()
 
 
+## Read-only snapshot of the patrol drone's threat state, for the laptop's drone-monitor
+## app to visualize (no gameplay effect). Returns the DRONE_* constant of the current
+## state: NONE=0 (parked), IDLE=1 (arrived at the window), GUNS=2 (aiming), SHOT=3/ZAP=4.
+func get_drone_visual_state() -> int:
+	return _drone_state
+
+
 ## Begins the forced look when the drone is ready to fire but the player is not
 ## watching the window: yank the camera over (jump-scare sting), hold the aim, and
 ## let _update_patrol_drone fire once the look-up finishes (see the GUNS branch).
@@ -2249,12 +2754,20 @@ func _apply_patrol_drone_visual() -> void:
 			# but every other dark layer stays on.
 			patrol_drone.texture = DRONE_SHOT_TEXTURE
 		DRONE_GUNS:
-			# The guns use the real lit art in the dark too (the dedicated dark
-			# gun art is too dull to read as guns); a modulate darkens it so it
-			# matches the rest of the dark drone instead of staying full-bright.
+			# The drone wears its dark shading overlays (DroneDark1-4) whenever it is
+			# on screen, in BOTH light states, so the deployed guns are dimmed to sit
+			# within that shading. The lit gun art is used (the dedicated dark art is
+			# too dull to read as guns) but darkened by drone_guns_dim_modulate so it
+			# stays legible without popping bright over the shadows.
+			# (DRONE_SHOT is left untouched: it turns the guns off so the bright firing
+			# pose can flash through - that darkness-reduction-on-fire still works.)
 			_show_accessory(DRONE_GUNS_TEXTURE)
+			patrol_drone_accessory.modulate = drone_guns_dim_modulate
+			# Lights off: overlay the dark-guns shadow on top of the lit guns so the
+			# deployed barrels darken to match the rest of the dark drone. Lights-on is
+			# left exactly as it was (no dark-guns overlay).
 			if dark:
-				patrol_drone_accessory.modulate = drone_guns_lights_off_modulate
+				_show_node(patrol_drone_guns_dark)
 		DRONE_ZAP:
 			_show_accessory(_current_zap_texture())
 		_:  # DRONE_IDLE
@@ -2680,6 +3193,8 @@ func _endurance_gain_rate_per_second() -> float:
 func debug_recalibrate() -> void:
 	_apply_body_part_screw_availability()
 	_connect_screw_summary_tracking()
+	# Picks up a curtains grant made from the debug menu mid-night.
+	_apply_curtain_availability()
 
 
 # --- Debug actions panel entry points (driven by Main's Shift+Tab menu) ---
@@ -3122,6 +3637,16 @@ func _begin_stress_test_summary(
 	_summary_result = result
 	_summary_registers_completion = registers_completion
 	_pending_failure_registers_wake = registers_wake
+	# Log this night to the laptop's stress-test history - real nights only, not the
+	# intro tutorial retry (which sets _intro_failure_restart_pending before coming here).
+	if not _intro_failure_restart_pending:
+		GameState.record_stress_test_result({
+			"day": GameState.day,
+			"success": success,
+			"reason": reason,
+			"electricity": float(_electricity_summary()["percent"]),
+			"screws": float(_screw_summary()["percent"]),
+		})
 	_dragging_gas_valve = false
 	_update_summary_text()
 

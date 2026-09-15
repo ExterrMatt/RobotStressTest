@@ -95,6 +95,32 @@ extends Control
 ## negative Y lifts it up, positive Y pushes it down. Pixels, post-scale.
 @export var robot_offset: Vector2 = Vector2.ZERO
 
+@export_group("Title")
+## Scale multiplier for the title logo image. 1.0 = its authored size (640x130). It keeps
+## its aspect ratio and stays in the logo column layout, so enlarging it nudges the tagline
+## and subtitle beneath it down. Updates live in-game.
+@export_range(0.25, 4.0, 0.05) var title_image_scale: float = 1.0:
+	set(value):
+		title_image_scale = value
+		if is_node_ready():
+			_apply_title_image_scale()
+## Horizontal nudge for the title logo, in pixels (positive = right, negative = left). Moves
+## only the title's visual position, not the tagline/subtitle stacked below it. Updates live.
+@export_range(-600, 600, 1) var title_image_offset_x: float = 0.0:
+	set(value):
+		title_image_offset_x = value
+		if is_node_ready():
+			_apply_title_image_offset()
+## Vertical nudge for the title logo, in pixels (positive = down, negative = up). Moves only
+## the title's visual position (it may overlap the tagline/subtitle). Updates live.
+@export_range(-600, 600, 1) var title_image_offset_y: float = 0.0:
+	set(value):
+		title_image_offset_y = value
+		if is_node_ready():
+			_apply_title_image_offset()
+## The title image's authored size; the scale multiplier is applied to this.
+const TITLE_IMAGE_BASE_SIZE: Vector2 = Vector2(640, 130)
+
 # --- TARGET SCENES ---
 @export_group("Target Scenes")
 ## Scene to load when "New Game" / "Endless" is picked.
@@ -149,6 +175,7 @@ const BOOT_DIAGNOSTIC_SEQUENCE: Array[Dictionary] = [
 @onready var embers_layer: Control       = %EmbersLayer
 @onready var subject_tag_label: Label    = %SubjectTagLabel
 @onready var subtitle_label: Label       = %SubtitleLabel
+@onready var title_image: TextureRect    = %TitleImage
 
 # Overlay panels — built on demand by _open_overlay().
 var _current_overlay: Control = null
@@ -175,6 +202,9 @@ var _boot_diagnostic_step: int = 0
 var _boot_diagnostic_cycles: int = 0
 var _boot_diagnostic_timer: float = 0.0
 var _flicker_tween: Tween = null
+## The container-assigned position of the title logo, captured each layout so the offset
+## re-applies without drifting.
+var _title_base_position: Vector2 = Vector2.ZERO
 
 
 # =============================================================================
@@ -197,6 +227,15 @@ func _ready() -> void:
 	_apply_brightness()
 	_configure_subject_status_label_slot()
 	_configure_boot_diagnostic_label_slot()
+	# The logo column re-sorts on load and on any resize; that is the point where the title's
+	# size and base position are finalized, so (re)apply the scale pivot + offset from there.
+	# Also apply now and once deferred so the scale is present the instant the menu opens
+	# (and after the first layout pass), not only after the value is nudged.
+	var logo := title_image.get_parent() if title_image != null else null
+	if logo != null and logo is Container and not (logo as Container).sort_children.is_connected(_on_logo_sorted):
+		(logo as Container).sort_children.connect(_on_logo_sorted)
+	_apply_title_image_scale()
+	call_deferred("_apply_title_image_scale")
 
 	_build_menu()
 
@@ -211,6 +250,40 @@ func _ready() -> void:
 	_start_subject_status_loop()
 	_start_boot_diagnostic_loop()
 	_start_menu_music()
+
+
+## Applies title_image_scale to the logo. The layout/collision box is left at its scale-1
+## size (TITLE_IMAGE_BASE_SIZE), so scaling never disturbs the tagline/subtitle below it;
+## only the visual transform is scaled, pivoted on the rect's centre (which is the centred
+## art's centre) so title.png grows outward from its middle.
+func _apply_title_image_scale() -> void:
+	if title_image == null or not is_instance_valid(title_image):
+		return
+	title_image.custom_minimum_size = TITLE_IMAGE_BASE_SIZE
+	# Pivot on the rect's centre; before the first layout the size can still be zero, so fall
+	# back to the authored size then so the scale is centred from the very first frame.
+	var rect_size := title_image.size
+	if rect_size.x <= 0.0 or rect_size.y <= 0.0:
+		rect_size = TITLE_IMAGE_BASE_SIZE
+	title_image.pivot_offset = rect_size * 0.5
+	title_image.scale = Vector2.ONE * maxf(0.01, title_image_scale)
+
+
+## The logo column just re-laid-out the title (its size + base position are final now):
+## re-apply the scale (correct pivot) and re-apply the offset from the freshly captured base.
+func _on_logo_sorted() -> void:
+	if title_image == null or not is_instance_valid(title_image):
+		return
+	_title_base_position = title_image.position
+	_apply_title_image_scale()
+	_apply_title_image_offset()
+
+
+## Shifts the title by (title_image_offset_x, title_image_offset_y) from its captured base.
+func _apply_title_image_offset() -> void:
+	if title_image == null or not is_instance_valid(title_image):
+		return
+	title_image.position = _title_base_position + Vector2(title_image_offset_x, title_image_offset_y)
 
 
 func _input(event: InputEvent) -> void:

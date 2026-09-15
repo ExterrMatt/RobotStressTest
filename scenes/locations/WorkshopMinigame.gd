@@ -23,43 +23,76 @@ const EASY_MODE_OFFER_SECONDS: float = 60.0
 @export var stomach_assembly_offset: Vector2 = Vector2.ZERO
 @export var chest_assembly_offset: Vector2 = Vector2.ZERO
 
+# Craftable items. Two shapes live here:
+#   - SEGMENT parts carry a flat "recipe" of raw ingredients (scrap_metal, nuts_bolts, …).
+#   - COMPOSITE limbs (arm / leg / chest) carry a "segments" list instead. A composite is
+#     built from one of each listed segment, and each segment slot can be paid EITHER with
+#     the finished segment item OR with that segment's own raw ingredients (substitution),
+#     so e.g. an arm crafts from {upper_arm + forearm + hand} items, from all their raw
+#     ingredients, or from any mix. See _part_consumption for the matching rules.
+# head and stomach stay single-recipe parts (no segment breakdown yet).
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
 		"display_name": "Head",
 		"recipe": {"head_segments": 1},
 	},
-	"leg": {
-		"display_name": "Leg",
-		"recipe": {"scrap_metal": 1},
-	},
-	# The upper arm is craftable on its own from a single nuts & bolts. It assembles
-	# from the same shoulder/bicep/elbow segments the arm uses (the UPPER_ARM subset
-	# of the arm slots) and produces an intermediate ITEM, not a robot part. The
-	# other way to get one is the intro work cutscene; this recipe is what lets the
-	# player make the second upper arm the robot's other side needs.
-	"upper_arm": {
-		"display_name": "Upper Arm",
-		"recipe": {"nuts_bolts": 1},
-	},
-	# Graft a pre-made upper arm (crafted above, or pocketed during the intro work
-	# scene) together with nuts & bolts (the forearm) into a full arm. This recipe
-	# is a superset of the upper_arm one, so _matching_recipe_part_id prefers it
-	# whenever both an upper arm and nuts & bolts are in the bin.
-	"arm": {
-		"display_name": "Arm",
-		"recipe": {"nuts_bolts": 1, "upper_arm": 1},
-	},
-	"hand": {
-		"display_name": "Hand",
-		"recipe": {"nanobots": 1},
-	},
 	"stomach": {
 		"display_name": "Stomach",
 		"recipe": {"synth_skin": 1},
 	},
+
+	# --- arm + its segments ---
+	"upper_arm": {
+		"display_name": "Upper Arm",
+		"recipe": {"scrap_metal": 3, "nanobots": 1, "electronics": 2, "nuts_bolts": 2, "synth_skin": 1},
+	},
+	"forearm": {
+		"display_name": "Forearm",
+		"recipe": {"scrap_metal": 3, "nanobots": 1, "electronics": 1, "nuts_bolts": 3, "synth_skin": 1},
+	},
+	"hand": {
+		"display_name": "Hand",
+		"recipe": {"scrap_metal": 2, "nanobots": 1, "electronics": 1, "nuts_bolts": 2, "synth_skin": 1},
+	},
+	"arm": {
+		"display_name": "Arm",
+		"segments": ["upper_arm", "forearm", "hand"],
+	},
+
+	# --- leg + its segments ---
+	"thigh": {
+		"display_name": "Thigh",
+		"recipe": {"scrap_metal": 6, "nanobots": 2, "electronics": 4, "nuts_bolts": 3, "synth_skin": 3},
+	},
+	"shin": {
+		"display_name": "Shin",
+		"recipe": {"scrap_metal": 4, "nanobots": 1, "electronics": 2, "nuts_bolts": 2, "synth_skin": 2},
+	},
+	"foot": {
+		"display_name": "Foot",
+		"recipe": {"scrap_metal": 2, "nanobots": 1, "electronics": 1, "nuts_bolts": 2, "synth_skin": 1},
+	},
+	"leg": {
+		"display_name": "Leg",
+		"segments": ["thigh", "shin", "foot"],
+	},
+
+	# --- chest + its segments ---
+	"ribcage": {
+		"display_name": "Rib Cage",
+		"recipe": {"scrap_metal": 5, "electronics": 2, "nuts_bolts": 2},
+	},
+	"upper_plating": {
+		"display_name": "Upper Plating",
+		"recipe": {"scrap_metal": 4, "nanobots": 1, "synth_skin": 3},
+	},
+	"lower_plating": {
+		"display_name": "Lower Plating",
+		"recipe": {"scrap_metal": 2, "nanobots": 1, "nuts_bolts": 1, "synth_skin": 1},
+	},
 	"chest": {
 		"display_name": "Chest",
-		"recipe": {"electronics": 1},
+		"segments": ["ribcage", "upper_plating", "lower_plating"],
 	},
 }
 
@@ -71,7 +104,31 @@ const INGREDIENT_PATHS: Dictionary = {
 	"synth_skin":    "res://assets/textures/icons/synth_skin.png",
 	"head_segments": "res://assets/textures/icons/head_segments.png",
 	"oil":           "res://assets/textures/icons/oil.png",
+	"battery":       "res://assets/textures/icons/battery.png",
+	# Craftable segment items — these can be dropped into the bin as substitutes for a
+	# limb's raw ingredients, so the tray needs their icons (note: thigh art is thighs.png).
 	"upper_arm":     "res://assets/textures/icons/upper_arm.png",
+	"forearm":       "res://assets/textures/icons/forearm.png",
+	"hand":          "res://assets/textures/icons/hand.png",
+	"thigh":         "res://assets/textures/icons/thighs.png",
+	"shin":          "res://assets/textures/icons/shin.png",
+	"foot":          "res://assets/textures/icons/foot.png",
+	"ribcage":       "res://assets/textures/icons/ribcage.png",
+	"upper_plating": "res://assets/textures/icons/upper_plating.png",
+	"lower_plating": "res://assets/textures/icons/lower_plating.png",
+}
+
+## Per-item render scale for tray / bin pieces (a piece draws at its texture's native size,
+## so higher-resolution icons come out too big). These normalize the oversized limb
+## sub-assembly icons down to the 96px baseline the upper arm uses; anything not listed
+## draws at 1.0. (Native sizes: forearm 192, ribcage/upper/lower plating 170, others ≤96.)
+const INGREDIENT_VISUAL_SCALES: Dictionary = {
+	"head_segments": 1.05,
+	"forearm": 0.5,
+	"ribcage": 0.56,
+	"upper_plating": 0.56,
+	"lower_plating": 0.56,
+	"battery": 0.7,
 }
 const HEAD_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot head"
 const HEAD_ASSEMBLY_SIZE: Vector2 = Vector2(200, 200)
@@ -139,6 +196,39 @@ const UPPER_ARM_SEGMENT_IDS: Array[StringName] = [
 	&"elbow_joint",
 	&"elbow_inner_gears",
 ]
+## The forearm sub-assembly: the arm slots NOT in the upper-arm subset (wrist / forearm /
+## forearm_lower). Crafting a standalone `forearm` reuses the arm assembly with just these
+## active, mirroring how `upper_arm` reuses it with UPPER_ARM_SEGMENT_IDS.
+const FOREARM_SEGMENT_IDS: Array[StringName] = [
+	&"wrist",
+	&"forearm_lower",
+	&"forearm",
+]
+## The leg assembly (AssemblyLeg in the scene) is harvested whole into
+## _leg_assembly_slot_ids. Crafting a standalone thigh / shin / foot reuses that assembly
+## with only its own slot subset active — the same slot-subset trick as upper_arm/forearm.
+## Together these three partition the full leg (top → mid → foot).
+const LEG_THIGH_SEGMENT_IDS: Array[StringName] = [
+	&"upper_thigh", &"mid_thigh", &"side_thigh", &"butt",
+	&"knee", &"knee_joint", &"knee_joint_axel",
+]
+const LEG_SHIN_SEGMENT_IDS: Array[StringName] = [
+	&"calf", &"lower_leg", &"shin", &"ankle_axel",
+]
+const LEG_FOOT_SEGMENT_IDS: Array[StringName] = [
+	&"ankle", &"heel", &"upper_foot", &"middle_foot", &"toes", &"toes_border",
+]
+## Maps a composite's segment id to the assembly slots that make it up. When that segment is
+## supplied as a finished ITEM, those slots' pieces spawn pre-assembled as one bundle (see
+## _prebuilt_slot_groups / _link_component_bundles). Chest segments have no clean slot split,
+## so they're handled separately (whole chest, only if every chest segment is an item).
+const COMPONENT_SLOT_GROUPS: Dictionary = {
+	&"upper_arm": UPPER_ARM_SEGMENT_IDS,
+	&"forearm": FOREARM_SEGMENT_IDS,
+	&"thigh": LEG_THIGH_SEGMENT_IDS,
+	&"shin": LEG_SHIN_SEGMENT_IDS,
+	&"foot": LEG_FOOT_SEGMENT_IDS,
+}
 ## The hand is grafted separately (recipe: nanobots). Its segments live in the
 ## same arm art directory. Back-to-front draw order, same convention as the arm.
 const HAND_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot arm"
@@ -261,6 +351,14 @@ var _active_drag_piece: WorkshopPiece = null
 
 var _crafted: bool = false
 var _crafted_part_id: String = ""
+## The composite's segment ids that were paid with a finished component ITEM this craft (as
+## opposed to raw ingredients). Those components spawn pre-assembled as one bundle so the
+## player doesn't reassemble what they already made. See _prebuilt_slot_groups.
+var _crafted_item_segments: Array[StringName] = []
+## True only while a multi-segment bundle is being dropped, so the leg drop scoring relaxes
+## its "release point must be inside the slot" rule and lets each bundle member settle into
+## its own slot by overlap (each segment only ever accepts its own slot anyway).
+var _placing_bundle: bool = false
 
 var _shadow_group: CanvasGroup = null
 var _shadow_drawer: Control = null
@@ -864,6 +962,9 @@ func _handle_left_release(global_pos: Vector2) -> void:
 			if p is WorkshopSegment and is_instance_valid(p):
 				group.append(p)
 
+		# A pre-assembled bundle drops as one: let each member settle into its own slot by
+		# overlap even for legs (which otherwise demand the release point land in the slot).
+		_placing_bundle = group.size() > 1
 		var drops: Array = []
 		var all_valid: bool = true
 		for seg in group:
@@ -872,6 +973,7 @@ func _handle_left_release(global_pos: Vector2) -> void:
 			if target == null:
 				all_valid = false
 			drops.append([seg, target])
+		_placing_bundle = false
 
 		if all_valid:
 			for entry in drops:
@@ -1093,7 +1195,10 @@ func _segment_drop_score(segment: WorkshopSegment, slot: WorkshopAssemblySlot, r
 	var release_hits_slot: bool = slot_hitbox.has_point(release_global_pos)
 	var overlap_area: float = _rect_overlap_area(segment_hitbox, slot_hitbox)
 	if not release_hits_slot:
-		if _crafted_part_id == "leg":
+		# Legs normally demand the release point land inside the slot, but a pre-assembled
+		# bundle drops with a single release point far from most of its members, so let those
+		# members settle by overlap instead (each segment only accepts its own slot anyway).
+		if _crafted_part_id == "leg" and not _placing_bundle:
 			return -1.0e20
 		if overlap_area <= 0.0:
 			return -1.0e20
@@ -1309,12 +1414,13 @@ func _refit_segment_bounds(segment: WorkshopSegment) -> void:
 
 
 func _clear_placed_part_outline(segment: WorkshopSegment, slot: WorkshopAssemblySlot) -> void:
-	# Unified-outline parts (stomach, chest) keep their outline art after placement
-	# — a back layer repaints it behind all bases — so never strip it here. The
-	# hand and the standalone upper arm share the arm art convention: their outlines
-	# are pick-up-only hints, cleared once a piece is placed.
+	# Unified-outline parts (stomach, chest and its segments) keep their outline art after
+	# placement — a back layer repaints it behind all bases — so never strip it here. The
+	# hand and the standalone upper arm / forearm share the arm art convention: their
+	# outlines are pick-up-only hints, cleared once a piece is placed.
 	if _crafted_part_id != "head" and _crafted_part_id != "arm" \
-			and _crafted_part_id != "hand" and _crafted_part_id != "upper_arm":
+			and _crafted_part_id != "hand" and _crafted_part_id != "upper_arm" \
+			and _crafted_part_id != "forearm":
 		return
 
 	for child in segment.get_children():
@@ -1448,8 +1554,8 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	piece.segment_id = &""
 	piece.texture = load(tex_path)
 	piece.auto_center = true
+	piece.visual_scale = float(INGREDIENT_VISUAL_SCALES.get(id, 1.0))
 	if id == "head_segments":
-		piece.visual_scale = 1.05
 		piece.auto_top_center = true
 
 	var shadow_path: String = String(INGREDIENT_SHADOW_PATHS.get(id, ""))
@@ -1805,48 +1911,62 @@ func _clamp_rect_to_bounds(rect: Rect2, bounds: Rect2) -> Rect2:
 
 
 func _configure_assembly_for_part(part_id: String) -> void:
+	# The leg / arm / chest assemblies are reused by their segment crafts (a segment just
+	# activates a subset of the parent's slots), so those parts share the parent's visibility.
+	var leg_parts := ["leg", "thigh", "shin", "foot"]
+	var arm_parts := ["arm", "upper_arm", "forearm"]
+	var chest_parts := ["chest", "ribcage", "upper_plating", "lower_plating"]
 	var leg_node := assembly.get_node_or_null("AssemblyLeg") as CanvasItem
 	if leg_node != null:
-		leg_node.visible = part_id == "" or part_id == "leg"
+		leg_node.visible = part_id == "" or part_id in leg_parts
 	if _head_assembly != null:
 		_head_assembly.visible = part_id == "head"
 	if _arm_assembly != null:
-		# The upper-arm craft reuses the arm assembly, activating only its
-		# shoulder/bicep/elbow slots (see the upper_arm branch below).
-		_arm_assembly.visible = part_id == "arm" or part_id == "upper_arm"
+		_arm_assembly.visible = part_id in arm_parts
 	if _hand_assembly != null:
 		_hand_assembly.visible = part_id == "hand"
 	if _stomach_assembly != null:
 		_stomach_assembly.visible = part_id == "stomach"
 	if _chest_assembly != null:
-		_chest_assembly.visible = part_id == "chest"
+		_chest_assembly.visible = part_id in chest_parts
 
 	_active_assembly_slot_ids.clear()
 	if part_id == "head":
-		for id in HEAD_SEGMENT_IDS:
-			if _assembly_slots.has(id):
-				_active_assembly_slot_ids.append(id)
+		_append_active_slots(HEAD_SEGMENT_IDS)
 	elif part_id == "arm":
-		for id in ARM_SEGMENT_IDS:
-			if _assembly_slots.has(id):
-				_active_assembly_slot_ids.append(id)
+		_append_active_slots(ARM_SEGMENT_IDS)
 	elif part_id == "upper_arm":
 		# Only the upper-arm segments (shoulder, bicep, tricep, upper-arm plates,
 		# elbow) — the forearm slots stay inactive, so they neither spawn nor gate
 		# completion.
-		for id in UPPER_ARM_SEGMENT_IDS:
-			if _assembly_slots.has(id):
-				_active_assembly_slot_ids.append(id)
+		_append_active_slots(UPPER_ARM_SEGMENT_IDS)
+	elif part_id == "forearm":
+		# The complementary subset: only the wrist / forearm slots.
+		_append_active_slots(FOREARM_SEGMENT_IDS)
 	elif part_id == "hand":
 		_active_assembly_slot_ids.assign(_hand_assembly_slot_ids)
 	elif part_id == "stomach":
 		_active_assembly_slot_ids.assign(_stomach_assembly_slot_ids)
-	elif part_id == "chest":
+	elif part_id in chest_parts:
+		# Chest and its segments share the whole chest assembly (no clean slot split).
 		_active_assembly_slot_ids.assign(_chest_assembly_slot_ids)
 	elif part_id == "leg":
 		_active_assembly_slot_ids.assign(_leg_assembly_slot_ids)
+	elif part_id == "thigh":
+		_append_active_slots(LEG_THIGH_SEGMENT_IDS)
+	elif part_id == "shin":
+		_append_active_slots(LEG_SHIN_SEGMENT_IDS)
+	elif part_id == "foot":
+		_append_active_slots(LEG_FOOT_SEGMENT_IDS)
 
 	_queue_unified_outline_redraw()
+
+
+## Appends whichever of `ids` actually have a harvested assembly slot to the active set.
+func _append_active_slots(ids: Array[StringName]) -> void:
+	for id in ids:
+		if _assembly_slots.has(id):
+			_active_assembly_slot_ids.append(id)
 
 
 # --- craft ---
@@ -1867,30 +1987,27 @@ func _bin_has_recipe() -> bool:
 func _matching_recipe_part_id() -> String:
 	var counts: Dictionary = craft_bin.count_items()
 	if not forced_part_id.strip_edges().is_empty():
-		var forced_data: Dictionary = CRAFTABLE_PARTS.get(forced_part_id, {})
-		if forced_data.is_empty():
+		if CRAFTABLE_PARTS.get(forced_part_id, {}).is_empty():
 			return ""
-		var forced_recipe: Dictionary = forced_data.get("recipe", {})
-		return forced_part_id if _counts_contain_recipe(counts, forced_recipe) else ""
-	# Pick the most specific satisfied recipe — the one consuming the most
-	# ingredients — so a bin holding both nuts & bolts AND an upper arm crafts the
-	# full arm (weight 2) rather than another upper arm (weight 1). Recipes with
-	# distinct ingredients never collide, so this only ever disambiguates the
-	# arm / upper-arm overlap.
+		return forced_part_id if not _part_consumption(counts, forced_part_id).is_empty() else ""
+	# Pick the most specific satisfied recipe — the one whose fully-expanded raw cost is
+	# largest — so a bin holding all of an arm's segments (or their raw ingredients) crafts
+	# the full arm rather than just one of its segments (e.g. upper_arm). Segment / raw
+	# recipes with distinct ingredients never collide; this weighting only disambiguates a
+	# composite limb from the segments nested inside it.
 	var best_id: String = ""
 	var best_weight: int = -1
 	for part_id in CRAFTABLE_PARTS:
-		var part_data: Dictionary = CRAFTABLE_PARTS[part_id]
-		var recipe: Dictionary = part_data.get("recipe", {})
-		if recipe.is_empty() or not _counts_contain_recipe(counts, recipe):
+		if _part_consumption(counts, String(part_id)).is_empty():
 			continue
-		var weight: int = _recipe_weight(recipe)
+		var weight: int = _part_expanded_weight(String(part_id))
 		if weight > best_weight:
 			best_weight = weight
 			best_id = String(part_id)
 	return best_id
 
 
+## True when `counts` can satisfy `part_id` (flat recipe or composite with substitution).
 func _counts_contain_recipe(counts: Dictionary, recipe: Dictionary) -> bool:
 	for id_key in recipe:
 		if int(counts.get(String(id_key), 0)) < int(recipe[id_key]):
@@ -1898,8 +2015,90 @@ func _counts_contain_recipe(counts: Dictionary, recipe: Dictionary) -> bool:
 	return true
 
 
-## Total number of ingredients a recipe requires (sum of its quantities). Used to
-## rank overlapping recipes so the more specific one wins.
+## Works out exactly what crafting `part_id` would consume from `counts`, or returns an
+## empty dict if the bin can't satisfy it. For a flat part that's just its recipe; for a
+## composite limb each segment slot is paid with the finished segment ITEM when present,
+## otherwise folded into the summed raw-ingredient cost (substitution). Because segment
+## items and raw ingredients are distinct ids, greedily preferring the item is optimal.
+func _part_consumption(counts: Dictionary, part_id: String) -> Dictionary:
+	var data: Dictionary = CRAFTABLE_PARTS.get(part_id, {})
+	if data.is_empty():
+		return {}
+
+	var segments: Array = data.get("segments", [])
+	if segments.is_empty():
+		var recipe: Dictionary = data.get("recipe", {})
+		if recipe.is_empty() or not _counts_contain_recipe(counts, recipe):
+			return {}
+		return recipe.duplicate()
+
+	# Composite: consume one of each segment, item-first then raw fallback.
+	var consume: Dictionary = {}
+	for seg_id in segments:
+		var seg := String(seg_id)
+		var have: int = int(counts.get(seg, 0)) - int(consume.get(seg, 0))
+		if have >= 1:
+			consume[seg] = int(consume.get(seg, 0)) + 1
+			continue
+		var seg_recipe: Dictionary = CRAFTABLE_PARTS.get(seg, {}).get("recipe", {})
+		if seg_recipe.is_empty():
+			return {}  # a segment with no raw recipe can only be paid as an item
+		for ing in seg_recipe:
+			consume[String(ing)] = int(consume.get(String(ing), 0)) + int(seg_recipe[ing])
+
+	for id_key in consume:
+		if int(counts.get(String(id_key), 0)) < int(consume[id_key]):
+			return {}
+	return consume
+
+
+## Which of a composite's segments `counts` pays for with a finished ITEM (rather than raw
+## ingredients), mirroring _part_consumption's item-first choice. Empty for a flat part.
+func _item_segments_used(counts: Dictionary, part_id: String) -> Array[StringName]:
+	var used: Array[StringName] = []
+	var segments: Array = CRAFTABLE_PARTS.get(part_id, {}).get("segments", [])
+	var taken: Dictionary = {}
+	for seg_id in segments:
+		var seg := String(seg_id)
+		if int(counts.get(seg, 0)) - int(taken.get(seg, 0)) >= 1:
+			taken[seg] = int(taken.get(seg, 0)) + 1
+			used.append(StringName(seg))
+	return used
+
+
+## The assembly-slot groups to spawn pre-assembled this craft — one per component supplied as
+## a finished item. Chest is special (no per-segment slots): only when ALL its segments are
+## items does the whole chest come pre-assembled.
+func _prebuilt_slot_groups() -> Array:
+	var groups: Array = []
+	for seg in _crafted_item_segments:
+		if COMPONENT_SLOT_GROUPS.has(seg):
+			groups.append(COMPONENT_SLOT_GROUPS[seg])
+	if _crafted_part_id == "chest":
+		var all_chest := true
+		for s in [&"ribcage", &"upper_plating", &"lower_plating"]:
+			if not _crafted_item_segments.has(s):
+				all_chest = false
+				break
+		if all_chest and not _chest_assembly_slot_ids.is_empty():
+			groups.append(_chest_assembly_slot_ids)
+	return groups
+
+
+## The fully-expanded raw weight of a part: a flat recipe's quantities, or the sum of every
+## segment's raw quantities for a composite. Used to rank a composite above its segments.
+func _part_expanded_weight(part_id: String) -> int:
+	var data: Dictionary = CRAFTABLE_PARTS.get(part_id, {})
+	var segments: Array = data.get("segments", [])
+	if segments.is_empty():
+		return _recipe_weight(data.get("recipe", {}))
+	var total: int = 0
+	for seg_id in segments:
+		total += _recipe_weight(CRAFTABLE_PARTS.get(String(seg_id), {}).get("recipe", {}))
+	return total
+
+
+## Total number of ingredients a flat recipe requires (sum of its quantities).
 func _recipe_weight(recipe: Dictionary) -> int:
 	var total: int = 0
 	for id_key in recipe:
@@ -1921,9 +2120,14 @@ func _on_craft_pressed() -> void:
 	_crafted = true
 	_crafted_part_id = part_id
 
-	var part_data: Dictionary = CRAFTABLE_PARTS.get(_crafted_part_id, {})
-	var recipe: Dictionary = part_data.get("recipe", {})
-	_consume_recipe_pieces(recipe)
+	# Consume exactly what this craft used — for a composite limb that's whichever mix of
+	# finished segment items and raw ingredients satisfied it (see _part_consumption), not a
+	# fixed recipe. Read the bin counts once, before consuming, so we also know which segments
+	# came in as finished items (those spawn pre-assembled below).
+	var counts: Dictionary = craft_bin.count_items()
+	_crafted_item_segments = _item_segments_used(counts, _crafted_part_id)
+	var consumption: Dictionary = _part_consumption(counts, _crafted_part_id)
+	_consume_recipe_pieces(consumption)
 	craft_bin.output_mode = true
 	_configure_assembly_for_part(_crafted_part_id)
 
@@ -1973,14 +2177,35 @@ func _consume_recipe_pieces(recipe: Dictionary) -> void:
 func _return_piece_home_or_discard(piece: WorkshopPiece) -> void:
 	if piece == null or not is_instance_valid(piece):
 		return
-	if piece.home_parent == null:
+	if piece.home_parent == null or not is_instance_valid(piece.home_parent):
 		piece.queue_free()
 		return
+	# If the home bag slot is empty, glide the piece back into it (snap_home animates and it
+	# stays). If the slot already holds a restamped tile, still fly the leftover back to that
+	# slot for the visual, then remove it — the stamped tile already represents the stack.
 	for child in piece.home_parent.get_children():
 		if child is WorkshopPiece and child != piece:
-			piece.queue_free()
+			_slide_piece_to_bag_and_free(piece)
 			return
 	piece.snap_home()
+
+
+## Fly an unused piece from wherever it sits back to its bag (tray) slot, then free it. Runs
+## on a high layer so it glides over the rest of the UI instead of clipping inside the bin.
+func _slide_piece_to_bag_and_free(piece: WorkshopPiece) -> void:
+	var home: Control = piece.home_parent
+	var target_global: Vector2 = home.get_global_transform().origin + (home.size - piece.size) * 0.5
+	var gpos: Vector2 = piece.global_position
+	var parent: Node = piece.get_parent()
+	if parent != null:
+		parent.remove_child(piece)
+	add_child(piece)
+	piece.global_position = gpos
+	piece.z_index = 300
+	var tw: Tween = piece.create_tween()
+	tw.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(piece, "global_position", target_global, 0.2)
+	tw.tween_callback(piece.queue_free)
 
 
 func _spawn_segments_stacked_at_bin_center() -> void:
@@ -2043,7 +2268,7 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 		if this_seg and other_seg and not this_seg.pair_partners.has(other_seg):
 			this_seg.pair_partners.append(other_seg)
 
-	_link_upper_arm_bundle(segments_by_id)
+	_link_component_bundles(segments_by_id)
 
 	var positioned: Dictionary = {}
 	var group_index: int = 0
@@ -2100,7 +2325,7 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 
 	_position_upper_arm_bundle_at_bottom()
 	_enforce_axle_cap_order()
-	_enforce_upper_arm_bundle_order()
+	_enforce_component_bundle_order()
 	craft_bin.contents_changed.emit()
 
 
@@ -2170,16 +2395,34 @@ func _position_upper_arm_bundle_at_bottom() -> void:
 		seg.position.y += delta_y
 
 
-func _enforce_upper_arm_bundle_order() -> void:
-	if _crafted_part_id != "arm":
+## Re-stack every pre-assembled bundle's segments in the crafted part's authored
+## back-to-front order, so each pre-built component overlaps correctly in the bin and while
+## dragged (segments spawn shuffled). Placement into slots restores authored order anyway.
+func _enforce_component_bundle_order() -> void:
+	var groups: Array = _prebuilt_slot_groups()
+	if groups.is_empty():
 		return
-	for seg_id in ARM_SEGMENT_IDS:
-		if not UPPER_ARM_SEGMENT_IDS.has(seg_id):
+	var bundled: Dictionary = {}
+	for group in groups:
+		for seg_id in group:
+			bundled[seg_id] = true
+	for seg_id in _crafted_part_segment_order():
+		if not bundled.has(seg_id):
 			continue
 		for child in craft_bin.get_children():
 			if child is WorkshopSegment and child.segment_id == seg_id:
 				craft_bin.move_child(child, craft_bin.get_child_count() - 1)
 				break
+
+
+## Authored back-to-front segment order for the crafted composite (arm from ARM_SEGMENT_IDS,
+## leg / chest from their harvested slot order), used to restack pre-assembled bundles.
+func _crafted_part_segment_order() -> Array[StringName]:
+	match _crafted_part_id:
+		"arm": return ARM_SEGMENT_IDS
+		"leg": return _leg_assembly_slot_ids
+		"chest": return _chest_assembly_slot_ids
+	return _active_assembly_slot_ids
 
 
 func _setup_place_audio() -> void:
@@ -2208,22 +2451,26 @@ func _play_place_sound() -> void:
 	_place_audio_player.play()
 
 
-func _link_upper_arm_bundle(segments_by_id: Dictionary) -> void:
-	if _crafted_part_id != "arm":
-		return
-	var bundle: Array = []
-	for seg_id in UPPER_ARM_SEGMENT_IDS:
-		var seg: WorkshopSegment = segments_by_id.get(seg_id)
-		if seg != null:
-			bundle.append(seg)
-	for i in bundle.size():
-		var a: WorkshopSegment = bundle[i]
-		for j in bundle.size():
-			if i == j:
-				continue
-			var b: WorkshopSegment = bundle[j]
-			if not a.pair_partners.has(b):
-				a.pair_partners.append(b)
+## Fuse each pre-made component's segments into one bundle by fully connecting their
+## pair_partners, so the existing pair machinery lays them out in assembled relative
+## positions, drags them as one, and drops the whole component at once — the player never
+## reassembles a component they already crafted. One bundle per component supplied as an item
+## (upper arm, forearm, thigh, shin, foot, or the whole chest); raw-built segments stay loose.
+func _link_component_bundles(segments_by_id: Dictionary) -> void:
+	for group in _prebuilt_slot_groups():
+		var bundle: Array = []
+		for seg_id in group:
+			var seg: WorkshopSegment = segments_by_id.get(seg_id)
+			if seg != null:
+				bundle.append(seg)
+		for i in bundle.size():
+			var a: WorkshopSegment = bundle[i]
+			for j in bundle.size():
+				if i == j:
+					continue
+				var b: WorkshopSegment = bundle[j]
+				if not a.pair_partners.has(b):
+					a.pair_partners.append(b)
 
 
 func _segment_spawn_center(index: int, total: int) -> Vector2:

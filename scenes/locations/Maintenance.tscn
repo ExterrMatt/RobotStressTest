@@ -2,12 +2,14 @@
 
 [ext_resource type="Script" uid="uid://15brafh6davw" path="res://scenes/locations/Maintenance.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://cttpa8ighauym" path="res://assets/textures/backgrounds/maintenance.png" id="2_background"]
-[ext_resource type="PackedScene" uid="uid://k8jls1dgr68d" path="res://scenes/locations/PersonalityTestRobot.tscn" id="3_robot"]
+[ext_resource type="PackedScene" uid="uid://bpp1mmy226uw7" path="res://scenes/locations/MaintenanceRobot.tscn" id="3_robot"]
 [ext_resource type="Script" uid="uid://dubeqvg4d682w" path="res://scenes/locations/WorkInventory.gd" id="4_inventory"]
 [ext_resource type="Script" uid="uid://b283qqu0wyy6e" path="res://scenes/locations/DraggableItem.gd" id="5_draggable"]
 [ext_resource type="Texture2D" uid="uid://dvffjqd4ghp41" path="res://assets/textures/icons/oil.png" id="6_oil"]
-[ext_resource type="Texture2D" uid="uid://baodthgpcv17l" path="res://assets/textures/icons/placeholder_item.png" id="7_placeholder"]
 [ext_resource type="Texture2D" uid="uid://up51kbruny1t" path="res://assets/textures/icons/nanobots.png" id="8_nanobots"]
+[ext_resource type="Texture2D" uid="uid://bvekvy2ah4duv" path="res://assets/textures/icons/battery.png" id="9_battery"]
+[ext_resource type="Texture2D" uid="uid://c7nncg2cxxw1u" path="res://assets/textures/icons/taser.png" id="10_taser"]
+[ext_resource type="PackedScene" uid="uid://vhrtxxrtkfto" path="res://scenes/effects/NanobotEffect.tscn" id="11_nanoeffect"]
 
 [node name="Maintenance" type="Control" unique_id=1359677230]
 layout_mode = 3
@@ -18,6 +20,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_script")
+mouse_follow_zoom_scale = 1.05
+mouse_follow_vertical_strength = 1.25
 
 [node name="FullscreenLayer" type="CanvasLayer" parent="." unique_id=2031965141]
 layer = 20
@@ -85,7 +89,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PersonalityTestRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/RobotLayer" unique_id=252185511 instance=ExtResource("3_robot")]
+[node name="MaintenanceRobot" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/RobotLayer" unique_id=252185511 instance=ExtResource("3_robot")]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -148,7 +152,7 @@ texture = ExtResource("6_oil")
 script = ExtResource("5_draggable")
 item_id = &"buff_shine"
 
-[node name="ProdSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn" unique_id=1640852453]
+[node name="TaserSlot" type="Panel" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn" unique_id=1640852453]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -160,7 +164,7 @@ grow_vertical = 2
 scale = Vector2(2, 2)
 mouse_filter = 2
 
-[node name="ProdItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/ProdSlot" unique_id=790267607]
+[node name="TaserItem" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock/LeftColumn/TaserSlot" unique_id=790267607]
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 8
@@ -174,9 +178,9 @@ offset_right = 28.0
 offset_bottom = 28.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("7_placeholder")
+texture = ExtResource("10_taser")
 script = ExtResource("5_draggable")
-item_id = &"zap"
+item_id = &"taser"
 
 [node name="RightColumn" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock" unique_id=1834495371]
 layout_mode = 1
@@ -254,9 +258,9 @@ offset_right = 28.0
 offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("7_placeholder")
+texture = ExtResource("9_battery")
 script = ExtResource("5_draggable")
-item_id = &"user"
+item_id = &"battery"
 
 [node name="EndButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1377351768]
 layout_mode = 1
@@ -283,9 +287,24 @@ offset_left = 7.0
 offset_top = -216.0
 offset_right = 103.0
 offset_bottom = -159.0
-grow_horizontal = 1
 grow_vertical = 0
 mouse_default_cursor_shape = 2
 text = "LAPTOP"
+
+[node name="NanobotEffectTemplate" parent="." unique_id=1506953332 instance=ExtResource("11_nanoeffect")]
+layout_mode = 0
+ring_thickness = 30.0
+expansion_s_curve = 1.2
+nanobot_pixel_size = 1.0
+nanobot_color_variation = 0.51
+nanobot_movement_speed = 51.0
+nanobot_speed_variation = 0.23
+nanobot_reproduction_chance = 0.33
+nanobot_lifetime_seconds = 0.3
+nanobot_lifetime_variation = 2.0
+nanobot_spawn_rate = 290.0
+nanobot_spawn_position_variation = 0.0
+pile_radius = 16.0
+decay_s_curve = 1.0
 
 [connection signal="pressed" from="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton" to="." method="_on_end_button_pressed"]

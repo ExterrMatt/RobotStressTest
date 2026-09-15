@@ -50,6 +50,9 @@ var _dragging: bool = false
 var _grab_offset: Vector2 = Vector2.ZERO
 var _grab_offset_tween: Tween = null
 var _place_tween: Tween = null
+## The tween that glides the item back to its home slot; kept so a caller can cancel it and
+## take the item over (e.g. the maintenance oil can falling away when it runs dry).
+var _snap_tween: Tween = null
 
 
 func _ready() -> void:
@@ -123,9 +126,18 @@ func snap_home() -> void:
 	# Reparent under the home slot if we got moved during the drag.
 	if get_parent() != home_slot:
 		_reparent_keeping_global(home_slot)
-	var tw: Tween = create_tween()
-	tw.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.tween_property(self, "position", target, 0.18)
+	if _snap_tween != null and _snap_tween.is_valid():
+		_snap_tween.kill()
+	_snap_tween = create_tween()
+	_snap_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_snap_tween.tween_property(self, "position", target, 0.18)
+
+
+## Cancels the glide-home tween so a caller can take the item over (e.g. animate it falling).
+func stop_home_motion() -> void:
+	if _snap_tween != null and _snap_tween.is_valid():
+		_snap_tween.kill()
+	_snap_tween = null
 
 
 ## Lock the item into a slot (drop target or home). Cancels any drag,

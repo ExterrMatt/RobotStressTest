@@ -1,0 +1,10 @@
+res://scenes/locations/Laptop.tscn
+res://autoload/GameState.gd
+res://scenes/Main.gd
+res://scenes/locations/WorkshopMinigame.gd
+res://scenes/ui/InventoryOverlay.gd
+res://scenes/locations/Laptop.gd
+res://scenes/locations/LaptopDesktop.gd
+res://scenes/locations/LaptopScreen.gd
+res://scenes/locations/DeliveryApp.gd
+res://themes/main_theme.tres

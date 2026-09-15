@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bpp1mmy226uw7"]
+
+[ext_resource type="Script" uid="uid://b6ldsgeqofqfv" path="res://scenes/locations/MaintenanceRobot.gd" id="1_script"]
+
+[node name="MaintenanceRobot" type="Control" unique_id=380948316]
+custom_minimum_size = Vector2(300, 450)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 300.0
+offset_bottom = 450.0
+mouse_filter = 2
+script = ExtResource("1_script")
+leg_out_horizontal_offset = -2
+leg_out_vertical_offset = 1

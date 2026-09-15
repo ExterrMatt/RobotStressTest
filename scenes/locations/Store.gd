@@ -489,7 +489,7 @@ func _is_lottery_item_available(item: StoreItemData) -> bool:
 	var item_id := String(item.id)
 	if item_id == "":
 		return false
-	return not (item.is_tool and _tool_at_max_quantity(item))
+	return not _item_at_max_quantity(item)
 
 
 func _has_available_lottery_items() -> bool:
@@ -599,9 +599,9 @@ func _refresh_slot(item_id: String) -> void:
 		return
 
 	var bought: bool = GameState.has_purchased_today(item_id)
-	var already_owned_tool: bool = item.is_tool and _tool_at_max_quantity(item)
+	var already_owned_max: bool = _item_at_max_quantity(item)
 	var affordable: bool = GameState.can_afford(item.cost)
-	var clickable: bool = (not bought) and (not already_owned_tool) and affordable
+	var clickable: bool = (not bought) and (not already_owned_max) and affordable
 
 	var mod: Color = ITEM_NORMAL_MODULATE if clickable else ITEM_DIMMED_MODULATE
 	for child in slot.get_children():
@@ -624,6 +624,21 @@ func _tool_at_max_quantity(item: StoreItemData) -> bool:
 	return GameState.get_tool_count(String(item.id)) >= cap
 
 
+## True when the player already owns as many of this item as it can hold, so it should
+## stop being offered - the same treatment the max-one tools (taser, sneaky shoes, etc.)
+## get. Tools cap at their max_quantity; consumable ingredients cap only when listed in
+## GameState.INGREDIENT_MAX (e.g. the single-use battery), otherwise they never max out.
+func _item_at_max_quantity(item: StoreItemData) -> bool:
+	if item == null:
+		return false
+	if item.is_tool:
+		return _tool_at_max_quantity(item)
+	var id := String(item.id)
+	if GameState.INGREDIENT_MAX.has(id):
+		return int(GameState.ingredients.get(id, 0)) >= int(GameState.INGREDIENT_MAX[id])
+	return false
+
+
 func _find_item(item_id: String) -> StoreItemData:
 	for item in items:
 		if item != null and String(item.id) == item_id:
@@ -643,7 +658,7 @@ func _try_purchase(item: StoreItemData) -> void:
 		_collect_intro_pickup_item(item)
 		return
 
-	if item.is_tool and _tool_at_max_quantity(item):
+	if _item_at_max_quantity(item):
 		return
 	if GameState.has_purchased_today(item_id):
 		return

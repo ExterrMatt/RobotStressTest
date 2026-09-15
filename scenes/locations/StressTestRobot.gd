@@ -1384,8 +1384,19 @@ func _cycle_hair_texture() -> void:
 	if HAIR_STATIC_OPTIONS.is_empty():
 		return
 	_hair_texture_index = (_hair_texture_index + 1) % HAIR_STATIC_OPTIONS.size()
+	_persist_hair_style()
 	_apply_visibility_state()
 	body_part_moved.emit(false)
+
+
+## Remembers the chosen hair-front style on GameState so other scenes (the
+## maintenance robot) can match "the hairstyle the robot had in the stress test".
+func _persist_hair_style() -> void:
+	if Engine.is_editor_hint():
+		return
+	var state := get_node_or_null("/root/GameState")
+	if state != null:
+		state.set("robot_hair_style", _hair_texture_index)
 
 
 func _is_hand_hover_box(box: Control) -> bool:
