@@ -472,8 +472,9 @@ const ASSEMBLY_PARTS: Array = [
 		{"name": "LOWER PLATING", "icon": "lower_plating", "id": "lower_plating"},
 	]},
 	{"name": "STOMACH", "icon": "torso", "build_limb": "STOMACH", "segments": [
-		{"name": "TANK", "icon": "", "id": "stomach"},
-		{"name": "PUMP", "icon": "", "id": "stomach"},
+		{"name": "TANK", "icon": "", "id": "tank"},
+		{"name": "PUMP", "icon": "", "id": "pump"},
+		{"name": "HUGE BATTERY", "icon": "battery", "id": "huge_battery"},
 	]},
 ]
 

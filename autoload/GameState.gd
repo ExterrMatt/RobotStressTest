@@ -10,6 +10,7 @@ extends Node
 signal money_changed(new_value: int)
 signal suspicion_changed(new_value: int)
 signal anger_changed(new_value: int)
+signal fatigue_changed(new_value: int)
 signal day_changed(new_day: int)
 signal phase_changed(new_phase: int)
 signal arrested()
@@ -40,6 +41,7 @@ enum WindowMode { WINDOWED = 0, WINDOWED_FULLSCREEN = 1, FULLSCREEN = 2 }
 
 const MAX_ANGER: int = 100
 const MAX_SUSPICION: int = 100
+const MAX_FATIGUE: int = 100
 const ARREST_THRESHOLD: int = 100  # tweak later; suspicion at/above this triggers arrest event
 const DEFAULT_PLAYER_NAME: String = "Noah"
 ## Names offered as the pre-filled suggestion when the player is asked to name
@@ -240,6 +242,7 @@ var window_mode: int:
 var _suspicion_permanent: int = 0
 var _suspicion_temp: int = 0
 var _anger: int = 0
+var _fatigue: int = 0
 
 # --- robot config ---
 const ROBOT_PART_IDS: Array[String] = ["leg", "arm", "stomach", "chest", "head", "hand"]
@@ -301,6 +304,10 @@ var ingredients: Dictionary = {
 	"ribcage": 0,
 	"upper_plating": 0,
 	"lower_plating": 0,
+	# Stomach sub-assemblies.
+	"tank": 0,
+	"pump": 0,
+	"huge_battery": 0,
 	# Spare battery used in maintenance (dragged onto the robot).
 	"battery": 0,
 }
@@ -373,6 +380,7 @@ func _emit_initial_state() -> void:
 	money_changed.emit(_money)
 	suspicion_changed.emit(_total_suspicion())
 	anger_changed.emit(_anger)
+	fatigue_changed.emit(_fatigue)
 	day_changed.emit(_day)
 	phase_changed.emit(_phase)
 	brightness_changed.emit(_brightness_value)
@@ -395,6 +403,7 @@ func reset_for_new_game() -> void:
 	_suspicion_permanent = 0
 	_suspicion_temp = 0
 	_anger = 0
+	_fatigue = 0
 	player_name = ""
 	equipped_limbs = 0
 
@@ -503,6 +512,24 @@ var anger: int:
 
 func add_anger(delta: int) -> void:
 	anger = _anger + delta
+
+
+# --- fatigue ---
+# Rises each night the player doesn't sleep (see Main's night-result handling)
+# and resets to 0 when they do.
+
+var fatigue: int:
+	get: return _fatigue
+	set(value):
+		var clamped: int = clampi(value, 0, MAX_FATIGUE)
+		if clamped == _fatigue:
+			return
+		_fatigue = clamped
+		fatigue_changed.emit(_fatigue)
+
+
+func add_fatigue(delta: int) -> void:
+	fatigue = _fatigue + delta
 
 
 # --- ingredients ---
@@ -854,6 +881,7 @@ func to_dict() -> Dictionary:
 		"suspicion_permanent": _suspicion_permanent,
 		"suspicion_temp": _suspicion_temp,
 		"anger": _anger,
+		"fatigue": _fatigue,
 		"equipped_limbs": equipped_limbs,
 		"robot_parts": robot_parts.duplicate(),
 		"cosmetic_items": cosmetic_items.duplicate(),
@@ -897,6 +925,7 @@ func from_dict(data: Dictionary) -> void:
 	_suspicion_permanent = clampi(int(data.get("suspicion_permanent", 0)), 0, MAX_SUSPICION)
 	_suspicion_temp = maxi(0, int(data.get("suspicion_temp", data.get("suspicion", 0))))
 	_anger = data.get("anger", 0)
+	_fatigue = clampi(int(data.get("fatigue", 0)), 0, MAX_FATIGUE)
 	equipped_limbs = data.get("equipped_limbs", 0)
 	var loaded_parts: Dictionary = data.get("robot_parts", {}).duplicate()
 	for id in ROBOT_PART_IDS:

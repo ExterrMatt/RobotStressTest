@@ -47,6 +47,7 @@ const TEXTURE_PATHS: Dictionary = {
 	"ribcage": "res://assets/textures/icons/ribcage.png",
 	"upper_plating": "res://assets/textures/icons/upper_plating.png",
 	"lower_plating": "res://assets/textures/icons/lower_plating.png",
+	"huge_battery": "res://assets/textures/icons/battery.png",
 	# Tools
 	"screwdriver": "res://assets/textures/icons/screwdriver.png",
 	"crank": "res://assets/textures/icons/crank.png",
@@ -91,6 +92,9 @@ const DISPLAY_NAMES: Dictionary = {
 	"ribcage": "Rib Cage",
 	"upper_plating": "Upper Plating",
 	"lower_plating": "Lower Plating",
+	"tank": "Tank",
+	"pump": "Pump",
+	"huge_battery": "Huge Battery",
 	"big_chest_cover": "Big Chest Cover",
 	"screwdriver": "Screwdriver",
 	"crank": "Crank",

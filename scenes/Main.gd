@@ -46,6 +46,9 @@ const DISABLED_LOCATION_IDS: Dictionary = {
 const EVENING_DISABLED_BEDROOM_OPTIONS: Array[String] = []
 const WORK_LOCATION_ID: StringName = &"work"
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
+const SLEEP_LOCATION_ID: StringName = &"sleep"
+## Fatigue gained for each night the player spends on something other than sleep.
+const SKIPPED_SLEEP_FATIGUE_DELTA: int = 40
 const LAPTOP_SCENE_PATH: String = "res://scenes/locations/Laptop.tscn"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 15
 ## Placeholder shown in the selection subtitle when nothing is selected yet,
@@ -138,6 +141,12 @@ const NIGHT_UNCLE_HANGOUT_CHANCE: float = 0.13
 const UNCLE_HANGOUT_LOCATION: LocationData = preload("res://resources/locations/uncle_hangout.tres")
 const UNCLE_HANGOUT_LOCATION_ID: StringName = &"uncle_hangout"
 
+## Night-bedroom "bring the robot to bed?" prompt, shown in front of the Sleep
+## scene once the robot has a body. Its answer is handed to Sleep via
+## consume_sleep_bring_robot().
+const SLEEP_PROMPT_LOCATION: LocationData = preload("res://resources/locations/sleep_prompt.tres")
+const SLEEP_PROMPT_LOCATION_ID: StringName = &"sleep_prompt"
+
 ## Default authored size of the framed scene image. Standard 500x125 scene
 ## textures are normalized to STANDARD_SCENE_TEXTURE_SCALE at runtime, and
 ## locations with taller source art can override via LocationData.frame_size.
@@ -182,6 +191,7 @@ const STAT_CLAUSE_BBCODE_COLOR: String = "e8c878"
 const PILL_MONEY_BBCODE_COLOR: String = "e8c878"
 const PILL_SUS_BBCODE_COLOR: String = "e8c878"
 const PILL_ANGER_BBCODE_COLOR: String = "e0906a"
+const PILL_FATIGUE_BBCODE_COLOR: String = "9ab4d8"
 
 ## Duration and easing for both the scale animation (frame resize between
 ## locations) and the slide animation (layout shifts inside a location).
@@ -253,6 +263,7 @@ enum LoadStyle { FLOWER, DOORS }
 @onready var money_label: Label = %MoneyLabel
 @onready var suspicion_label: Label = %SuspicionLabel
 @onready var anger_label: Label = %AngerLabel
+@onready var fatigue_label: Label = %FatigueLabel
 @onready var scene_image: TextureRect = %SceneImage
 @onready var frame_wrap: CenterContainer = $UI/VBox/FrameWrap
 ## The outer panel of the picture frame. We animate its minimum width
@@ -296,6 +307,8 @@ enum LoadStyle { FLOWER, DOORS }
 @onready var scanline_layer: CanvasLayer = $ScanlineLayer
 
 var _locations: Array[LocationData] = []
+## Answer from the sleep prompt; read (and reset) by the Sleep scene on entry.
+var _sleep_bring_robot: bool = true
 var _locations_loaded: bool = false
 var _location_scene_cache: Dictionary = {}
 var _current_location_node: Node = null
@@ -323,6 +336,8 @@ var _debug_actions_layer: CanvasLayer = null
 ## Universal punch-animation preview overlay (a debug toy). Lives on its own canvas layer
 ## as a child of Main so it works in every scene, not just maintenance.
 var _punch_overlay: CanvasLayer = null
+## Layer hosting a debug-opened repair minigame (see _debug_open_minigame).
+var _debug_minigame_layer: CanvasLayer = null
 
 ## The most recent debug-opened laptop overlay, tracked so the "Close Laptop" debug
 ## button can dismiss it. May go stale on its own (the overlay frees itself when
@@ -371,6 +386,7 @@ var _large_scene_phase_label: Label = null
 var _large_scene_money_label: Label = null
 var _large_scene_suspicion_label: RichTextLabel = null
 var _large_scene_anger_label: RichTextLabel = null
+var _large_scene_fatigue_label: RichTextLabel = null
 var _large_scene_work_timer_divider: PanelContainer = null
 var _large_scene_work_timer_label: Label = null
 ## Bottom-right END/action button that floats in the margin outside the picture
@@ -392,6 +408,7 @@ var _bedroom_phase_label: RichTextLabel = null
 var _bedroom_money_label: RichTextLabel = null
 var _bedroom_suspicion_label: RichTextLabel = null
 var _bedroom_anger_label: RichTextLabel = null
+var _bedroom_fatigue_label: RichTextLabel = null
 ## Day-planner choice entries: each is {"button": Button, "loc": LocationData|null}.
 var _choice_entries: Array = []
 var _selected_choice_index: int = -1
@@ -498,6 +515,7 @@ func _ready() -> void:
 	GameState.money_changed.connect(_on_money_changed)
 	GameState.suspicion_changed.connect(_on_suspicion_changed)
 	GameState.anger_changed.connect(_on_anger_changed)
+	GameState.fatigue_changed.connect(_on_fatigue_changed)
 	GameState.day_changed.connect(_on_day_changed)
 	GameState.phase_changed.connect(_on_phase_changed)
 	GameState.arrested.connect(_on_arrested)
@@ -1361,6 +1379,9 @@ const DEBUG_LIMB_SUBASSEMBLY_CAPS: Dictionary = {
 	"ribcage": 1,
 	"upper_plating": 1,
 	"lower_plating": 1,
+	"tank": 1,
+	"pump": 1,
+	"huge_battery": 1,
 }
 
 
@@ -1560,7 +1581,7 @@ func _refresh_debug_info() -> void:
 	lines.append("Day %d  |  %s  |  $%d" % [
 		GameState.day, DayCycle.phase_name(GameState.phase), GameState.money
 	])
-	lines.append("Suspicion %d  |  Anger %d" % [GameState.suspicion, GameState.anger])
+	lines.append("Suspicion %d  |  Anger %d  |  Fatigue %d" % [GameState.suspicion, GameState.anger, GameState.fatigue])
 	lines.append("Location: %s" % loc)
 	if GameState.intro_active and not GameState.intro_completed:
 		lines.append("Intro step: %s" % GameState.intro_step)
@@ -1812,6 +1833,29 @@ func _debug_toggle_punch() -> void:
 		punch.visible = true
 
 
+## Opens one of the repair minigames (a Minigame subclass script) centred over the
+## current scene. Replaces any minigame already open; it closes itself via its X
+## button or Esc.
+func _debug_open_minigame(minigame_script: GDScript) -> void:
+	if _debug_minigame_layer != null and is_instance_valid(_debug_minigame_layer):
+		_debug_minigame_layer.queue_free()
+	var layer := CanvasLayer.new()
+	layer.name = "DebugMinigameLayer"
+	# Above the scenes and HUD, below the Tab / Shift+Tab debug overlays.
+	layer.layer = 4000
+	add_child(layer)
+	_debug_minigame_layer = layer
+	var game: Minigame = minigame_script.new()
+	game.completed.connect(func(_success: bool) -> void:
+		_log("[color=#88ff88]Debug: %s complete[/color]" % game.title)
+	)
+	game.closed.connect(func() -> void:
+		if is_instance_valid(layer):
+			layer.queue_free()
+	)
+	layer.add_child(game)
+
+
 ## Opens the laptop as an overlay on top of the current location (used by the debug menu to
 ## bring the laptop up during the stress test). The laptop closes itself when clicked off.
 func _debug_open_laptop_overlay() -> void:
@@ -1954,6 +1998,14 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 		# head): Default -> each sound -> Default. Relabels itself on each press.
 		_add_debug_anim_sound_cycle_button(vbox)
 
+	# Repair minigames, opened standalone over the current scene for testing.
+	_add_debug_section(vbox, "MINIGAMES")
+	_add_debug_action_button(vbox, "Lever Sequence", _debug_open_minigame.bind(LeverSequenceMinigame), true)
+	_add_debug_action_button(vbox, "Meter Hold", _debug_open_minigame.bind(MeterHoldMinigame), true)
+	_add_debug_action_button(vbox, "Wire Connect", _debug_open_minigame.bind(WireConnectMinigame), true)
+	_add_debug_action_button(vbox, "Big Screw", _debug_open_minigame.bind(ScrewTurnMinigame), true)
+	_add_debug_action_button(vbox, "Minefield", _debug_open_minigame.bind(MinefieldMinigame), true)
+
 	# Overlays.
 	_add_debug_section(vbox, "OVERLAYS")
 	# Universal punch-animation preview - available in every scene, not just maintenance.
@@ -2021,6 +2073,7 @@ func _refresh_hud() -> void:
 	money_label.text = "$%d" % GameState.money
 	suspicion_label.text = str(GameState.suspicion)
 	anger_label.text = str(GameState.anger)
+	fatigue_label.text = str(GameState.fatigue)
 	if _large_scene_day_label != null:
 		_large_scene_day_label.text = "DAY %d" % GameState.day
 	if _large_scene_phase_label != null:
@@ -2034,6 +2087,10 @@ func _refresh_hud() -> void:
 	if _large_scene_anger_label != null:
 		_large_scene_anger_label.text = "ANGER [color=%s]%d[/color]" % [
 			PILL_ANGER_BBCODE_COLOR, GameState.anger
+		]
+	if _large_scene_fatigue_label != null:
+		_large_scene_fatigue_label.text = "FATIGUE [color=%s]%d[/color]" % [
+			PILL_FATIGUE_BBCODE_COLOR, GameState.fatigue
 		]
 	if _large_scene_work_timer_label != null:
 		_large_scene_work_timer_label.text = _format_work_hud_elapsed_time()
@@ -2058,6 +2115,10 @@ func _refresh_bedroom_pills() -> void:
 		_bedroom_anger_label.text = "ANGER [color=%s]%d[/color]" % [
 			PILL_ANGER_BBCODE_COLOR, GameState.anger
 		]
+	if _bedroom_fatigue_label != null:
+		_bedroom_fatigue_label.text = "FATIGUE [color=%s]%d[/color]" % [
+			PILL_FATIGUE_BBCODE_COLOR, GameState.fatigue
+		]
 	_fit_bedroom_pills()
 
 
@@ -2069,7 +2130,7 @@ func _refresh_bedroom_pills() -> void:
 func _fit_bedroom_pills() -> void:
 	for label in [
 		_bedroom_day_label, _bedroom_phase_label, _bedroom_money_label,
-		_bedroom_suspicion_label, _bedroom_anger_label,
+		_bedroom_suspicion_label, _bedroom_anger_label, _bedroom_fatigue_label,
 	]:
 		if label != null and is_instance_valid(label):
 			label.fit_content = false
@@ -2109,6 +2170,8 @@ func _create_bedroom_pills() -> void:
 	_bedroom_suspicion_label = _add_pill_segment(right_box)
 	_add_pill_divider(right_box)
 	_bedroom_anger_label = _add_pill_segment(right_box)
+	_add_pill_divider(right_box)
+	_bedroom_fatigue_label = _add_pill_segment(right_box)
 	_bedroom_pill_layer.add_child(_bedroom_right_pill)
 
 	_refresh_bedroom_pills()
@@ -2198,6 +2261,9 @@ func _create_large_scene_hud() -> void:
 	right_box.add_child(_make_large_scene_hud_divider())
 	_large_scene_anger_label = _make_large_scene_hud_rich_label()
 	right_box.add_child(_large_scene_anger_label)
+	right_box.add_child(_make_large_scene_hud_divider())
+	_large_scene_fatigue_label = _make_large_scene_hud_rich_label()
+	right_box.add_child(_large_scene_fatigue_label)
 	_large_scene_work_timer_divider = _make_large_scene_hud_divider()
 	right_box.add_child(_large_scene_work_timer_divider)
 	_large_scene_work_timer_label = _make_large_scene_hud_label("00:00:00", &"HUDStat")
@@ -2652,6 +2718,9 @@ func _on_suspicion_changed(_v: int) -> void:
 	_refresh_hud()
 	_refresh_debug_info_if_visible()
 func _on_anger_changed(_v: int) -> void:
+	_refresh_hud()
+	_refresh_debug_info_if_visible()
+func _on_fatigue_changed(_v: int) -> void:
 	_refresh_hud()
 	_refresh_debug_info_if_visible()
 func _on_day_changed(_v: int) -> void:
@@ -3173,6 +3242,11 @@ func _on_location_picked(loc: LocationData, play_select_sound: bool = true) -> v
 	if play_select_sound:
 		UI_SOUND.play_scene_select(self)
 	_hide_mouse_tooltip()
+
+	# Picking Sleep with a bodied robot detours through the bedtime prompt first;
+	# the prompt re-enters Sleep through enter_sleep_from_prompt().
+	if loc != null and loc.id == SLEEP_LOCATION_ID and _should_show_sleep_prompt():
+		loc = SLEEP_PROMPT_LOCATION
 
 	# Entering a fullscreen scene from the framed view is the heavy case. Defer the
 	# scene load() itself (not just the instantiate) until the wipe has fully shut,
@@ -4204,6 +4278,7 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 
 	result = _apply_skipped_stress_test_penalty(result)
 	_apply_result(result)
+	_apply_night_fatigue(result)
 
 	if result.get("skip_advance", false):
 		_show_selection_screen()
@@ -4266,6 +4341,35 @@ func _maybe_show_night_hangout_event() -> bool:
 	return true
 
 
+# --- bedtime prompt ---------------------------------------------------------
+
+func _should_show_sleep_prompt() -> bool:
+	if _intro_sequence_enabled:
+		return false
+	if _current_location_id == SLEEP_PROMPT_LOCATION_ID:
+		return false
+	return GameState.equipped_limbs > 0
+
+
+## Called by the SleepPrompt scene once the player answers. Wipes into the Sleep
+## scene, which reads the answer via consume_sleep_bring_robot().
+func enter_sleep_from_prompt(bring_robot: bool) -> void:
+	var sleep_loc := _location_by_id(SLEEP_LOCATION_ID)
+	if sleep_loc == null:
+		push_error("Main: no sleep location to enter from the bedtime prompt.")
+		return
+	_sleep_bring_robot = bring_robot
+	_on_location_picked(sleep_loc, false)
+
+
+## Consumed by the Sleep scene at _ready: whether the robot should be in the bed.
+## Resets to true so entries that skip the prompt keep the default behaviour.
+func consume_sleep_bring_robot() -> bool:
+	var bring := _sleep_bring_robot
+	_sleep_bring_robot = true
+	return bring
+
+
 ## Consumed by the DroneEncounter scene at _ready to learn which activity it is
 ## following and whether the player is carrying stolen contraband.
 func consume_pending_drone_args() -> Dictionary:
@@ -4293,6 +4397,22 @@ func _should_apply_skipped_stress_test_penalty(result: Dictionary) -> bool:
 	if _current_location_id == DRONE_ENCOUNTER_LOCATION_ID:
 		return false
 	return _current_location_id != STRESS_TEST_LOCATION_ID
+
+
+## Night's activity decides fatigue: sleeping clears it, anything else (e.g. the
+## stress test) costs SKIPPED_SLEEP_FATIGUE_DELTA. Same gating as the skipped
+## stress-test penalty, so non-activities like the drone cutscene don't count.
+func _apply_night_fatigue(result: Dictionary) -> void:
+	if result.get("skip_advance", false):
+		return
+	if GameState.phase != DayCycle.Phase.NIGHT:
+		return
+	if _current_location_id == DRONE_ENCOUNTER_LOCATION_ID:
+		return
+	if _current_location_id == SLEEP_LOCATION_ID:
+		GameState.fatigue = 0
+	else:
+		GameState.add_fatigue(SKIPPED_SLEEP_FATIGUE_DELTA)
 
 
 func _apply_result(result: Dictionary) -> void:

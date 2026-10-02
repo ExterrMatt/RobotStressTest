@@ -662,6 +662,14 @@ var _hover_boxes: Array[Control] = []
 var _managed_paths: Array[NodePath] = []
 var _base_visibility: Dictionary = {}
 var _interaction_enabled: bool = true
+## When on (the stress test turns it on), every click that would move a body part
+## first opens a random repair minigame; the move only happens if it is won. Losing
+## or closing the minigame leaves the robot untouched. Off in the Sleep scene.
+var limb_move_minigames_enabled: bool = false
+## Canvas layer hosting the open limb-move minigame (null when none is open).
+var _limb_minigame_layer: CanvasLayer = null
+## Above the stress test's FullscreenLayer (20).
+const LIMB_MINIGAME_CANVAS_LAYER: int = 60
 var _editor_preview_was_active: bool = false
 var _hand_grip_overgrip: bool = true
 
@@ -757,6 +765,9 @@ func _input(event: InputEvent) -> void:
 		return
 	if not _interaction_enabled:
 		return
+	# A limb-move minigame is open: it owns the mouse until it closes.
+	if _limb_minigame_layer != null:
+		return
 	if not (event is InputEventMouseButton):
 		return
 
@@ -768,8 +779,58 @@ func _input(event: InputEvent) -> void:
 	if clicked_box == null:
 		return
 
-	_handle_hover_box_click(clicked_box, mouse_event.shift_pressed)
+	if limb_move_minigames_enabled and _click_moves_body_part(clicked_box):
+		_open_limb_minigame(clicked_box, mouse_event.shift_pressed)
+	else:
+		_handle_hover_box_click(clicked_box, mouse_event.shift_pressed)
 	get_viewport().set_input_as_handled()
+
+
+## The minigames a limb move can roll.
+func _limb_minigame_scripts() -> Array[GDScript]:
+	return [LeverSequenceMinigame, MeterHoldMinigame, WireConnectMinigame,
+			ScrewTurnMinigame, MinefieldMinigame]
+
+
+## Whether clicking `box` would actually move a body part, mirroring the early-outs in
+## _handle_hover_box_click: hair restyles, locked legs and clicks that do nothing
+## (an animation mid-strip) shouldn't cost a minigame.
+func _click_moves_body_part(box: Control) -> bool:
+	if _is_hair_hover_box(box):
+		return false
+	if (_is_pelvis_box(box) or _is_leg_pose_hover_box(box)) and _legs_have_screws():
+		return false
+	if int(box.get("click_action")) == CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION 			and _box_has_layered_animation(box) and _animation_states.has(box):
+		var state: Dictionary = _animation_states[box]
+		if bool(state.get("playing", false)) and String(state.get("phase", "")) != ANIMATION_PHASE_LOOP:
+			return false
+	return true
+
+
+## Opens a random minigame for the click on `box`; the click is replayed only if won.
+func _open_limb_minigame(box: Control, shift_pressed: bool) -> void:
+	var scripts := _limb_minigame_scripts()
+	var game: Minigame = scripts[randi() % scripts.size()].new()
+	game.auto_close_on_result = true
+	var layer := CanvasLayer.new()
+	layer.name = "LimbMinigameLayer"
+	layer.layer = LIMB_MINIGAME_CANVAS_LAYER
+	add_child(layer)
+	_limb_minigame_layer = layer
+	game.closed.connect(func() -> void:
+		var won := game.solved
+		_close_limb_minigame()
+		if won and _interaction_enabled and is_instance_valid(box):
+			_handle_hover_box_click(box, shift_pressed)
+	)
+	layer.add_child(game)
+
+
+## Tears down the open limb-move minigame (if any) without applying its move.
+func _close_limb_minigame() -> void:
+	if _limb_minigame_layer != null and is_instance_valid(_limb_minigame_layer):
+		_limb_minigame_layer.queue_free()
+	_limb_minigame_layer = null
 
 
 func _handle_debug_key(event: InputEventKey) -> void:
@@ -920,6 +981,9 @@ func set_leg_slight_out_prestage_enabled(value: bool) -> void:
 
 func set_head_interaction_enabled(value: bool) -> void:
 	_interaction_enabled = value
+	# Interaction shutting off (night over, drone death, ...) cancels any pending move.
+	if not value:
+		_close_limb_minigame()
 	for box in _hover_boxes:
 		if box != null and is_instance_valid(box):
 			var visible_value := value and _is_hover_box_available(box)

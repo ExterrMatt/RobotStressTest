@@ -505,6 +505,29 @@ Ms. Okorie: That wasn't quite it, {player_name}. The reason fire isn't considere
 You look back down at your phone. She hung up…
 Thoughts: Great…
 ",
+"sleep": "# Sleep dialogue.
+# Format: see data/dialogue/school.dlg for the full spec.
+# Trailing backslash joins onto the next line into one page (one click).
+
+
+# -----------------------------------------------------------------------------
+# PROMPT - shown in the night bedroom before the Sleep scene, when the robot
+# has a body to bring along. The choice decides whether she's in the bed.
+# -----------------------------------------------------------------------------
+
+[intro]
+[i]It's late. The house has gone quiet.[/i]
+
+# The gold prompt and the two button labels (exact button text).
+[prompt]
+Bring the robot to bed with you?
+
+[prompt.yes]
+YES
+
+[prompt.no]
+NO
+",
 "work": "# Work dialogue.
 # Format: see data/dialogue/school.dlg for the full spec.
 # Trailing backslash joins onto the next line into one page (one click).

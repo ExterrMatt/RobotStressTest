@@ -121,6 +121,12 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_script")
+drone_shot_seconds = 0.01
+drone_death_pan_seconds = 0.35
+drone_death_pan_screens = 2.0
+drone_death_red_fade_seconds = 2.0
+drone_death_pan_and_red_together = true
+drone_death_zoom = -10.0
 hand_screw_animation_offset = Vector2(3, -4)
 curved_pan_bow_strength = 0.3
 table_to_generator_rotation_1 = -4.0
@@ -135,7 +141,7 @@ mouse_follow_strength_table = 10.0
 mouse_follow_strength_generator = 16.0
 mouse_follow_strength_window = 12.0
 mouse_follow_horizontal_strength = 1.4
-table_window_pan_duration = 0.39999999999999997
+table_window_pan_duration = 0.4
 table_window_mid_speedup = 2.7
 
 [node name="FullscreenLayer" type="CanvasLayer" parent="." unique_id=2013108336]

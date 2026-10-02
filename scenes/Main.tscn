@@ -183,6 +183,24 @@ theme_type_variation = &"HUDStat"
 theme_override_font_sizes/font_size = 36
 text = "0"
 
+[node name="Div6" type="PanelContainer" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1187349021]
+custom_minimum_size = Vector2(3, 28)
+layout_mode = 2
+theme_type_variation = &"PanelDivider"
+
+[node name="FatiguePrefix" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=1593027746]
+layout_mode = 2
+theme_type_variation = &"HUDLabel"
+theme_override_font_sizes/font_size = 36
+text = "FATIGUE:"
+
+[node name="FatigueLabel" type="Label" parent="UI/VBox/HUDBar/HUDMargin/HUDLayout" unique_id=2071538214]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HUDStat"
+theme_override_font_sizes/font_size = 36
+text = "0"
+
 [node name="FrameWrap" type="CenterContainer" parent="UI/VBox" unique_id=857694113]
 layout_mode = 2
 size_flags_vertical = 3

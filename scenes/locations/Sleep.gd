@@ -39,6 +39,9 @@ var _grid_cell: Vector2i = Vector2i(1, 1)
 var _zoomed_in: bool = true
 var _blanket_removed := false
 var _has_robot_in_bed := false
+## False when the player answered NO to the bedtime prompt: the bed stays empty
+## even though the robot has a body.
+var _bring_robot := true
 var _pan_tween: Tween = null
 var _zoom_tween: Tween = null
 
@@ -50,6 +53,9 @@ var _mattress_stream: AudioStream = null
 
 
 func _ready() -> void:
+	var main := get_tree().current_scene
+	if main != null and main.has_method("consume_sleep_bring_robot"):
+		_bring_robot = bool(main.call("consume_sleep_bring_robot"))
 	call_deferred("_initialize_zoom")
 	_setup_sleep_audio()
 	if bot_placeholder.has_method("set_head_interaction_enabled"):
@@ -65,7 +71,7 @@ func _ready() -> void:
 ## so it can be re-run when parts are granted mid-sleep (see debug_recalibrate),
 ## making a robot that gains limbs appear in the bed instead of staying hidden.
 func _apply_bed_occupancy() -> void:
-	_has_robot_in_bed = GameState.equipped_limbs > 0
+	_has_robot_in_bed = _bring_robot and GameState.equipped_limbs > 0
 	end_button.visible = _has_robot_in_bed
 	end_button.disabled = not _has_robot_in_bed
 
@@ -117,7 +123,7 @@ func debug_anim_sound_label() -> String:
 ## (it was hidden if the scene opened with an empty bed), then rebuild the robot so
 ## newly granted limbs/cosmetics show. Mirrors the stress test's own recalibrate.
 func debug_recalibrate() -> void:
-	if (GameState.equipped_limbs > 0) != _has_robot_in_bed:
+	if (_bring_robot and GameState.equipped_limbs > 0) != _has_robot_in_bed:
 		_apply_bed_occupancy()
 	if bot_placeholder != null and is_instance_valid(bot_placeholder) \
 			and bot_placeholder.has_method("_refresh_configuration"):

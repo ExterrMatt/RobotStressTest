@@ -282,7 +282,30 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 ## emergency button drives it off, before it disappears. Halved so the zap plays
 ## twice as fast and lasts half as long.
 @export var drone_zap_seconds: float = 0.15
+## Every robot limb move first plays a random repair minigame; the limb only moves if
+## the minigame is won (see StressTestRobot.limb_move_minigames_enabled).
+@export var limb_move_minigames_enabled: bool = true
 @export var drone_failure_text: String = "You were caught by a patrol drone. Hit the emergency button to fend it off."
+## PROTOTYPE death sequence after the drone's shot: instead of failing at once, the
+## camera pans upward (past the top of the background into black), then a red gradient
+## sweeps down the screen, and only then does the night fail.
+@export var drone_death_sequence_enabled: bool = true
+## Seconds the camera takes to pan upward after the shot.
+@export var drone_death_pan_seconds: float = 1.5
+## How far the camera pans up, in visible screen heights (0.5 = the top half of the
+## screen ends up black, above the background art).
+@export var drone_death_pan_screens: float = 0.5
+## Seconds the red gradient takes to sweep from the top to the bottom of the screen.
+@export var drone_death_red_fade_seconds: float = 3.0
+## Height of the soft leading edge of the red sweep, as a fraction of the screen.
+@export var drone_death_red_softness: float = 0.35
+@export var drone_death_red_color: Color = Color(0.7, 0.0, 0.0, 1.0)
+## When on, the red sweep starts together with the pan instead of after it. The night
+## fails once whichever of the two is longer has finished.
+@export var drone_death_pan_and_red_together: bool = false
+## Camera zoom applied during the pan (same duration and easing, centred on the screen).
+## 1.0 = no zoom; above 1 zooms in (e.g. 1.3), below 1 zooms out (e.g. 0.8).
+@export var drone_death_zoom: float = 1.0
 
 @export_group("Failure Messages")
 @export var gas_high_failure_text: String = "She woke up because you let the gas pressure rise too high."
@@ -462,6 +485,8 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 var _zoom_level: int = ZOOM_LEVEL_FIRST
 var _current_zoom_region: Control = null
 var _pan_tween: Tween = null
+## True while the prototype drone-shot death sequence plays (see _begin_drone_death_sequence).
+var _drone_death_active: bool = false
 var _zoom_tween: Tween = null
 var _canvas_base_scale: float = 1.0
 ## Current smoothed mouse-follow (sway) offset added on top of the resting camera
@@ -647,7 +672,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if _night_finished:
+	if _night_finished or _drone_death_active:
 		_hide_mouse_tooltip()
 		return
 
@@ -704,7 +729,7 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _night_finished:
+	if _night_finished or _drone_death_active:
 		return
 
 	# The forced-look camera yank cannot be resisted: swallow all camera/gas input
@@ -1703,6 +1728,8 @@ func _initialize_robot_position_state() -> void:
 		if not state.is_connected("robot_parts_changed", changed_callable):
 			state.connect("robot_parts_changed", changed_callable)
 
+	if stress_test_robot != null:
+		stress_test_robot.set("limb_move_minigames_enabled", limb_move_minigames_enabled)
 	if stress_test_robot != null and stress_test_robot.has_signal("body_part_moved"):
 		var moved_callable := Callable(self, "_on_body_part_moved")
 		if not stress_test_robot.is_connected("body_part_moved", moved_callable):
@@ -2516,13 +2543,92 @@ func _update_patrol_drone(delta: float) -> void:
 					_set_drone_state(DRONE_SHOT)
 		DRONE_SHOT:
 			if _drone_elapsed >= maxf(0.0, drone_shot_seconds):
-				_fail_stress_test(drone_failure_text, false)
+				if drone_death_sequence_enabled and not _is_intro_tutorial_stress_test():
+					_begin_drone_death_sequence()
+				else:
+					_fail_stress_test(drone_failure_text, false)
 		DRONE_ZAP:
 			if _drone_elapsed >= maxf(0.0, drone_zap_seconds):
 				_clear_patrol_drone()
 			else:
 				# Advance the arc animation (frame 1 -> 2 -> 3) as time passes.
 				_show_accessory(_current_zap_texture())
+
+
+## PROTOTYPE: the drone-shot death sequence (see drone_death_sequence_enabled). The night
+## is frozen (_process / _unhandled_input bail while _drone_death_active), the HUD hides,
+## the camera pans up into the black above the background, a red gradient sweeps down,
+## and then the normal drone failure runs.
+func _begin_drone_death_sequence() -> void:
+	if _drone_death_active or _night_finished:
+		return
+	_drone_death_active = true
+	_hide_mouse_tooltip()
+	_set_stress_test_interaction_enabled(false)
+	if _pan_tween and _pan_tween.is_valid():
+		_pan_tween.kill()
+	if _zoom_tween and _zoom_tween.is_valid():
+		_zoom_tween.kill()
+	for hud_name in ["StressHud", "ElectricityMeter", "WindowAlertIndicator", "EndButton", "WakeButton", "GiveUpButton"]:
+		var hud := camera_window.get_node_or_null(NodePath(hud_name)) as CanvasItem
+		if hud != null:
+			hud.visible = false
+
+	# Red sweep overlay over the camera view (under the failure overlay, z 100).
+	var red := ColorRect.new()
+	red.name = "DroneDeathRed"
+	red.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	red.z_index = 90
+	red.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var shader := Shader.new()
+	shader.code = """
+shader_type canvas_item;
+uniform float progress = 0.0;
+uniform float softness = 0.35;
+uniform vec4 tint : source_color = vec4(0.7, 0.0, 0.0, 1.0);
+void fragment() {
+	// The leading edge travels from above the top (0) to past the bottom (1).
+	float edge = progress * (1.0 + softness);
+	float a = 1.0 - smoothstep(edge - softness, edge, UV.y);
+	COLOR = vec4(tint.rgb, tint.a * a);
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("progress", 0.0)
+	mat.set_shader_parameter("softness", maxf(0.001, drone_death_red_softness))
+	mat.set_shader_parameter("tint", drone_death_red_color)
+	red.material = mat
+	camera_window.add_child(red)
+
+	# The camera window can be taller than the screen (4:3 cover crop), so measure the pan
+	# in VISIBLE screen heights, in the window's local units.
+	var window_scale := camera_window.get_global_transform_with_canvas().get_scale().y
+	var visible_h := minf(camera_window.size.y, get_viewport_rect().size.y / maxf(0.001, window_scale))
+	var pan_offset := Vector2(0.0, visible_h * drone_death_pan_screens)
+	var start_position := scene_canvas.position
+	var start_scale := scene_canvas.scale
+	# Zoom about the middle of the camera window (the visible screen centre): keep the
+	# canvas point under it fixed while scaling, then add the eased pan on top.
+	var view_center := camera_window.size * 0.5
+	var focus := (view_center - start_position) / start_scale
+	var zoom := maxf(0.01, drone_death_zoom)
+	var tween := create_tween()
+	tween.tween_method(func(t: float) -> void:
+		var s := start_scale * lerpf(1.0, zoom, t)
+		scene_canvas.scale = s
+		scene_canvas.position = view_center - focus * s + pan_offset * t
+	, 0.0, 1.0, maxf(0.01, drone_death_pan_seconds)) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	if drone_death_pan_and_red_together:
+		# Run the red sweep alongside the pan (from the tween's start, not after it).
+		tween.parallel()
+	tween.tween_method(func(v: float) -> void: mat.set_shader_parameter("progress", v),
+			0.0, 1.0, maxf(0.01, drone_death_red_fade_seconds))
+	tween.tween_callback(func() -> void:
+		_drone_death_active = false
+		_fail_stress_test(drone_failure_text, false)
+	)
 
 
 func _start_patrol_drone() -> void:

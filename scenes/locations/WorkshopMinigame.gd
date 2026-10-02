@@ -25,20 +25,16 @@ const EASY_MODE_OFFER_SECONDS: float = 60.0
 
 # Craftable items. Two shapes live here:
 #   - SEGMENT parts carry a flat "recipe" of raw ingredients (scrap_metal, nuts_bolts, …).
-#   - COMPOSITE limbs (arm / leg / chest) carry a "segments" list instead. A composite is
+#   - COMPOSITE limbs (arm / leg / chest / stomach) carry a "segments" list instead. A composite is
 #     built from one of each listed segment, and each segment slot can be paid EITHER with
 #     the finished segment item OR with that segment's own raw ingredients (substitution),
 #     so e.g. an arm crafts from {upper_arm + forearm + hand} items, from all their raw
 #     ingredients, or from any mix. See _part_consumption for the matching rules.
-# head and stomach stay single-recipe parts (no segment breakdown yet).
+# head stays a single-recipe part (no segment breakdown yet).
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
 		"display_name": "Head",
 		"recipe": {"head_segments": 1},
-	},
-	"stomach": {
-		"display_name": "Stomach",
-		"recipe": {"synth_skin": 1},
 	},
 
 	# --- arm + its segments ---
@@ -94,6 +90,24 @@ const CRAFTABLE_PARTS: Dictionary = {
 		"display_name": "Chest",
 		"segments": ["ribcage", "upper_plating", "lower_plating"],
 	},
+
+	# --- stomach + its segments ---
+	"tank": {
+		"display_name": "Tank",
+		"recipe": {"scrap_metal": 3, "nuts_bolts": 2, "synth_skin": 1},
+	},
+	"pump": {
+		"display_name": "Pump",
+		"recipe": {"scrap_metal": 1, "electronics": 2, "nuts_bolts": 2, "nanobots": 1},
+	},
+	"huge_battery": {
+		"display_name": "Huge Battery",
+		"recipe": {"scrap_metal": 2, "electronics": 3, "nanobots": 1},
+	},
+	"stomach": {
+		"display_name": "Stomach",
+		"segments": ["tank", "pump", "huge_battery"],
+	},
 }
 
 const INGREDIENT_PATHS: Dictionary = {
@@ -116,6 +130,11 @@ const INGREDIENT_PATHS: Dictionary = {
 	"ribcage":       "res://assets/textures/icons/ribcage.png",
 	"upper_plating": "res://assets/textures/icons/upper_plating.png",
 	"lower_plating": "res://assets/textures/icons/lower_plating.png",
+	# Stomach segments. Tank / pump have no art yet (placeholder); the huge battery reuses
+	# the maintenance battery icon until it gets its own.
+	"tank":          "res://assets/textures/icons/placeholder_item.png",
+	"pump":          "res://assets/textures/icons/placeholder_item.png",
+	"huge_battery":  "res://assets/textures/icons/battery.png",
 }
 
 ## Per-item render scale for tray / bin pieces (a piece draws at its texture's native size,
@@ -129,6 +148,7 @@ const INGREDIENT_VISUAL_SCALES: Dictionary = {
 	"upper_plating": 0.56,
 	"lower_plating": 0.56,
 	"battery": 0.7,
+	"huge_battery": 0.85,
 }
 const HEAD_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot head"
 const HEAD_ASSEMBLY_SIZE: Vector2 = Vector2(200, 200)
@@ -1916,6 +1936,7 @@ func _configure_assembly_for_part(part_id: String) -> void:
 	var leg_parts := ["leg", "thigh", "shin", "foot"]
 	var arm_parts := ["arm", "upper_arm", "forearm"]
 	var chest_parts := ["chest", "ribcage", "upper_plating", "lower_plating"]
+	var stomach_parts := ["stomach", "tank", "pump", "huge_battery"]
 	var leg_node := assembly.get_node_or_null("AssemblyLeg") as CanvasItem
 	if leg_node != null:
 		leg_node.visible = part_id == "" or part_id in leg_parts
@@ -1926,7 +1947,7 @@ func _configure_assembly_for_part(part_id: String) -> void:
 	if _hand_assembly != null:
 		_hand_assembly.visible = part_id == "hand"
 	if _stomach_assembly != null:
-		_stomach_assembly.visible = part_id == "stomach"
+		_stomach_assembly.visible = part_id in stomach_parts
 	if _chest_assembly != null:
 		_chest_assembly.visible = part_id in chest_parts
 
@@ -1945,7 +1966,8 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		_append_active_slots(FOREARM_SEGMENT_IDS)
 	elif part_id == "hand":
 		_active_assembly_slot_ids.assign(_hand_assembly_slot_ids)
-	elif part_id == "stomach":
+	elif part_id in stomach_parts:
+		# Stomach and its segments share the whole stomach assembly (no clean slot split).
 		_active_assembly_slot_ids.assign(_stomach_assembly_slot_ids)
 	elif part_id in chest_parts:
 		# Chest and its segments share the whole chest assembly (no clean slot split).
@@ -2082,6 +2104,14 @@ func _prebuilt_slot_groups() -> Array:
 				break
 		if all_chest and not _chest_assembly_slot_ids.is_empty():
 			groups.append(_chest_assembly_slot_ids)
+	elif _crafted_part_id == "stomach":
+		var all_stomach := true
+		for s in [&"tank", &"pump", &"huge_battery"]:
+			if not _crafted_item_segments.has(s):
+				all_stomach = false
+				break
+		if all_stomach and not _stomach_assembly_slot_ids.is_empty():
+			groups.append(_stomach_assembly_slot_ids)
 	return groups
 
 
@@ -2422,6 +2452,7 @@ func _crafted_part_segment_order() -> Array[StringName]:
 		"arm": return ARM_SEGMENT_IDS
 		"leg": return _leg_assembly_slot_ids
 		"chest": return _chest_assembly_slot_ids
+		"stomach": return _stomach_assembly_slot_ids
 	return _active_assembly_slot_ids
 
 
