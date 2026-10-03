@@ -246,6 +246,8 @@ func _mirror_canvas_item_state(shadow_node: Node, source_node: Node) -> void:
 		shadow_sprite.texture = source_sprite.texture
 		shadow_sprite.region_enabled = source_sprite.region_enabled
 		shadow_sprite.region_rect = source_sprite.region_rect
+		# Packed sheets position each trimmed piece via offset.
+		shadow_sprite.offset = source_sprite.offset
 
 
 func _apply_hidden_shadow_paths() -> void:

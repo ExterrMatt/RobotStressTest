@@ -1,0 +1,1188 @@
+{ "frames": {
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 0.aseprite": {
+    "frame": { "x": 146, "y": 142, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 129, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 1.aseprite": {
+    "frame": { "x": 0, "y": 144, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 129, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 2.aseprite": {
+    "frame": { "x": 146, "y": 193, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 128, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 3.aseprite": {
+    "frame": { "x": 146, "y": 193, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 128, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 4.aseprite": {
+    "frame": { "x": 146, "y": 193, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 128, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 5.aseprite": {
+    "frame": { "x": 0, "y": 195, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 129, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 6.aseprite": {
+    "frame": { "x": 202, "y": 234, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 129, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (torso_crunch) 7.aseprite": {
+    "frame": { "x": 258, "y": 234, "w": 56, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 129, "w": 56, "h": 51 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 0.aseprite": {
+    "frame": { "x": 128, "y": 0, "w": 58, "h": 70 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 64, "y": 120, "w": 58, "h": 70 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 1.aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 64, "h": 71 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 67, "y": 119, "w": 64, "h": 71 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 2.aseprite": {
+    "frame": { "x": 128, "y": 70, "w": 54, "h": 72 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 68, "y": 117, "w": 54, "h": 72 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 3.aseprite": {
+    "frame": { "x": 0, "y": 71, "w": 53, "h": 73 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 69, "y": 116, "w": 53, "h": 73 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 4.aseprite": {
+    "frame": { "x": 0, "y": 71, "w": 53, "h": 73 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 69, "y": 116, "w": 53, "h": 73 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 5.aseprite": {
+    "frame": { "x": 128, "y": 70, "w": 54, "h": 72 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 68, "y": 118, "w": 54, "h": 72 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 6.aseprite": {
+    "frame": { "x": 244, "y": 69, "w": 55, "h": 71 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 67, "y": 119, "w": 55, "h": 71 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (left_leg_up_thigh) 7.aseprite": {
+    "frame": { "x": 244, "y": 0, "w": 58, "h": 69 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 64, "y": 121, "w": 58, "h": 69 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 0.aseprite": {
+    "frame": { "x": 186, "y": 0, "w": 58, "h": 70 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 128, "y": 120, "w": 58, "h": 70 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 1.aseprite": {
+    "frame": { "x": 64, "y": 0, "w": 64, "h": 71 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 119, "y": 119, "w": 64, "h": 71 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 2.aseprite": {
+    "frame": { "x": 182, "y": 70, "w": 54, "h": 72 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 128, "y": 117, "w": 54, "h": 72 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 3.aseprite": {
+    "frame": { "x": 53, "y": 71, "w": 53, "h": 73 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 128, "y": 116, "w": 53, "h": 73 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 4.aseprite": {
+    "frame": { "x": 53, "y": 71, "w": 53, "h": 73 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 128, "y": 116, "w": 53, "h": 73 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 5.aseprite": {
+    "frame": { "x": 182, "y": 70, "w": 54, "h": 72 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 128, "y": 118, "w": 54, "h": 72 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 6.aseprite": {
+    "frame": { "x": 299, "y": 69, "w": 55, "h": 71 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 128, "y": 119, "w": 55, "h": 71 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_thigh) 7.aseprite": {
+    "frame": { "x": 302, "y": 0, "w": 58, "h": 69 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 128, "y": 121, "w": 58, "h": 69 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 0.aseprite": {
+    "frame": { "x": 202, "y": 167, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 69, "y": 148, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 1.aseprite": {
+    "frame": { "x": 219, "y": 167, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 71, "y": 148, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 2.aseprite": {
+    "frame": { "x": 356, "y": 175, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 73, "y": 146, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 3.aseprite": {
+    "frame": { "x": 130, "y": 387, "w": 16, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 74, "y": 146, "w": 16, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 4.aseprite": {
+    "frame": { "x": 130, "y": 387, "w": 16, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 74, "y": 146, "w": 16, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 5.aseprite": {
+    "frame": { "x": 202, "y": 199, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 73, "y": 148, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 6.aseprite": {
+    "frame": { "x": 219, "y": 199, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 71, "y": 149, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_overgrip) 7.aseprite": {
+    "frame": { "x": 356, "y": 207, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 68, "y": 149, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 0.aseprite": {
+    "frame": { "x": 356, "y": 239, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 164, "y": 148, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 1.aseprite": {
+    "frame": { "x": 182, "y": 244, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 162, "y": 148, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 2.aseprite": {
+    "frame": { "x": 236, "y": 384, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 160, "y": 146, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 3.aseprite": {
+    "frame": { "x": 146, "y": 387, "w": 16, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 160, "y": 146, "w": 16, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 4.aseprite": {
+    "frame": { "x": 146, "y": 387, "w": 16, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 160, "y": 146, "w": 16, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 5.aseprite": {
+    "frame": { "x": 344, "y": 384, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 160, "y": 148, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 6.aseprite": {
+    "frame": { "x": 361, "y": 384, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 162, "y": 149, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_overgrip) 7.aseprite": {
+    "frame": { "x": 0, "y": 386, "w": 17, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 165, "y": 149, "w": 17, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 0.aseprite": {
+    "frame": { "x": 360, "y": 0, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 159, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 1.aseprite": {
+    "frame": { "x": 360, "y": 25, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 157, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 2.aseprite": {
+    "frame": { "x": 360, "y": 50, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 155, "y": 151, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 3.aseprite": {
+    "frame": { "x": 194, "y": 317, "w": 21, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 155, "y": 150, "w": 21, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 4.aseprite": {
+    "frame": { "x": 194, "y": 317, "w": 21, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 155, "y": 150, "w": 21, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 5.aseprite": {
+    "frame": { "x": 17, "y": 386, "w": 21, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 156, "y": 152, "w": 21, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 6.aseprite": {
+    "frame": { "x": 106, "y": 71, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 157, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_right_hand_undergrip) 7.aseprite": {
+    "frame": { "x": 354, "y": 75, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 159, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 0.aseprite": {
+    "frame": { "x": 106, "y": 96, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 69, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 1.aseprite": {
+    "frame": { "x": 354, "y": 100, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 71, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 2.aseprite": {
+    "frame": { "x": 356, "y": 125, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 73, "y": 151, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 3.aseprite": {
+    "frame": { "x": 88, "y": 387, "w": 21, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 74, "y": 150, "w": 21, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 4.aseprite": {
+    "frame": { "x": 88, "y": 387, "w": 21, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 74, "y": 150, "w": 21, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 5.aseprite": {
+    "frame": { "x": 109, "y": 387, "w": 21, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 73, "y": 152, "w": 21, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 6.aseprite": {
+    "frame": { "x": 202, "y": 142, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 71, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_hand_undergrip) 7.aseprite": {
+    "frame": { "x": 356, "y": 150, "w": 22, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 69, "y": 154, "w": 22, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 0.aseprite": {
+    "frame": { "x": 236, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 36, "y": 117, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 1.aseprite": {
+    "frame": { "x": 276, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 39, "y": 116, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 2.aseprite": {
+    "frame": { "x": 236, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 41, "y": 114, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 3.aseprite": {
+    "frame": { "x": 236, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 42, "y": 113, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 4.aseprite": {
+    "frame": { "x": 236, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 42, "y": 113, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 5.aseprite": {
+    "frame": { "x": 236, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 41, "y": 115, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 6.aseprite": {
+    "frame": { "x": 276, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 39, "y": 116, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (human_left_leg_up_shin) 7.aseprite": {
+    "frame": { "x": 276, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 35, "y": 118, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 0.aseprite": {
+    "frame": { "x": 316, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 174, "y": 117, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 1.aseprite": {
+    "frame": { "x": 106, "y": 142, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 171, "y": 116, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 2.aseprite": {
+    "frame": { "x": 316, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 169, "y": 114, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 3.aseprite": {
+    "frame": { "x": 316, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 168, "y": 113, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 4.aseprite": {
+    "frame": { "x": 316, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 168, "y": 113, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 5.aseprite": {
+    "frame": { "x": 316, "y": 140, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 169, "y": 115, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 6.aseprite": {
+    "frame": { "x": 106, "y": 142, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 171, "y": 116, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (right_leg_up_shin) 7.aseprite": {
+    "frame": { "x": 106, "y": 142, "w": 40, "h": 94 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 175, "y": 118, "w": 40, "h": 94 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 0.aseprite": {
+    "frame": { "x": 162, "y": 387, "w": 14, "h": 29 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 118, "y": 170, "w": 14, "h": 29 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 1.aseprite": {
+    "frame": { "x": 215, "y": 317, "w": 14, "h": 24 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 118, "y": 170, "w": 14, "h": 24 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 2.aseprite": {
+    "frame": { "x": 142, "y": 298, "w": 14, "h": 16 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 118, "y": 168, "w": 14, "h": 16 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 3.aseprite": {
+    "frame": { "x": 156, "y": 298, "w": 16, "h": 14 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 117, "y": 168, "w": 16, "h": 14 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 4.aseprite": {
+    "frame": { "x": 356, "y": 271, "w": 16, "h": 15 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 117, "y": 168, "w": 16, "h": 15 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 5.aseprite": {
+    "frame": { "x": 106, "y": 121, "w": 16, "h": 21 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 117, "y": 169, "w": 16, "h": 21 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 6.aseprite": {
+    "frame": { "x": 256, "y": 344, "w": 14, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 118, "y": 170, "w": 14, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana) 7.aseprite": {
+    "frame": { "x": 224, "y": 142, "w": 10, "h": 24 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 120, "y": 172, "w": 10, "h": 24 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 0.aseprite": {
+    "frame": { "x": 372, "y": 271, "w": 12, "h": 17 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 119, "y": 183, "w": 12, "h": 17 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 1.aseprite": {
+    "frame": { "x": 116, "y": 327, "w": 12, "h": 12 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 119, "y": 183, "w": 12, "h": 12 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 2.aseprite": {
+    "frame": { "x": 202, "y": 231, "w": 12, "h": 3 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 119, "y": 182, "w": 12, "h": 3 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 3.aseprite": {
+    "frame": { "x": 373, "y": 175, "w": 10, "h": 2 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 120, "y": 181, "w": 10, "h": 2 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 4.aseprite": {
+    "frame": { "x": 373, "y": 175, "w": 10, "h": 2 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 120, "y": 182, "w": 10, "h": 2 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 5.aseprite": {
+    "frame": { "x": 182, "y": 276, "w": 12, "h": 8 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 119, "y": 183, "w": 12, "h": 8 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 6.aseprite": {
+    "frame": { "x": 52, "y": 316, "w": 12, "h": 11 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 119, "y": 183, "w": 12, "h": 11 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_outline) 7.aseprite": {
+    "frame": { "x": 104, "y": 327, "w": 12, "h": 14 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 119, "y": 183, "w": 12, "h": 14 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 0.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 1.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 2.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 3.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 4.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 5.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 6.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (banana_folds) 7.aseprite": {
+    "frame": { "x": 382, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 0.aseprite": {
+    "frame": { "x": 56, "y": 144, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 1.aseprite": {
+    "frame": { "x": 56, "y": 198, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 2.aseprite": {
+    "frame": { "x": 314, "y": 234, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 3.aseprite": {
+    "frame": { "x": 314, "y": 234, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 4.aseprite": {
+    "frame": { "x": 98, "y": 236, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 5.aseprite": {
+    "frame": { "x": 140, "y": 244, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 6.aseprite": {
+    "frame": { "x": 0, "y": 246, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest) 7.aseprite": {
+    "frame": { "x": 0, "y": 246, "w": 42, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 83, "w": 42, "h": 54 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 0.aseprite": {
+    "frame": { "x": 208, "y": 344, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 1.aseprite": {
+    "frame": { "x": 52, "y": 352, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 2.aseprite": {
+    "frame": { "x": 208, "y": 364, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 3.aseprite": {
+    "frame": { "x": 334, "y": 364, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 4.aseprite": {
+    "frame": { "x": 0, "y": 366, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 5.aseprite": {
+    "frame": { "x": 100, "y": 367, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 6.aseprite": {
+    "frame": { "x": 148, "y": 367, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (balloons) 7.aseprite": {
+    "frame": { "x": 256, "y": 368, "w": 48, "h": 20 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 102, "w": 48, "h": 20 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 0.aseprite": {
+    "frame": { "x": 48, "y": 372, "w": 40, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 105, "y": 99, "w": 40, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 1.aseprite": {
+    "frame": { "x": 48, "y": 372, "w": 40, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 105, "y": 99, "w": 40, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 2.aseprite": {
+    "frame": { "x": 196, "y": 384, "w": 40, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 105, "y": 99, "w": 40, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 3.aseprite": {
+    "frame": { "x": 334, "y": 318, "w": 42, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 99, "w": 42, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 4.aseprite": {
+    "frame": { "x": 334, "y": 341, "w": 42, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 99, "w": 42, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 5.aseprite": {
+    "frame": { "x": 304, "y": 384, "w": 40, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 105, "y": 99, "w": 40, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 6.aseprite": {
+    "frame": { "x": 48, "y": 372, "w": 40, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 105, "y": 99, "w": 40, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (small_coconuts) 7.aseprite": {
+    "frame": { "x": 48, "y": 372, "w": 40, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 105, "y": 99, "w": 40, "h": 23 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 0.aseprite": {
+    "frame": { "x": 42, "y": 252, "w": 50, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 98, "w": 50, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 1.aseprite": {
+    "frame": { "x": 232, "y": 285, "w": 50, "h": 30 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 98, "w": 50, "h": 30 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 2.aseprite": {
+    "frame": { "x": 92, "y": 298, "w": 50, "h": 29 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 98, "w": 50, "h": 29 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 3.aseprite": {
+    "frame": { "x": 282, "y": 288, "w": 50, "h": 30 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 97, "w": 50, "h": 30 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 4.aseprite": {
+    "frame": { "x": 42, "y": 284, "w": 50, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 96, "w": 50, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 5.aseprite": {
+    "frame": { "x": 182, "y": 285, "w": 50, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 96, "w": 50, "h": 32 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 6.aseprite": {
+    "frame": { "x": 332, "y": 288, "w": 50, "h": 30 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 98, "w": 50, "h": 30 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (big_coconuts) 7.aseprite": {
+    "frame": { "x": 232, "y": 315, "w": 50, "h": 29 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 100, "y": 98, "w": 50, "h": 29 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 0.aseprite": {
+    "frame": { "x": 92, "y": 290, "w": 46, "h": 8 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 102, "y": 117, "w": 46, "h": 8 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 1.aseprite": {
+    "frame": { "x": 92, "y": 290, "w": 46, "h": 8 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 102, "y": 116, "w": 46, "h": 8 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 2.aseprite": {
+    "frame": { "x": 92, "y": 290, "w": 46, "h": 8 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 102, "y": 115, "w": 46, "h": 8 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 3.aseprite": {
+    "frame": { "x": 253, "y": 388, "w": 46, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 102, "y": 113, "w": 46, "h": 7 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 4.aseprite": {
+    "frame": { "x": 253, "y": 401, "w": 46, "h": 6 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 102, "y": 112, "w": 46, "h": 6 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 5.aseprite": {
+    "frame": { "x": 253, "y": 395, "w": 48, "h": 6 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 111, "w": 48, "h": 6 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 6.aseprite": {
+    "frame": { "x": 38, "y": 395, "w": 44, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 103, "y": 112, "w": 44, "h": 7 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (pepperonis) 7.aseprite": {
+    "frame": { "x": 0, "y": 300, "w": 42, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 104, "y": 114, "w": 42, "h": 7 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 0.aseprite": {
+    "frame": { "x": 0, "y": 316, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 103, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 1.aseprite": {
+    "frame": { "x": 142, "y": 317, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 102, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 2.aseprite": {
+    "frame": { "x": 282, "y": 318, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 101, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 3.aseprite": {
+    "frame": { "x": 52, "y": 327, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 100, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 4.aseprite": {
+    "frame": { "x": 0, "y": 341, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 99, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 5.aseprite": {
+    "frame": { "x": 104, "y": 342, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 99, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 6.aseprite": {
+    "frame": { "x": 156, "y": 342, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 100, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   },
+   "(Bed, StressTest) Robot Vegetable-Mission Medium Loop (chest_cover) 7.aseprite": {
+    "frame": { "x": 282, "y": 343, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 101, "w": 52, "h": 25 },
+    "sourceSize": { "w": 250, "h": 350 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "vegetable_mission_loop_medium.png",
+  "format": "RGBA8888",
+  "size": { "w": 384, "h": 419 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "torso_crunch", "opacity": 255, "blendMode": "normal" },
+   { "name": "legs" },
+   { "name": "left_leg_up_thigh", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_leg_up_thigh", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "human_left_hand_overgrip", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "human_right_hand_overgrip", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "human_right_hand_undergrip", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "human_left_hand_undergrip", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "human_left_leg_up_shin", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_leg_up_shin", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "banana", "opacity": 255, "blendMode": "normal" },
+   { "name": "banana_outline", "opacity": 255, "blendMode": "normal" },
+   { "name": "banana_folds", "opacity": 255, "blendMode": "normal" },
+   { "name": "chest", "opacity": 255, "blendMode": "normal" },
+   { "name": "balloons", "opacity": 255, "blendMode": "normal" },
+   { "name": "small_coconuts", "opacity": 255, "blendMode": "normal" },
+   { "name": "big_coconuts", "opacity": 255, "blendMode": "normal" },
+   { "name": "pepperonis", "opacity": 255, "blendMode": "normal" },
+   { "name": "chest_cover", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

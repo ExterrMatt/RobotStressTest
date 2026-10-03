@@ -11,6 +11,16 @@ const FIRST_ZOOM_SCALE: Vector2 = Vector2(2.6667, 2.6667)
 const SECOND_ZOOM_SCALE: Vector2 = Vector2(4.0, 4.0)
 const ZOOMED_OUT_SCALE: Vector2 = Vector2.ONE
 const BASE_SCENE_SIZE: Vector2 = Vector2(1200.0, 800.0)
+
+## Engine lever (lever_sheet.png): a vertical strip of 96x96 frames, one per stage.
+signal lever_stage_changed(stage: int)
+const LEVER_FRAME_SIZE: float = 96.0
+## Handle centre (y, in frame pixels) for each stage. Dragging snaps to the stage
+## whose handle is nearest the cursor, so the lever tracks the mouse precisely.
+const LEVER_HANDLE_Y: Array[float] = [20.5, 26.5, 31.5, 38.5, 45.5, 56.5, 63.5, 68.5, 76.5]
+const LEVER_STAGE_COUNT: int = 9
+## The clickable lever box inside each frame (the art's bounds).
+const LEVER_BOX: Rect2 = Rect2(22.0, 13.0, 51.0, 69.0)
 ## How much the debug speedrun accelerates the night.
 const DEBUG_SPEEDRUN_TIME_SCALE: float = 10.0
 const PAN_DURATION: float = 0.35
@@ -172,10 +182,14 @@ const LEG_SCREW_INDEX_INNER_KNEE: int = 2
 
 @export_group("Electricity Meter")
 @export var electricity_label_text: String = "Electricity"
-@export var electricity_start_percent: float = 100.0
-@export var electricity_ripcord_gain_percent: float = 20.0
-@export var electricity_decay_percent_per_second: float = 6.0
-@export var electricity_lights_off_decay_multiplier: float = 2.0
+## Electricity supplied at each engine-lever stage, from stage 0 (handle fully up)
+## to the last stage (fully down). While the generator runs, the meter sits exactly
+## at the lever's value - there is no drain.
+@export var lever_stage_electricity_percents: Array[float] = [120.0, 105.0, 90.0, 75.0, 60.0, 45.0, 30.0, 15.0, 0.0]
+## Lever stage each night starts on (2 = 90%, inside the target band).
+@export_range(0, 8) var lever_start_stage: int = 2
+## Chance that one full rip-cord pull restarts a stopped generator.
+@export_range(0.0, 1.0, 0.01) var generator_ripcord_start_chance: float = 0.25
 @export var electricity_wake_threshold_percent: float = 130.0
 @export var electricity_meter_visual_max_percent: float = 105.0
 @export var electricity_low_end_score_threshold: float = 25.0
@@ -312,7 +326,7 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @export var gas_low_failure_text: String = "She woke up because you let the gas pressure fall too low."
 @export var electricity_failure_text: String = "She woke up because you over supplied her with electricity."
 @export var uncle_failure_text: String = "Your uncle caught you. Click the lights and shut off the generator."
-@export var electricity_low_end_failure_text: String = "You did not supply enough electricity to the robot during the stress test. Pull on the generator's pull cord to generate electricity."
+@export var electricity_low_end_failure_text: String = "You did not supply enough electricity to the robot during the stress test. Raise the generator lever to supply more, and pull the rip cord to restart the generator if it shuts off."
 @export var timeout_failure_text: String = "You ran out of time."
 @export var wake_button_failure_text: String = "She woke up."
 
@@ -465,6 +479,7 @@ const ELECTRICITY_GENERATED_RED_PER_SECOND: float = 5.0
 @onready var left_leg_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/LeftLegScrewRepair
 @onready var right_leg_screw_repair: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/StressTestRobot/RightLegScrewRepair
 @onready var gas_valve: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/GasValve
+@onready var engine_lever: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Lever
 @onready var emergency_power_button: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton
 @onready var window_alert_rect: ColorRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/WindowAlertRect
 @onready var window_alert_indicator: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/WindowAlertIndicator
@@ -530,6 +545,11 @@ var _window_alert_safe_elapsed: float = 0.0
 var _window_alert_seen_elapsed: float = 0.0
 var _window_alert_next_allowed_time: float = 0.0
 var _dragging_gas_valve: bool = false
+var _dragging_lever: bool = false
+## Current engine-lever stage: 0 = handle fully up ... LEVER_STAGE_COUNT - 1 = fully down.
+var lever_stage: int = 0
+## False once the emergency button shuts the generator down; the rip cord restarts it.
+var _generator_running: bool = true
 var _pending_failure_registers_wake: bool = false
 var _failure_result_emitted: bool = false
 var _failure_transition_playing: bool = false
@@ -667,6 +687,7 @@ func _ready() -> void:
 	_initialize_pull_cord()
 	_initialize_stress_systems()
 	_initialize_emergency_power_button()
+	_initialize_engine_lever()
 	_initialize_curtain()
 	call_deferred("_initialize_zoom")
 
@@ -694,7 +715,7 @@ func _process(delta: float) -> void:
 	_night_elapsed += delta * time_scale
 	_update_intro_head_interaction_gate()
 	if not timer_only_speedrun:
-		_electricity_percent = maxf(0.0, _electricity_percent - _current_electricity_decay_per_second() * sim_delta)
+		_update_electricity(sim_delta)
 		_update_awareness(sim_delta)
 		_update_endurance(sim_delta)
 		_accumulate_electricity_generated(sim_delta)
@@ -1647,6 +1668,8 @@ func _apply_lights_off_modulate() -> void:
 		electrical_cord.modulate = lights_modulate
 	if emergency_power_button != null:
 		emergency_power_button.modulate = lights_modulate
+	if engine_lever != null:
+		engine_lever.modulate = lights_modulate
 	# The curtains sit above the dark_shed overlay, so they are not darkened by it -
 	# dim the whole curtain group here instead so a closed curtain reads just as dark
 	# as the rest of the room (no bright rectangle over the window) when the lights
@@ -1908,7 +1931,7 @@ func _play_rip_cord_full_extend_sound() -> void:
 
 
 func _update_generator_power_sound() -> void:
-	var has_power := _electricity_percent > 0.001
+	var has_power := _generator_running or _electricity_percent > 0.001
 	if _generator_had_power and not has_power and not _night_finished:
 		_play_generator_no_power_sound()
 	_generator_had_power = has_power
@@ -2144,7 +2167,8 @@ func _initialize_stress_systems() -> void:
 	_night_finished = false
 	_reset_night_special_sounds()
 	_play_random_night_ambient()
-	_electricity_percent = electricity_start_percent
+	_generator_running = true
+	_electricity_percent = _lever_electricity_percent()
 	_awareness = 0.0
 	_awareness_calm_elapsed = 0.0
 	_endurance = 0.0
@@ -2941,8 +2965,9 @@ func _on_electrical_cord_max_pull_reached() -> void:
 	if _night_finished:
 		return
 	_play_rip_cord_full_extend_sound()
-	_electricity_percent += electricity_ripcord_gain_percent
-	_refresh_stress_hud()
+	# The rip cord only (re)starts a stopped generator, and only sometimes catches.
+	if not _generator_running and _rng.randf() < clampf(generator_ripcord_start_chance, 0.0, 1.0):
+		_start_generator()
 	if _rng.randf() < clampf(screw_electrical_pull_chance, 0.0, 1.0):
 		_trigger_random_screw()
 
@@ -2990,6 +3015,89 @@ func _is_over_gas_valve(global_position: Vector2) -> bool:
 	return gas_valve != null and gas_valve.get_global_rect().has_point(global_position)
 
 
+## Lever clicks are read here, before the GUI: the stress test's container controls
+## consume mouse buttons, so they never reach _unhandled_input (same as PullCord).
+func _input(event: InputEvent) -> void:
+	if _night_finished or _drone_death_active or _drone_forced_look_active:
+		_dragging_lever = false
+		return
+	if _limb_minigame_open():
+		return
+	if _handle_lever_input(event):
+		get_viewport().set_input_as_handled()
+
+
+func _limb_minigame_open() -> bool:
+	return stress_test_robot != null and stress_test_robot.has_method("get_limb_minigame_box") \
+			and stress_test_robot.call("get_limb_minigame_box") != null
+
+
+## The lever's AtlasTexture lives in the (cached) scene, so give this night its own
+## copy before moving the region - otherwise the stage would carry over to the next.
+func _initialize_engine_lever() -> void:
+	if engine_lever == null or engine_lever.texture == null:
+		return
+	engine_lever.texture = engine_lever.texture.duplicate()
+	lever_stage = clampi(lever_start_stage, 0, LEVER_STAGE_COUNT - 1)
+	_apply_lever_frame(lever_stage)
+
+
+## Press on the engine lever to grab it, drag up/down to move it through its stages,
+## release to leave it wherever it is.
+func _handle_lever_input(event: InputEvent) -> bool:
+	if engine_lever == null or not engine_lever.is_visible_in_tree():
+		return false
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return false
+		if mouse_event.pressed and LEVER_BOX.has_point(_lever_local(mouse_event.global_position)):
+			_dragging_lever = true
+			_set_lever_stage(_lever_stage_at(mouse_event.global_position))
+			return true
+		if not mouse_event.pressed and _dragging_lever:
+			_dragging_lever = false
+			return true
+	if event is InputEventMouseMotion and _dragging_lever:
+		_set_lever_stage(_lever_stage_at((event as InputEventMouseMotion).global_position))
+		return true
+	return false
+
+
+## Mouse position in the lever's own 96x96 frame space (handles camera zoom and roll).
+func _lever_local(global_position: Vector2) -> Vector2:
+	var local := engine_lever.get_global_transform().affine_inverse() * global_position
+	# The TextureRect may be stretched; map back into source frame pixels.
+	return local * (LEVER_FRAME_SIZE / maxf(1.0, engine_lever.size.y))
+
+
+func _lever_stage_at(global_position: Vector2) -> int:
+	var y := _lever_local(global_position).y
+	var best := 0
+	for i in LEVER_HANDLE_Y.size():
+		if absf(LEVER_HANDLE_Y[i] - y) < absf(LEVER_HANDLE_Y[best] - y):
+			best = i
+	return best
+
+
+func _set_lever_stage(stage: int) -> void:
+	stage = clampi(stage, 0, LEVER_STAGE_COUNT - 1)
+	_apply_lever_frame(stage)
+	if stage == lever_stage:
+		return
+	lever_stage = stage
+	_update_electricity(0.0)
+	_refresh_stress_hud()
+	lever_stage_changed.emit(stage)
+
+
+func _apply_lever_frame(stage: int) -> void:
+	var atlas := engine_lever.texture as AtlasTexture if engine_lever != null else null
+	if atlas == null:
+		return
+	atlas.region = Rect2(0.0, float(stage) * LEVER_FRAME_SIZE, LEVER_FRAME_SIZE, LEVER_FRAME_SIZE)
+
+
 func _apply_gas_flow_change(delta_percent: float) -> void:
 	_gas_last_change_percent = delta_percent
 	_gas_flow_percent = clampf(_gas_flow_percent + delta_percent, gas_low_failure_percent, gas_high_failure_percent)
@@ -3017,6 +3125,7 @@ func _on_emergency_power_button_pressed() -> void:
 		_play_generator_shutting_off_sound()
 	if _can_start_emergency_consequence_pause():
 		_start_emergency_consequence_pause()
+	_generator_running = false
 	_set_emergency_power_shutoff_pressed(true)
 	_update_generator_power_sound()
 	_refresh_stress_hud()
@@ -3068,10 +3177,11 @@ func _refresh_stress_hud() -> void:
 		timer_value_label.text = "%s: %s" % [timer_label_text, _format_remaining_time()]
 	if electricity_value_label != null:
 		if debug_mode:
-			electricity_value_label.text = "%s: %.0f%% (%+.1f%%/s)" % [
+			electricity_value_label.text = "%s: %.0f%% (lever %d, generator %s)" % [
 				electricity_label_text,
 				_electricity_percent,
-				-_current_electricity_decay_per_second(),
+				lever_stage,
+				"on" if _generator_running else "off",
 			]
 		else:
 			electricity_value_label.text = "%s: %.0f%%" % [
@@ -3183,11 +3293,28 @@ func _format_remaining_time() -> String:
 	return "%02d:%02d.%02d" % [minutes, seconds, centiseconds]
 
 
-func _current_electricity_decay_per_second() -> float:
-	if _emergency_power_shutoff_pressed:
-		return emergency_power_electricity_decay_per_second
-	var multiplier := electricity_lights_off_decay_multiplier if _stress_test_dark else 1.0
-	return electricity_decay_percent_per_second * multiplier
+## While the generator runs the meter reads exactly the lever's setting. Once it is
+## shut down (emergency button) the charge drains away at the emergency rate.
+func _update_electricity(delta: float) -> void:
+	if _generator_running and not _emergency_power_shutoff_pressed:
+		_electricity_percent = _lever_electricity_percent()
+	else:
+		_electricity_percent = maxf(0.0, _electricity_percent - emergency_power_electricity_decay_per_second * delta)
+
+
+func _lever_electricity_percent() -> float:
+	if lever_stage_electricity_percents.is_empty():
+		return 0.0
+	var index := clampi(lever_stage, 0, lever_stage_electricity_percents.size() - 1)
+	return lever_stage_electricity_percents[index]
+
+
+func _start_generator() -> void:
+	_generator_running = true
+	_set_emergency_power_shutoff_pressed(false)
+	_update_electricity(0.0)
+	_update_generator_power_sound()
+	_refresh_stress_hud()
 
 
 ## Awareness climbs while a body animation plays and while parts are moved, and

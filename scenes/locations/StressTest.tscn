@@ -16,24 +16,6 @@
 [ext_resource type="Script" uid="uid://ckexopyixr75o" path="res://scenes/locations/EmergencyPowerButton.gd" id="16_emergency_power_button"]
 [ext_resource type="Script" uid="uid://cm0lmhrjqnsh8" path="res://scenes/ui/GlowingLabel.gd" id="17_glowing_label"]
 [ext_resource type="Script" uid="uid://cfj8bhm2fbx1d" path="res://scenes/ui/FixedWidthTimerLabel.gd" id="18_fixed_width_timer"]
-[ext_resource type="Texture2D" uid="uid://d1n1cjkrwg1df" path="res://assets/textures/backgrounds/stress_test/shed_background.png" id="19_shed_background"]
-[ext_resource type="Texture2D" uid="uid://dcv3p6ggjfiud" path="res://assets/textures/backgrounds/stress_test/side_wall/side_table.png" id="20_side_table"]
-[ext_resource type="Texture2D" uid="uid://pnhke68c5vpp" path="res://assets/textures/backgrounds/stress_test/side_wall/side_panel.png" id="21_side_panel"]
-[ext_resource type="Texture2D" uid="uid://bqpkyts2qeayq" path="res://assets/textures/backgrounds/stress_test/side_wall/side_wall.png" id="22_side_wall"]
-[ext_resource type="Texture2D" uid="uid://drpakyidmfx5q" path="res://assets/textures/backgrounds/stress_test/side_wall/generator.png" id="23_generator"]
-[ext_resource type="Texture2D" uid="uid://cbksyf0cnkef5" path="res://assets/textures/backgrounds/stress_test/side_wall/generator_gauge.png" id="24_generator_gauge"]
-[ext_resource type="Texture2D" uid="uid://ckcqd8fsag5h8" path="res://assets/textures/backgrounds/stress_test/side_wall/rip_cord_dock.png" id="25_rip_cord_dock"]
-[ext_resource type="Texture2D" uid="uid://catqpx06puklo" path="res://assets/textures/backgrounds/stress_test/floor/floor.png" id="26_floor"]
-[ext_resource type="Texture2D" uid="uid://d4lqhjwr2jck0" path="res://assets/textures/backgrounds/stress_test/floor/floor_wire_darkness.png" id="27_floor_wire_darkness"]
-[ext_resource type="Texture2D" uid="uid://dvmaxf52u2iqy" path="res://assets/textures/backgrounds/stress_test/floor/table.png" id="28_table"]
-[ext_resource type="Texture2D" uid="uid://l7e7hn4etm0x" path="res://assets/textures/backgrounds/stress_test/window/button.png" id="29_button"]
-[ext_resource type="Texture2D" uid="uid://c1hihaqhdb2bh" path="res://assets/textures/backgrounds/stress_test/window/button_pressed.png" id="30_button_pressed"]
-[ext_resource type="Texture2D" uid="uid://cqk10nfe7odup" path="res://assets/textures/backgrounds/stress_test/window/window.png" id="31_window"]
-[ext_resource type="Texture2D" uid="uid://biyf4k4pg6tsc" path="res://assets/textures/backgrounds/stress_test/window/window_light_on.png" id="32_window_light_on"]
-[ext_resource type="Texture2D" uid="uid://bl2wesj1838yo" path="res://assets/textures/backgrounds/stress_test/window/uncle_window.png" id="33_uncle_window"]
-[ext_resource type="Texture2D" uid="uid://bwhwvms6kmiir" path="res://assets/textures/backgrounds/stress_test/window/bulb_over_window.png" id="34_bulb_over_window"]
-[ext_resource type="Texture2D" uid="uid://ijuiwks7mxh" path="res://assets/textures/backgrounds/stress_test/window/light.png" id="35_light"]
-[ext_resource type="Texture2D" uid="uid://buqh1w4htw3lo" path="res://assets/textures/backgrounds/stress_test/window/bulb.png" id="36_bulb"]
 [ext_resource type="Texture2D" uid="uid://cg87tqloimpqx" path="res://assets/textures/characters/robot/stresstest/arms/screw_left_top.png" id="37_screw_arm_left_top"]
 [ext_resource type="Texture2D" uid="uid://behaq1b3q75ag" path="res://assets/textures/characters/robot/stresstest/arms/screw_left_mid.png" id="38_screw_arm_left_mid"]
 [ext_resource type="Texture2D" uid="uid://qxi6tc0knq41" path="res://assets/textures/characters/robot/stresstest/arms/screw_left_elbow.png" id="39_screw_arm_left_elbow"]
@@ -56,41 +38,221 @@
 [ext_resource type="Texture2D" uid="uid://03alar1kv0nj" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_inner_knee.png" id="56_screw_leg_right_inner_knee"]
 [ext_resource type="Texture2D" uid="uid://kthxawrxvjgl" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_ankle.png" id="57_screw_leg_right_ankle"]
 [ext_resource type="Texture2D" uid="uid://o0mfqg6yf4qg" path="res://assets/textures/characters/robot/stresstest/legs/screw_right_foot.png" id="58_screw_leg_right_foot"]
-[ext_resource type="Texture2D" uid="uid://bah3e0rmdkw7q" path="res://assets/textures/backgrounds/stress_test/window/window_og.png" id="59_window_og"]
-[ext_resource type="Texture2D" uid="uid://43mde3viqmjn" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_1.png" id="60_gas_thing_1"]
-[ext_resource type="Texture2D" uid="uid://8bvryni852kh" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_2.png" id="61_gas_thing_2"]
-[ext_resource type="Texture2D" uid="uid://cb1h7p4bk0fjm" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_3.png" id="62_gas_thing_3"]
-[ext_resource type="Texture2D" uid="uid://dhc818up8g4pg" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_4.png" id="63_gas_thing_4"]
-[ext_resource type="Texture2D" uid="uid://73a5qbgrip4x" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_5.png" id="64_gas_thing_5"]
-[ext_resource type="Texture2D" uid="uid://csnvmtyqs3k74" path="res://assets/textures/backgrounds/stress_test/gas_tank/gas_thing_6.png" id="65_gas_thing_6"]
-[ext_resource type="Texture2D" uid="uid://cvaclwh4trfat" path="res://assets/textures/backgrounds/stress_test/darkness/dark1.png" id="66_dark1"]
-[ext_resource type="Texture2D" uid="uid://ca68pj836p1h2" path="res://assets/textures/backgrounds/stress_test/darkness/dark2.png" id="67_dark2"]
-[ext_resource type="Texture2D" uid="uid://dnn78kemxu1hk" path="res://assets/textures/backgrounds/stress_test/darkness/dark3.png" id="68_dark3"]
 [ext_resource type="Texture2D" uid="uid://chhxfe0hlshor" path="res://assets/textures/characters/drone/drone.png" id="69_patrol_drone"]
-[ext_resource type="Texture2D" uid="uid://bd3i270i5crev" path="res://assets/textures/backgrounds/stress_test/window/drone_lights_off.png" id="70_drone_lights_off"]
-[ext_resource type="Texture2D" uid="uid://u1xmqn5ilpcf" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_guns.png" id="71_drone_guns_dark"]
-[ext_resource type="Texture2D" uid="uid://cgye1q32jlcl3" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_1.png" id="72_drone_dark_1"]
-[ext_resource type="Texture2D" uid="uid://bdbhq6nfjcysn" path="res://assets/textures/backgrounds/stress_test/window/lens_glow.png" id="73_drone_glow"]
-[ext_resource type="Texture2D" uid="uid://sxbfyre8tnv3" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_2.png" id="74_drone_dark_2"]
-[ext_resource type="Texture2D" uid="uid://bwhdee1foo8dg" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_3.png" id="75_drone_dark_3"]
-[ext_resource type="Texture2D" uid="uid://coeokd1s11xq0" path="res://assets/textures/backgrounds/stress_test/window/drone_dark_4.png" id="76_drone_dark_4"]
-[ext_resource type="Texture2D" uid="uid://b5mfhwj35qphd" path="res://assets/textures/backgrounds/stress_test/background.png" id="77_background"]
-[ext_resource type="Texture2D" uid="uid://c47yebl85u7o8" path="res://assets/textures/backgrounds/stress_test/dark_shed.png" id="78_dark_shed"]
-[ext_resource type="Texture2D" uid="uid://bhfi4gj5wuxn7" path="res://assets/textures/backgrounds/stress_test/floor/table_4.png" id="79_table_4"]
-[ext_resource type="Texture2D" uid="uid://bj0sex5efiyq2" path="res://assets/textures/backgrounds/stress_test/darkness/dark4.png" id="80_dark4"]
-[ext_resource type="Texture2D" uid="uid://b40ghkxvrnw5v" path="res://assets/textures/backgrounds/stress_test/darkness/dark5.png" id="81_dark5"]
-[ext_resource type="Texture2D" uid="uid://dwhbq3qx8lrgc" path="res://assets/textures/backgrounds/stress_test/darkness/dark6.png" id="82_dark6"]
-[ext_resource type="Texture2D" uid="uid://m5oas3rxmiio" path="res://assets/textures/backgrounds/stress_test/curtain_bar.png" id="83_curtain_bar"]
-[ext_resource type="Texture2D" uid="uid://c8q742tju34ju" path="res://assets/textures/backgrounds/stress_test/curtain_closed.png" id="84_curtain_closed"]
-[ext_resource type="Texture2D" uid="uid://dp8bq0sdau5k5" path="res://assets/textures/backgrounds/stress_test/curtain_opened.png" id="85_curtain_opened"]
-[ext_resource type="Texture2D" uid="uid://crrn2dg4028gu" path="res://assets/textures/backgrounds/stress_test/engine/engine_wall.png" id="86_engine_wall"]
-[ext_resource type="Texture2D" uid="uid://dt6edfbqt2hn1" path="res://assets/textures/backgrounds/stress_test/engine/engine_wires.png" id="87_engine_wires"]
-[ext_resource type="Texture2D" uid="uid://d3et6q0euxfb0" path="res://assets/textures/backgrounds/stress_test/engine/engine3.png" id="88_engine3"]
-[ext_resource type="Texture2D" uid="uid://dnfp433u2hoxc" path="res://assets/textures/backgrounds/stress_test/engine/engine2.png" id="89_engine2"]
-[ext_resource type="Texture2D" uid="uid://bbd2f7pyys613" path="res://assets/textures/backgrounds/stress_test/engine/engine1.png" id="90_engine1"]
-[ext_resource type="Texture2D" uid="uid://cx66qu2mubdqn" path="res://assets/textures/backgrounds/stress_test/engine/engine_details.png" id="91_engine_details"]
-[ext_resource type="Texture2D" uid="uid://iqqdod8uq084" path="res://assets/textures/backgrounds/stress_test/dark_engine.png" id="92_dark_engine"]
-[ext_resource type="Texture2D" uid="uid://c4gm7j1qirv5u" path="res://assets/textures/backgrounds/stress_test/darkness/dark7.png" id="93_dark7"]
+[ext_resource type="Texture2D" uid="uid://dncd64jpo55yi" path="res://assets/textures/icons/lever_sheet.png" id="lever_sheet"]
+[ext_resource type="Texture2D" uid="uid://b6h8m7bffbfok" path="res://assets/textures/backgrounds/stress_test/Stress Test Shed V4.png" id="shed_v4"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_background"]
+atlas = ExtResource("shed_v4")
+region = Rect2(3191, 1202, 1200, 800)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_shed_background"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4875, 1200, 1200, 802)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_roof"]
+atlas = ExtResource("shed_v4")
+region = Rect2(3191, 2002, 1250, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_side_table"]
+atlas = ExtResource("shed_v4")
+region = Rect2(1310, 2503, 294, 253)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_generator"]
+atlas = ExtResource("shed_v4")
+region = Rect2(1946, 2503, 214, 221)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_generator_gauge"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6480, 235, 25, 25)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_rip_cord_dock"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6480, 168, 29, 44)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_floor"]
+atlas = ExtResource("shed_v4")
+region = Rect2(2360, 2219, 611, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_floor_wire_darkness"]
+atlas = ExtResource("shed_v4")
+region = Rect2(2971, 2219, 181, 451)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_table"]
+atlas = ExtResource("shed_v4")
+region = Rect2(0, 2418, 264, 371)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_window_og"]
+atlas = ExtResource("shed_v4")
+region = Rect2(1604, 2503, 342, 159)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_window"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6075, 1653, 342, 250)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_window_light_on"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6480, 212, 48, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_uncle_window"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6517, 68, 23, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_lights_off"]
+atlas = ExtResource("shed_v4")
+region = Rect2(3373, 2514, 221, 102)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_guns"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6275, 1903, 200, 52)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_1"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4036, 2514, 219, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_2"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4990, 2514, 219, 100)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_3"]
+atlas = ExtResource("shed_v4")
+region = Rect2(3594, 2514, 221, 102)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_4"]
+atlas = ExtResource("shed_v4")
+region = Rect2(3815, 2514, 221, 102)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_lens_glow"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6439, 1410, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_gas_thing_6"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4744, 1635, 120, 363)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_gas_thing_5"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4763, 1202, 112, 383)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_gas_thing_4"]
+atlas = ExtResource("shed_v4")
+region = Rect2(2160, 2503, 146, 317)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_gas_thing_3"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6014, 2504, 160, 207)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_gas_thing_2"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6439, 1313, 71, 97)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_gas_thing_1"]
+atlas = ExtResource("shed_v4")
+region = Rect2(5673, 2508, 184, 124)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine_wall"]
+atlas = ExtResource("shed_v4")
+region = Rect2(988, 2418, 322, 254)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine_wires"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6014, 2002, 512, 251)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine_wires_Copy"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6014, 2253, 512, 251)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine3"]
+atlas = ExtResource("shed_v4")
+region = Rect2(5502, 2002, 512, 506)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine2"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4391, 1202, 372, 433)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine1"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6075, 1200, 364, 453)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine_details"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4391, 1635, 353, 328)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_red_blue_switches"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6439, 1200, 79, 113)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark_engine"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4990, 2002, 512, 512)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark1"]
+atlas = ExtResource("shed_v4")
+region = Rect2(3265, 0, 1610, 1202)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark2"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4875, 0, 1605, 1200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark3"]
+atlas = ExtResource("shed_v4")
+region = Rect2(0, 0, 1635, 1200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark4"]
+atlas = ExtResource("shed_v4")
+region = Rect2(1635, 0, 1630, 1200)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark5"]
+atlas = ExtResource("shed_v4")
+region = Rect2(1579, 1200, 1612, 1019)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark6"]
+atlas = ExtResource("shed_v4")
+region = Rect2(1579, 2219, 781, 284)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark7"]
+atlas = ExtResource("shed_v4")
+region = Rect2(4441, 2002, 549, 559)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark_shed"]
+atlas = ExtResource("shed_v4")
+region = Rect2(0, 1200, 1579, 1218)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lever"]
+atlas = ExtResource("lever_sheet")
+region = Rect2(0, 384, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_curtain_bar"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6075, 1955, 403, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_curtain_closed"]
+atlas = ExtResource("shed_v4")
+region = Rect2(628, 2418, 360, 230)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_curtain_opened"]
+atlas = ExtResource("shed_v4")
+region = Rect2(264, 2418, 364, 230)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_bulb_over_window"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6517, 86, 17, 12)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_light"]
+atlas = ExtResource("shed_v4")
+region = Rect2(5502, 2508, 171, 138)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_bulb"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6509, 168, 29, 33)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_button"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6480, 68, 37, 50)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shed_button_pressed"]
+atlas = ExtResource("shed_v4")
+region = Rect2(6480, 118, 37, 50)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_electricity_meter"]
 content_margin_left = 4.0
@@ -123,17 +285,17 @@ mouse_filter = 2
 script = ExtResource("1_script")
 drone_shot_seconds = 0.01
 drone_death_pan_seconds = 0.35
-drone_death_pan_screens = 2.0
+drone_death_pan_screens = 1.4
 drone_death_red_fade_seconds = 2.0
 drone_death_pan_and_red_together = true
-drone_death_zoom = -10.0
+drone_death_zoom = 0.5
 hand_screw_animation_offset = Vector2(3, -4)
 curved_pan_bow_strength = 0.3
 table_to_generator_rotation_1 = -4.0
-table_to_generator_rotation_2 = 6.0
-table_to_generator_keyframe_1 = 0.3
+table_to_generator_rotation_2 = 2.5
+table_to_generator_keyframe_1 = 0.4
 window_to_generator_rotation_1 = 1.0
-window_to_generator_rotation_2 = 3.0
+window_to_generator_rotation_2 = 1.5
 window_to_generator_keyframe_1 = 0.35
 rotation_settle = 1.02
 curved_pan_bounce = 0.01
@@ -201,181 +363,151 @@ mouse_filter = 2
 
 [node name="Background" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1054355600]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("77_background")
+texture = SubResource("AtlasTexture_shed_background")
 expand_mode = 1
 
 [node name="ShedBackground" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1054355615]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = -2.0
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("19_shed_background")
+texture = SubResource("AtlasTexture_shed_shed_background")
+expand_mode = 1
+
+[node name="Roof" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=422298199]
+layout_mode = 1
+offset_left = -350.0
+offset_top = -400.0
+offset_right = 900.0
+offset_bottom = 112.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_shed_roof")
 expand_mode = 1
 
 [node name="SideTable" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=2053021675]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 592.0
+offset_top = 548.0
+offset_right = 886.0
+offset_bottom = 801.0
 mouse_filter = 2
-texture = ExtResource("20_side_table")
-expand_mode = 1
-
-[node name="SidePanel" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=930569676]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("21_side_panel")
-expand_mode = 1
-
-[node name="SideWall" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=369451495]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = ExtResource("22_side_wall")
+texture = SubResource("AtlasTexture_shed_side_table")
 expand_mode = 1
 
 [node name="Generator" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1896534767]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 986.0
+offset_top = 124.0
+offset_right = 1200.0
+offset_bottom = 345.0
 mouse_filter = 2
-texture = ExtResource("23_generator")
+texture = SubResource("AtlasTexture_shed_generator")
 expand_mode = 1
 
 [node name="GeneratorGauge" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=593186459]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 1042.0
+offset_top = 150.0
+offset_right = 1067.0
+offset_bottom = 175.0
 mouse_filter = 2
-texture = ExtResource("24_generator_gauge")
+texture = SubResource("AtlasTexture_shed_generator_gauge")
 expand_mode = 1
 
 [node name="RipCordDock" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1103673197]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 1073.0
+offset_top = 169.0
+offset_right = 1102.0
+offset_bottom = 213.0
 mouse_filter = 2
-texture = ExtResource("25_rip_cord_dock")
+texture = SubResource("AtlasTexture_shed_rip_cord_dock")
 expand_mode = 1
 
 [node name="Floor" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=554771159]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = 500.0
+offset_right = 611.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("26_floor")
+texture = SubResource("AtlasTexture_shed_floor")
 expand_mode = 1
 
 [node name="FloorWireDarkness" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=594291274]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 390.0
+offset_top = 280.0
+offset_right = 571.0
+offset_bottom = 731.0
 mouse_filter = 2
-texture = ExtResource("27_floor_wire_darkness")
+texture = SubResource("AtlasTexture_shed_floor_wire_darkness")
 expand_mode = 1
 
 [node name="Table" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1712345476]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 150.0
+offset_top = 429.0
+offset_right = 414.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("28_table")
+texture = SubResource("AtlasTexture_shed_table")
 expand_mode = 1
 
 [node name="Table4" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1712345477]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 150.0
+offset_top = 429.0
+offset_right = 414.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("79_table_4")
+texture = SubResource("AtlasTexture_shed_table")
 expand_mode = 1
 
 [node name="WindowOg" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1284097159]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 122.0
+offset_top = 30.0
+offset_right = 464.0
+offset_bottom = 189.0
 mouse_filter = 2
-texture = ExtResource("59_window_og")
+texture = SubResource("AtlasTexture_shed_window_og")
 expand_mode = 1
 
 [node name="Window" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1284097158]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 122.0
+offset_top = 30.0
+offset_right = 464.0
+offset_bottom = 280.0
 mouse_filter = 2
-texture = ExtResource("31_window")
+texture = SubResource("AtlasTexture_shed_window")
 expand_mode = 1
 
 [node name="WindowLightOn" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=233490396]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 235.0
+offset_top = 80.0
+offset_right = 283.0
+offset_bottom = 103.0
 mouse_filter = 2
-texture = ExtResource("32_window_light_on")
+texture = SubResource("AtlasTexture_shed_window_light_on")
 expand_mode = 1
 
 [node name="UncleWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420079]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 243.0
+offset_top = 83.0
+offset_right = 266.0
+offset_bottom = 101.0
 mouse_filter = 2
-texture = ExtResource("33_uncle_window")
+texture = SubResource("AtlasTexture_shed_uncle_window")
 expand_mode = 1
 
 [node name="PatrolDrone" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420080]
@@ -403,319 +535,309 @@ expand_mode = 1
 [node name="DroneLightsOff" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420082]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 182.0
+offset_top = 59.0
+offset_right = 403.0
+offset_bottom = 161.0
 mouse_filter = 2
-texture = ExtResource("70_drone_lights_off")
+texture = SubResource("AtlasTexture_shed_drone_lights_off")
 expand_mode = 1
 
 [node name="DroneGuns" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420083]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 192.0
+offset_top = 133.0
+offset_right = 392.0
+offset_bottom = 185.0
 mouse_filter = 2
-texture = ExtResource("71_drone_guns_dark")
+texture = SubResource("AtlasTexture_shed_drone_dark_guns")
 expand_mode = 1
 
 [node name="DroneDark1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420084]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 182.0
+offset_top = 61.0
+offset_right = 401.0
+offset_bottom = 161.0
 mouse_filter = 2
-texture = ExtResource("72_drone_dark_1")
+texture = SubResource("AtlasTexture_shed_drone_dark_1")
 expand_mode = 1
 
 [node name="DroneDark2" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420086]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 184.0
+offset_top = 61.0
+offset_right = 403.0
+offset_bottom = 161.0
 mouse_filter = 2
-texture = ExtResource("74_drone_dark_2")
+texture = SubResource("AtlasTexture_shed_drone_dark_2")
 expand_mode = 1
 
 [node name="DroneDark3" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420087]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 182.0
+offset_top = 59.0
+offset_right = 403.0
+offset_bottom = 161.0
 mouse_filter = 2
-texture = ExtResource("75_drone_dark_3")
+texture = SubResource("AtlasTexture_shed_drone_dark_3")
 expand_mode = 1
 
 [node name="DroneDark4" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420088]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 182.0
+offset_top = 59.0
+offset_right = 403.0
+offset_bottom = 161.0
 mouse_filter = 2
-texture = ExtResource("76_drone_dark_4")
+texture = SubResource("AtlasTexture_shed_drone_dark_4")
 expand_mode = 1
 
 [node name="DroneGlow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1671420085]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 261.0
+offset_top = 66.0
+offset_right = 325.0
+offset_bottom = 130.0
 mouse_filter = 2
-texture = ExtResource("73_drone_glow")
+texture = SubResource("AtlasTexture_shed_lens_glow")
 expand_mode = 1
 
 [node name="GasThing6" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000006]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 120.0
+offset_bottom = 363.0
 mouse_filter = 2
-texture = ExtResource("65_gas_thing_6")
+texture = SubResource("AtlasTexture_shed_gas_thing_6")
 expand_mode = 1
 
 [node name="GasThing5" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000005]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_right = 112.0
+offset_bottom = 383.0
 mouse_filter = 2
-texture = ExtResource("64_gas_thing_5")
+texture = SubResource("AtlasTexture_shed_gas_thing_5")
 expand_mode = 1
 
 [node name="GasThing4" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000004]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = 102.0
+offset_right = 146.0
+offset_bottom = 419.0
 mouse_filter = 2
-texture = ExtResource("63_gas_thing_4")
+texture = SubResource("AtlasTexture_shed_gas_thing_4")
 expand_mode = 1
 
 [node name="GasThing3" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000003]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 26.0
+offset_top = 182.0
+offset_right = 186.0
+offset_bottom = 389.0
 mouse_filter = 2
-texture = ExtResource("62_gas_thing_3")
+texture = SubResource("AtlasTexture_shed_gas_thing_3")
 expand_mode = 1
 
 [node name="GasThing2" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000002]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 77.0
+offset_top = 267.0
+offset_right = 148.0
+offset_bottom = 364.0
 mouse_filter = 2
-texture = ExtResource("61_gas_thing_2")
+texture = SubResource("AtlasTexture_shed_gas_thing_2")
 expand_mode = 1
 
 [node name="GasThing1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1400000001]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = 254.0
+offset_right = 184.0
+offset_bottom = 378.0
 mouse_filter = 2
-texture = ExtResource("60_gas_thing_1")
+texture = SubResource("AtlasTexture_shed_gas_thing_1")
 expand_mode = 1
 
 [node name="EngineWall" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000001]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 845.0
+offset_right = 1167.0
+offset_bottom = 254.0
 mouse_filter = 2
-texture = ExtResource("86_engine_wall")
+texture = SubResource("AtlasTexture_shed_engine_wall")
 expand_mode = 1
 
 [node name="EngineWires" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000002]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 688.0
+offset_right = 1200.0
+offset_bottom = 251.0
 mouse_filter = 2
-texture = ExtResource("87_engine_wires")
+texture = SubResource("AtlasTexture_shed_engine_wires")
+expand_mode = 1
+
+[node name="EngineWiresCopy" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=472646677]
+layout_mode = 1
+offset_left = 688.0
+offset_right = 1200.0
+offset_bottom = 251.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_shed_engine_wires_Copy")
 expand_mode = 1
 
 [node name="Engine3" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000003]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 688.0
+offset_top = 6.0
+offset_right = 1200.0
+offset_bottom = 512.0
 mouse_filter = 2
-texture = ExtResource("88_engine3")
+texture = SubResource("AtlasTexture_shed_engine3")
 expand_mode = 1
 
 [node name="Engine2" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000004]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 828.0
+offset_top = 34.0
+offset_right = 1200.0
+offset_bottom = 467.0
 mouse_filter = 2
-texture = ExtResource("89_engine2")
+texture = SubResource("AtlasTexture_shed_engine2")
 expand_mode = 1
 
 [node name="Engine1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000005]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 836.0
+offset_right = 1200.0
+offset_bottom = 453.0
 mouse_filter = 2
-texture = ExtResource("90_engine1")
+texture = SubResource("AtlasTexture_shed_engine1")
 expand_mode = 1
 
 [node name="EngineDetails" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000006]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 847.0
+offset_right = 1200.0
+offset_bottom = 328.0
 mouse_filter = 2
-texture = ExtResource("91_engine_details")
+texture = SubResource("AtlasTexture_shed_engine_details")
+expand_mode = 1
+
+[node name="RedBlueSwitches" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=567222563]
+layout_mode = 1
+offset_left = 846.0
+offset_top = 114.0
+offset_right = 925.0
+offset_bottom = 227.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_shed_red_blue_switches")
 expand_mode = 1
 
 [node name="DarkEngine" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1700000007]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 688.0
+offset_right = 1200.0
+offset_bottom = 512.0
 mouse_filter = 2
-texture = ExtResource("92_dark_engine")
+texture = SubResource("AtlasTexture_shed_dark_engine")
 expand_mode = 1
 
 [node name="Dark1" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000001]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = -410.0
+offset_top = -400.0
+offset_right = 1200.0
+offset_bottom = 802.0
 mouse_filter = 2
-texture = ExtResource("66_dark1")
+texture = SubResource("AtlasTexture_shed_dark1")
 expand_mode = 1
 
 [node name="Dark2" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000002]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = -405.0
+offset_top = -400.0
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("67_dark2")
+texture = SubResource("AtlasTexture_shed_dark2")
 expand_mode = 1
 
 [node name="Dark3" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000003]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = -435.0
+offset_top = -400.0
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("68_dark3")
+texture = SubResource("AtlasTexture_shed_dark3")
 expand_mode = 1
 
 [node name="Dark4" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000004]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = -430.0
+offset_top = -400.0
+offset_right = 1200.0
+offset_bottom = 800.0
 mouse_filter = 2
-texture = ExtResource("80_dark4")
+texture = SubResource("AtlasTexture_shed_dark4")
 expand_mode = 1
 
 [node name="Dark5" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000005]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = -412.0
+offset_top = -366.0
+offset_right = 1200.0
+offset_bottom = 653.0
 mouse_filter = 2
-texture = ExtResource("81_dark5")
+texture = SubResource("AtlasTexture_shed_dark5")
 expand_mode = 1
 
 [node name="Dark6" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000006]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 86.0
+offset_top = -4.0
+offset_right = 867.0
+offset_bottom = 280.0
 mouse_filter = 2
-texture = ExtResource("82_dark6")
+texture = SubResource("AtlasTexture_shed_dark6")
 expand_mode = 1
 
 [node name="Dark7" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/LightPlaceholder" unique_id=1500000007]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 651.0
+offset_top = -4.0
+offset_right = 1200.0
+offset_bottom = 555.0
 mouse_filter = 2
-texture = ExtResource("93_dark7")
+texture = SubResource("AtlasTexture_shed_dark7")
 expand_mode = 1
 
 [node name="DarkPlaceholder" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1297079992]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = -562.0
+offset_top = -400.0
+offset_right = 1017.0
+offset_bottom = 818.0
 mouse_filter = 2
-texture = ExtResource("78_dark_shed")
+texture = SubResource("AtlasTexture_shed_dark_shed")
+expand_mode = 1
+
+[node name="Lever" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1720623968]
+layout_mode = 1
+offset_left = 819.0
+offset_top = 93.0
+offset_right = 915.0
+offset_bottom = 189.0
+mouse_filter = 2
+texture = SubResource("AtlasTexture_lever")
 expand_mode = 1
 
 [node name="Curtains" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1600000020]
@@ -729,69 +851,62 @@ mouse_filter = 2
 
 [node name="CurtainBar" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains" unique_id=1600000001]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 91.0
+offset_top = 8.0
+offset_right = 494.0
+offset_bottom = 24.0
 mouse_filter = 2
-texture = ExtResource("83_curtain_bar")
+texture = SubResource("AtlasTexture_shed_curtain_bar")
 expand_mode = 1
 
 [node name="CurtainClosed" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains" unique_id=1600000002]
 visible = false
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 113.0
+offset_top = 14.0
+offset_right = 473.0
+offset_bottom = 244.0
 mouse_filter = 2
-texture = ExtResource("84_curtain_closed")
+texture = SubResource("AtlasTexture_shed_curtain_closed")
 expand_mode = 1
 
 [node name="CurtainOpened" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Curtains" unique_id=1600000003]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 111.0
+offset_top = 14.0
+offset_right = 475.0
+offset_bottom = 244.0
 mouse_filter = 2
-texture = ExtResource("85_curtain_opened")
+texture = SubResource("AtlasTexture_shed_curtain_opened")
 expand_mode = 1
 
 [node name="BulbOverWindow" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=100411321]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 297.0
+offset_top = 30.0
+offset_right = 314.0
+offset_bottom = 42.0
 mouse_filter = 2
-texture = ExtResource("34_bulb_over_window")
+texture = SubResource("AtlasTexture_shed_bulb_over_window")
 expand_mode = 1
 
 [node name="Light" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=415680127]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 221.0
+offset_right = 392.0
+offset_bottom = 138.0
 mouse_filter = 2
-texture = ExtResource("35_light")
+texture = SubResource("AtlasTexture_shed_light")
 expand_mode = 1
 
 [node name="Bulb" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1141615490]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = 291.0
+offset_top = 40.0
+offset_right = 320.0
+offset_bottom = 73.0
 mouse_filter = 2
-texture = ExtResource("36_bulb")
+texture = SubResource("AtlasTexture_shed_bulb")
 expand_mode = 1
 
 [node name="StressTestRobotShadow" type="Control" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=1305825547]
@@ -932,6 +1047,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_head_screw_repair")
 blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
+limb_move_hover_box_paths = Array[NodePath]([NodePath("../LeftShoulderHoverBox")])
 flipped_screwdriver_indices = [0, 1]
 screw_nodes = Array[NodePath]([NodePath("ScrewTop"), NodePath("ScrewMid"), NodePath("ScrewElbow")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Top"), NodePath("ScrewdriverPositions/Mid"), NodePath("ScrewdriverPositions/Elbow")])
@@ -1001,6 +1117,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_head_screw_repair")
 blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
+limb_move_hover_box_paths = Array[NodePath]([NodePath("../RightShoulderHoverBox")])
 flipped_screwdriver_indices = [2]
 screw_nodes = Array[NodePath]([NodePath("ScrewTop"), NodePath("ScrewMid"), NodePath("ScrewElbow")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Top"), NodePath("ScrewdriverPositions/Mid"), NodePath("ScrewdriverPositions/Elbow")])
@@ -1070,6 +1187,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_head_screw_repair")
 blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox"), NodePath("../PelvisHoverBox")])
+lock_exempt_hover_box_paths = Array[NodePath]([NodePath("../PelvisHoverBox")])
 flipped_screwdriver_indices = [0, 2]
 screw_nodes = Array[NodePath]([NodePath("ScrewLeftRib"), NodePath("ScrewRightRib"), NodePath("ScrewLeftWaist"), NodePath("ScrewRightWaist")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/LeftRib"), NodePath("ScrewdriverPositions/RightRib"), NodePath("ScrewdriverPositions/LeftWaist"), NodePath("ScrewdriverPositions/RightWaist")])
@@ -1155,6 +1273,7 @@ mouse_filter = 2
 script = ExtResource("10_head_screw_repair")
 enabled = false
 blocked_hover_box_paths = Array[NodePath]([NodePath("../HeadHoverBox")])
+limb_move_hover_box_paths = Array[NodePath]([NodePath("../ChestCoverHoverBox")])
 flipped_screwdriver_indices = [0]
 screw_nodes = Array[NodePath]([NodePath("ScrewLeftCoco"), NodePath("ScrewRightCoco")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/LeftCoco"), NodePath("ScrewdriverPositions/RightCoco")])
@@ -1209,6 +1328,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_head_screw_repair")
 blocked_hover_box_paths = Array[NodePath]([NodePath("../PelvisHoverBox")])
+limb_move_hover_box_paths = Array[NodePath]([NodePath("../LeftLegHoverBox"), NodePath("../LeftLegHoverBoxOut"), NodePath("../LeftLegHoverBoxRaised")])
 flipped_screwdriver_indices = [0, 1, 3, 4]
 screw_nodes = Array[NodePath]([NodePath("ScrewCheek"), NodePath("ScrewOuterKnee"), NodePath("ScrewInnerKnee"), NodePath("ScrewAnkle"), NodePath("ScrewFoot")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Cheek"), NodePath("ScrewdriverPositions/OuterKnee"), NodePath("ScrewdriverPositions/InnerKnee"), NodePath("ScrewdriverPositions/Ankle"), NodePath("ScrewdriverPositions/Foot")])
@@ -1308,6 +1428,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("10_head_screw_repair")
 blocked_hover_box_paths = Array[NodePath]([NodePath("../PelvisHoverBox")])
+limb_move_hover_box_paths = Array[NodePath]([NodePath("../RightLegHoverBox"), NodePath("../RightLegHoverBoxOut"), NodePath("../RightLegHoverBoxRaised")])
 flipped_screwdriver_indices = [2]
 screw_nodes = Array[NodePath]([NodePath("ScrewCheek"), NodePath("ScrewOuterKnee"), NodePath("ScrewInnerKnee"), NodePath("ScrewAnkle"), NodePath("ScrewFoot")])
 screwdriver_position_paths = Array[NodePath]([NodePath("ScrewdriverPositions/Cheek"), NodePath("ScrewdriverPositions/OuterKnee"), NodePath("ScrewdriverPositions/InnerKnee"), NodePath("ScrewdriverPositions/Ankle"), NodePath("ScrewdriverPositions/Foot")])
@@ -1469,23 +1590,23 @@ script = ExtResource("16_emergency_power_button")
 
 [node name="Button" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton" unique_id=1317033291]
 layout_mode = 1
-offset_left = -466.0
-offset_top = -80.0
-offset_right = 734.0
-offset_bottom = 720.0
+offset_left = -3.0
+offset_top = -5.0
+offset_right = 34.0
+offset_bottom = 45.0
 mouse_filter = 2
-texture = ExtResource("29_button")
+texture = SubResource("AtlasTexture_shed_button")
 expand_mode = 1
 
 [node name="ButtonPressed" type="TextureRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/EmergencyPowerButton" unique_id=2085711196]
 visible = false
 layout_mode = 1
-offset_left = -466.0
-offset_top = -80.0
-offset_right = 734.0
-offset_bottom = 720.0
+offset_left = -3.0
+offset_top = -5.0
+offset_right = 34.0
+offset_bottom = 45.0
 mouse_filter = 2
-texture = ExtResource("30_button_pressed")
+texture = SubResource("AtlasTexture_shed_button_pressed")
 expand_mode = 1
 
 [node name="GasValve" type="ColorRect" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas" unique_id=389653453]

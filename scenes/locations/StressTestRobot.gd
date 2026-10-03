@@ -668,6 +668,9 @@ var _interaction_enabled: bool = true
 var limb_move_minigames_enabled: bool = false
 ## Canvas layer hosting the open limb-move minigame (null when none is open).
 var _limb_minigame_layer: CanvasLayer = null
+## Hover box whose move the open minigame is gating (null when none is open).
+## Screw controllers read it so no screw loosens on that part mid-minigame.
+var _limb_minigame_box: Control = null
 ## Above the stress test's FullscreenLayer (20).
 const LIMB_MINIGAME_CANVAS_LAYER: int = 60
 var _editor_preview_was_active: bool = false
@@ -732,6 +735,7 @@ var _repair_hidden_hand_sides: Dictionary = {}
 
 
 func _ready() -> void:
+	_apply_sheet_frame_zero(self)
 	_initialize_neck_front_texture()
 	_initialize_balloons_static_texture()
 	_refresh_configuration()
@@ -817,6 +821,7 @@ func _open_limb_minigame(box: Control, shift_pressed: bool) -> void:
 	layer.layer = LIMB_MINIGAME_CANVAS_LAYER
 	add_child(layer)
 	_limb_minigame_layer = layer
+	_limb_minigame_box = box
 	game.closed.connect(func() -> void:
 		var won := game.solved
 		_close_limb_minigame()
@@ -831,6 +836,11 @@ func _close_limb_minigame() -> void:
 	if _limb_minigame_layer != null and is_instance_valid(_limb_minigame_layer):
 		_limb_minigame_layer.queue_free()
 	_limb_minigame_layer = null
+	_limb_minigame_box = null
+
+
+func get_limb_minigame_box() -> Control:
+	return _limb_minigame_box
 
 
 func _handle_debug_key(event: InputEventKey) -> void:
@@ -1969,7 +1979,7 @@ func _show_side_intro_grip(resolved: Dictionary, is_left: bool) -> bool:
 	resolved[path] = true
 	# Lock the sprite to frame 0 in case a previous animation left it elsewhere.
 	var node := get_node_or_null(NodePath(String(path))) as Sprite2D
-	if node != null:
+	if node != null and not _apply_sheet_frame(node, 0, 0.0, float(DEFAULT_FRAME_SIZE.y)):
 		node.region_rect = Rect2(node.region_rect.position.x, 0.0, float(DEFAULT_FRAME_SIZE.x), float(DEFAULT_FRAME_SIZE.y))
 		node.offset = Vector2(node.offset.x, 0.0)
 	return true
@@ -2718,6 +2728,20 @@ func _set_animation_frame_for_box(box: Control, phase: String, frame: int) -> vo
 		var node := get_node_or_null(path) as Sprite2D
 		if node == null:
 			continue
+		# While the head and pelvis animations run together the chest cell is
+		# split down the middle: the head keeps the top half, the pelvis draws
+		# its bottom half so the two halves meet in the middle.
+		var window_y := 0.0
+		var window_h := float(frame_size.y)
+		if split:
+			if HEAD_CHEST_ANIM_PATHS.has(path):
+				window_h = float(half_height)
+			elif PELVIS_CHEST_ANIM_PATHS.has(path):
+				window_y = float(half_height)
+				window_h = float(half_height)
+		if _apply_sheet_frame(node, frame, window_y, window_h):
+			continue
+		# Fallback for fixed-grid sheets without packed JSON data.
 		# Each sprite's sheet column is authored on its own region_rect.x, so the
 		# node order in the box's path list is independent of the packing order.
 		# This lets sheets pack parts in any column (and reuse a column for more
@@ -2740,6 +2764,41 @@ func _set_animation_frame_for_box(box: Control, phase: String, frame: int) -> vo
 		node.region_rect = Rect2(rx, ry, rw, rh)
 		node.offset = Vector2(node.offset.x, offset_y)
 	visual_state_changed.emit()
+
+
+## Points `node` at one frame of its Aseprite layer in a packed (trimmed) sheet,
+## showing only rows [window_y, window_y + window_h) of the 250x350 cell. Returns
+## false when the node has no packed-sheet data, so callers can fall back.
+func _apply_sheet_frame(node: Sprite2D, frame: int, window_y: float, window_h: float) -> bool:
+	var layer := String(node.get_meta(PackedSpriteSheet.SHEET_LAYER_META, ""))
+	if layer == "" or not PackedSpriteSheet.has_data(node.texture):
+		return false
+	var piece := PackedSpriteSheet.get_piece(node.texture, layer, frame)
+	if piece.is_empty():
+		# Empty cel: nothing to draw this frame.
+		node.region_rect = Rect2()
+		node.offset = Vector2.ZERO
+		return true
+	var region: Rect2 = piece[0]
+	var cell_offset: Vector2 = piece[1]
+	var top := maxf(cell_offset.y, window_y)
+	var bottom := minf(cell_offset.y + region.size.y, window_y + window_h)
+	if bottom <= top:
+		node.region_rect = Rect2()
+		node.offset = Vector2.ZERO
+		return true
+	node.region_rect = Rect2(region.position.x, region.position.y + (top - cell_offset.y), region.size.x, bottom - top)
+	node.offset = Vector2(cell_offset.x, top)
+	return true
+
+
+## Packed sheets store trimmed pieces, so the scene's authored regions only hold
+## frame 0. Re-apply frame 0 on load in case a re-export moved the pieces.
+func _apply_sheet_frame_zero(root: Node) -> void:
+	for child in root.get_children():
+		if child is Sprite2D and child.has_meta(PackedSpriteSheet.SHEET_LAYER_META):
+			_apply_sheet_frame(child as Sprite2D, 0, 0.0, float(DEFAULT_FRAME_SIZE.y))
+		_apply_sheet_frame_zero(child)
 
 
 func _get_animation_phase_paths(box: Control, phase: String) -> Array:

@@ -36,6 +36,13 @@ const HAND_SCREW_TEXTURE_PATH: String = "res://assets/textures/icons/hand_horizo
 @export var click_radius: float = 16.0
 @export var randomize_screws: bool = true
 @export var blocked_hover_box_paths: Array[NodePath] = []
+## Body-part hover boxes whose click moves this part. While a limb-move minigame
+## is open for one of these (or a blocked_hover_box_paths box), no screw loosens
+## here, so a screw never pops up on the part the player is mid-way to moving.
+@export var limb_move_hover_box_paths: Array[NodePath] = []
+## Boxes from blocked_hover_box_paths that loose screws here do NOT lock. They
+## still stop screws loosening while their animation or minigame is running.
+@export var lock_exempt_hover_box_paths: Array[NodePath] = []
 @export var flipped_screwdriver_indices: Array = []
 @export var screw_nodes: Array[NodePath] = []
 @export var screwdriver_position_paths: Array[NodePath] = []
@@ -180,6 +187,8 @@ func _loosen_next_screw() -> bool:
 		return false
 	if _any_blocked_hover_box_active():
 		return false
+	if _limb_move_minigame_targets_this_part():
+		return false
 
 	var next_index := int(available_indices[0])
 	if randomize_screws:
@@ -236,6 +245,9 @@ func blocks_hover_box(box: Control) -> bool:
 		return false
 	if _loose_screw_indices.is_empty():
 		return false
+	for path in lock_exempt_hover_box_paths:
+		if get_node_or_null(path) == box:
+			return false
 	return _blocked_hover_boxes().has(box)
 
 
@@ -680,6 +692,22 @@ func _get_screwdriver() -> Sprite2D:
 func _any_blocked_hover_box_active() -> bool:
 	for box in _blocked_hover_boxes():
 		if box.has_method("is_effect_active") and bool(box.call("is_effect_active")):
+			return true
+	return false
+
+
+## True while the robot has a limb-move minigame open for a box that moves this part.
+func _limb_move_minigame_targets_this_part() -> bool:
+	var robot := get_parent()
+	if robot == null or not robot.has_method("get_limb_minigame_box"):
+		return false
+	var box := robot.call("get_limb_minigame_box") as Control
+	if box == null:
+		return false
+	if _blocked_hover_boxes().has(box):
+		return true
+	for path in limb_move_hover_box_paths:
+		if get_node_or_null(path) == box:
 			return true
 	return false
 
