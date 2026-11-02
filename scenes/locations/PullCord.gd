@@ -667,6 +667,16 @@ func _max_stretch_radius() -> float:
 	return minf(max_pull_radius, texture_max_radius)
 
 
+## True while the mouse is over the handle, where a press grabs the cord.
+func is_mouse_over() -> bool:
+	return _is_over_bulb(_global_to_local(get_viewport().get_mouse_position()))
+
+
+## True from a press on the handle until the button is let go.
+func is_dragging() -> bool:
+	return _dragging
+
+
 func _is_over_bulb(local_position: Vector2) -> bool:
 	if _bulb_uses_chain_pivot():
 		var bulb_center := _bulb_position + Vector2(0.0, bulb_size.y * 0.5).rotated(_bulb_angle)

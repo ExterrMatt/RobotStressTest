@@ -47,10 +47,9 @@ POCKET A SCRAP
 # -----------------------------------------------------------------------------
 # WORK DISRUPTION - the scripted robot phone call that plays the first time the
 # player finishes the upper-arm assembly minigame after the intro. The robot
-# notices the phone's GPS is on and talks the player into pocketing the arm.
-# This shift ends on the arm being stolen, so the usual scrap steal choice is
-# skipped (see Work.gd). Plays over a placeholder background until its own art
-# exists.
+# notices the phone's GPS is on and talks the player into pocketing the robot
+# chest sitting on the work table. This shift ends on the chest being stolen, so the usual scrap steal choice is
+# skipped (see Work.gd). Plays over the work_table background.
 # -----------------------------------------------------------------------------
 
 [robot_work_disruption]
@@ -69,7 +68,7 @@ Thoughts: She wouldn't report me would she?
 Thoughts: No… She'd be destroyed if the police found her. I wonder if she knows that.
 You: Yeah, robots are illegal now. It's a risk working for my uncle, but it pays.
 Thoughts: I wish it paid more…
-Her: You should steal that arm.
+Her: You should steal that chest.
 You: What?
 You turn the phone over and see the flash is on…
 You: Did you hack my phone's camera??
@@ -80,7 +79,7 @@ The flash suddenly turns off.
 Thoughts: This is creepy.
 You: Please don't spy on me…
 Her: It's boring here. I can't do anything when I'm just a head...
-Her: Steal the arm.
+Her: Steal the chest.
 Thoughts: She can't be serious.
 You have to whisper so no one hears you.
 You: I can't just take it! There are people around.
@@ -88,8 +87,8 @@ Her: No one's watching I can tell.
 It's just then that you notice a blue light coming from a camera above you.
 Thoughts: Is she watching me??
 You awkwardly wave at the camera.
-Her: Stop goofing around and steal the arm. Do it now, while no one's looking.
+Her: Stop goofing around and steal the chest. Do it now, while no one's looking.
 You: If I get caught for this I swear I'm taking you apart myself.
-You pack the upper arm in your bag.
+You pack the chest in your bag.
 Her: That's a good boy.
 You: Oh, shut up. 

@@ -69,6 +69,93 @@
 [ext_resource type="Texture2D" uid="uid://bdjil1v5440yi" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Outro/vegetable_mission_outro.png" id="90_veg_outro"]
 [ext_resource type="Texture2D" uid="uid://kuo63j2ufirr" path="res://assets/textures/characters/robot/stresstest/animations/legs/Vegetable-Mission-Outro/vegetable_mission_pre_outro.png" id="91_veg_preoutro"]
 [ext_resource type="Texture2D" uid="uid://d0crl31b415vo" path="res://assets/textures/characters/robot/stresstest/torso/syrup_stomach.png" id="92_syrup_stomach"]
+[ext_resource type="Texture2D" uid="uid://d1j2eb31fkuf7" path="res://assets/textures/characters/robot/stresstest/head/angry_face.png" id="95_angry_face"]
+[ext_resource type="Texture2D" uid="uid://cq0r7fn1pwyka" path="res://assets/textures/characters/robot/stresstest/head/open_eyes.png" id="96_open_eyes"]
+[ext_resource type="Texture2D" uid="uid://x2b1jadp7jfx" path="res://assets/textures/characters/robot/stresstest/stress_test_bot.png" id="stress_bot_sheet"]
+[ext_resource type="Texture2D" uid="uid://3gox6ndi347i" path="res://assets/textures/characters/robot/stresstest/arms/left_forearm_mid.png" id="arm_left_forearm_mid"]
+[ext_resource type="Texture2D" uid="uid://ctq68n6mbit3n" path="res://assets/textures/characters/robot/stresstest/arms/right_forearm_mid.png" id="arm_right_forearm_mid"]
+[ext_resource type="Texture2D" uid="uid://rkc0dssyhn1n" path="res://assets/textures/characters/robot/stresstest/arms/hands/left_palm_up_out.png" id="hand_left_palm_up_out"]
+[ext_resource type="Texture2D" uid="uid://cayc1hybj0xpi" path="res://assets/textures/characters/robot/stresstest/arms/hands/right_palm_up_out.png" id="hand_right_palm_up_out"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_happy_face_1"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(15, 535, 27, 18)
+margin = Rect2(112, 75, 223, 332)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_happy_face_2"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(15, 516, 27, 19)
+margin = Rect2(112, 75, 223, 331)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_happy_face_3"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(126, 509, 27, 22)
+margin = Rect2(112, 72, 223, 328)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_face_down"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(0, 0, 134, 296)
+margin = Rect2(58, 46, 116, 54)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_right_upper_arm_up"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(34, 348, 27, 65)
+margin = Rect2(86, 58, 223, 285)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_right_forearm_up"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(210, 491, 18, 35)
+margin = Rect2(87, 30, 232, 315)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_left_palm_up_up"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(76, 483, 25, 28)
+margin = Rect2(96, 6, 225, 322)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_arm_up_shoulder_right"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(256, 34, 12, 34)
+margin = Rect2(103, 101, 238, 316)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_arm_up_shoulder_details_right"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(101, 514, 15, 36)
+margin = Rect2(101, 99, 235, 314)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_arm_up_shoulder_smooth_right"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(252, 344, 15, 36)
+margin = Rect2(101, 99, 235, 314)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_left_upper_arm_up"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(175, 311, 27, 65)
+margin = Rect2(137, 58, 223, 285)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_left_forearm_up"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(247, 463, 18, 35)
+margin = Rect2(145, 30, 232, 315)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_right_palm_up_up"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(101, 486, 25, 28)
+margin = Rect2(129, 6, 225, 322)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_arm_up_shoulder_left"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(256, 0, 12, 34)
+margin = Rect2(135, 101, 238, 316)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_arm_up_shoulder_details_left"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(0, 516, 15, 36)
+margin = Rect2(134, 99, 235, 314)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bot_arm_up_shoulder_smooth_left"]
+atlas = ExtResource("stress_bot_sheet")
+region = Rect2(86, 511, 15, 36)
+margin = Rect2(134, 99, 235, 314)
 
 [node name="StressTestRobot" type="Control" unique_id=1977347602]
 custom_minimum_size = Vector2(250, 350)
@@ -78,6 +165,7 @@ offset_right = 250.0
 offset_bottom = 350.0
 mouse_filter = 2
 script = ExtResource("1_script")
+happy_face_textures = Array[Texture2D]([SubResource("AtlasTexture_bot_happy_face_1"), SubResource("AtlasTexture_bot_happy_face_2"), SubResource("AtlasTexture_bot_happy_face_3")])
 
 [node name="HairBack" type="TextureRect" parent="." unique_id=421752235]
 layout_mode = 1
@@ -88,6 +176,99 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("2_hair_back")
+expand_mode = 1
+
+[node name="ArmsUp" type="Control" parent="." unique_id=1934022140]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftUpperArmUp" type="TextureRect" parent="ArmsUp" unique_id=1934022100]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_right_upper_arm_up")
+expand_mode = 1
+
+[node name="LeftForearmUp" type="TextureRect" parent="ArmsUp" unique_id=1934022101]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_right_forearm_up")
+expand_mode = 1
+
+[node name="RightUpperArmUp" type="TextureRect" parent="ArmsUp" unique_id=1934022102]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_left_upper_arm_up")
+expand_mode = 1
+
+[node name="RightForearmUp" type="TextureRect" parent="ArmsUp" unique_id=1934022103]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_left_forearm_up")
+expand_mode = 1
+
+[node name="LeftPalmUpUp" type="TextureRect" parent="ArmsUp" unique_id=1934022104]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_left_palm_up_up")
+expand_mode = 1
+
+[node name="RightPalmUpUp" type="TextureRect" parent="ArmsUp" unique_id=1934022105]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_right_palm_up_up")
 expand_mode = 1
 
 [node name="Torso" type="Control" parent="." unique_id=1566708374]
@@ -316,6 +497,96 @@ mouse_filter = 2
 texture = ExtResource("82_chest_smooth_right")
 expand_mode = 1
 
+[node name="ArmUpShoulderSmoothLeft" type="TextureRect" parent="Torso" unique_id=1934022110]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_arm_up_shoulder_smooth_right")
+expand_mode = 1
+
+[node name="ArmUpShoulderSmoothRight" type="TextureRect" parent="Torso" unique_id=1934022111]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_arm_up_shoulder_smooth_left")
+expand_mode = 1
+
+[node name="ArmUpShoulderLeft" type="TextureRect" parent="Torso" unique_id=1934022106]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_arm_up_shoulder_right")
+expand_mode = 1
+
+[node name="ArmUpShoulderDetailsLeft" type="TextureRect" parent="Torso" unique_id=1934022107]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_arm_up_shoulder_details_right")
+expand_mode = 1
+
+[node name="ArmUpShoulderRight" type="TextureRect" parent="Torso" unique_id=1934022108]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_arm_up_shoulder_left")
+expand_mode = 1
+
+[node name="ArmUpShoulderDetailsRight" type="TextureRect" parent="Torso" unique_id=1934022109]
+visible = false
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_arm_up_shoulder_details_left")
+expand_mode = 1
+
 [node name="Head" type="Control" parent="." unique_id=321421157]
 layout_mode = 1
 anchors_preset = 15
@@ -357,6 +628,44 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("12_squint_eyes")
+expand_mode = 1
+
+[node name="AngryFace" type="TextureRect" parent="Head" unique_id=1934021187]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("95_angry_face")
+expand_mode = 1
+
+[node name="HappyFace" type="TextureRect" parent="Head" unique_id=1934021189]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_happy_face_3")
+expand_mode = 1
+
+[node name="OpenEyes" type="TextureRect" parent="Head" unique_id=1934021188]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("96_open_eyes")
 expand_mode = 1
 
 [node name="HairFrontNormal" type="TextureRect" parent="Head" unique_id=1845867497]
@@ -447,6 +756,18 @@ mouse_filter = 2
 texture = ExtResource("79_right_forearm")
 expand_mode = 1
 
+[node name="ForearmMid" type="TextureRect" parent="Arms/RightArm" unique_id=1934022002]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("arm_right_forearm_mid")
+expand_mode = 1
+
 [node name="LeftArm" type="Control" parent="Arms" unique_id=1049253849]
 layout_mode = 1
 anchors_preset = 15
@@ -476,6 +797,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("77_left_forearm")
+expand_mode = 1
+
+[node name="ForearmMid" type="TextureRect" parent="Arms/LeftArm" unique_id=1934022001]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("arm_left_forearm_mid")
 expand_mode = 1
 
 [node name="RightShoulderPad" type="TextureRect" parent="Arms" unique_id=1373138815]
@@ -577,6 +910,30 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("22_right_flexed_fingers")
+expand_mode = 1
+
+[node name="LeftPalmUpOut" type="TextureRect" parent="Hands" unique_id=1934022003]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("hand_left_palm_up_out")
+expand_mode = 1
+
+[node name="RightPalmUpOut" type="TextureRect" parent="Hands" unique_id=1934022004]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("hand_right_palm_up_out")
 expand_mode = 1
 
 [node name="AnimationArmLayers" type="Control" parent="." unique_id=1682380112]
@@ -2385,6 +2742,20 @@ mouse_filter = 2
 texture = ExtResource("23_chest_cover")
 expand_mode = 1
 
+[node name="FaceDown" type="TextureRect" parent="." unique_id=1934022005]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_bot_face_down")
+expand_mode = 1
+
 [node name="HeadHoverBox" type="Control" parent="." unique_id=1361736466]
 z_index = 1000
 z_as_relative = false
@@ -2606,3 +2977,120 @@ mouse_filter = 2
 script = ExtResource("2_hover_box")
 priority = 16
 hover_description = "Lower Leg"
+
+[node name="LeftArmHoverBox" type="Control" parent="." unique_id=1934022006]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 66.0
+offset_top = 140.0
+offset_right = 97.0
+offset_bottom = 176.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 40
+hover_description = "Raise Arm"
+
+[node name="RightArmHoverBox" type="Control" parent="." unique_id=1934022007]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 153.0
+offset_top = 140.0
+offset_right = 184.0
+offset_bottom = 176.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 40
+hover_description = "Raise Arm"
+
+[node name="LeftArmRaisedHoverBox" type="Control" parent="." unique_id=1934022008]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 31.0
+offset_top = 143.0
+offset_right = 60.0
+offset_bottom = 174.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 40
+hover_description = "Lower Arm"
+
+[node name="RightArmRaisedHoverBox" type="Control" parent="." unique_id=1934022009]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 188.0
+offset_top = 143.0
+offset_right = 219.0
+offset_bottom = 174.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 40
+hover_description = "Lower Arm"
+
+[node name="FaceDownHoverBox" type="Control" parent="." unique_id=1934022010]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 100.0
+offset_top = 136.0
+offset_right = 150.0
+offset_bottom = 176.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 60
+hover_description = "Turn Over"
+
+[node name="LeftArmUpHoverBox" type="Control" parent="." unique_id=1934022112]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 59.0
+offset_top = 136.0
+offset_right = 92.0
+offset_bottom = 161.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 45
+hover_description = "Raise Above Head"
+
+[node name="RightArmUpHoverBox" type="Control" parent="." unique_id=1934022113]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 158.0
+offset_top = 136.0
+offset_right = 191.0
+offset_bottom = 161.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 45
+hover_description = "Raise Above Head"
+
+[node name="LeftArmAboveHeadHoverBox" type="Control" parent="." unique_id=1934022114]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 86.0
+offset_top = -12.0
+offset_right = 122.0
+offset_bottom = 45.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 45
+hover_description = "Lower Arm"
+
+[node name="RightArmAboveHeadHoverBox" type="Control" parent="." unique_id=1934022115]
+z_index = 1000
+z_as_relative = false
+anchors_preset = 0
+offset_left = 128.0
+offset_top = -12.0
+offset_right = 164.0
+offset_bottom = 45.0
+mouse_filter = 2
+script = ExtResource("2_hover_box")
+priority = 45
+hover_description = "Lower Arm"

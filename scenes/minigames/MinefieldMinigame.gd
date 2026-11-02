@@ -8,15 +8,36 @@ extends Minigame
 ## Layout is random each round but evenly spread: mines are placed by dart throwing
 ## with a minimum spacing (no clusters or overlaps, and every gap between two mines
 ## is wide enough for the dot), and the start and goal always sit on roughly
-## opposite sides of the field.
+## opposite sides of the field. Each mine is one of the sprites on the mines sheet, picked
+## at random; its size sets how close the dot can get.
+
+const BOARD_TEXTURE_PATH: String = "res://assets/textures/icons/minefield_minigame.png"
+## The art's title strip and the buttons drawn into it (art pixels). The buttons carry their
+## own labels.
+const ART_HEADER: Dictionary = {
+	"height": 20.0,
+	"restart": Rect2(254, 3, 27, 15),
+	"close": Rect2(283, 3, 14, 15),
+}
+## The play area on the board art (art pixels): everything inside its frame, below the title.
+const FIELD_ART_RECT: Rect2 = Rect2(2, 20, 296, 178)
 
 const PLAYER_RADIUS: float = 7.0
 ## How close the press must land to the dot to pick it up.
 const GRAB_RADIUS: float = 20.0
 const GOAL_RADIUS: float = 16.0
-const MINE_RADIUS_RANGE: Vector2 = Vector2(11.0, 17.0)
+const MINES_TEXTURE_PATH: String = "res://assets/textures/icons/mines.png"
+## The mines on the sheet (art pixels): two large, a medium one and four small ones.
+const MINE_SPRITES: Array[Rect2i] = [
+	Rect2i(0, 0, 16, 16), Rect2i(16, 0, 16, 16), Rect2i(0, 16, 14, 14),
+	Rect2i(14, 16, 8, 8), Rect2i(22, 16, 8, 8), Rect2i(14, 24, 6, 6), Rect2i(20, 24, 6, 6),
+]
+## Board pixels per art pixel (whole, so the pixel art stays crisp).
+const MINE_SCALE: float = 3.0
+## The largest mine's radius on the board (the 16px sprites), for keeping mines inside the field.
+const MAX_MINE_RADIUS: float = 8.0 * MINE_SCALE
 ## Minimum distance between mine centres. With the largest mines that still leaves
-## (MINE_SPACING - 2 * max radius) of clearance, comfortably wider than the dot.
+## (MINE_SPACING - 2 * MAX_MINE_RADIUS) of clearance, still wider than the dot.
 const MINE_SPACING: float = 66.0
 const MINE_COUNT: int = 22
 ## Mines keep this far from the start and goal.
@@ -37,6 +58,10 @@ var _start: Vector2
 var _goal: Vector2
 var _mines: Array[Vector2] = []
 var _mine_radii: Array[float] = []
+## Which MINE_SPRITES entry each mine is drawn with.
+var _mine_sprites: Array[int] = []
+var _mines_tex: Texture2D
+var _board_tex: Texture2D
 var _holding: bool = false
 ## Index of the mine that was hit (drawn highlighted), or -1.
 var _hit_mine: int = -1
@@ -44,13 +69,32 @@ var _hit_mine: int = -1
 
 func _init() -> void:
 	title = "MINEFIELD"
+	_board_tex = load(BOARD_TEXTURE_PATH) as Texture2D
+
+
+func _board_art_size() -> Vector2:
+	return _board_tex.get_size() if _board_tex != null else Vector2.ZERO
+
+
+func _art_header() -> Dictionary:
+	return ART_HEADER if _board_tex != null else {}
+
+
+## The art's buttons are already labelled: just the title.
+func _draw_art_header_labels(header: Dictionary) -> void:
+	var mid := (header["restart"] as Rect2).get_center()
+	var title_room := (header["restart"] as Rect2).position.x - ART_TITLE_GAP - ART_TITLE_LEFT
+	draw_art_text(title, Vector2(ART_TITLE_LEFT, mid.y), ART_TITLE_FONT_SIZE, false, COL_TEXT, title_room)
 
 
 func _field() -> Rect2:
-	return content_rect(10.0)
+	return art_to_board(FIELD_ART_RECT) if _board_tex != null else content_rect(10.0)
 
 
 func _setup_game() -> void:
+	_mines_tex = load(MINES_TEXTURE_PATH) as Texture2D
+	# Pixel art: keep it crisp when scaled up.
+	board.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_holding = false
 	_hit_mine = -1
 	_place_start_and_goal()
@@ -79,7 +123,8 @@ func _ray_to_edge(r: Rect2, dir: Vector2) -> float:
 func _place_mines() -> void:
 	_mines.clear()
 	_mine_radii.clear()
-	var f := _field().grow(-MINE_RADIUS_RANGE.y)
+	_mine_sprites.clear()
+	var f := _field().grow(-MAX_MINE_RADIUS)
 	var attempts := 0
 	while _mines.size() < MINE_COUNT and attempts < 4000:
 		attempts += 1
@@ -92,8 +137,10 @@ func _place_mines() -> void:
 				ok = false
 				break
 		if ok:
+			var sprite := rng.randi_range(0, MINE_SPRITES.size() - 1)
 			_mines.append(p)
-			_mine_radii.append(rng.randf_range(MINE_RADIUS_RANGE.x, MINE_RADIUS_RANGE.y))
+			_mine_sprites.append(sprite)
+			_mine_radii.append(MINE_SPRITES[sprite].size.x * MINE_SCALE * 0.5)
 
 
 # --- input ------------------------------------------------------------------
@@ -136,7 +183,10 @@ func _move_player_to(target: Vector2) -> void:
 
 func _draw_game() -> void:
 	var f := _field()
-	board.draw_rect(f, COL_FIELD)
+	if _board_tex != null:
+		board.draw_texture_rect(_board_tex, art_rect(), false)
+	else:
+		board.draw_rect(f, COL_FIELD)
 
 	# Soft lit pool around the dot (concentric rings fading out).
 	var rings := 8
@@ -152,9 +202,7 @@ func _draw_game() -> void:
 		var a := 1.0 if reveal_all else clampf((VIEW_RADIUS - d) / VIEW_FADE, 0.0, 1.0)
 		if a <= 0.0:
 			continue
-		var col := COL_BAD if i == _hit_mine else COL_MINE
-		col.a = a
-		board.draw_circle(_mines[i], _mine_radii[i], col)
+		_draw_mine(i, a)
 
 	_draw_goal()
 	_mask_outside_field(f)
@@ -163,7 +211,7 @@ func _draw_game() -> void:
 	if not _holding and not solved and not lost:
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 180.0)
 		board.draw_arc(_player, GRAB_RADIUS * (0.7 + 0.3 * pulse), 0, TAU, 32, Color(COL_PLAYER, 0.6), 2.0)
-		draw_text_centered("Hold the dot - don't let go", Vector2(f.get_center().x, f.position.y + 18.0), 13,
+		draw_text_centered("Hold the dot - don't let go", Vector2(f.get_center().x, f.position.y + 18.0), 16,
 				Color(COL_TEXT, 0.75))
 	board.draw_circle(_player, PLAYER_RADIUS, COL_PLAYER)
 
@@ -171,11 +219,37 @@ func _draw_game() -> void:
 ## Repaints the frame around the field so the light pool / mines never bleed onto it.
 func _mask_outside_field(f: Rect2) -> void:
 	var s := bsize()
+	if _board_tex != null:
+		# The board art outside the field (title strip, sides, bottom), then the gold border.
+		var art := Rect2(Vector2.ZERO, _board_art_size())
+		var field := FIELD_ART_RECT
+		for src in [
+			Rect2(art.position, Vector2(art.size.x, field.position.y)),
+			Rect2(0, field.position.y, field.position.x, field.size.y),
+			Rect2(field.end.x, field.position.y, art.end.x - field.end.x, field.size.y),
+			Rect2(0, field.end.y, art.size.x, art.end.y - field.end.y),
+		]:
+			board.draw_texture_rect_region(_board_tex, art_to_board(src), src)
+		board.draw_rect(Rect2(Vector2.ONE * BORDER_WIDTH * 0.5, s - Vector2.ONE * BORDER_WIDTH), COL_BORDER, false, BORDER_WIDTH)
+		return
 	board.draw_rect(Rect2(0, HEADER_HEIGHT, f.position.x, s.y - HEADER_HEIGHT), COL_PANEL)
 	board.draw_rect(Rect2(f.end.x, HEADER_HEIGHT, s.x - f.end.x, s.y - HEADER_HEIGHT), COL_PANEL)
 	board.draw_rect(Rect2(0, HEADER_HEIGHT, s.x, f.position.y - HEADER_HEIGHT), COL_PANEL)
 	board.draw_rect(Rect2(0, f.end.y, s.x, s.y - f.end.y), COL_PANEL)
 	board.draw_rect(Rect2(Vector2(1.5, 1.5), s - Vector2(3, 3)), COL_BORDER, false, 3.0)
+
+
+## Mine `i` at `alpha`: its sprite centred on it, ringed in red if it's the one that was hit.
+func _draw_mine(i: int, alpha: float) -> void:
+	var r := _mine_radii[i]
+	if _mines_tex == null:
+		board.draw_circle(_mines[i], r, Color(COL_MINE, alpha))
+	else:
+		var src := Rect2(MINE_SPRITES[_mine_sprites[i]])
+		var dest := Rect2((_mines[i] - Vector2.ONE * r).round(), src.size * MINE_SCALE)
+		board.draw_texture_rect_region(_mines_tex, dest, src, Color(1, 1, 1, alpha))
+	if i == _hit_mine:
+		board.draw_arc(_mines[i], r + 3.0, 0, TAU, 32, COL_BAD, 2.0, true)
 
 
 func _draw_goal() -> void:

@@ -1,40 +1,51 @@
 [gd_scene format=3 uid="uid://b1qinvent00v0"]
 
-[ext_resource type="Script" path="res://scenes/ui/InventoryOverlay.gd" id="1"]
+[ext_resource type="Script" uid="uid://cgf2cpow3mchw" path="res://scenes/ui/InventoryOverlay.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://d4bv0yr8wmpi4" path="res://assets/textures/icons/inventory_label.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://cv6x14juobbjv" path="res://assets/textures/icons/inventory_bag.png" id="3"]
 
-[node name="InventoryOverlay" type="CanvasLayer"]
+[node name="InventoryOverlay" type="CanvasLayer" unique_id=412770008]
 layer = 100
 script = ExtResource("1")
 
-[node name="DimBackground" type="ColorRect" parent="."]
+[node name="DimBackground" type="ColorRect" parent="." unique_id=1860957335]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
-color = Color(0, 0, 0, 0.55)
 mouse_filter = 1
+color = Color(0, 0, 0, 0.55)
 
-[node name="TitleLabel" type="Label" parent="."]
+[node name="InventoryBag" type="TextureRect" parent="." unique_id=843744535]
+texture_filter = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -130.00002
+offset_top = -283.99997
+offset_right = 19.999985
+offset_bottom = -134.0
+grow_vertical = 0
+scale = Vector2(3.523, 3.523)
+mouse_filter = 2
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InventoryLabel" type="TextureRect" parent="." unique_id=2090355056]
+texture_filter = 1
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.0
 anchor_right = 0.5
-anchor_bottom = 0.0
-offset_left = -200.0
-offset_top = 40.0
-offset_right = 200.0
-offset_bottom = 96.0
+offset_left = -316.0
+offset_right = 317.0
+offset_bottom = 117.0
 grow_horizontal = 2
-text = "INVENTORY"
-horizontal_alignment = 1
-vertical_alignment = 1
-theme_override_font_sizes/font_size = 40
-theme_override_colors/font_color = Color(0.95, 0.85, 0.4, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 6
+mouse_filter = 2
+texture = ExtResource("2")
+expand_mode = 1
 
-[node name="EmptyLabel" type="Label" parent="."]
+[node name="EmptyLabel" type="Label" parent="." unique_id=154519352]
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -45,23 +56,25 @@ offset_right = 300.0
 offset_bottom = 32.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 0.8)
+theme_override_font_sizes/font_size = 24
 text = "Your inventory is empty."
 horizontal_alignment = 1
 vertical_alignment = 1
-theme_override_font_sizes/font_size = 24
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 0.8)
 
-[node name="TileArea" type="CenterContainer" parent="."]
+[node name="TileArea" type="CenterContainer" parent="." unique_id=499723867]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = 120.0
+offset_top = 130.0
 offset_right = -24.0
 offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
-[node name="TileRow" type="GridContainer" parent="TileArea"]
+[node name="Sections" type="HBoxContainer" parent="TileArea" unique_id=846798078]
+layout_mode = 2
 mouse_filter = 2
-theme_override_constants/h_separation = 6
-theme_override_constants/v_separation = 6
-columns = 8
+theme_override_constants/separation = 32

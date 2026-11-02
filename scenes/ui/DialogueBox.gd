@@ -59,6 +59,10 @@ const SPEAKER_COLORS: Dictionary = {
 ## Pages advanced per second after hold-skip starts.
 @export_range(1.0, 60.0, 0.5) var hold_skip_pages_per_second: float = 9.5
 
+## How much holding SHIFT or CTRL along with the advance button speeds up
+## hold-skip. 5.0 = five times as many pages per second.
+@export_range(1.0, 20.0, 0.5) var hold_skip_boost_multiplier: float = 5.0
+
 ## Pause (seconds) inserted at sentence-ending punctuation for natural rhythm.
 ## Set to 0 to disable.
 @export_range(0.0, 1.0, 0.01) var sentence_pause: float = 0.15
@@ -529,8 +533,15 @@ func _update_hold_skip(delta: float) -> void:
 	if _is_typing:
 		_finish_typing()
 	_hold_skip_timer -= delta
-	var interval := 1.0 / maxf(1.0, hold_skip_pages_per_second)
-	while _active and not _is_typing and _hold_skip_timer <= 0.0:
+	var pages_per_second := hold_skip_pages_per_second
+	if Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL):
+		pages_per_second *= maxf(1.0, hold_skip_boost_multiplier)
+	var interval := 1.0 / maxf(1.0, pages_per_second)
+	# Finish each newly shown page inside the loop so the boosted rate can skip
+	# several pages in one frame instead of being capped at the frame rate.
+	while _active and _advance_held and _hold_skip_timer <= 0.0:
+		if _is_typing:
+			_finish_typing()
 		_advance_click()
 		_hold_skip_timer += interval
 

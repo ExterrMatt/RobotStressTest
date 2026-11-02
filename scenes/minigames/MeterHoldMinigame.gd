@@ -10,8 +10,14 @@ extends Minigame
 const METER_COUNT: int = 4
 ## Seconds a hold takes to fill the meter to the top, picked per meter per round.
 const FILL_TIME_RANGE: Vector2 = Vector2(0.55, 1.25)
-## Height of the target band as a fraction of the meter.
+## Meters move (fill and drain) at this fraction of their base speed.
+const METER_SPEED_SCALE: float = 0.65
+## Height of the target band as a fraction of the meter, before the boosts below.
 const TARGET_HEIGHT: float = 0.09
+## Every band is at least this much taller than TARGET_HEIGHT ...
+const TARGET_HEIGHT_MIN_SCALE: float = 1.4
+## ... plus a random extra (0 to this fraction of that size) per meter per round.
+const TARGET_HEIGHT_RANDOM_BOOST: float = 0.2
 const TARGET_CENTER_RANGE: Vector2 = Vector2(0.3, 0.85)
 const DRAIN_SPEED: float = 2.2
 const BUTTON_RADIUS: float = 34.0
@@ -29,6 +35,8 @@ var _level: Array[float] = []
 var _locked: Array[bool] = []
 var _draining: Array[bool] = []
 var _target: Array[float] = []
+## Per-meter target band height (fraction of the meter).
+var _target_height: Array[float] = []
 var _fill_time: Array[float] = []
 var _pattern: Array[int] = []
 ## Pattern-specific random parameters (wobble frequency, step count, ...).
@@ -43,7 +51,7 @@ func _init() -> void:
 
 func _setup_game() -> void:
 	_level.clear(); _locked.clear(); _draining.clear()
-	_target.clear(); _fill_time.clear(); _pattern.clear(); _param.clear()
+	_target.clear(); _target_height.clear(); _fill_time.clear(); _pattern.clear(); _param.clear()
 	_held = -1
 	var patterns: Array = Pattern.values()
 	patterns.shuffle()
@@ -52,7 +60,9 @@ func _setup_game() -> void:
 		_locked.append(false)
 		_draining.append(false)
 		_target.append(rng.randf_range(TARGET_CENTER_RANGE.x, TARGET_CENTER_RANGE.y))
-		_fill_time.append(rng.randf_range(FILL_TIME_RANGE.x, FILL_TIME_RANGE.y))
+		_target_height.append(TARGET_HEIGHT * TARGET_HEIGHT_MIN_SCALE
+				* (1.0 + rng.randf_range(0.0, TARGET_HEIGHT_RANDOM_BOOST)))
+		_fill_time.append(rng.randf_range(FILL_TIME_RANGE.x, FILL_TIME_RANGE.y) / METER_SPEED_SCALE)
 		_pattern.append(int(patterns[i % patterns.size()]))
 		_param.append(rng.randf())
 
@@ -106,13 +116,13 @@ func _game_process(delta: float) -> void:
 				# Maxed out: auto-release as an overshoot.
 				_release(true)
 		elif _draining[i]:
-			_level[i] = move_toward(_level[i], 0.0, delta * DRAIN_SPEED)
+			_level[i] = move_toward(_level[i], 0.0, delta * DRAIN_SPEED * METER_SPEED_SCALE)
 			if _level[i] <= 0.0:
 				_draining[i] = false
 
 
 func _in_target(i: int) -> bool:
-	return absf(_level[i] - _target[i]) <= TARGET_HEIGHT * 0.5
+	return absf(_level[i] - _target[i]) <= _target_height[i] * 0.5
 
 
 func _release(force_fail: bool = false) -> void:
@@ -176,7 +186,7 @@ func _draw_meter(i: int) -> void:
 	board.draw_rect(r.grow(3.0), Color(0.05, 0.05, 0.06))
 	board.draw_rect(r, Color(0.14, 0.15, 0.16))
 	# Target band.
-	var band_h := r.size.y * TARGET_HEIGHT
+	var band_h := r.size.y * _target_height[i]
 	var band_y := r.end.y - r.size.y * _target[i] - band_h * 0.5
 	board.draw_rect(Rect2(r.position.x, band_y, r.size.x, band_h), Color(1, 1, 1, 0.18))
 	board.draw_line(Vector2(r.position.x - 6, band_y), Vector2(r.end.x + 6, band_y), COL_TEXT, 2.0)

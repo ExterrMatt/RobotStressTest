@@ -278,19 +278,6 @@ grow_vertical = 0
 mouse_default_cursor_shape = 2
 text = "LEAVE"
 
-[node name="LaptopButton" type="Button" parent="FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow" unique_id=1377351769]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = -216.0
-offset_right = 103.0
-offset_bottom = -159.0
-grow_vertical = 0
-mouse_default_cursor_shape = 2
-text = "LAPTOP"
-
 [node name="NanobotEffectTemplate" parent="." unique_id=1506953332 instance=ExtResource("11_nanoeffect")]
 layout_mode = 0
 ring_thickness = 30.0

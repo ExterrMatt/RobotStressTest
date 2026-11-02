@@ -38,8 +38,12 @@ signal closed
 ## LEAVE frees it and emits `closed` instead of finishing a location.
 var overlay_mode: bool = false
 ## Which desktop the hosted LaptopDesktop shows: "laptop" (standalone), "maintenance"
-## (restricted, from the maintenance scene) or "admin" (full grid, from the debug menu).
+## (restricted, from the maintenance scene), "stresstest" (maintenance / patrol / store,
+## from the stress test's left view) or "admin" (full grid, from the debug menu).
 var desktop_context: String = "laptop"
+## Instant close: the open animation still plays every time, but a background click shuts
+## the laptop on the spot (no close animation). Set by the stress test's left-view laptop.
+var instant: bool = false
 
 @onready var fullscreen_layer: CanvasLayer = $FullscreenLayer
 @onready var black_background: ColorRect = $FullscreenLayer/FullscreenRoot/BlackBackground
@@ -69,15 +73,47 @@ const MF_STRENGTH: float = 24.0
 const MF_EDGE_FALLOFF: float = 2.5
 ## How quickly the view eases toward the target, per second.
 const MF_SMOOTHING: float = 8.0
+## The standalone scene's background sits this many screen pixels lower than centred.
+const MF_BACKGROUND_DROP: float = 35.0
+## Vertical sway range (screen px each way). The laptop rests this far below flush with
+## the bottom of the screen, so the sway can lift it until its bottom edge meets the
+## screen's - never past - and lower it the same amount.
+const MF_VERTICAL_RANGE: float = 16.0
+## Extra sway of the laptop alone (screen px at full pull, per axis), opposite the mouse,
+## on top of the camera drift. Not bound by the pan limits, so it may lift the laptop
+## enough to show a sliver below it.
+const MF_LAPTOP_SWAY: Vector2 = Vector2(10.0, 8.0)
 
 ## Current smoothed sway offset applied on top of the resting (centered) layout.
 var _mf_offset: Vector2 = Vector2.ZERO
 ## Resting (centered) layer positions and the per-axis pan limits, recomputed on layout.
 var _mf_scene_base: Vector2 = Vector2.ZERO
 var _mf_unit_base: Vector2 = Vector2.ZERO
+## Resting scales of the background (cover-fit) and laptop (contain-fit).
+var _mf_scene_scale: float = 1.0
+var _mf_unit_scale: float = 1.0
+## The laptop's own extra sway (see MF_LAPTOP_SWAY), smoothed like the drift.
+var _mf_laptop_sway: Vector2 = Vector2.ZERO
+var _mf_min_offset: Vector2 = Vector2.ZERO
 var _mf_max_offset: Vector2 = Vector2.ZERO
 ## Whether the mouse-follow camera runs (standalone laptop scene, not an overlay).
 var _mf_active: bool = false
+
+# --- fullscreen (the taskbar's FULLSCREEN button) ---
+# Like leaning in to the laptop: the view zooms toward its screen - room and laptop
+# together - until the screen fills the display, the screen's content widening as it goes
+# so it ends up covering the whole display edge to edge. Pressing it again leans back out.
+## Seconds the zoom in (or back out) takes.
+const FULLSCREEN_SECONDS: float = 0.6
+## While (going) fullscreen the laptop draws on this canvas layer, above the hosts' LAPTOP
+## drag bar (41), so nothing of the scene shows over its screen.
+const FULLSCREEN_CANVAS_LAYER: int = 50
+
+## 0 = the normal view, 1 = fullscreen; tweened between them.
+var _fs_progress: float = 0.0
+var _fs_target: bool = false
+var _fs_tween: Tween = null
+var _base_canvas_layer: int = 20
 
 
 func _ready() -> void:
@@ -96,6 +132,8 @@ func _ready() -> void:
 	# the laptop has finished opening.
 	_screen = LaptopDesktop.new()
 	_screen.set("context", desktop_context)
+	_screen.set("fullscreen_supported", true)
+	_screen.connect("fullscreen_toggle_requested", _toggle_fullscreen)
 	screen_content.add_child(_screen)
 	screen_content.visible = false
 
@@ -125,11 +163,12 @@ func _ready() -> void:
 		screen_content.mouse_filter = Control.MOUSE_FILTER_STOP
 		black_background.gui_input.connect(_on_overlay_background_input)
 		_cache_laptop_hit_image()
+	_base_canvas_layer = fullscreen_layer.layer
+
+	leave_button.pressed.connect(_on_leave_pressed)
 
 	_set_frame(FRAME_COUNT - 1)  # start on the closed frame
 	leave_button.disabled = true  # inert until the laptop has finished opening
-	leave_button.pressed.connect(_on_leave_pressed)
-
 	_open_laptop()
 
 
@@ -177,57 +216,169 @@ func _layout_canvas() -> void:
 	var zoom: float = MF_ZOOM_SCALE if _mf_active else 1.0
 
 	var cover: float = maxf(vp.x / CANVAS_SIZE.x, vp.y / CANVAS_SIZE.y) * zoom
+	_mf_scene_scale = cover
 	if scene_canvas != null:
 		scene_canvas.size = CANVAS_SIZE
 		scene_canvas.scale = Vector2(cover, cover)
-		var scene_y: float = (vp.y - CANVAS_SIZE.y * cover) * 0.5 if _mf_active else 0.0
+		var scene_y: float = (vp.y - CANVAS_SIZE.y * cover) * 0.5 + MF_BACKGROUND_DROP if _mf_active else 0.0
 		_mf_scene_base = Vector2((vp.x - CANVAS_SIZE.x * cover) * 0.5, scene_y)
 		scene_canvas.position = _mf_scene_base
 
 	# The laptop stays contain-fit (never zoomed past fully-visible) so its screen is always
 	# fully on-screen; it only pans with the camera, within its own letterbox margin.
 	var contain: float = minf(vp.x / CANVAS_SIZE.x, vp.y / CANVAS_SIZE.y)
+	_mf_unit_scale = contain
 	if laptop_unit != null:
 		laptop_unit.size = CANVAS_SIZE
 		laptop_unit.scale = Vector2(contain, contain)
-		_mf_unit_base = Vector2(
-			(vp.x - CANVAS_SIZE.x * contain) * 0.5,
-			(vp.y - CANVAS_SIZE.y * contain) * 0.5,
-		)
+		var unit_size := CANVAS_SIZE * contain
+		# Standalone: the laptop rests MF_VERTICAL_RANGE below flush with the bottom of the
+		# screen, so the sway can move it both ways without ever showing anything below it.
+		# As an overlay it stays centred.
+		var unit_y := vp.y - unit_size.y + MF_VERTICAL_RANGE if _mf_active else (vp.y - unit_size.y) * 0.5
+		_mf_unit_base = Vector2((vp.x - unit_size.x) * 0.5, unit_y)
 		laptop_unit.position = _mf_unit_base
 
-	# Per-axis pan limit: never reveal a background edge, never crop the laptop.
+	# Per-axis pan limits: never reveal a background edge. Horizontally the laptop also
+	# stays uncropped. Vertically it sways MF_VERTICAL_RANGE each way around its rest
+	# (which sits that far below flush), so the view never pans past the laptop's bottom.
 	if _mf_active:
 		var bg_margin := (CANVAS_SIZE * cover - vp) * 0.5
-		var unit_margin := (vp - CANVAS_SIZE * contain) * 0.5
-		_mf_max_offset = Vector2(
-			maxf(0.0, minf(bg_margin.x, unit_margin.x)),
-			maxf(0.0, minf(bg_margin.y, unit_margin.y)),
-		)
+		var unit_margin_x := (vp.x - CANVAS_SIZE.x * contain) * 0.5
+		var x := maxf(0.0, minf(bg_margin.x, unit_margin_x))
+		# The background's top edge (lowered by MF_BACKGROUND_DROP) must stay above the screen.
+		var bg_room_down := -_mf_scene_base.y
+		_mf_min_offset = Vector2(-x, -MF_VERTICAL_RANGE)
+		_mf_max_offset = Vector2(x, maxf(0.0, minf(bg_room_down, MF_VERTICAL_RANGE)))
 	else:
+		_mf_min_offset = Vector2.ZERO
 		_mf_max_offset = Vector2.ZERO
 	_apply_mf_offset()
 
 
 func _process(delta: float) -> void:
 	if not _mf_active:
+		if _fs_progress > 0.0:
+			_apply_mf_offset()
+		return
+	# The sway holds still while the inventory is open.
+	if InventoryOverlay.is_open(get_tree()):
+		_apply_mf_offset()
 		return
 	var smoothing: float = 1.0 - exp(-MF_SMOOTHING * maxf(0.0, delta))
-	var target: Vector2 = _mf_target() if _camera_mouse_follow_enabled() else Vector2.ZERO
+	var following := _camera_mouse_follow_enabled()
+	var target: Vector2 = _mf_target() if following else Vector2.ZERO
 	_mf_offset = _mf_offset.lerp(target, smoothing)
+	var sway_target: Vector2 = _mf_laptop_sway_target() if following else Vector2.ZERO
+	_mf_laptop_sway = _mf_laptop_sway.lerp(sway_target, smoothing)
 	_apply_mf_offset()
+
+
+## The laptop's own sway for the current mouse position: opposite the cursor, easing in
+## from the centre like the camera drift.
+func _mf_laptop_sway_target() -> Vector2:
+	var vp: Vector2 = get_viewport_rect().size
+	if vp.x <= 0.0 or vp.y <= 0.0:
+		return Vector2.ZERO
+	var center: Vector2 = vp * 0.5
+	var mouse: Vector2 = get_viewport().get_mouse_position()
+	var n := Vector2((mouse.x - center.x) / center.x, (mouse.y - center.y) / center.y)
+	var pull := Vector2(_mf_falloff(n.x), _mf_falloff(n.y)) / _mf_falloff(1.0)
+	return -pull * MF_LAPTOP_SWAY
 
 
 ## Applies the current sway offset (clamped to the pan limit) on top of the resting layout.
 func _apply_mf_offset() -> void:
-	var off := Vector2(
-		clampf(_mf_offset.x, -_mf_max_offset.x, _mf_max_offset.x),
-		clampf(_mf_offset.y, -_mf_max_offset.y, _mf_max_offset.y),
-	)
+	var off := _mf_offset.clamp(_mf_min_offset, _mf_max_offset)
 	if scene_canvas != null:
+		scene_canvas.scale = Vector2.ONE * _mf_scene_scale
 		scene_canvas.position = _mf_scene_base + off
 	if laptop_unit != null:
-		laptop_unit.position = _mf_unit_base + off
+		laptop_unit.scale = Vector2.ONE * _mf_unit_scale
+		laptop_unit.position = _mf_unit_base + off + _mf_laptop_sway
+	_apply_fullscreen_zoom()
+
+
+# --- fullscreen ----------------------------------------------------------------------
+
+## The taskbar's FULLSCREEN button: lean in to the screen, or back out.
+func _toggle_fullscreen() -> void:
+	# Not while the lid is opening or closing (closing waits on the zoom back out).
+	if _busy:
+		return
+	_set_fullscreen(not _fs_target)
+
+
+## Starts the zoom toward (or away from) fullscreen; returns the tween so a caller can wait
+## on it (null if already there).
+func _set_fullscreen(on: bool) -> Tween:
+	_fs_target = on
+	if _screen != null:
+		_screen.set("fullscreen_active", on)
+	if _fs_tween != null and _fs_tween.is_valid():
+		_fs_tween.kill()
+		_fs_tween = null
+	var goal := 1.0 if on else 0.0
+	if is_equal_approx(_fs_progress, goal):
+		return null
+	if on:
+		fullscreen_layer.layer = maxi(_base_canvas_layer, FULLSCREEN_CANVAS_LAYER)
+	# Takes the full time from the far end; a reversal part-way takes only what's left.
+	var seconds := FULLSCREEN_SECONDS * absf(goal - _fs_progress)
+	_fs_tween = create_tween()
+	_fs_tween.tween_method(_set_fs_progress, _fs_progress, goal, seconds) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	if not on:
+		_fs_tween.tween_callback(func() -> void: fullscreen_layer.layer = _base_canvas_layer)
+	return _fs_tween
+
+
+func _set_fs_progress(value: float) -> void:
+	_fs_progress = value
+	_apply_mf_offset()
+
+
+## Lays the fullscreen zoom over the normal layout _apply_mf_offset just set. The view scales
+## about the screen's centre - room and laptop together, like a camera moving in - by up to
+## the zoom that fits the screen to the display, while that centre slides to the display's
+## centre. The screen's content widens (or heightens) meanwhile so at full zoom it covers
+## the display exactly instead of leaving the bezel showing down two sides.
+func _apply_fullscreen_zoom() -> void:
+	if screen_content == null or laptop_unit == null:
+		return
+	if _fs_progress <= 0.0:
+		screen_content.offset_left = 0.0
+		screen_content.offset_top = 0.0
+		screen_content.offset_right = 0.0
+		screen_content.offset_bottom = 0.0
+		return
+	var vp: Vector2 = get_viewport_rect().size
+	var unit_scale: float = _mf_unit_scale
+	# The screen's rest rect inside the laptop (from its anchors), and where that is on screen.
+	var screen_pos := Vector2(screen_content.anchor_left, screen_content.anchor_top) * CANVAS_SIZE
+	var screen_size := Vector2(screen_content.anchor_right - screen_content.anchor_left,
+			screen_content.anchor_bottom - screen_content.anchor_top) * CANVAS_SIZE
+	if screen_size.x <= 0.0 or screen_size.y <= 0.0 or unit_scale <= 0.0:
+		return
+	var rest_size := screen_size * unit_scale
+	var rest_centre := laptop_unit.position + (screen_pos + screen_size * 0.5) * unit_scale
+	var t := _fs_progress
+	# Eased exponentially so the zoom feels even all the way in.
+	var full_zoom := minf(vp.x / rest_size.x, vp.y / rest_size.y)
+	var zoom := pow(full_zoom, t)
+	var centre := rest_centre.lerp(vp * 0.5, t)
+	laptop_unit.scale = Vector2.ONE * unit_scale * zoom
+	laptop_unit.position = centre + (laptop_unit.position - rest_centre) * zoom
+	if scene_canvas != null:
+		scene_canvas.scale = Vector2.ONE * _mf_scene_scale * zoom
+		scene_canvas.position = centre + (scene_canvas.position - rest_centre) * zoom
+	# Widen the content toward the display's shape (in laptop pixels, about its own centre).
+	var full_size := vp / (unit_scale * full_zoom)
+	var grow := (screen_size.lerp(full_size, t) - screen_size) * 0.5
+	screen_content.offset_left = -grow.x
+	screen_content.offset_top = -grow.y
+	screen_content.offset_right = grow.x
+	screen_content.offset_bottom = grow.y
 
 
 ## The sway offset the current mouse position calls for: pull toward the cursor that grows
@@ -241,10 +392,10 @@ func _mf_target() -> Vector2:
 	var n := Vector2((mouse.x - center.x) / center.x, (mouse.y - center.y) / center.y)
 	# Negative: shifting the view the opposite way moves it toward the cursor.
 	var off := -Vector2(_mf_falloff(n.x), _mf_falloff(n.y)) * MF_STRENGTH
-	return Vector2(
-		clampf(off.x, -_mf_max_offset.x, _mf_max_offset.x),
-		clampf(off.y, -_mf_max_offset.y, _mf_max_offset.y),
-	)
+	# Vertically, spread the (smaller) range over the whole screen height so the sway keeps
+	# moving all the way to the top and bottom edges instead of maxing out early.
+	off.y = -_mf_falloff(n.y) / _mf_falloff(1.0) * MF_VERTICAL_RANGE
+	return off.clamp(_mf_min_offset, _mf_max_offset)
 
 
 ## Signed, saturating edge falloff for one axis (mirrors the maintenance camera).
@@ -339,10 +490,20 @@ func _mouse_over_opaque_laptop_pixel() -> bool:
 
 
 func _on_leave_pressed() -> void:
+	if instant and overlay_mode:
+		if is_queued_for_deletion():
+			return
+		closed.emit()
+		queue_free()
+		return
 	if _busy:
 		return
 	_busy = true
 	leave_button.disabled = true
+	# Lean back out of fullscreen first, so the lid shuts on the laptop as it normally sits.
+	var unzoom := _set_fullscreen(false)
+	if unzoom != null:
+		await unzoom.finished
 	# Stop displaying the screen, then play the close animation forward.
 	screen_content.visible = false
 	await _play_frames(0, FRAME_COUNT - 1)

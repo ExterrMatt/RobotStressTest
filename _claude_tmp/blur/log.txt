@@ -1,0 +1,77 @@
+Godot Engine v4.6.2.stable.official.71f334935 - https://godotengine.org
+OpenGL API 3.3.0 - Build 31.0.101.4502 - Compatibility - Using Device: Intel - Intel(R) Iris(R) Xe Graphics
+
+[AUDIT] step bedroom
+[AUDIT]   current=res://scenes/locations/IntroDialogue.tscn
+[AUDIT] step stress_test
+[ZoomDebug] region=Zoom1_R1_C1 level=1 head_only=false new_head_cam=false
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step stress_laptop_overlay
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] stress_laptop_overlay draw_string(LaptopHome.gd) scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74
+[AUDIT] stress_laptop_overlay Label:R O B O · O S scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@84/@Label@77
+[AUDIT] stress_laptop_overlay Label:v0.2 scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@84/@Label@78
+[AUDIT] stress_laptop_overlay Label:SYS: ONLINE scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@84/@PanelContainer@81/@Label@80
+[AUDIT] stress_laptop_overlay Label:> home session — select  scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@85/@Label@86
+[AUDIT] stress_laptop_overlay Label:MAINTENANCE scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@91/@MarginContainer@92/@VBoxContainer@93/@Label@95
+[AUDIT] stress_laptop_overlay Label:BUILDER scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@97/@MarginContainer@98/@VBoxContainer@99/@Label@101
+[AUDIT] stress_laptop_overlay Label:DELIVERY scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@103/@MarginContainer@104/@VBoxContainer@105/@Label@107
+[AUDIT] stress_laptop_overlay Label:THOUGHTS scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@109/@MarginContainer@110/@VBoxContainer@111/@Label@113
+[AUDIT] stress_laptop_overlay Label:PATROL scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@115/@MarginContainer@116/@VBoxContainer@117/@Label@119
+[AUDIT] stress_laptop_overlay Label:STRESS LOG scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@121/@MarginContainer@122/@VBoxContainer@123/@Label@125
+[AUDIT] stress_laptop_overlay Label:IDENTITY scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@127/@MarginContainer@128/@VBoxContainer@129/@Label@131
+[AUDIT] stress_laptop_overlay Label:SAVE scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@133/@MarginContainer@134/@VBoxContainer@135/@Label@137
+[AUDIT] stress_laptop_overlay Label:SETTINGS scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@Container@90/@Button@139/@MarginContainer@140/@VBoxContainer@141/@Label@143
+[AUDIT] stress_laptop_overlay Label:SYS MON scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@PanelContainer@161/@VBoxContainer@145/@Label@146
+[AUDIT] stress_laptop_overlay Label:CPU scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@PanelContainer@161/@VBoxContainer@145/@HBoxContainer@147/@Label@148
+[AUDIT] stress_laptop_overlay Label:24% scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@PanelContainer@161/@VBoxContainer@145/@HBoxContainer@147/@Label@150
+[AUDIT] stress_laptop_overlay Label:TEMP scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@PanelContainer@161/@VBoxContainer@145/@HBoxContainer@153/@Label@154
+[AUDIT] stress_laptop_overlay Label:41C scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@PanelContainer@161/@VBoxContainer@145/@HBoxContainer@153/@Label@156
+[AUDIT] stress_laptop_overlay Label:LIMBS scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@PanelContainer@161/@VBoxContainer@145/@HBoxContainer@157/@Label@158
+[AUDIT] stress_laptop_overlay Label:0 RDY scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@HBoxContainer@89/@PanelContainer@161/@VBoxContainer@145/@HBoxContainer@157/@Label@160
+[AUDIT] stress_laptop_overlay Label:
+robo-os v0.2 ready. typ scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@PanelContainer@167/@VBoxContainer@162/@Label@163
+[AUDIT] stress_laptop_overlay Label:noah@robo-os:~$ scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@PanelContainer@167/@VBoxContainer@162/@HBoxContainer@164/@Label@165
+[AUDIT] stress_laptop_overlay LineEdit scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@Control@61/@Control@74/@MarginContainer@75/@VBoxContainer@76/@PanelContainer@167/@VBoxContainer@162/@HBoxContainer@164/@LineEdit@166
+[AUDIT] stress_laptop_overlay Label:HOME scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@PanelContainer@73/@HBoxContainer@62/@Label@70
+[AUDIT] stress_laptop_overlay Label:DAY 1 · MORNING scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@PanelContainer@73/@HBoxContainer@62/@Label@72
+[AUDIT] stress_laptop_overlay Button:‹ scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@PanelContainer@73/@CenterContainer@63/@HBoxContainer@64/@Button@65
+[AUDIT] stress_laptop_overlay Button:HOME scale=1.80 crisp=true  UI/VBox/LocationHost/StressTest/Laptop/FullscreenLayer/FullscreenRoot/LaptopUnit/ScreenContent/@Control@58/@VBoxContainer@60/@PanelContainer@73/@CenterContainer@63/@HBoxContainer@64/@Button@66
+[AUDIT] step workshop
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step sleep
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step maintenance
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step school
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step store
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step work
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step personality_training
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step laptop
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step minigame_LeverSequenceMinigame
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step minigame_MeterHoldMinigame
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step minigame_WireConnectMinigame
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step minigame_ScrewTurnMinigame
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step minigame_MinefieldMinigame
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step minigame_RouteDragMinigame
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] step minigame_RouteSlideMinigame
+[AUDIT]   current=res://scenes/locations/StressTest.tscn
+[AUDIT] done
+ERROR: 1 RID allocations of type 'N5GLES37TextureE' were leaked at exit.
+ERROR: Texture with GL ID of 23: leaked 5460 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Parameter "RenderingServer::get_singleton()" is null.
+   at: ~ImageTexture (scene/resources/image_texture.cpp:230)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2641)

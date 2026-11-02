@@ -1,0 +1,754 @@
+{ "frames": {
+   "Stress Test Shed V4 (background).aseprite": {
+    "frame": { "x": 4998, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (shed_background).aseprite": {
+    "frame": { "x": 2380, "y": 1371, "w": 683, "h": 288 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 565, "y": 397, "w": 683, "h": 288 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (shed_background_bottom).aseprite": {
+    "frame": { "x": 0, "y": 1171, "w": 780, "h": 380 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 522, "y": 1420, "w": 780, "h": 380 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (shed_background_right).aseprite": {
+    "frame": { "x": 2380, "y": 1659, "w": 552, "h": 288 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1248, "y": 397, "w": 552, "h": 288 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (shed_background_left).aseprite": {
+    "frame": { "x": 372, "y": 1762, "w": 536, "h": 287 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 398, "w": 536, "h": 287 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (wall_hole).aseprite": {
+    "frame": { "x": 908, "y": 2004, "w": 173, "h": 155 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 99, "y": 439, "w": 173, "h": 155 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (horizontal_table).aseprite": {
+    "frame": { "x": 4131, "y": 1899, "w": 435, "h": 265 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 590, "w": 435, "h": 265 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (roof).aseprite": {
+    "frame": { "x": 0, "y": 773, "w": 1250, "h": 398 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 250, "y": 0, "w": 1250, "h": 398 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (side_table).aseprite": {
+    "frame": { "x": 3045, "y": 1948, "w": 266, "h": 246 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1205, "y": 955, "w": 266, "h": 246 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (side_table_2).aseprite": {
+    "frame": { "x": 4358, "y": 1511, "w": 446, "h": 388 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1166, "y": 916, "w": 446, "h": 388 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (side_table_3).aseprite": {
+    "frame": { "x": 3063, "y": 1574, "w": 426, "h": 374 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 48, "y": 902, "w": 426, "h": 374 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (generator).aseprite": {
+    "frame": { "x": 3653, "y": 1982, "w": 196, "h": 217 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1601, "y": 524, "w": 196, "h": 217 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (generator_gauge).aseprite": {
+    "frame": { "x": 4967, "y": 440, "w": 25, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1642, "y": 550, "w": 25, "h": 25 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (rip_cord_dock).aseprite": {
+    "frame": { "x": 4967, "y": 255, "w": 29, "h": 44 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1673, "y": 569, "w": 29, "h": 44 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (floor).aseprite": {
+    "frame": { "x": 908, "y": 1762, "w": 590, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 600, "y": 958, "w": 590, "h": 242 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (table).aseprite": {
+    "frame": { "x": 3489, "y": 1574, "w": 263, "h": 377 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 750, "y": 830, "w": 263, "h": 377 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (gas_thing_5).aseprite": {
+    "frame": { "x": 4804, "y": 1511, "w": 153, "h": 330 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 556, "y": 450, "w": 153, "h": 330 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (bottom_mechanicals).aseprite": {
+    "frame": { "x": 1252, "y": 2004, "w": 184, "h": 124 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 600, "y": 654, "w": 184, "h": 124 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (button).aseprite": {
+    "frame": { "x": 1314, "y": 773, "w": 37, "h": 50 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1063, "y": 475, "w": 37, "h": 50 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (button_pressed).aseprite": {
+    "frame": { "x": 1351, "y": 773, "w": 37, "h": 50 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1063, "y": 475, "w": 37, "h": 50 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (window_og).aseprite": {
+    "frame": { "x": 372, "y": 1551, "w": 342, "h": 159 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 722, "y": 430, "w": 342, "h": 159 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (window).aseprite": {
+    "frame": { "x": 3311, "y": 1951, "w": 342, "h": 159 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 722, "y": 430, "w": 342, "h": 159 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (window_light_on).aseprite": {
+    "frame": { "x": 4703, "y": 471, "w": 48, "h": 23 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 835, "y": 480, "w": 48, "h": 23 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (uncle_window).aseprite": {
+    "frame": { "x": 4817, "y": 471, "w": 23, "h": 18 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 843, "y": 483, "w": 23, "h": 18 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (guns).aseprite": {
+    "frame": { "x": 780, "y": 1171, "w": 200, "h": 52 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 792, "y": 533, "w": 200, "h": 52 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (drone).aseprite": {
+    "frame": { "x": 1804, "y": 1250, "w": 221, "h": 102 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 782, "y": 459, "w": 221, "h": 102 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (guns_shot).aseprite": {
+    "frame": { "x": 0, "y": 1984, "w": 224, "h": 136 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 779, "y": 459, "w": 224, "h": 136 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (drone_lights_off).aseprite": {
+    "frame": { "x": 2025, "y": 1250, "w": 221, "h": 102 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 782, "y": 459, "w": 221, "h": 102 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lens_glow).aseprite": {
+    "frame": { "x": 4932, "y": 577, "w": 64, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 861, "y": 466, "w": 64, "h": 64 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (drone_dark_1).aseprite": {
+    "frame": { "x": 2295, "y": 833, "w": 219, "h": 100 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 782, "y": 461, "w": 219, "h": 100 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (drone_dark_2).aseprite": {
+    "frame": { "x": 666, "y": 2049, "w": 219, "h": 100 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 784, "y": 461, "w": 219, "h": 100 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (drone_dark_3).aseprite": {
+    "frame": { "x": 224, "y": 2049, "w": 221, "h": 102 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 782, "y": 459, "w": 221, "h": 102 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (drone_dark_4).aseprite": {
+    "frame": { "x": 445, "y": 2049, "w": 221, "h": 102 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 782, "y": 459, "w": 221, "h": 102 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (drone_dark_guns).aseprite": {
+    "frame": { "x": 980, "y": 1171, "w": 200, "h": 52 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 792, "y": 533, "w": 200, "h": 52 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (bulb_on).aseprite": {
+    "frame": { "x": 4967, "y": 211, "w": 31, "h": 44 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 890, "y": 430, "w": 31, "h": 44 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (bulb_off).aseprite": {
+    "frame": { "x": 4967, "y": 0, "w": 31, "h": 76 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 890, "y": 398, "w": 31, "h": 76 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (light).aseprite": {
+    "frame": { "x": 1081, "y": 2004, "w": 171, "h": 138 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 821, "y": 400, "w": 171, "h": 138 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (engine_wall).aseprite": {
+    "frame": { "x": 2723, "y": 1947, "w": 322, "h": 254 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1445, "y": 400, "w": 322, "h": 254 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (engine_wires).aseprite": {
+    "frame": { "x": 1498, "y": 1812, "w": 512, "h": 251 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1288, "y": 400, "w": 512, "h": 251 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (engine3).aseprite": {
+    "frame": { "x": 1292, "y": 1250, "w": 512, "h": 506 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1288, "y": 406, "w": 512, "h": 506 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (engine2).aseprite": {
+    "frame": { "x": 0, "y": 1551, "w": 372, "h": 433 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1428, "y": 434, "w": 372, "h": 433 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (engine1).aseprite": {
+    "frame": { "x": 3767, "y": 1529, "w": 364, "h": 453 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1436, "y": 400, "w": 364, "h": 453 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (engine_details).aseprite": {
+    "frame": { "x": 2010, "y": 1812, "w": 353, "h": 328 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1447, "y": 400, "w": 353, "h": 328 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (red_blue_switches).aseprite": {
+    "frame": { "x": 2932, "y": 1659, "w": 79, "h": 113 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1446, "y": 514, "w": 79, "h": 113 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (back_panel).aseprite": {
+    "frame": { "x": 4932, "y": 706, "w": 51, "h": 68 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1441, "y": 506, "w": 51, "h": 68 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (full_body_shadow).aseprite": {
+    "frame": { "x": 3849, "y": 1982, "w": 213, "h": 163 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 758, "y": 1637, "w": 213, "h": 163 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_upperarm).aseprite": {
+    "frame": { "x": 4967, "y": 143, "w": 21, "h": 68 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 846, "y": 1649, "w": 21, "h": 68 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_shoulderpad).aseprite": {
+    "frame": { "x": 4797, "y": 471, "w": 20, "h": 28 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 845, "y": 1649, "w": 20, "h": 28 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (torso).aseprite": {
+    "frame": { "x": 4932, "y": 471, "w": 57, "h": 106 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 854, "y": 1640, "w": 57, "h": 106 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (left_leg).aseprite": {
+    "frame": { "x": 3063, "y": 1472, "w": 94, "h": 76 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 889, "y": 1717, "w": 94, "h": 76 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_leg_up).aseprite": {
+    "frame": { "x": 3063, "y": 1371, "w": 94, "h": 101 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 790, "y": 1677, "w": 94, "h": 101 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_leg).aseprite": {
+    "frame": { "x": 1436, "y": 2063, "w": 140, "h": 80 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 740, "y": 1717, "w": 140, "h": 80 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_forearm).aseprite": {
+    "frame": { "x": 1250, "y": 773, "w": 64, "h": 48 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 845, "y": 1708, "w": 64, "h": 48 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_hand).aseprite": {
+    "frame": { "x": 4775, "y": 471, "w": 22, "h": 26 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 851, "y": 1754, "w": 22, "h": 26 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (left_forearm).aseprite": {
+    "frame": { "x": 4967, "y": 299, "w": 31, "h": 40 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 900, "y": 1707, "w": 31, "h": 40 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (left_hand).aseprite": {
+    "frame": { "x": 4967, "y": 376, "w": 25, "h": 36 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 887, "y": 1742, "w": 25, "h": 36 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (left_upperarm).aseprite": {
+    "frame": { "x": 4967, "y": 76, "w": 30, "h": 67 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 900, "y": 1645, "w": 30, "h": 67 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (left_shoulderpad).aseprite": {
+    "frame": { "x": 4751, "y": 471, "w": 24, "h": 32 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 900, "y": 1644, "w": 24, "h": 32 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_arm_up).aseprite": {
+    "frame": { "x": 4644, "y": 471, "w": 59, "h": 37 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 801, "y": 1649, "w": 59, "h": 37 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (left_shoulderpad_up).aseprite": {
+    "frame": { "x": 4967, "y": 412, "w": 30, "h": 28 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 831, "y": 1644, "w": 30, "h": 28 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_hand_up).aseprite": {
+    "frame": { "x": 4967, "y": 339, "w": 26, "h": 37 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 842, "y": 1674, "w": 26, "h": 37 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (head).aseprite": {
+    "frame": { "x": 4932, "y": 641, "w": 56, "h": 65 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 833, "y": 1613, "w": 56, "h": 65 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lights_off_front).aseprite": {
+    "frame": { "x": 1398, "y": 0, "w": 1176, "h": 833 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 308, "y": 343, "w": 1176, "h": 833 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lights_off_roof).aseprite": {
+    "frame": { "x": 2574, "y": 513, "w": 1449, "h": 421 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 168, "y": 0, "w": 1449, "h": 421 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lights_off_engine).aseprite": {
+    "frame": { "x": 780, "y": 1250, "w": 512, "h": 512 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1288, "y": 400, "w": 512, "h": 512 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lights_off_left).aseprite": {
+    "frame": { "x": 4358, "y": 963, "w": 588, "h": 548 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 362, "w": 588, "h": 548 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lights_off_table).aseprite": {
+    "frame": { "x": 2295, "y": 934, "w": 882, "h": 437 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 600, "y": 781, "w": 882, "h": 437 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lights_off_bottom).aseprite": {
+    "frame": { "x": 4023, "y": 513, "w": 909, "h": 450 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 483, "y": 1350, "w": 909, "h": 450 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (lights_off_eye).aseprite": {
+    "frame": { "x": 4988, "y": 143, "w": 13, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 848, "y": 1647, "w": 13, "h": 7 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_top).aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 1398, "h": 773 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 165, "y": 0, "w": 1398, "h": 773 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_front).aseprite": {
+    "frame": { "x": 4241, "y": 0, "w": 726, "h": 471 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 528, "y": 337, "w": 726, "h": 471 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_front_2).aseprite": {
+    "frame": { "x": 1804, "y": 1371, "w": 576, "h": 441 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 612, "y": 337, "w": 576, "h": 441 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_front_3).aseprite": {
+    "frame": { "x": 4999, "y": 0, "w": 1, "h": 1 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 1, "h": 1 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_front_gas).aseprite": {
+    "frame": { "x": 4131, "y": 1529, "w": 202, "h": 317 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 570, "y": 493, "w": 202, "h": 317 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_right).aseprite": {
+    "frame": { "x": 3177, "y": 934, "w": 590, "h": 640 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1210, "y": 330, "w": 590, "h": 640 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_table).aseprite": {
+    "frame": { "x": 2574, "y": 0, "w": 1667, "h": 513 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 820, "w": 1667, "h": 513 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_bottom).aseprite": {
+    "frame": { "x": 1250, "y": 833, "w": 1045, "h": 417 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 410, "y": 1382, "w": 1045, "h": 417 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (dark_left).aseprite": {
+    "frame": { "x": 3767, "y": 963, "w": 591, "h": 566 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 337, "w": 591, "h": 566 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (curtain_bar).aseprite": {
+    "frame": { "x": 4241, "y": 471, "w": 403, "h": 16 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 691, "y": 408, "w": 403, "h": 16 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (curtain_closed).aseprite": {
+    "frame": { "x": 2363, "y": 1947, "w": 360, "h": 230 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 713, "y": 414, "w": 360, "h": 230 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (curtain_opened).aseprite": {
+    "frame": { "x": 4566, "y": 1899, "w": 364, "h": 230 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 711, "y": 414, "w": 364, "h": 230 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "stress_test_shed.png",
+  "format": "RGBA8888",
+  "size": { "w": 5001, "h": 2201 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "background", "opacity": 255, "blendMode": "normal" },
+   { "name": "shed_background", "opacity": 255, "blendMode": "normal" },
+   { "name": "shed_background_bottom", "opacity": 255, "blendMode": "normal" },
+   { "name": "shed_background_right", "opacity": 255, "blendMode": "normal" },
+   { "name": "shed_background_left", "opacity": 255, "blendMode": "normal" },
+   { "name": "wall_hole", "opacity": 255, "blendMode": "normal" },
+   { "name": "horizontal_table", "opacity": 255, "blendMode": "normal" },
+   { "name": "roof", "opacity": 255, "blendMode": "normal" },
+   { "name": "side_wall" },
+   { "name": "side_table", "group": "side_wall", "opacity": 255, "blendMode": "normal" },
+   { "name": "side_table_2", "group": "side_wall", "opacity": 255, "blendMode": "normal" },
+   { "name": "side_table_3", "group": "side_wall", "opacity": 255, "blendMode": "normal" },
+   { "name": "generator", "group": "side_wall", "opacity": 255, "blendMode": "normal" },
+   { "name": "generator_gauge", "group": "side_wall", "opacity": 255, "blendMode": "normal" },
+   { "name": "rip_cord_dock", "group": "side_wall", "opacity": 255, "blendMode": "normal" },
+   { "name": "floor" },
+   { "name": "floor", "group": "floor", "opacity": 255, "blendMode": "normal" },
+   { "name": "table", "group": "floor", "opacity": 255, "blendMode": "normal" },
+   { "name": "gas_tank" },
+   { "name": "gas_thing_5", "group": "gas_tank", "opacity": 255, "blendMode": "normal" },
+   { "name": "bottom_mechanicals", "group": "gas_tank", "opacity": 255, "blendMode": "normal" },
+   { "name": "window" },
+   { "name": "button", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "button_pressed", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "window_og", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "window", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "window_light_on", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "uncle_window", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "guns", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "drone", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "guns_shot", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "drone_lights_off", "group": "window", "opacity": 186, "blendMode": "normal" },
+   { "name": "lens_glow", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "drone_dark_1", "group": "window", "opacity": 128, "blendMode": "normal" },
+   { "name": "drone_dark_2", "group": "window", "opacity": 107, "blendMode": "normal" },
+   { "name": "drone_dark_3", "group": "window", "opacity": 84, "blendMode": "normal" },
+   { "name": "drone_dark_4", "group": "window", "opacity": 128, "blendMode": "normal" },
+   { "name": "drone_dark_guns", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "bulb_on", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "bulb_off", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "light", "group": "window", "opacity": 255, "blendMode": "normal" },
+   { "name": "engine" },
+   { "name": "engine_wall", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "engine_wires", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "engine3", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "engine2", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "engine1", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "engine_details", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "red_blue_switches", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "back_panel", "group": "engine", "opacity": 255, "blendMode": "normal" },
+   { "name": "evil_robot" },
+   { "name": "full_body_shadow", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_upperarm", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_shoulderpad", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "torso", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_leg", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_leg_up", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_leg", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_forearm", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_hand", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_forearm", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_hand", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_upperarm", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_shoulderpad", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_arm_up", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_shoulderpad_up", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_hand_up", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "head", "group": "evil_robot", "opacity": 255, "blendMode": "normal" },
+   { "name": "lights_off" },
+   { "name": "lights_off_front", "group": "lights_off", "opacity": 255, "blendMode": "normal" },
+   { "name": "lights_off_roof", "group": "lights_off", "opacity": 255, "blendMode": "normal" },
+   { "name": "lights_off_engine", "group": "lights_off", "opacity": 255, "blendMode": "normal" },
+   { "name": "lights_off_left", "group": "lights_off", "opacity": 255, "blendMode": "normal" },
+   { "name": "lights_off_table", "group": "lights_off", "opacity": 255, "blendMode": "normal" },
+   { "name": "lights_off_bottom", "group": "lights_off", "opacity": 255, "blendMode": "normal" },
+   { "name": "lights_off_eye", "group": "lights_off", "opacity": 255, "blendMode": "normal" },
+   { "name": "darkness" },
+   { "name": "dark_top", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_front", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_front_2", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_front_3", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_front_gas", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_right", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_table", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_bottom", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "dark_left", "group": "darkness", "opacity": 255, "blendMode": "normal" },
+   { "name": "curtain_bar", "opacity": 255, "blendMode": "normal" },
+   { "name": "curtain_closed", "opacity": 255, "blendMode": "normal" },
+   { "name": "curtain_opened", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

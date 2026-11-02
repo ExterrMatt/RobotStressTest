@@ -23,10 +23,42 @@ signal finished(result: Dictionary)
 
 const DEFAULT_ENTRY_INPUT_LOCK_SECONDS: float = 0.2
 
+## Design values for the corner END button, kept in sync with Main's shared
+## floating END/LEAVE button: the GoldHudButton look at 1.5x font + padding.
+const END_BUTTON_FONT_SIZE: int = 48         # Main.LARGE_SCENE_HUD_FONT_SIZE (32) * 1.5
+const END_BUTTON_PADDING_SCALE: float = 1.5  # Main.LARGE_SCENE_END_BUTTON_SIZE_SCALE
+
 var _finished_emitted: bool = false
 var _entry_input_blocker_layer: CanvasLayer = null
 var _entry_input_blocker: Control = null
 var _entry_input_lock_serial: int = 0
+
+
+## Restyle a scene's own corner END / LEAVE button (maintenance, sleep) to match Main's
+## shared corner END/LEAVE button (the gold-bordered GoldHudButton look at 1.5x font +
+## padding), so every scene's corner button looks the same. Only the design
+## changes: the button keeps its authored bottom-right anchor and offsets, and
+## since it grows toward the top-left (grow direction BEGIN) its bottom-right
+## corner stays exactly where it is while the larger design expands up and left.
+func style_corner_button(btn: Button) -> void:
+	if btn == null:
+		return
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_font_size_override("font_size", END_BUTTON_FONT_SIZE)
+	# Scale each state's stylebox padding to match the enlarged font while leaving
+	# the theme's border width untouched (so it stays crisp, like Main's button).
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		var base := btn.get_theme_stylebox(state)
+		if base == null:
+			continue
+		var sb := base.duplicate() as StyleBox
+		sb.content_margin_left = base.get_margin(SIDE_LEFT) * END_BUTTON_PADDING_SCALE
+		sb.content_margin_top = base.get_margin(SIDE_TOP) * END_BUTTON_PADDING_SCALE
+		sb.content_margin_right = base.get_margin(SIDE_RIGHT) * END_BUTTON_PADDING_SCALE
+		sb.content_margin_bottom = base.get_margin(SIDE_BOTTOM) * END_BUTTON_PADDING_SCALE
+		btn.add_theme_stylebox_override(state, sb)
 
 
 ## True when debug mode is on AND the player is currently holding Enter.
@@ -230,7 +262,8 @@ func _set_ambient_stream_loop(stream: AudioStream, enabled: bool) -> void:
 ## Convenience: build a result dict and emit. Subclasses call this when done.
 ## `contraband` is the display name of anything the player stole this scene
 ## (e.g. "pile of nanobots"); empty means they left clean. The patrol-drone
-## encounter reads it to branch its dialogue.
+## encounter reads it to branch its dialogue. `extra` adds scene-specific keys to the
+## result (e.g. the stress test's "stress_test_failed").
 func finish(
 	money_delta: int = 0,
 	suspicion_delta: int = 0,
@@ -238,15 +271,18 @@ func finish(
 	ingredients: Dictionary = {},
 	skip_advance: bool = false,
 	contraband: String = "",
+	extra: Dictionary = {},
 ) -> void:
 	if _finished_emitted:
 		return
 	_finished_emitted = true
-	finished.emit({
+	var result := {
 		"money_delta": money_delta,
 		"suspicion_delta": suspicion_delta,
 		"anger_delta": anger_delta,
 		"ingredients": ingredients,
 		"skip_advance": skip_advance,
 		"contraband": contraband,
-	})
+	}
+	result.merge(extra)
+	finished.emit(result)

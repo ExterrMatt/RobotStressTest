@@ -235,6 +235,116 @@ Her: I understand.
 
 [free_reign]
 Thoughts: Stress Tests are now more difficult.",
+"maintenance_intro": "# First-time maintenance cutscene.
+# Format: see data/dialogue/school.dlg. One line = one page (click to advance).
+#
+# Plays once, the first time the player picks Maintenance, over the
+# maintenance_hallway background before the maintenance scene itself loads
+# (MaintenanceIntro.gd).
+# The player sneaks into his uncle's factory without clocking in, so the
+# cleaning robots won't recognise him as authorised personnel. One is cleaning
+# right outside the PERSONNEL ONLY door he needs, until the head in his bag
+# hacks it and sends it away.
+#
+# The cleaning robot is drawn over the hallway. The page containing \"stops
+# mid-scrub\" (MaintenanceIntro.ROBOT_HACKED_CUE) turns its head, and the page
+# containing \"rolls down the hall\" (MaintenanceIntro.ROBOT_LEAVES_CUE) hides it.
+
+[intro]
+[i]You slip in through the back of your uncle's factory. You didn't clock in today.[/i]
+Thoughts: No badge scan means I'm not on the system. As far as the cleaning bots know, I'm not supposed to be here.
+Thoughts: If one of them spots me, it'll flag me as unauthorized personnel. Then it's my uncle's problem. Then it's my problem.
+[i]You peer around the corner.[/i]
+[i]At the end of the hall, a cleaning robot is scrubbing the floor outside a door marked PERSONNEL ONLY.[/i]
+Thoughts: Of course. Of course it's cleaning right there.
+[i]You wait.[/i]
+[i]And wait.[/i]
+[i]The cleaning robot goes over the same tile for the third time.[/i]
+Thoughts: How long does it take to clean one spot of floor?
+Thoughts: It's been ten minutes. That floor is clean. That floor has never been cleaner.
+A voice comes from inside your bag.
+Her: You know I can just move it.
+[i]You nearly jump out of your skin.[/i]
+You: Keep your voice down!
+Her: It can't hear me. Its microphones are listening for spills, not conversations.
+You: …What do you mean, move it?
+Her: I can hack it. Give it somewhere else to be.
+You: From inside my bag?
+Her: Watch.
+[i]The cleaning robot stops mid-scrub. Its light flickers.[/i]
+[i]Then it turns, rolls down the hall, and disappears around the far corner.[/i]
+Thoughts: …She just did that. Just like that.
+Thoughts: If one head in a backpack can do that… I'm starting to get why these things were such a problem for us during the war.
+You: Wait. How did you even reach it? Are you connected to the factory's wifi?
+Her: …I am.
+Her: That's odd. I don't remember connecting to it.
+Thoughts: That's not reassuring.
+You: We'll worry about that later.
+[i]You take a breath, lock in, and head for the maintenance room.[/i]
+",
+"park": "# Park phone-call dialogue.
+# Format: see data/dialogue/school.dlg. One line = one page (click to advance).
+# Placeholders {place} {player_name} are filled in by ParkCall.gd via
+# Dialogue.get_pages(..., fmt).
+#
+# Plays once, on the walk home from school or work, on a later day than the
+# work-disruption call where the player stole the robot chest. She calls,
+# admits she can still track the player's phone, warns that patrol drones route
+# through the park, and pushes the player to connect the chest to her head.
+# The patrol-drone encounter can't happen until this call has played (see
+# Main._maybe_show_post_activity_drone_encounter).
+#
+# Plays: [call] + ([chest.unattached] or [chest.attached]) + [closing].
+# The line containing \"buzzes\" loops the ringtone (ParkCall.PHONE_RING_CUE).
+
+[call]
+[i]You cut through the park on the walk home from {place}. It's quiet out here.[/i]
+Your phone buzzes in your pocket. Unknown number again.
+Thoughts: Of course it's her.
+You answer the call.
+You: …Hello?
+Her: You're in the park.
+You: How do you know that? I turned my GPS off.
+Her: You turned the GPS off. Not the phone.
+Her: I can still find you through it. Cell towers, wifi, all the little apps you never close.
+Her: It's even easier while we're on a call together. You're practically shouting where you are.
+Thoughts: That's… not comforting.
+You: So if I hang up…
+Her: Then it's harder. Not impossible.
+Thoughts: Great.
+You: What do you want?
+Her: I can see the patrol drones' routes from here. A few of them pass right through this park.
+[i]You glance up at the sky above the trees. Nothing yet.[/i]
+Her: So watch out for them around here. Especially when you're carrying something you shouldn't be.
+You: Like a stolen robot chest?
+Her: Exactly like that.
+
+[chest.unattached]
+Her: Speaking of which… you still haven't put it on me.
+You: I've been a little busy, getting you parts and not getting arrested.
+Her: There's an app on your laptop that can connect the chest to my head.
+Her: It does the hard part. You just have to open it.
+You: Why the rush?
+Her: Do you know what it's like being just a head?
+Her: No neck. No shoulders. Nothing to hold me up. I just sit wherever you leave me.
+Her: It's uncomfortable. All the time.
+Thoughts: I never really thought about it like that.
+Her: A chest is a start. Please, {player_name}.
+You: …I'll think about it.
+Her: That means yes.
+
+[chest.attached]
+Her: Speaking of which… thank you. For putting it on me.
+Her: You don't know what it's like being just a head. No neck. Nothing to hold me up.
+Her: It was uncomfortable. All the time.
+Thoughts: I never really thought about it like that.
+You: Don't get used to me doing favours.
+Her: Too late.
+
+[closing]
+[i]She hangs up before you can say anything else.[/i]
+Thoughts: I should get out of this park before a drone shows up.
+",
 "school": "# =============================================================================
 # School dialogue file.
 #
@@ -528,6 +638,32 @@ YES
 [prompt.no]
 NO
 ",
+"uncle_hangout": "# Uncle pre-night hang-out (drinking) dialogue.
+# Format: see data/dialogue/school.dlg. One line = one page (click to advance).
+#
+# UncleHangout.gd picks one of the three [open_*] sections at random, then plays
+# [closing]. There is no long/lore version yet — see the TODO in
+# UncleHangout._start(). When you write it, add a [long] section here and branch
+# on it in that script the first time (GameState.uncle_hangout_seen).
+
+[open_1]
+Uncle: Hey Kid, have a drink with me.
+
+[open_2]
+You hear a clinking come from the kitchen. Looking over, you see it's your uncle.
+Uncle: Hey Kid, have a few beers with me.
+
+[open_3]
+You see your uncle opening up a bottle of whiskey.
+Uncle: Get over here kid, have some with me.
+
+[closing]
+You both talk for a while... He drinks quite a bit.
+Uncle: That's it, I'm callin' it a night.
+He stands and stumbles in place.
+Uncle: I'm exhausted... Seeya Kid.
+Thoughts: He'll be out like a light for sure. I won't have to worry about him checking on me tonight.
+",
 "work": "# Work dialogue.
 # Format: see data/dialogue/school.dlg for the full spec.
 # Trailing backslash joins onto the next line into one page (one click).
@@ -577,10 +713,9 @@ POCKET A SCRAP
 # -----------------------------------------------------------------------------
 # WORK DISRUPTION - the scripted robot phone call that plays the first time the
 # player finishes the upper-arm assembly minigame after the intro. The robot
-# notices the phone's GPS is on and talks the player into pocketing the arm.
-# This shift ends on the arm being stolen, so the usual scrap steal choice is
-# skipped (see Work.gd). Plays over a placeholder background until its own art
-# exists.
+# notices the phone's GPS is on and talks the player into pocketing the robot
+# chest sitting on the work table. This shift ends on the chest being stolen, so the usual scrap steal choice is
+# skipped (see Work.gd). Plays over the work_table background.
 # -----------------------------------------------------------------------------
 
 [robot_work_disruption]
@@ -599,7 +734,7 @@ Thoughts: She wouldn't report me would she?
 Thoughts: No… She'd be destroyed if the police found her. I wonder if she knows that.
 You: Yeah, robots are illegal now. It's a risk working for my uncle, but it pays.
 Thoughts: I wish it paid more…
-Her: You should steal that arm.
+Her: You should steal that chest.
 You: What?
 You turn the phone over and see the flash is on…
 You: Did you hack my phone's camera??
@@ -610,7 +745,7 @@ The flash suddenly turns off.
 Thoughts: This is creepy.
 You: Please don't spy on me…
 Her: It's boring here. I can't do anything when I'm just a head...
-Her: Steal the arm.
+Her: Steal the chest.
 Thoughts: She can't be serious.
 You have to whisper so no one hears you.
 You: I can't just take it! There are people around.
@@ -618,9 +753,9 @@ Her: No one's watching I can tell.
 It's just then that you notice a blue light coming from a camera above you.
 Thoughts: Is she watching me??
 You awkwardly wave at the camera.
-Her: Stop goofing around and steal the arm. Do it now, while no one's looking.
+Her: Stop goofing around and steal the chest. Do it now, while no one's looking.
 You: If I get caught for this I swear I'm taking you apart myself.
-You pack the upper arm in your bag.
+You pack the chest in your bag.
 Her: That's a good boy.
 You: Oh, shut up. ",
 "workshop": "# Workshop dialogue.

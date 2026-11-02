@@ -1,0 +1,44 @@
+{ "frames": {
+   "Sprite-0002 (background).": {
+    "frame": { "x": 0, "y": 0, "w": 500, "h": 125 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 500, "h": 125 },
+    "sourceSize": { "w": 500, "h": 125 },
+    "duration": 100
+   },
+   "Sprite-0002 (body).": {
+    "frame": { "x": 500, "y": 113, "w": 85, "h": 111 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 373, "y": 14, "w": 85, "h": 111 },
+    "sourceSize": { "w": 500, "h": 125 },
+    "duration": 100
+   },
+   "Sprite-0002 (head_turn).": {
+    "frame": { "x": 500, "y": 0, "w": 439, "h": 113 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 25, "y": 12, "w": 439, "h": 113 },
+    "sourceSize": { "w": 500, "h": 125 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "maintenance_hallway.png",
+  "format": "RGBA8888",
+  "size": { "w": 939, "h": 224 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "background", "opacity": 255, "blendMode": "normal" },
+   { "name": "body", "opacity": 255, "blendMode": "normal" },
+   { "name": "head_turn", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

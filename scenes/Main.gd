@@ -132,6 +132,10 @@ const POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE: float = 0.05
 const POST_ACTIVITY_DRONE_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
 const DRONE_ENCOUNTER_LOCATION: LocationData = preload("res://resources/locations/drone_encounter.tres")
 const DRONE_ENCOUNTER_LOCATION_ID: StringName = &"drone_encounter"
+## One-time robot phone call on the walk home through the park: the first school
+## or work run finished on a day after the work-disruption call (the chest steal).
+## Loaded like the drone encounter; the drone stays locked until it has played.
+const PARK_CALL_LOCATION: LocationData = preload("res://resources/locations/park_call.tres")
 
 ## Optional hang-out with the uncle on the way into Night: he shares some drinks,
 ## overdoes it and turns in early, so he won't check the window during that
@@ -146,6 +150,10 @@ const UNCLE_HANGOUT_LOCATION_ID: StringName = &"uncle_hangout"
 ## consume_sleep_bring_robot().
 const SLEEP_PROMPT_LOCATION: LocationData = preload("res://resources/locations/sleep_prompt.tres")
 const SLEEP_PROMPT_LOCATION_ID: StringName = &"sleep_prompt"
+## The first Maintenance pick detours through a one-time cutscene (sneaking into the
+## uncle's factory), which re-enters Maintenance through enter_maintenance_from_intro().
+const MAINTENANCE_LOCATION_ID: StringName = &"maintenance"
+const MAINTENANCE_INTRO_LOCATION: LocationData = preload("res://resources/locations/maintenance_intro.tres")
 
 ## Default authored size of the framed scene image. Standard 500x125 scene
 ## textures are normalized to STANDARD_SCENE_TEXTURE_SCALE at runtime, and
@@ -187,11 +195,16 @@ const CHOICE_SELECTED_BORDER: Color = Color(0.91, 0.784, 0.471)
 const CHOICE_UNSELECTED_BORDER: Color = Color(0.2, 0.188, 0.165)
 const CHOICE_SELECTED_BG: Color = Color(0.126, 0.11, 0.204, 1.0)
 const CHOICE_GLOW: Color = Color(0.91, 0.784, 0.471, 0.28)
+## A disabled choice (e.g. CALIBRATION) is drawn faded and never takes the highlight.
+const CHOICE_DISABLED_MODULATE: Color = Color(1.0, 1.0, 1.0, 0.35)
 const STAT_CLAUSE_BBCODE_COLOR: String = "e8c878"
 const PILL_MONEY_BBCODE_COLOR: String = "e8c878"
 const PILL_SUS_BBCODE_COLOR: String = "e8c878"
 const PILL_ANGER_BBCODE_COLOR: String = "e0906a"
 const PILL_FATIGUE_BBCODE_COLOR: String = "9ab4d8"
+## The change since yesterday in a stat's hover: green when it went down, red when it rose.
+const STAT_DROP_BBCODE_COLOR: String = "7ee08a"
+const STAT_RISE_BBCODE_COLOR: String = "ff6b5e"
 
 ## Duration and easing for both the scale animation (frame resize between
 ## locations) and the slide animation (layout shifts inside a location).
@@ -320,6 +333,8 @@ var _current_location_id: StringName = &""
 var _drone_encounter_rng := RandomNumberGenerator.new()
 var _pending_drone_place: String = "work"
 var _pending_drone_contraband: String = ""
+## Which activity the park call follows ("school"/"work"), read by ParkCall at _ready.
+var _pending_park_place: String = "work"
 var _default_scene_image: Texture2D
 ## Toggle for the alternate teacher portrait (e.g., Health.png → Health2.png).
 ## Flipped with the X key. Persists across teachers within a session.
@@ -470,6 +485,8 @@ var _source_frame_style_backups: Dictionary = {}
 var _source_frame_visibility_backups: Dictionary = {}
 var _tooltip_layer: CanvasLayer = null
 var _mouse_tooltip: MouseFollowTooltip = null
+## The stat hover's text while one is up (see _update_stat_tooltip), "" otherwise.
+var _stat_tooltip_shown: String = ""
 var _intro_sequence_enabled: bool = false
 var _suppress_phase_selection_refresh: bool = false
 
@@ -572,6 +589,7 @@ func _process(_delta: float) -> void:
 	if _fullbleed_active and _bedroom_pill_layer != null and _bedroom_pill_layer.visible:
 		_snap_bedroom_pills_to_min()
 		_position_bedroom_pills()
+	_update_stat_tooltip()
 
 
 ## Tab / Shift+Tab toggle the debug overlays. Handled here in _input (ahead of the
@@ -948,8 +966,9 @@ func _handle_debug_number_shortcut(key_event: InputEventKey) -> bool:
 		1, 2, 3:
 			_debug_jump_for_phase_number(number, key_event.shift_pressed, key_event.ctrl_pressed)
 		4:
+			# Plain 4 also puts a full robot on her; Ctrl+4 only fills the inventory.
 			if not key_event.shift_pressed:
-				_debug_give_all_items()
+				_debug_give_all_items(not key_event.ctrl_pressed)
 			_debug_give_money()
 			_debug_recalibrate_current_location()
 		5:
@@ -1279,6 +1298,23 @@ func _complete_intro_sequence() -> void:
 	_show_selection_screen()
 
 
+## Debug: skip the intro ahead to the moment the player has just passed the first
+## (30-second wake-up) stress test - i.e. the step right after "stress_test", the
+## robot's first-talk dialogue on the night of day 2. The rest of the intro then
+## plays out normally from there. Works from anywhere, even after the intro ended.
+func _debug_skip_to_after_first_stress_test() -> void:
+	_cancel_active_transitions()
+	GameState.intro_completed = false
+	GameState.set_intro_step("robot_first_talk")
+	GameState.day = 2
+	# The intro workshop builds her head; it goes straight on (see GameState._keep_head_on).
+	if not GameState.equipped_parts.has("head") and GameState.get_robot_part_count("head") < 1:
+		GameState.add_robot_part("head", 1)
+	_intro_sequence_enabled = true
+	_log("[color=#88aaff]Debug: skipped to after the first stress test[/color]")
+	_open_intro_current_step()
+
+
 func is_intro_sequence_location_active(location_id: StringName) -> bool:
 	return _intro_sequence_enabled and _current_location_id == location_id
 
@@ -1293,11 +1329,15 @@ func restart_intro_current_step() -> void:
 	_open_intro_current_step(true)
 
 
-func _debug_give_all_items() -> void:
+## Debug: 99 of every item, robot parts included, in the inventory. With `equip`, every free
+## slot on the robot is then filled from those, the same as putting each part on her.
+func _debug_give_all_items(equip: bool = true) -> void:
 	for id in GameState.ingredients.keys():
 		GameState.ingredients[id] = 99
 
 	GameState.set_all_robot_parts(99)
+	if equip:
+		GameState.equip_all_robot_parts()
 	for cosmetic_id in GameState.COSMETIC_ITEM_IDS:
 		GameState.set_cosmetic_item(cosmetic_id, 1)
 	GameState.unlock_tool("taser")
@@ -1309,9 +1349,10 @@ func _debug_give_all_items() -> void:
 	# The stress-test window curtains: an unlockable ability rather than a held tool,
 	# but granted through the same owned_tools ledger so debug can hand it out.
 	GameState.unlock_tool("curtains")
+	GameState.unlock_tool("flashlight")
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
-	_log("[color=#88ff88]Debug: inventory set to 99 of all items[/color]")
+	_log("[color=#88ff88]Debug: inventory set to 99 of all items%s[/color]" % (", full robot equipped" if equip else ""))
 
 
 ## Debug: grant every ingredient and tool — the non-robot-part inventory — while
@@ -1331,6 +1372,7 @@ func _debug_give_non_part_items() -> void:
 	GameState.tool_counts["screwdriver"] = 2
 	GameState.unlock_tool("welding_gun")
 	GameState.unlock_tool("sneaky_shoes")
+	GameState.unlock_tool("flashlight")
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: all ingredients + tools granted (no robot parts)[/color]")
@@ -1350,11 +1392,13 @@ const DEBUG_FULL_ROBOT_PART_COUNTS: Dictionary = {
 }
 
 
-## Debug: set the robot's parts to a single full robot's worth (absolute set, not
-## additive) and nothing else — no ingredients, no tools.
+## Debug: give a single full robot's worth of parts (absolute set, not additive) and put
+## them on her - every slot filled - and nothing else: no ingredients, no tools.
 func _debug_give_robot_parts() -> void:
+	GameState.unequip_all_robot_parts()
 	for id in DEBUG_FULL_ROBOT_PART_COUNTS:
 		GameState.set_robot_part_count(String(id), int(DEBUG_FULL_ROBOT_PART_COUNTS[id]))
+	GameState.equip_all_robot_parts()
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: robot parts set to one full robot (2 arms/legs/hands, 1 chest/stomach/head)[/color]")
@@ -1363,7 +1407,7 @@ func _debug_give_robot_parts() -> void:
 ## Unlockable tools handed out by "Give All Tools" and listed individually under
 ## "Give Specific Item". The always-owned mouth/hand aren't included. Add new
 ## tools here as they're introduced.
-const DEBUG_GIVE_TOOL_IDS: Array[String] = ["taser", "screwdriver", "welding_gun", "sneaky_shoes", "curtains"]
+const DEBUG_GIVE_TOOL_IDS: Array[String] = ["taser", "screwdriver", "welding_gun", "sneaky_shoes", "curtains", "flashlight"]
 
 ## Ingredient ids that are really pre-made limb sub-assemblies (crafted in the workshop and
 ## dropped into the craft bin as substitutes for a limb's raw ingredients). They're grouped
@@ -1379,9 +1423,12 @@ const DEBUG_LIMB_SUBASSEMBLY_CAPS: Dictionary = {
 	"ribcage": 1,
 	"upper_plating": 1,
 	"lower_plating": 1,
+	"pelvis": 1,
+	"outer_plating": 1,
 	"tank": 1,
 	"pump": 1,
 	"huge_battery": 1,
+	"external": 1,
 }
 
 
@@ -1594,7 +1641,7 @@ func _refresh_debug_info() -> void:
 	lines.append("  +Shift → school / store / stress test")
 	lines.append("  +Ctrl → work / workshop / sleep")
 	lines.append("  +Shift+Ctrl → maintenance / room")
-	lines.append("4  all items +$1000     Shift+4  $1000 only")
+	lines.append("4  all items + full robot on +$1000     Ctrl+4  all items, no equip     Shift+4  $1000 only")
 	lines.append("5  clear items (keep HEAD) + wipe $     Shift+5  wipe $ only")
 	lines.append("  (4 / 5 also refresh the open scene)")
 	lines.append("6  workshop: auto-complete segments")
@@ -1614,10 +1661,12 @@ func _refresh_debug_info() -> void:
 
 func _debug_parts_summary() -> String:
 	var parts: Array[String] = []
+	# On her, then how many more are in the inventory.
 	for id in GameState.ROBOT_PART_IDS:
-		var count := GameState.get_robot_part_count(id)
-		if count > 0:
-			parts.append("%s x%d" % [id, count])
+		var on := GameState.get_attached_part_count(id)
+		var loose := GameState.get_robot_part_count(id)
+		if on + loose > 0:
+			parts.append("%s %d on +%d" % [id, on, loose])
 	return "none" if parts.is_empty() else "   ".join(parts)
 
 
@@ -1909,6 +1958,52 @@ func _add_debug_anim_sound_cycle_button(vbox: VBoxContainer) -> void:
 	vbox.add_child(btn)
 
 
+## A self-relabeling ON/OFF button for one of the location's debug cheats (see
+## StressTest.debug_toggle_cheat). Each press flips the cheat and updates the text.
+func _add_debug_cheat_toggle_button(vbox: VBoxContainer, label: String, cheat: String) -> void:
+	var btn := Button.new()
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var relabel := func() -> void:
+		var enabled := false
+		if _current_location_node != null and is_instance_valid(_current_location_node) \
+				and _current_location_node.has_method("debug_cheat_enabled"):
+			enabled = bool(_current_location_node.call("debug_cheat_enabled", cheat))
+		btn.text = "%s: %s" % [label, "ON" if enabled else "OFF"]
+	relabel.call()
+	btn.pressed.connect(func() -> void:
+		if _current_location_node != null and is_instance_valid(_current_location_node) \
+				and _current_location_node.has_method("debug_toggle_cheat"):
+			_current_location_node.call("debug_toggle_cheat", cheat)
+		relabel.call()
+	)
+	vbox.add_child(btn)
+
+
+## A self-relabeling button for one of the location's look settings (see
+## Maintenance.debug_cycle_setting). Each press steps the setting and updates the text.
+func _add_debug_setting_button(vbox: VBoxContainer, key: String) -> void:
+	var btn := Button.new()
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var relabel := func() -> void:
+		if _current_location_node != null and is_instance_valid(_current_location_node) \
+				and _current_location_node.has_method("debug_setting_label"):
+			btn.text = String(_current_location_node.call("debug_setting_label", key))
+	relabel.call()
+	btn.pressed.connect(func() -> void:
+		if _current_location_node != null and is_instance_valid(_current_location_node) \
+				and _current_location_node.has_method("debug_cycle_setting"):
+			_current_location_node.call("debug_cycle_setting", key)
+		# One setting can turn on another (eye tracking opens the eyes), so relabel them all.
+		for sibling in vbox.get_children():
+			if sibling.has_meta(&"debug_setting_relabel"):
+				(sibling.get_meta(&"debug_setting_relabel") as Callable).call()
+	)
+	btn.set_meta(&"debug_setting_relabel", relabel)
+	vbox.add_child(btn)
+
+
 func _debug_anim_sound_label() -> String:
 	if _current_location_node != null and is_instance_valid(_current_location_node) \
 			and _current_location_node.has_method("debug_anim_sound_label"):
@@ -1930,6 +2025,7 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 	_add_debug_action_button(vbox, "Sleep", _debug_jump_for_phase_number.bind(3, false, true), true)
 	_add_debug_action_button(vbox, "Maintenance", _debug_jump_for_phase_number.bind(1, true, true), true)
 	_add_debug_action_button(vbox, "Laptop", _debug_jump_for_phase_number.bind(2, true, true), true)
+	_add_debug_action_button(vbox, "Skip → First Stress Test Passed", _debug_skip_to_after_first_stress_test, true)
 
 	# Inventory / money (stay open).
 	_add_debug_section(vbox, "INVENTORY")
@@ -1976,6 +2072,9 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 	# Stress-test-only actions (drone/uncle + robot appearance toggles).
 	if _current_location_id == STRESS_TEST_LOCATION_ID:
 		_add_debug_section(vbox, "STRESS TEST")
+		_add_debug_cheat_toggle_button(vbox, "No Awareness", "no_awareness")
+		_add_debug_cheat_toggle_button(vbox, "No Enemies", "no_enemies")
+		_add_debug_cheat_toggle_button(vbox, "Infinite Time", "infinite_time")
 		_add_debug_action_button(vbox, "Summon Drone", _debug_call_location.bind("debug_summon_drone"))
 		_add_debug_action_button(vbox, "Summon Uncle", _debug_call_location.bind("debug_summon_uncle"))
 		_add_debug_action_button(vbox, "Toggle Smooth Skin", _debug_call_location.bind("debug_toggle_human_skin"))
@@ -1988,6 +2087,22 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 			{"label": "Open Laptop", "action": _debug_open_laptop_overlay},
 			{"label": "Close Laptop", "action": _debug_close_laptop_overlay},
 		])
+
+	# The scene robot's look (shoulders, smooth skin, coconuts, eyes) - wherever the scene
+	# exposes it (Maintenance).
+	if _current_location_node != null and is_instance_valid(_current_location_node) \
+			and _current_location_node.has_method("debug_setting_keys"):
+		var setting_keys: Array = _current_location_node.call("debug_setting_keys")
+		if not setting_keys.is_empty():
+			_add_debug_section(vbox, "ROBOT LOOK")
+			for key in setting_keys:
+				_add_debug_setting_button(vbox, String(key))
+
+	# Sleep-only cheats (same toggle as the stress test's).
+	if _current_location_id == SLEEP_LOCATION_ID:
+		_add_debug_section(vbox, "SLEEP")
+		_add_debug_cheat_toggle_button(vbox, "No Awareness", "no_awareness")
+		_add_debug_cheat_toggle_button(vbox, "Infinite Time", "infinite_time")
 
 	# Animation sound testing — shown wherever the scene's robot exposes it (the
 	# stress test and the Sleep scene), not tied to a specific location id.
@@ -2005,6 +2120,8 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 	_add_debug_action_button(vbox, "Wire Connect", _debug_open_minigame.bind(WireConnectMinigame), true)
 	_add_debug_action_button(vbox, "Big Screw", _debug_open_minigame.bind(ScrewTurnMinigame), true)
 	_add_debug_action_button(vbox, "Minefield", _debug_open_minigame.bind(MinefieldMinigame), true)
+	_add_debug_action_button(vbox, "Steady Hand", _debug_open_minigame.bind(RouteDragMinigame), true)
+	_add_debug_action_button(vbox, "Slide Route", _debug_open_minigame.bind(RouteSlideMinigame), true)
 
 	# Overlays.
 	_add_debug_section(vbox, "OVERLAYS")
@@ -2027,7 +2144,9 @@ func _debug_clear_inventory() -> void:
 		GameState.ingredients[id] = 0
 
 	# Never strip a HEAD the player already owns — the intro can't be replayed to
-	# re-craft it, so clearing it would soft-lock the robot. Preserve its count.
+	# re-craft it, so clearing it would soft-lock the robot. Preserve its count (and
+	# the one on her stays on); every other part comes off her and is cleared.
+	GameState.unequip_all_robot_parts(["head"])
 	var head_count := GameState.get_robot_part_count("head")
 	GameState.set_all_robot_parts(0)
 	if head_count > 0:
@@ -2731,6 +2850,9 @@ func _on_scanlines_enabled_changed(enabled: bool) -> void: _apply_scanlines_enab
 func _on_debug_mode_changed(enabled: bool) -> void:
 	if not enabled and log_overlay != null:
 		log_overlay.visible = false
+	# Debug mode shows Maintenance early, so refresh the location buttons.
+	if selection_screen != null and selection_screen.visible:
+		_show_selection_screen()
 func _on_phase_changed(_v: int) -> void:
 	_refresh_hud()
 	_refresh_debug_info_if_visible()
@@ -2773,7 +2895,7 @@ func _show_selection_screen() -> void:
 	_selected_choice_index = -1
 
 	for loc in _locations:
-		if not loc.available_in_phase(GameState.phase):
+		if not loc.available_in_phase(GameState.phase) or _is_location_locked(loc):
 			continue
 		_add_choice_entry(_build_choice_button(loc), loc)
 	for label in _disabled_bedroom_options_for_phase(GameState.phase):
@@ -2879,11 +3001,24 @@ func _texture_is_bedroom(tex: Texture2D) -> bool:
 ## Always refreshes the looping ambience bed afterwards (which also picks up
 ## phase changes that keep us in the bedroom, e.g. Evening -> Night).
 func _update_bedroom_scene_audio(is_bedroom: bool) -> void:
-	if is_bedroom != _in_bedroom_scene:
-		_in_bedroom_scene = is_bedroom
-		_play_door_sound(DOOR_OPEN_SOUND_PATH if is_bedroom else DOOR_CLOSE_SOUND_PATH)
+	_play_door_sound_for_crossing(is_bedroom)
 	_update_bedroom_ambience()
 	_update_movie_across_scenes(is_bedroom)
+
+
+## The door half of _update_bedroom_scene_audio: plays open/close only when this
+## crosses the bedroom boundary. Safe to call ahead of the swap - the swap's own
+## call then sees no crossing and stays quiet.
+func _play_door_sound_for_crossing(is_bedroom: bool) -> void:
+	if is_bedroom == _in_bedroom_scene:
+		return
+	_in_bedroom_scene = is_bedroom
+	_play_door_sound(DOOR_OPEN_SOUND_PATH if is_bedroom else DOOR_CLOSE_SOUND_PATH)
+
+
+## Whether a location counts as the bedroom for the door sounds and ambience.
+func _is_bedroom_location(loc: LocationData) -> bool:
+	return _texture_is_bedroom(loc.preview_texture) or BEDROOM_LOCATION_IDS.has(loc.id)
 
 
 ## Drive the looping bedroom ambience: the morning bed for Morning/Evening, the
@@ -3058,6 +3193,9 @@ func _build_disabled_bedroom_button(label: String) -> Button:
 ## or unselected (dim outline, no fill) state. The same padding is used for
 ## both so highlighting never reflows the row.
 func _apply_choice_button_style(btn: Button, selected: bool) -> void:
+	if btn.disabled:
+		selected = false
+	btn.modulate = CHOICE_DISABLED_MODULATE if btn.disabled else Color.WHITE
 	var box := StyleBoxFlat.new()
 	box.content_margin_left = 26.0
 	box.content_margin_right = 26.0
@@ -3218,8 +3356,91 @@ func _hide_mouse_tooltip() -> void:
 		_mouse_tooltip.hide_tooltip()
 
 
+## Hovering a suspicion / anger / fatigue readout (the bedroom pill or the large-scene HUD)
+## shows, centred under it, the stat at the start of yesterday and how far it has moved to
+## now: green if it went down, red if up.
+## Found by checking the mouse against the readouts each frame, so they keep letting clicks
+## through to the scene.
+func _update_stat_tooltip() -> void:
+	if _mouse_tooltip == null:
+		return
+	var label := _hovered_stat_label()
+	var stat := _stat_of_readout(label)
+	var text := _stat_tooltip_text(stat) if stat != "" else ""
+	if text == _stat_tooltip_shown:
+		return
+	if _stat_tooltip_shown != "":
+		_mouse_tooltip.hide_text(_stat_tooltip_shown)
+	_stat_tooltip_shown = text
+	if text != "":
+		# Centred under the readout rather than trailing the cursor.
+		var rect := label.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, label.size)
+		_mouse_tooltip.show_text(text, true, rect)
+
+
+## "suspicion", "anger" or "fatigue" for the readout under the mouse, or "".
+func _hovered_stat() -> String:
+	return _stat_of_readout(_hovered_stat_label())
+
+
+func _stat_of_readout(label: Control) -> String:
+	if label == null:
+		return ""
+	if label == _bedroom_suspicion_label or label == _large_scene_suspicion_label:
+		return "suspicion"
+	if label == _bedroom_anger_label or label == _large_scene_anger_label:
+		return "anger"
+	return "fatigue"
+
+
+## The suspicion / anger / fatigue readout under the mouse, if any.
+func _hovered_stat_label() -> Control:
+	if _player_inventory_overlay != null and _player_inventory_overlay.visible:
+		return null
+	if _runtime_settings_overlay_open():
+		return null
+	# Something drawn on a higher canvas layer (the laptop, a fullscreen scene) covers the HUD.
+	var hovered := get_viewport().gui_get_hovered_control()
+	var covering_layer := _canvas_layer_of(hovered) if hovered != null else -1000000
+	for label in [
+		_bedroom_suspicion_label, _large_scene_suspicion_label,
+		_bedroom_anger_label, _large_scene_anger_label,
+		_bedroom_fatigue_label, _large_scene_fatigue_label,
+	]:
+		if label != null and is_instance_valid(label) and label.is_visible_in_tree() \
+				and _canvas_layer_of(label) >= covering_layer \
+				and label.get_global_rect().has_point(label.get_global_mouse_position()):
+			return label
+	return null
+
+
+func _canvas_layer_of(item: CanvasItem) -> int:
+	var layer := item.get_canvas_layer_node()
+	return layer.layer if layer != null else 0
+
+
+## "Yesterday: 0 (+15)": the stat at the start of yesterday, then how far it's moved to now
+## (the number tinted red when it rose, green when it fell).
+func _stat_tooltip_text(stat: String) -> String:
+	var before := int(GameState.yesterday_stats.get(stat, 0))
+	var change := int(GameState.get(stat)) - before
+	var delta := "%+d" % change
+	if change != 0:
+		delta = "[color=%s]%s[/color]" % [
+			STAT_DROP_BBCODE_COLOR if change < 0 else STAT_RISE_BBCODE_COLOR, delta
+		]
+	return "Yesterday: %d (%s)" % [before, delta]
+
+
 func _is_location_disabled(loc: LocationData) -> bool:
 	return DISABLED_LOCATION_IDS.has(loc.id)
+
+
+## Locations left off the selection screen entirely until the story opens them.
+## Maintenance appears once the stolen chest is home (debug mode can go early).
+func _is_location_locked(loc: LocationData) -> bool:
+	return loc.id == MAINTENANCE_LOCATION_ID and not GameState.maintenance_unlocked \
+			and not _debug_mode_enabled()
 
 
 func _disabled_bedroom_options_for_phase(phase: int) -> Array[String]:
@@ -3247,6 +3468,9 @@ func _on_location_picked(loc: LocationData, play_select_sound: bool = true) -> v
 	# the prompt re-enters Sleep through enter_sleep_from_prompt().
 	if loc != null and loc.id == SLEEP_LOCATION_ID and _should_show_sleep_prompt():
 		loc = SLEEP_PROMPT_LOCATION
+	# The first Maintenance pick plays the factory break-in cutscene first.
+	if loc != null and loc.id == MAINTENANCE_LOCATION_ID and _should_show_maintenance_intro():
+		loc = MAINTENANCE_INTRO_LOCATION
 
 	# Entering a fullscreen scene from the framed view is the heavy case. Defer the
 	# scene load() itself (not just the instantiate) until the wipe has fully shut,
@@ -3257,6 +3481,9 @@ func _on_location_picked(loc: LocationData, play_select_sound: bool = true) -> v
 			_log("ERROR: could not load %s" % loc.scene_path)
 			return
 		_log("[b]→ %s[/b]" % loc.display_name)
+		# The doors start closing now, but the swap waits out the load hold behind
+		# them - so play the door sound with the wipe, not at the swap.
+		_play_door_sound_for_crossing(_is_bedroom_location(loc))
 		_play_expanding_fullscreen_transition_then(
 			_load_and_apply_fullscreen_location_pick_swap.bind(loc)
 		)
@@ -3332,8 +3559,7 @@ func _apply_location_pick_swap(
 	# as entering the bedroom, as do in-room locations like Sleep; every other
 	# location counts as leaving it. In-room locations keep the door silent since
 	# the player never actually leaves the room to reach them.
-	var is_bedroom_scene := _texture_is_bedroom(loc.preview_texture) or BEDROOM_LOCATION_IDS.has(loc.id)
-	_update_bedroom_scene_audio(is_bedroom_scene)
+	_update_bedroom_scene_audio(_is_bedroom_location(loc))
 
 	_apply_scene_presentation_mode()
 
@@ -3468,6 +3694,13 @@ func _panel_style_minimum_size(panel: PanelContainer) -> Vector2:
 	if style == null:
 		return Vector2.ZERO
 	return style.get_minimum_size()
+
+
+## The location scene currently running (null between locations / in your room).
+func current_location() -> Node:
+	if _current_location_node != null and is_instance_valid(_current_location_node):
+		return _current_location_node
+	return null
 
 
 func _clear_current_location() -> void:
@@ -4282,6 +4515,10 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 
 	if result.get("skip_advance", false):
 		_show_selection_screen()
+	elif _maybe_show_park_call():
+		# She calls on the walk home. The call advances the phase itself once it
+		# finishes, so we don't advance here.
+		return
 	elif _maybe_show_post_activity_drone_encounter(result):
 		# The drone stopped the player. The encounter advances the phase itself
 		# once dismissed, so we don't advance here.
@@ -4304,6 +4541,9 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 func _maybe_show_post_activity_drone_encounter(result: Dictionary) -> bool:
 	if not POST_ACTIVITY_DRONE_LOCATION_IDS.has(_current_location_id):
 		return false
+	# No patrol drones until she's warned the player about them in the park call.
+	if not GameState.robot_park_call_seen:
+		return false
 	if _drone_encounter_rng.randf() >= POST_ACTIVITY_DRONE_ENCOUNTER_CHANCE:
 		return false
 	var packed := _load_location_scene(DRONE_ENCOUNTER_LOCATION)
@@ -4316,6 +4556,27 @@ func _maybe_show_post_activity_drone_encounter(result: Dictionary) -> bool:
 	# same transition the normal location picks use. The drone scene reads its
 	# branch inputs via consume_pending_drone_args().
 	_play_transition_then(_apply_location_pick_swap.bind(DRONE_ENCOUNTER_LOCATION, packed))
+	return true
+
+
+# --- post-school/work park call ----------------------------------------------
+
+## The robot's one-time park call: wipes in after the first school or work run
+## finished on a later day than the work-disruption call. Returns true when the
+## call was loaded (the caller must NOT advance the phase - the call finishes
+## into _on_location_finished, which then advances).
+func _maybe_show_park_call() -> bool:
+	if not POST_ACTIVITY_DRONE_LOCATION_IDS.has(_current_location_id):
+		return false
+	if not GameState.robot_work_disruption_seen or GameState.robot_park_call_seen:
+		return false
+	if GameState.day <= GameState.robot_work_disruption_day:
+		return false
+	var packed := _load_location_scene(PARK_CALL_LOCATION)
+	if packed == null:
+		return false  # couldn't load — let the caller advance normally
+	_pending_park_place = "school" if _current_location_id == &"school" else "work"
+	_play_transition_then(_apply_location_pick_swap.bind(PARK_CALL_LOCATION, packed))
 	return true
 
 
@@ -4351,6 +4612,23 @@ func _should_show_sleep_prompt() -> bool:
 	return GameState.equipped_limbs > 0
 
 
+func _should_show_maintenance_intro() -> bool:
+	# The cutscene is about sneaking in with the stolen chest, so a debug-mode
+	# visit before then goes straight to Maintenance and leaves it for later.
+	return not _intro_sequence_enabled \
+			and GameState.maintenance_unlocked \
+			and not GameState.maintenance_intro_seen
+
+
+## Called by the MaintenanceIntro cutscene when it ends: wipes into Maintenance.
+func enter_maintenance_from_intro() -> void:
+	var maintenance_loc := _location_by_id(MAINTENANCE_LOCATION_ID)
+	if maintenance_loc == null:
+		push_error("Main: no maintenance location to enter from its intro.")
+		return
+	_on_location_picked(maintenance_loc, false)
+
+
 ## Called by the SleepPrompt scene once the player answers. Wipes into the Sleep
 ## scene, which reads the answer via consume_sleep_bring_robot().
 func enter_sleep_from_prompt(bring_robot: bool) -> void:
@@ -4360,6 +4638,34 @@ func enter_sleep_from_prompt(bring_robot: bool) -> void:
 		return
 	_sleep_bring_robot = bring_robot
 	_on_location_picked(sleep_loc, false)
+
+
+## Called from the Sleep scene's failure screen (she woke up): re-runs the night
+## in bed with the robot, straight back into Sleep without the bedtime prompt.
+func restart_sleep_with_robot() -> void:
+	if _is_any_transition_playing():
+		return
+	var sleep_loc := _location_by_id(SLEEP_LOCATION_ID)
+	var packed := _load_location_scene(sleep_loc) if sleep_loc != null else null
+	if packed == null:
+		push_error("Main: could not reload the sleep scene.")
+		return
+	_sleep_bring_robot = true
+	_play_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(sleep_loc, packed, false))
+
+
+## Called from the stress test's failure screen (TRY AGAIN): runs the stress test again
+## from the start, straight back in. The failed night is never finished, so nothing of it
+## is applied - the same as restarting a night in Sleep.
+func restart_stress_test() -> void:
+	if _is_any_transition_playing():
+		return
+	var stress_loc := _location_by_id(STRESS_TEST_LOCATION_ID)
+	var packed := _load_location_scene(stress_loc) if stress_loc != null else null
+	if packed == null:
+		push_error("Main: could not reload the stress test scene.")
+		return
+	_play_fullscreen_transition_then(_apply_fullscreen_location_pick_swap.bind(stress_loc, packed, false))
 
 
 ## Consumed by the Sleep scene at _ready: whether the robot should be in the bed.
@@ -4376,6 +4682,11 @@ func consume_pending_drone_args() -> Dictionary:
 	var args := {"place": _pending_drone_place, "contraband": _pending_drone_contraband}
 	_pending_drone_contraband = ""
 	return args
+
+
+## Consumed by the ParkCall scene at _ready: which activity it follows.
+func consume_pending_park_place() -> String:
+	return _pending_park_place
 
 
 func _apply_skipped_stress_test_penalty(result: Dictionary) -> Dictionary:
@@ -4396,6 +4707,10 @@ func _should_apply_skipped_stress_test_penalty(result: Dictionary) -> bool:
 	# "skipped the stress test" when it finishes.
 	if _current_location_id == DRONE_ENCOUNTER_LOCATION_ID:
 		return false
+	# A stress test the player failed and then left (DONE, not TRY AGAIN) counts as a
+	# night without one: the same anger as skipping it, on top of the night's fatigue.
+	if result.get("stress_test_failed", false):
+		return true
 	return _current_location_id != STRESS_TEST_LOCATION_ID
 
 
@@ -4652,6 +4967,12 @@ func _can_open_inventory() -> bool:
 	# Otherwise: only open while a location is running. Selection screen =
 	# "in your room".
 	return _current_location_node != null
+
+
+## For a location's own inventory button (Maintenance): same as pressing Space.
+func toggle_inventory() -> void:
+	if _can_open_inventory():
+		_toggle_inventory_overlay()
 
 
 func _toggle_inventory_overlay() -> void:

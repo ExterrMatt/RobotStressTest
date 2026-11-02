@@ -11,6 +11,15 @@ signal head_returned_to_rest
 ## which the stress test's awareness meter weights more heavily. Consumers decide
 ## how much awareness each move is worth.
 signal body_part_moved(is_leg_raise: bool)
+## Emitted when an animation's "done" (outro) clip finishes - whether it settled
+## back to rest or, after an interrupted wind-down, returned to its frozen first
+## frame. The endurance meter resets on it when it was the one that triggered
+## the wind-down.
+signal done_animation_finished
+## One pass of a wind-down's pre-done strip finished (it repeats pre_outro_repeat times
+## before the done strip): fired once per pass, the last one included. `box_name` is
+## the animation's hover box (HeadHoverBox / PelvisHoverBox).
+signal pre_outro_looped(box_name: String)
 
 const RobotHoverBox: GDScript = preload("res://scenes/locations/RobotHoverBox.gd")
 
@@ -216,6 +225,15 @@ const HUMAN_SKIN_PATHS: Array[NodePath] = [
 ## Syrup overlay drizzled onto the static head once the Mouth-B outro finishes.
 ## Off by default and cleared whenever a fresh head animation is primed.
 const SYRUP_STATIC_PATH: NodePath = ^"Head/Syrup"
+## Awareness faces driven by the stress test's stress-indicator eyes: the angry
+## face once awareness gets high, plus the open eyes once she has woken up.
+## Static-head only (no animation columns), so they hide while the head animates.
+const ANGRY_FACE_STATIC_PATH: NodePath = ^"Head/AngryFace"
+const OPEN_EYES_STATIC_PATH: NodePath = ^"Head/OpenEyes"
+## Happy face (stages 1-3, from happy_face_textures) shown while maxed-out robot
+## endurance holds her awareness down. It takes the angry face's place; her open
+## eyes (woken up) win over it.
+const HAPPY_FACE_STATIC_PATH: NodePath = ^"Head/HappyFace"
 
 ## Leg-screw controllers (present only in the stress test) and the mapping from
 ## each screw node to its texture stem. The rig swaps these screws between their
@@ -425,10 +443,12 @@ const STOMACH_PART_PATHS: Array[NodePath] = [
 const LEFT_UPPER_ARM_PATHS: Array[NodePath] = [
 	^"Arms/LeftArm",
 	^"Arms/LeftArm/UpperArm",
+	^"ArmsUp/LeftUpperArmUp",
 ]
 const RIGHT_UPPER_ARM_PATHS: Array[NodePath] = [
 	^"Arms/RightArm",
 	^"Arms/RightArm/UpperArm",
+	^"ArmsUp/RightUpperArmUp",
 ]
 const LEFT_ARM_SHOULDER_PATHS: Array[NodePath] = [
 	^"Arms/LeftShoulderPad",
@@ -446,6 +466,8 @@ const RIGHT_ARM_SHOULDER_PATHS: Array[NodePath] = [
 ]
 const LEFT_FULL_ARM_PATHS: Array[NodePath] = [
 	^"Arms/LeftArm/ForearmDown",
+	^"Arms/LeftArm/ForearmMid",
+	^"ArmsUp/LeftForearmUp",
 	^"AnimationArmLayers/LeftArm",
 	^"AnimationArmLayers/MouthBLoopMedium/LeftArm",
 	^"AnimationArmLayers/MouthBPreOutro/LeftArm",
@@ -453,6 +475,8 @@ const LEFT_FULL_ARM_PATHS: Array[NodePath] = [
 ]
 const RIGHT_FULL_ARM_PATHS: Array[NodePath] = [
 	^"Arms/RightArm/ForearmDown",
+	^"Arms/RightArm/ForearmMid",
+	^"ArmsUp/RightForearmUp",
 	^"AnimationArmLayers/RightArm",
 	^"AnimationArmLayers/MouthBLoopMedium/RightArm",
 	^"AnimationArmLayers/MouthBPreOutro/RightArm",
@@ -460,11 +484,15 @@ const RIGHT_FULL_ARM_PATHS: Array[NodePath] = [
 ]
 const LEFT_HAND_PART_PATHS: Array[NodePath] = [
 	^"Hands/LeftPalmUp",
+	^"Hands/LeftPalmUpOut",
+	^"ArmsUp/LeftPalmUpUp",
 	^"Hands/LeftOpenFingers",
 	^"Hands/LeftFlexedFingers",
 ]
 const RIGHT_HAND_PART_PATHS: Array[NodePath] = [
 	^"Hands/RightPalmUp",
+	^"Hands/RightPalmUpOut",
+	^"ArmsUp/RightPalmUpUp",
 	^"Hands/RightOpenFingers",
 	^"Hands/RightFlexedFingers",
 ]
@@ -483,6 +511,57 @@ const RIGHT_HAND_TEXTURE_OPTIONS: Array[NodePath] = [
 ]
 const LEFT_HAND_HOVER_BOX_NAME: String = "LeftHandHoverBox"
 const RIGHT_HAND_HOVER_BOX_NAME: String = "RightHandHoverBox"
+
+## Arm poses: each arm goes down -> out to the side (raised forearm + palm-up hand)
+## -> up above her head, one hover box per step:
+##   - <side>ArmHoverBox (the lowered forearm): down -> out
+##   - <side>ArmUpHoverBox (the out forearm): out -> above head
+##   - <side>ArmRaisedHoverBox (the out hand): out -> down
+##   - <side>ArmAboveHeadHoverBox (the raised hand): above head -> out
+## While an arm is off its rest pose its hand-pose cycling is off. Arms only move
+## while nothing is animating and that arm has no loose screws (there is no
+## raised-arm screw art), and the head / pelvis animations wait until both arms are
+## down. Above her head, the arm's side of the chest swaps its outline / details /
+## smooth overlay for the matching arm-up shoulder layer, and the pad comes off.
+const ARM_POSE_DOWN: int = 0
+const ARM_POSE_OUT: int = 1
+const ARM_POSE_UP: int = 2
+const LEFT_ARM_HOVER_BOX_NAME: String = "LeftArmHoverBox"
+const RIGHT_ARM_HOVER_BOX_NAME: String = "RightArmHoverBox"
+const LEFT_ARM_RAISED_HOVER_BOX_NAME: String = "LeftArmRaisedHoverBox"
+const RIGHT_ARM_RAISED_HOVER_BOX_NAME: String = "RightArmRaisedHoverBox"
+const LEFT_ARM_UP_HOVER_BOX_NAME: String = "LeftArmUpHoverBox"
+const RIGHT_ARM_UP_HOVER_BOX_NAME: String = "RightArmUpHoverBox"
+const LEFT_ARM_ABOVE_HEAD_HOVER_BOX_NAME: String = "LeftArmAboveHeadHoverBox"
+const RIGHT_ARM_ABOVE_HEAD_HOVER_BOX_NAME: String = "RightArmAboveHeadHoverBox"
+## Each arm box: [pose it is clicked from, pose it moves the arm to].
+const ARM_BOX_POSES: Dictionary = {
+	"LeftArmHoverBox": [ARM_POSE_DOWN, ARM_POSE_OUT],
+	"RightArmHoverBox": [ARM_POSE_DOWN, ARM_POSE_OUT],
+	"LeftArmUpHoverBox": [ARM_POSE_OUT, ARM_POSE_UP],
+	"RightArmUpHoverBox": [ARM_POSE_OUT, ARM_POSE_UP],
+	"LeftArmRaisedHoverBox": [ARM_POSE_OUT, ARM_POSE_DOWN],
+	"RightArmRaisedHoverBox": [ARM_POSE_OUT, ARM_POSE_DOWN],
+	"LeftArmAboveHeadHoverBox": [ARM_POSE_UP, ARM_POSE_OUT],
+	"RightArmAboveHeadHoverBox": [ARM_POSE_UP, ARM_POSE_OUT],
+}
+const LEFT_ARM_RAISED_PATHS: Array[NodePath] = [^"Arms/LeftArm/ForearmMid", ^"Hands/LeftPalmUpOut"]
+const RIGHT_ARM_RAISED_PATHS: Array[NodePath] = [^"Arms/RightArm/ForearmMid", ^"Hands/RightPalmUpOut"]
+## The above-the-head arm layers live in ArmsUp, the robot's first child, so they
+## draw behind her hair, torso and head - the arms sit at the bottom of the Aseprite
+## stack, and up above her head the hair and the arm-up shoulders overlap them.
+const LEFT_ARM_UP_PATHS: Array[NodePath] = [^"ArmsUp/LeftUpperArmUp", ^"ArmsUp/LeftForearmUp", ^"ArmsUp/LeftPalmUpUp"]
+const RIGHT_ARM_UP_PATHS: Array[NodePath] = [^"ArmsUp/RightUpperArmUp", ^"ArmsUp/RightForearmUp", ^"ArmsUp/RightPalmUpUp"]
+## Arm-up shoulder overlays, in chest overlay mode order (outline, details, smooth).
+const LEFT_ARM_UP_SHOULDER_PATHS: Array[NodePath] = [^"Torso/ArmUpShoulderLeft", ^"Torso/ArmUpShoulderDetailsLeft", ^"Torso/ArmUpShoulderSmoothLeft"]
+const RIGHT_ARM_UP_SHOULDER_PATHS: Array[NodePath] = [^"Torso/ArmUpShoulderRight", ^"Torso/ArmUpShoulderDetailsRight", ^"Torso/ArmUpShoulderSmoothRight"]
+const LEFT_ARM_SCREW_REPAIR_PATH: NodePath = ^"LeftArmScrewRepair"
+const RIGHT_ARM_SCREW_REPAIR_PATH: NodePath = ^"RightArmScrewRepair"
+## Face down: with both arms up above her head, the stomach box turns her over onto her front
+## (the face_down body replaces everything else) and clicking it again turns her
+## back. Nothing else can be touched while she lies face down.
+const FACE_DOWN_HOVER_BOX_NAME: String = "FaceDownHoverBox"
+const FACE_DOWN_PATH: NodePath = ^"FaceDown"
 const LEFT_LEG_PART_PATHS: Array[NodePath] = [
 	^"Legs/LeftLeg",
 	^"Legs/LeftLegSlightlyOut",
@@ -640,7 +719,7 @@ const RIGHT_INTRO_GRIP_HAND_PATHS: Array[NodePath] = [
 	^"AnimationLayers/VegetableMissionIntro/RightHandUndergrip",
 ]
 
-@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"ChestCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox", ^"LeftLegHoverBox", ^"LeftLegHoverBoxOut", ^"LeftLegHoverBoxRaised", ^"RightLegHoverBox", ^"RightLegHoverBoxOut", ^"RightLegHoverBoxRaised"]:
+@export var hover_box_paths: Array[NodePath] = [^"HeadHoverBox", ^"HairHoverBox", ^"PelvisHoverBox", ^"ChestCoverHoverBox", ^"LeftShoulderHoverBox", ^"RightShoulderHoverBox", ^"LeftHandHoverBox", ^"RightHandHoverBox", ^"LeftLegHoverBox", ^"LeftLegHoverBoxOut", ^"LeftLegHoverBoxRaised", ^"RightLegHoverBox", ^"RightLegHoverBoxOut", ^"RightLegHoverBoxRaised", ^"LeftArmHoverBox", ^"RightArmHoverBox", ^"LeftArmRaisedHoverBox", ^"RightArmRaisedHoverBox", ^"LeftArmUpHoverBox", ^"RightArmUpHoverBox", ^"LeftArmAboveHeadHoverBox", ^"RightArmAboveHeadHoverBox", ^"FaceDownHoverBox"]:
 	set(value):
 		hover_box_paths = value
 		_request_configuration_refresh()
@@ -651,6 +730,8 @@ const RIGHT_INTRO_GRIP_HAND_PATHS: Array[NodePath] = [
 		_request_configuration_refresh()
 
 @export var sync_animation_layer_scale: bool = true
+## Happy face stages 1-3 (see set_happy_face), from the packed stress test bot sheet.
+@export var happy_face_textures: Array[Texture2D] = []
 
 ## Nodes that must stay hidden in-game and in hover previews until removed here.
 @export var always_hidden_image_paths: Array[NodePath] = []:
@@ -666,6 +747,28 @@ var _interaction_enabled: bool = true
 ## first opens a random repair minigame; the move only happens if it is won. Losing
 ## or closing the minigame leaves the robot untouched. Off in the Sleep scene.
 var limb_move_minigames_enabled: bool = false
+## When on (the Sleep scene turns it on), her arms and legs move by being dragged in a
+## direction rather than clicked - see LIMB_DRAG_DIRECTIONS. Hands, turning her over and
+## everything else still work on a click.
+var directional_limb_drag_enabled: bool = false
+## When on (the Sleep scene turns it on), a shoulder pad or the chest cover is picked up
+## by a click and carried with the mouse; let go far enough away and it comes off (a
+## pad goes into the inventory as a "shoulder_pad"). Clicking the empty spot puts it
+## back on. Off, a click just toggles it on and off.
+var drag_to_remove_items_enabled: bool = false
+## Something lying over her (the Sleep scene's blanket): called with a canvas
+## position, true when that spot is covered, so nothing of hers there can be hovered
+## or grabbed. Unset, nothing covers her.
+var interaction_blocker: Callable = Callable()
+## Per side (left, right): whether that arm lies on top of whatever covers her (see
+## set_arms_drawn_over).
+var _arm_overlay: Array[bool] = [false, false]
+## Something lying over her (the Sleep scene's blanket): called when an arm is lowered
+## back to rest from a raised pose, true when it should come to rest on top of it.
+## Unset, arms always rest in their usual place.
+var arm_rests_on_cover_check: Callable = Callable()
+## Per side: whether that arm was last lowered onto the cover (see is_arm_on_cover).
+var _arm_on_cover: Array[bool] = [false, false]
 ## Canvas layer hosting the open limb-move minigame (null when none is open).
 var _limb_minigame_layer: CanvasLayer = null
 ## Hover box whose move the open minigame is gating (null when none is open).
@@ -687,6 +790,13 @@ var _leg_prestage_active: bool = false
 ## Currently selected hand-pose option per side (index into the option lists).
 var _left_hand_texture_index: int = 0
 var _right_hand_texture_index: int = 0
+## ARM_POSE_* per side.
+var _left_arm_pose: int = ARM_POSE_DOWN
+var _right_arm_pose: int = ARM_POSE_DOWN
+var _face_down: bool = false
+## Visibility of the robot's direct children when she was turned face down, put
+## back when she is turned over again.
+var _face_down_saved_visibility: Dictionary = {}
 ## Current per-side leg pose step (LEG_POSE_*). The pelvis animation may only
 ## begin once both sides reach LEG_POSE_RAISED.
 var _left_leg_pose: int = LEG_POSE_DEFAULT
@@ -697,6 +807,11 @@ var _hair_texture_index: int = HAIR_DEFAULT_INDEX
 var _head_texture_index: int = HEAD_DEFAULT_INDEX
 ## Whether the squint-eyes overlay is shown.
 var _squint_eyes_enabled: bool = SQUINT_DEFAULT_ENABLED
+## Awareness faces set by the stress test (see set_awareness_face).
+var _angry_face_enabled: bool = false
+var _open_eyes_enabled: bool = false
+## 0 = no happy face, 1-3 = which happy_face_textures stage is showing.
+var _happy_face_stage: int = 0
 ## Whether the "human" skin set (stomach skin + chest smooth) is shown.
 var _human_skin_enabled: bool = HUMAN_SKIN_DEFAULT_ENABLED
 ## Whether the syrup overlay is drizzled on the static head (set by the head outro).
@@ -732,6 +847,23 @@ var _debug_anim_sound_target: String = "veg"
 ## Sides ("left"/"right") whose player hand is currently hidden because that
 ## hand is holding the screwdriver on that side during a stress-test repair.
 var _repair_hidden_hand_sides: Dictionary = {}
+## True from a click on a limb (arm, leg, hand, turning her over) until the mouse
+## button is let go: the cursor shows a closed hand meanwhile (see _update_limb_cursor).
+var _limb_grip: bool = false
+## The limb being dragged with directional_limb_drag_enabled ("" = none) and where the
+## current stroke started (it restarts after every move, so one hold can chain moves).
+var _limb_drag_limb: String = ""
+var _limb_drag_origin: Vector2 = Vector2.ZERO
+## Whether the dragged limb has already moved during this hold (later moves then need
+## LIMB_DRAG_REPEAT_FACTOR times the distance).
+var _limb_drag_moved: bool = false
+## The pad / cover box being carried (null = none), the item's static layers being
+## moved with the mouse, their resting positions and z-indices, and where the mouse
+## picked it up.
+var _carry_box: Control = null
+var _carry_nodes: Array[CanvasItem] = []
+var _carry_rest: Array = []
+var _carry_origin: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -756,6 +888,7 @@ func _process(delta: float) -> void:
 		return
 
 	_update_hover_boxes()
+	_update_limb_cursor()
 	if not _animation_states.is_empty():
 		_advance_animations(delta)
 	_enforce_always_hidden_paths()
@@ -767,10 +900,27 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		_handle_debug_key(event as InputEventKey)
 		return
+	# Letting go of the mouse releases a limb grip, whatever else is going on.
+	if _limb_grip and event is InputEventMouseButton and not event.pressed \
+			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		_limb_grip = false
+		_limb_drag_limb = ""
+		_finish_item_carry()
+		_update_limb_cursor()
 	if not _interaction_enabled:
+		_limb_drag_limb = ""
+		_cancel_item_carry()
 		return
 	# A limb-move minigame is open: it owns the mouse until it closes.
 	if _limb_minigame_layer != null:
+		return
+	if event is InputEventMouseMotion and _carry_box != null:
+		_move_item_carry(get_global_mouse_position())
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseMotion and _limb_drag_limb != "":
+		_advance_limb_drag(get_global_mouse_position())
+		get_viewport().set_input_as_handled()
 		return
 	if not (event is InputEventMouseButton):
 		return
@@ -779,8 +929,27 @@ func _input(event: InputEvent) -> void:
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
 		return
 
-	var clicked_box := _find_clicked_hover_box(mouse_event.global_position)
+	var clicked_box := _find_grab_box_at(mouse_event.global_position)
 	if clicked_box == null:
+		return
+	if _is_grabbable_limb_box(clicked_box):
+		# The hand closes on the click itself, before the move (or its minigame).
+		_limb_grip = true
+		_update_limb_cursor()
+	if _is_carryable_item_box(clicked_box):
+		if _carry_item_equipped(clicked_box):
+			_begin_item_carry(clicked_box, mouse_event.global_position)
+		else:
+			_reequip_item(clicked_box)
+		get_viewport().set_input_as_handled()
+		return
+	var drag_limb := _drag_limb_for_box(clicked_box)
+	if drag_limb != "":
+		# Grabbed, not clicked: the limb moves once the mouse is dragged its way.
+		_limb_drag_limb = drag_limb
+		_limb_drag_origin = mouse_event.global_position
+		_limb_drag_moved = false
+		get_viewport().set_input_as_handled()
 		return
 
 	if limb_move_minigames_enabled and _click_moves_body_part(clicked_box):
@@ -790,32 +959,59 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
-## The minigames a limb move can roll.
-func _limb_minigame_scripts() -> Array[GDScript]:
+## The minigames a click on `box` can roll: moving a limb (arms, legs, hands, turning
+## her over) rolls a grid route game; everything else (shoulder pads, chest cover,
+## ...) rolls a repair game. Animations never roll one (see _click_moves_body_part).
+func _limb_minigame_scripts(box: Control) -> Array[GDScript]:
+	if _is_grid_minigame_box(box):
+		return [RouteDragMinigame, RouteSlideMinigame]
 	return [LeverSequenceMinigame, MeterHoldMinigame, WireConnectMinigame,
 			ScrewTurnMinigame, MinefieldMinigame]
 
 
-## Whether clicking `box` would actually move a body part, mirroring the early-outs in
-## _handle_hover_box_click: hair restyles, locked legs and clicks that do nothing
-## (an animation mid-strip) shouldn't cost a minigame.
+func _is_grid_minigame_box(box: Control) -> bool:
+	if _is_arm_raise_hover_box(box) or _is_leg_pose_hover_box(box):
+		return true
+	return box.name in [FACE_DOWN_HOVER_BOX_NAME, LEFT_HAND_HOVER_BOX_NAME, RIGHT_HAND_HOVER_BOX_NAME]
+
+
+## Whether clicking `box` should cost a minigame, mirroring the early-outs in
+## _handle_hover_box_click: hair restyles and locked legs don't, and neither does
+## starting, advancing or ending an animation (head talk, pelvis).
 func _click_moves_body_part(box: Control) -> bool:
 	if _is_hair_hover_box(box):
 		return false
-	if (_is_pelvis_box(box) or _is_leg_pose_hover_box(box)) and _legs_have_screws():
+	if int(box.get("click_action")) == CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION:
 		return false
-	if int(box.get("click_action")) == CLICK_ACTION_PRIME_THEN_PLAY_ANIMATION 			and _box_has_layered_animation(box) and _animation_states.has(box):
-		var state: Dictionary = _animation_states[box]
-		if bool(state.get("playing", false)) and String(state.get("phase", "")) != ANIMATION_PHASE_LOOP:
-			return false
+	if _is_leg_pose_hover_box(box) and _legs_have_screws():
+		return false
 	return true
+
+
+## How much higher (screen px) a leg move's minigame sits while her legs run off the
+## bottom of the view.
+const LEG_MINIGAME_RAISE: float = 44.0
 
 
 ## Opens a random minigame for the click on `box`; the click is replayed only if won.
 func _open_limb_minigame(box: Control, shift_pressed: bool) -> void:
-	var scripts := _limb_minigame_scripts()
+	var scripts := _limb_minigame_scripts(box)
 	var game: Minigame = scripts[randi() % scripts.size()].new()
 	game.auto_close_on_result = true
+	# The limb-move (route) games pop up small, right over the limb being moved.
+	if _is_grid_minigame_box(box):
+		game.compact = true
+		game.over_rect = box.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, box.size)
+		# Her legs run off the bottom of the view (the upper table view): their game sits
+		# higher, clear of the screen's bottom edge.
+		if _is_leg_pose_hover_box(box) and game.over_rect.end.y > get_viewport_rect().size.y:
+			game.over_nudge = Vector2(0.0, -LEG_MINIGAME_RAISE)
+		# Its route traces the move: the way the limb goes, as far as it goes.
+		if game is RouteMinigame:
+			if String(box.name) == FACE_DOWN_HOVER_BOX_NAME:
+				game.roll = true
+			else:
+				game.move = _limb_move_vector(box)
 	var layer := CanvasLayer.new()
 	layer.name = "LimbMinigameLayer"
 	layer.layer = LIMB_MINIGAME_CANVAS_LAYER
@@ -831,16 +1027,606 @@ func _open_limb_minigame(box: Control, shift_pressed: bool) -> void:
 	layer.add_child(game)
 
 
+## The point of a limb a move carries along, in each pose, as the layer it's read from:
+## an arm's hand (the middle of its art) and a leg's shin (the foot of its art, the ankle).
+## [left, right] per pose.
+const ARM_HAND_PATHS: Dictionary = {
+	ARM_POSE_DOWN: [^"Hands/LeftPalmUp", ^"Hands/RightPalmUp"],
+	ARM_POSE_OUT: [^"Hands/LeftPalmUpOut", ^"Hands/RightPalmUpOut"],
+	ARM_POSE_UP: [^"ArmsUp/LeftPalmUpUp", ^"ArmsUp/RightPalmUpUp"],
+}
+const LEG_SHIN_PATHS: Dictionary = {
+	LEG_POSE_DEFAULT: [^"Legs/LeftLeg/Shin", ^"Legs/RightLeg/Shin"],
+	LEG_POSE_SLIGHTLY_OUT: [^"Legs/LeftLegSlightlyOut/Shin", ^"Legs/RightLegSlightlyOut/Shin"],
+	LEG_POSE_RAISED: [^"Legs/LeftLegUpShin", ^"Legs/RightLegUpShin"],
+}
+
+
+## How the click on `box` moves her, for its route minigame: the way the limb travels on
+## screen, as long as it travels in her art (pixels). Zero when there's no telling.
+func _limb_move_vector(box: Control) -> Vector2:
+	var from := Vector2.INF
+	var to := Vector2.INF
+	var box_name := String(box.name)
+	if _is_arm_raise_hover_box(box):
+		var side := _arm_side_for_box(box)
+		var poses: Array = ARM_BOX_POSES[box_name]
+		from = _layer_art_point(ARM_HAND_PATHS[poses[0]][side], false)
+		to = _layer_art_point(ARM_HAND_PATHS[poses[1]][side], false)
+	elif _is_leg_pose_hover_box(box):
+		var side := 0 if _is_left_leg_box(box) else 1
+		var pose := _leg_pose_for_box(box)
+		from = _layer_art_point(LEG_SHIN_PATHS[pose][side], true)
+		to = _layer_art_point(LEG_SHIN_PATHS[_next_leg_pose(pose)][side], true)
+	elif box_name == LEFT_HAND_HOVER_BOX_NAME or box_name == RIGHT_HAND_HOVER_BOX_NAME:
+		var left := box_name == LEFT_HAND_HOVER_BOX_NAME
+		var options: Array[NodePath] = LEFT_HAND_TEXTURE_OPTIONS if left else RIGHT_HAND_TEXTURE_OPTIONS
+		var index := _left_hand_texture_index if left else _right_hand_texture_index
+		if not options.is_empty():
+			from = _layer_art_point(options[index % options.size()], false)
+			to = _layer_art_point(options[(index + 1) % options.size()], false)
+	if not from.is_finite() or not to.is_finite() or from == to:
+		return Vector2.ZERO
+	# Which way that is as she's drawn on screen (turned or flipped), at its length in her art.
+	var travel := to - from
+	return get_global_transform_with_canvas().basis_xform(travel).normalized() * travel.length()
+
+
+## Where the art of the TextureRect at `path` sits in her own space: the middle of its
+## opaque pixels, or (`foot`) the middle of their bottom edge. INF when there's none.
+func _layer_art_point(path: NodePath, foot: bool) -> Vector2:
+	var node := get_node_or_null(path) as TextureRect
+	if node == null or node.texture == null:
+		return Vector2.INF
+	var tex := node.texture
+	var used := _opaque_rect(tex)
+	if not used.has_area():
+		return Vector2.INF
+	var point := used.get_center()
+	if foot:
+		point.y = used.end.y
+	var rect_size := node.size if node.size.x > 0.0 and node.size.y > 0.0 else tex.get_size()
+	return get_global_transform().affine_inverse() * (node.get_global_transform() * (point * rect_size / tex.get_size()))
+
+
+## The rect a texture's opaque pixels cover, in the texture's own space (an AtlasTexture's
+## margin included), worked out once each.
+var _opaque_rect_cache: Dictionary = {}
+
+
+func _opaque_rect(tex: Texture2D) -> Rect2:
+	if _opaque_rect_cache.has(tex):
+		return _opaque_rect_cache[tex]
+	var rect := Rect2()
+	if tex is AtlasTexture:
+		var atlas := tex as AtlasTexture
+		var image := _alpha_image(atlas.atlas)
+		if image != null:
+			var used := image.get_region(Rect2i(atlas.region)).get_used_rect()
+			rect = Rect2(Vector2(used.position) + atlas.margin.position, Vector2(used.size))
+	else:
+		var image := _alpha_image(tex)
+		if image != null:
+			rect = Rect2(image.get_used_rect())
+	_opaque_rect_cache[tex] = rect
+	return rect
+
+
 ## Tears down the open limb-move minigame (if any) without applying its move.
 func _close_limb_minigame() -> void:
 	if _limb_minigame_layer != null and is_instance_valid(_limb_minigame_layer):
 		_limb_minigame_layer.queue_free()
 	_limb_minigame_layer = null
 	_limb_minigame_box = null
+	_update_limb_cursor()
 
 
 func get_limb_minigame_box() -> Control:
 	return _limb_minigame_box
+
+
+# --- Limbs in their default position (for the zaps, RobotZaps) ---
+
+## A limb (or her head) is in its default position while this layer of it shows - it
+## hides when the limb is posed, animated or missing.
+const LIMB_REST_LAYER_PATHS: Dictionary = {
+	"left_arm": ^"Arms/LeftArm/ForearmDown",
+	"right_arm": ^"Arms/RightArm/ForearmDown",
+	"left_hand": ^"Hands/LeftPalmUp",
+	"right_hand": ^"Hands/RightPalmUp",
+	"left_leg": ^"Legs/LeftLeg",
+	"right_leg": ^"Legs/RightLeg",
+	"head": ^"Head",
+}
+
+
+## The part of her a layer belongs to: "left_arm" / "right_arm" (its shoulder pad too),
+## "left_hand" / "right_hand", "left_leg" / "right_leg", "head" (her hair too) - or ""
+## for the rest of her (torso), which never moves.
+func limb_of_layer(layer: Node) -> String:
+	var path := String(get_path_to(layer))
+	var left := path.contains("Left")
+	if path.begins_with("Hands/"):
+		return "left_hand" if left else "right_hand"
+	if path.begins_with("Legs/"):
+		return "left_leg" if left else "right_leg"
+	if path.begins_with("Arms/") or path.begins_with("ArmsUp/") or path.begins_with("Torso/ArmUpShoulder"):
+		return "left_arm" if left else "right_arm"
+	if path.begins_with("Head/") or path == "HairBack":
+		return "head"
+	return ""
+
+
+## Whether `limb` (as limb_of_layer names it; "" = her torso) is in its default position:
+## arms down, hands open, legs together, head lowered (not raised or animating), and her
+## lying on her back. Turned over, none of her is.
+func is_limb_in_default_position(limb: String) -> bool:
+	if _face_down:
+		return false
+	match limb:
+		"":
+			return true
+		"left_arm":
+			if _left_arm_pose != ARM_POSE_DOWN:
+				return false
+		"right_arm":
+			if _right_arm_pose != ARM_POSE_DOWN:
+				return false
+		"left_hand":
+			if _left_arm_pose != ARM_POSE_DOWN or _left_hand_texture_index != 0:
+				return false
+		"right_hand":
+			if _right_arm_pose != ARM_POSE_DOWN or _right_hand_texture_index != 0:
+				return false
+		"left_leg":
+			if _left_leg_pose != LEG_POSE_DEFAULT or _leg_prestage_active:
+				return false
+		"right_leg":
+			if _right_leg_pose != LEG_POSE_DEFAULT or _leg_prestage_active:
+				return false
+		"head":
+			var head_box := _find_hover_box_by_name(HEAD_ANIM_BOX_NAME)
+			if head_box != null and _animation_states.has(head_box):
+				return false
+	var rest_layer := get_node_or_null(LIMB_REST_LAYER_PATHS.get(limb, NodePath())) as CanvasItem
+	return rest_layer == null or _shown_in_robot(rest_layer)
+
+
+## Whether `limb` is being moved right now - its move minigame is up (from the click on
+## it until it's won or lost), or it's being dragged. While she's being turned over, all
+## of her is.
+func is_limb_being_moved(limb: String) -> bool:
+	var moving := _limb_being_moved()
+	if moving == "all":
+		return true
+	if moving == "" or limb == "":
+		return false
+	# A hand goes wherever its arm does.
+	return moving == limb or (moving.ends_with("_arm") and limb == moving.trim_suffix("_arm") + "_hand")
+
+
+## Whether `item` is drawn as far as she goes (hidden by none of her own layers between),
+## whether or not she herself is on screen.
+func _shown_in_robot(item: CanvasItem) -> bool:
+	var node: Node = item
+	while node != null and node != self:
+		if node is CanvasItem and not (node as CanvasItem).visible:
+			return false
+		node = node.get_parent()
+	return true
+
+
+## The limb being moved right now - by its open move minigame, or a drag - as
+## limb_of_layer names it; "all" while she's being turned over, "" when nothing is.
+func _limb_being_moved() -> String:
+	if _limb_minigame_box != null and is_instance_valid(_limb_minigame_box):
+		var box := _limb_minigame_box
+		var box_name := String(box.name)
+		if box_name == FACE_DOWN_HOVER_BOX_NAME:
+			return "all"
+		if _is_arm_raise_hover_box(box):
+			return "left_arm" if _arm_side_for_box(box) == 0 else "right_arm"
+		if _is_leg_pose_hover_box(box):
+			return "left_leg" if _is_left_leg_box(box) else "right_leg"
+		if box_name == LEFT_HAND_HOVER_BOX_NAME:
+			return "left_hand"
+		if box_name == RIGHT_HAND_HOVER_BOX_NAME:
+			return "right_hand"
+	if _limb_drag_limb == "face_down":
+		return "all"
+	return _limb_drag_limb
+
+
+## A box whose click moves one of her limbs (raising an arm, swinging a leg, a hand,
+## turning her over) - the things the grab cursor shows for.
+func _is_grabbable_limb_box(box: Control) -> bool:
+	return box != null and _is_grid_minigame_box(box) and _click_moves_body_part(box)
+
+
+## True while the mouse is over one of her boxes that a click acts on (the stress test
+## shows the open hand for it; her limbs also report their own grab cursor below).
+func is_mouse_over_clickable() -> bool:
+	return _find_grab_box_at(get_global_mouse_position()) != null
+
+
+## The grab cursor for her limbs: a closed hand from the click on a limb until the
+## mouse button is let go, an open hand while a movable limb is under the mouse.
+func _update_limb_cursor() -> void:
+	# The release can go to something else - the minigame the click opened takes the mouse
+	# until it closes, the inventory takes every click - so a button that's up lets go of
+	# the limb whether or not we saw it come up (an item carried off goes back on).
+	if _limb_grip and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_limb_grip = false
+		_limb_drag_limb = ""
+		_cancel_item_carry()
+	var state: int = CursorTheme.Grab.NONE
+	if _limb_grip:
+		state = CursorTheme.Grab.CLOSED
+	elif _interaction_enabled and _limb_minigame_layer == null and is_visible_in_tree():
+		var hovered := _find_grab_box_at(get_global_mouse_position())
+		if _is_grabbable_limb_box(hovered) \
+				or (_is_carryable_item_box(hovered) and _carry_item_equipped(hovered)):
+			state = CursorTheme.Grab.OPEN
+	CursorTheme.set_grab(self, state)
+
+
+func _exit_tree() -> void:
+	if not Engine.is_editor_hint():
+		CursorTheme.set_grab(self, CursorTheme.Grab.NONE)
+
+
+# --- Directional limb dragging (Sleep) ---
+
+## How far (screen pixels) the mouse has to travel in one direction for a dragged limb
+## to take a step - and, once it has moved during a hold, how many times that distance
+## each further step in the same hold takes. Letting go and grabbing again starts back
+## at the base distance.
+const LIMB_DRAG_DISTANCE: float = 60.0
+const LIMB_DRAG_REPEAT_FACTOR: float = 2.0
+## Turning her over (the stomach box, with both arms above her head) takes a stroke left
+## or right, either way, in either direction.
+## Per limb and pose: the drag direction that moves it, and the pose it moves to. The
+## sides are the player's: her left arm and leg are on the left of the screen. Each
+## limb is dragged outward to its second pose and up to raise it (a slightly-out leg
+## also raises with another drag outward); down drops a raised limb back to its second
+## pose, and the opposite of outward takes it from there back to rest. Arms also go
+## from rest to out with a drag up, and from out back to rest with a drag down.
+const LIMB_DRAG_DIRECTIONS: Dictionary = {
+	"left_leg": {LEG_POSE_DEFAULT: {"left": LEG_POSE_SLIGHTLY_OUT},
+			LEG_POSE_SLIGHTLY_OUT: {"up": LEG_POSE_RAISED, "left": LEG_POSE_RAISED, "right": LEG_POSE_DEFAULT},
+			LEG_POSE_RAISED: {"down": LEG_POSE_SLIGHTLY_OUT}},
+	"right_leg": {LEG_POSE_DEFAULT: {"right": LEG_POSE_SLIGHTLY_OUT},
+			LEG_POSE_SLIGHTLY_OUT: {"up": LEG_POSE_RAISED, "right": LEG_POSE_RAISED, "left": LEG_POSE_DEFAULT},
+			LEG_POSE_RAISED: {"down": LEG_POSE_SLIGHTLY_OUT}},
+	"left_arm": {ARM_POSE_DOWN: {"left": ARM_POSE_OUT, "up": ARM_POSE_OUT},
+			ARM_POSE_OUT: {"up": ARM_POSE_UP, "right": ARM_POSE_DOWN, "down": ARM_POSE_DOWN},
+			ARM_POSE_UP: {"down": ARM_POSE_OUT}},
+	"right_arm": {ARM_POSE_DOWN: {"right": ARM_POSE_OUT, "up": ARM_POSE_OUT},
+			ARM_POSE_OUT: {"up": ARM_POSE_UP, "left": ARM_POSE_DOWN, "down": ARM_POSE_DOWN},
+			ARM_POSE_UP: {"down": ARM_POSE_OUT}},
+}
+
+
+## The hover box a press at `global_pos` acts on. Normally the usual hover box there;
+## with directional dragging, an arm up above her head is also grabbed anywhere on its
+## art (upper arm, forearm or hand), not just by its hand box - except where her head
+## or hair, drawn over it, has a box of its own.
+func _find_grab_box_at(global_pos: Vector2) -> Control:
+	if _is_covered_at(global_pos):
+		return null
+	var box := _find_hover_box_at(global_pos)
+	if not directional_limb_drag_enabled:
+		return box
+	if box != null and String(box.name) in [HEAD_ANIM_BOX_NAME, HAIR_HOVER_BOX_NAME, FACE_DOWN_HOVER_BOX_NAME]:
+		return box
+	for side in 2:
+		if _arm_pose(side) != ARM_POSE_UP:
+			continue
+		var arm_box := _find_hover_box_by_name(
+				LEFT_ARM_ABOVE_HEAD_HOVER_BOX_NAME if side == 0 else RIGHT_ARM_ABOVE_HEAD_HOVER_BOX_NAME)
+		if arm_box == null or not _is_hover_box_available(arm_box):
+			continue
+		for path in (LEFT_ARM_UP_PATHS if side == 0 else RIGHT_ARM_UP_PATHS):
+			var layer := get_node_or_null(path) as TextureRect
+			if layer != null and _texture_rect_opaque_at(layer, global_pos):
+				return arm_box
+	return box
+
+
+## Whether something lying over her (interaction_blocker) covers `global_pos` - unless
+## an arm lying on top of it (set_arms_drawn_over) is there.
+func _is_covered_at(global_pos: Vector2) -> bool:
+	if not interaction_blocker.is_valid() or not bool(interaction_blocker.call(global_pos)):
+		return false
+	for side in 2:
+		if not _arm_overlay[side]:
+			continue
+		for node in _arm_overlay_nodes(side):
+			if node is TextureRect and _texture_rect_opaque_at(node as TextureRect, global_pos):
+				return false
+			for child in node.get_children():
+				if child is TextureRect and _texture_rect_opaque_at(child as TextureRect, global_pos):
+					return false
+	return true
+
+
+## Whether that arm was last lowered onto the cover, so it lies on top of it.
+func is_arm_on_cover(side: int) -> bool:
+	return _arm_on_cover[side]
+
+
+## Every layer of one arm short of the above-her-head pose: the arm itself (upper arm
+## and forearm, lowered or out), its hand in any pose, and its shoulder pad.
+func _arm_overlay_nodes(side: int) -> Array[CanvasItem]:
+	var out: Array[CanvasItem] = []
+	var paths: Array[NodePath] = []
+	if side == 0:
+		paths.append_array([^"Arms/LeftArm", LEFT_SHOULDER_PAD_PATH, ^"Hands/LeftPalmUpOut"])
+	else:
+		paths.append_array([^"Arms/RightArm", RIGHT_SHOULDER_PAD_PATH, ^"Hands/RightPalmUpOut"])
+	paths.append_array(LEFT_HAND_TEXTURE_OPTIONS if side == 0 else RIGHT_HAND_TEXTURE_OPTIONS)
+	for path in paths:
+		var node := get_node_or_null(path) as CanvasItem
+		if node != null:
+			out.append(node)
+	return out
+
+
+## Marks which arms lie on top of whatever covers her (the Sleep scene's blanket). Her
+## own draw order is left alone: the cover shows those arms through itself instead (see
+## arm_cover_mask_layers), and their pixels can be touched through it.
+func set_arms_drawn_over(left: bool, right: bool) -> void:
+	_arm_overlay[0] = left
+	_arm_overlay[1] = right
+
+
+## The visible layers (TextureRects) of the arms lying on top of the cover - the shape
+## the cover leaves open so they show through it.
+func arm_cover_mask_layers() -> Array[TextureRect]:
+	var out: Array[TextureRect] = []
+	for side in 2:
+		if not _arm_overlay[side]:
+			continue
+		for node in _arm_overlay_nodes(side):
+			var layers: Array[Node] = [node]
+			layers.append_array(node.get_children())
+			for layer in layers:
+				var rect := layer as TextureRect
+				if rect != null and rect.texture != null and rect.is_visible_in_tree():
+					out.append(rect)
+	return out
+
+
+## Whether `node` draws an opaque pixel at `global_pos` (full-cell TextureRects,
+## including AtlasTextures with margins, scaled to the rect).
+func _texture_rect_opaque_at(node: TextureRect, global_pos: Vector2) -> bool:
+	var tex := node.texture
+	if tex == null or not node.is_visible_in_tree() or node.size.x <= 0.0 or node.size.y <= 0.0:
+		return false
+	var local := node.get_global_transform().affine_inverse() * global_pos
+	if local.x < 0.0 or local.y < 0.0 or local.x >= node.size.x or local.y >= node.size.y:
+		return false
+	var px := local / node.size * tex.get_size()
+	var image: Image = null
+	if tex is AtlasTexture:
+		var atlas := tex as AtlasTexture
+		px -= atlas.margin.position
+		if px.x < 0.0 or px.y < 0.0 or px.x >= atlas.region.size.x or px.y >= atlas.region.size.y:
+			return false
+		px += atlas.region.position
+		image = _alpha_image(atlas.atlas)
+	else:
+		image = _alpha_image(tex)
+	if image == null:
+		return false
+	var pixel := Vector2i(px)
+	if pixel.x < 0 or pixel.y < 0 or pixel.x >= image.get_width() or pixel.y >= image.get_height():
+		return false
+	return image.get_pixelv(pixel).a > 0.1
+
+
+## Decompressed images of textures, for per-pixel hit tests, built once each.
+var _alpha_image_cache: Dictionary = {}
+
+
+func _alpha_image(tex: Texture2D) -> Image:
+	if tex == null:
+		return null
+	if _alpha_image_cache.has(tex):
+		return _alpha_image_cache[tex]
+	var image := tex.get_image()
+	if image != null and image.is_compressed():
+		image.decompress()
+	_alpha_image_cache[tex] = image
+	return image
+
+
+## The limb a press on `box` grabs for directional dragging, or "" when the box is
+## clicked as usual (directional dragging off, or not an arm / leg box).
+func _drag_limb_for_box(box: Control) -> String:
+	if not directional_limb_drag_enabled or box == null:
+		return ""
+	if _is_leg_pose_hover_box(box):
+		if _legs_have_screws():
+			return ""
+		return "left_leg" if _is_left_leg_box(box) else "right_leg"
+	if _is_arm_raise_hover_box(box):
+		return "left_arm" if _arm_side_for_box(box) == 0 else "right_arm"
+	if String(box.name) == FACE_DOWN_HOVER_BOX_NAME:
+		return "face_down"
+	return ""
+
+
+## Once the mouse has travelled LIMB_DRAG_DISTANCE from the stroke's start (twice that
+## after the limb has already moved this hold), reads the stroke's direction (left /
+## right / up / down, whichever axis it moved most along) and takes the step it calls
+## for, if any. Either way a new stroke starts there.
+func _advance_limb_drag(mouse_position: Vector2) -> void:
+	var stroke := mouse_position - _limb_drag_origin
+	var needed := LIMB_DRAG_DISTANCE * (LIMB_DRAG_REPEAT_FACTOR if _limb_drag_moved else 1.0)
+	if stroke.length() < needed:
+		return
+	_limb_drag_origin = mouse_position
+	var direction := ""
+	if absf(stroke.x) >= absf(stroke.y):
+		direction = "left" if stroke.x < 0.0 else "right"
+	else:
+		direction = "up" if stroke.y < 0.0 else "down"
+	if _limb_drag_limb == "face_down":
+		# Turning her over (onto her front or back): a stroke left or right, either one.
+		# Once per grab, so a long sideways drag doesn't flip her straight back.
+		if direction == "left" or direction == "right":
+			_limb_drag_limb = ""
+			_set_face_down(not _face_down)
+			_play_wood_creak_sound()
+			_apply_visibility_state()
+			body_part_moved.emit(false)
+		return
+	var is_leg := _limb_drag_limb.ends_with("_leg")
+	var left := _limb_drag_limb.begins_with("left")
+	var pose: int
+	if is_leg:
+		pose = _left_leg_pose if left else _right_leg_pose
+	else:
+		pose = _arm_pose(0 if left else 1)
+	var steps: Dictionary = LIMB_DRAG_DIRECTIONS[_limb_drag_limb].get(pose, {})
+	if not steps.has(direction):
+		return
+	var target := int(steps[direction])
+	_limb_drag_moved = true
+	if is_leg:
+		_set_leg_pose(left, target)
+	else:
+		_set_arm_pose(0 if left else 1, target)
+
+
+# --- Carrying the shoulder pads / chest cover off (Sleep) ---
+
+## Screen pixels the item has to be carried from where it was picked up for letting
+## go to take it off (closer, and it goes back on).
+const ITEM_REMOVE_DISTANCE: float = 90.0
+## Drawn above the rest of her while carried.
+const CARRY_Z_INDEX: int = 100
+const SHOULDER_PAD_INGREDIENT_ID: String = "shoulder_pad"
+
+
+func _is_carryable_item_box(box: Control) -> bool:
+	if not drag_to_remove_items_enabled or box == null:
+		return false
+	var box_name := String(box.name)
+	return box_name in SHOULDER_HOVER_BOX_NAMES or box_name == "ChestCoverHoverBox"
+
+
+## Whether the pad / cover for `box` is on her (its box effect marks it removed).
+func _carry_item_equipped(box: Control) -> bool:
+	return not _is_named_box_effect_active(String(box.name))
+
+
+## The item's layers that are showing now - what gets carried. That's the static layer,
+## or while an animation holds her (e.g. both legs raised freezes the pelvis animation
+## on its first frame) the animation's own copy of the item.
+func _carry_item_nodes(box: Control) -> Array[CanvasItem]:
+	var paths: Array[NodePath] = CHEST_COVER_ITEM_PATHS
+	if String(box.name) == LEFT_SHOULDER_HOVER_BOX_NAME:
+		paths = [LEFT_SHOULDER_PAD_PATH]
+		paths.append_array(ANIM_LEFT_SHOULDER_PAD_PATHS)
+	elif String(box.name) == RIGHT_SHOULDER_HOVER_BOX_NAME:
+		paths = [RIGHT_SHOULDER_PAD_PATH]
+		paths.append_array(ANIM_RIGHT_SHOULDER_PAD_PATHS)
+	var out: Array[CanvasItem] = []
+	for path in paths:
+		var node := get_node_or_null(path) as CanvasItem
+		if (node is Control or node is Node2D) and node.is_visible_in_tree():
+			out.append(node)
+	return out
+
+
+func _begin_item_carry(box: Control, mouse_position: Vector2) -> void:
+	_carry_nodes = _carry_item_nodes(box)
+	if _carry_nodes.is_empty():
+		return
+	_carry_box = box
+	_carry_origin = mouse_position
+	_carry_rest.clear()
+	for node in _carry_nodes:
+		# [local position to restore, z-index to restore, on-screen position it started at]
+		# (static layers are Controls, animation copies Sprite2Ds; both have these).
+		_carry_rest.append([node.get("position"), node.z_index, node.get("global_position")])
+		node.z_index = CARRY_Z_INDEX
+	_limb_grip = true
+	_update_limb_cursor()
+	if _carrying_chest_cover():
+		_apply_visibility_state()
+
+
+func _carrying_chest_cover() -> bool:
+	return _carry_box != null and is_instance_valid(_carry_box) \
+			and String(_carry_box.name) == "ChestCoverHoverBox"
+
+
+## Keeps the carried layers under the mouse: moved on screen by exactly as much as the
+## mouse has moved, whatever the robot's scale.
+func _move_item_carry(mouse_position: Vector2) -> void:
+	var moved := mouse_position - _carry_origin
+	for i in _carry_nodes.size():
+		if is_instance_valid(_carry_nodes[i]):
+			_carry_nodes[i].set("global_position", (_carry_rest[i][2] as Vector2) + moved)
+
+
+## Letting go: far enough away and the item comes off (a pad into the inventory);
+## otherwise it goes back on. Either way the carried layers return to their spot.
+func _finish_item_carry() -> void:
+	if _carry_box == null:
+		return
+	var box := _carry_box
+	var far := get_global_mouse_position().distance_to(_carry_origin) >= ITEM_REMOVE_DISTANCE
+	_cancel_item_carry()
+	if not far or not is_instance_valid(box):
+		return
+	_toggle_box_effect(box)
+	if String(box.name) in SHOULDER_HOVER_BOX_NAMES:
+		var state := get_node_or_null("/root/GameState")
+		if state != null:
+			state.call("add_ingredient", SHOULDER_PAD_INGREDIENT_ID, 1)
+
+
+## Puts the carried layers back where they were, without taking the item off.
+func _cancel_item_carry() -> void:
+	var was_cover := _carrying_chest_cover()
+	for i in _carry_nodes.size():
+		if is_instance_valid(_carry_nodes[i]):
+			_carry_nodes[i].set("position", _carry_rest[i][0])
+			_carry_nodes[i].z_index = _carry_rest[i][1]
+	_carry_nodes.clear()
+	_carry_rest.clear()
+	_carry_box = null
+	if was_cover:
+		_apply_visibility_state()
+
+
+## A click on the empty spot puts the item back on: the chest cover always (it stays
+## owned), a shoulder pad only if one is in the inventory (it is taken out).
+func _reequip_item(box: Control) -> void:
+	if String(box.name) in SHOULDER_HOVER_BOX_NAMES:
+		var state := get_node_or_null("/root/GameState")
+		if state == null or int(state.get("ingredients").get(SHOULDER_PAD_INGREDIENT_ID, 0)) < 1:
+			return
+		state.call("add_ingredient", SHOULDER_PAD_INGREDIENT_ID, -1)
+	_toggle_box_effect(box)
+
+
+## Moves one leg to `pose`, with the same sound, pelvis sync and awareness signal as
+## a click through the pose cycle.
+func _set_leg_pose(left: bool, pose: int) -> void:
+	var previous_pose := _left_leg_pose if left else _right_leg_pose
+	if left:
+		_left_leg_pose = pose
+	else:
+		_right_leg_pose = pose
+	_play_wood_creak_sound()
+	_sync_pelvis_to_leg_poses()
+	_apply_visibility_state()
+	body_part_moved.emit(previous_pose == LEG_POSE_SLIGHTLY_OUT and pose == LEG_POSE_RAISED)
 
 
 func _handle_debug_key(event: InputEventKey) -> void:
@@ -869,6 +1655,28 @@ func _handle_debug_key(event: InputEventKey) -> void:
 ## panel can drive them by button as well as by hotkey.
 func debug_toggle_human_skin() -> void:
 	_toggle_human_skin()
+
+
+## Sets the awareness faces from the stress test's stress-indicator eyes. Only
+## re-resolves visibility when something actually changed.
+## Shows happy face stage 1-3 (0 hides it) - see HAPPY_FACE_STATIC_PATH.
+func set_happy_face(stage: int) -> void:
+	stage = clampi(stage, 0, happy_face_textures.size())
+	if stage == _happy_face_stage:
+		return
+	_happy_face_stage = stage
+	var node := get_node_or_null(HAPPY_FACE_STATIC_PATH) as TextureRect
+	if node != null and stage > 0:
+		node.texture = happy_face_textures[stage - 1]
+	_apply_visibility_state()
+
+
+func set_awareness_face(angry: bool, open_eyes: bool) -> void:
+	if angry == _angry_face_enabled and open_eyes == _open_eyes_enabled:
+		return
+	_angry_face_enabled = angry
+	_open_eyes_enabled = open_eyes
+	_apply_visibility_state()
 
 
 func debug_toggle_squint_eyes() -> void:
@@ -1013,10 +1821,16 @@ func reset_interactions_to_default() -> void:
 	_right_leg_pose = LEG_POSE_DEFAULT
 	_left_hand_texture_index = 0
 	_right_hand_texture_index = 0
+	_left_arm_pose = ARM_POSE_DOWN
+	_right_arm_pose = ARM_POSE_DOWN
+	_set_face_down(false)
 	_hair_texture_index = HAIR_DEFAULT_INDEX
 	_head_texture_index = HEAD_DEFAULT_INDEX
 	_squint_eyes_enabled = SQUINT_DEFAULT_ENABLED
 	_human_skin_enabled = HUMAN_SKIN_DEFAULT_ENABLED
+	_angry_face_enabled = false
+	_open_eyes_enabled = false
+	_happy_face_stage = 0
 	_syrup_enabled = false
 	_syrup_stomach_enabled = false
 	_repair_hidden_hand_sides.clear()
@@ -1039,6 +1853,8 @@ func is_in_default_pose() -> bool:
 	if _left_leg_pose != LEG_POSE_DEFAULT or _right_leg_pose != LEG_POSE_DEFAULT:
 		return false
 	if _left_hand_texture_index != 0 or _right_hand_texture_index != 0:
+		return false
+	if _left_arm_pose != ARM_POSE_DOWN or _right_arm_pose != ARM_POSE_DOWN or _face_down:
 		return false
 	if _hair_texture_index != HAIR_DEFAULT_INDEX:
 		return false
@@ -1248,7 +2064,9 @@ func _update_hover_boxes() -> void:
 			continue
 		box.visible = _does_hover_box_show_border(box)
 		var force_box_visible := bool(box.get("force_visible"))
-		var hovered := force_box_visible or box.get_global_rect().has_point(get_global_mouse_position())
+		var mouse := get_global_mouse_position()
+		var hovered := force_box_visible \
+				or (box.get_global_rect().has_point(mouse) and not _is_covered_at(mouse))
 		if box.has_method("set_hovered"):
 			box.call("set_hovered", hovered)
 
@@ -1293,6 +2111,16 @@ func _handle_hover_box_click(box: Control, shift_pressed: bool = false) -> void:
 				_finish_animation_for_box(head)
 			return
 		_cycle_hair_texture()
+		return
+
+	if _is_arm_raise_hover_box(box):
+		_set_arm_pose(_arm_side_for_box(box), int(ARM_BOX_POSES[String(box.name)][1]))
+		return
+	if box.name == FACE_DOWN_HOVER_BOX_NAME:
+		_set_face_down(not _face_down)
+		_play_wood_creak_sound()
+		_apply_visibility_state()
+		body_part_moved.emit(false)
 		return
 
 	var action := int(box.get("click_action"))
@@ -1473,6 +2301,128 @@ func _persist_hair_style() -> void:
 		state.set("robot_hair_style", _hair_texture_index)
 
 
+func _is_arm_raise_hover_box(box: Control) -> bool:
+	return box != null and ARM_BOX_POSES.has(String(box.name))
+
+
+func _arm_pose(side: int) -> int:
+	return _left_arm_pose if side == 0 else _right_arm_pose
+
+
+## 0 = left, 1 = right.
+func _arm_side_for_box(box: Control) -> int:
+	return 0 if String(box.name).begins_with("Left") else 1
+
+
+func _arm_has_loose_screws(side: int) -> bool:
+	var controller := get_node_or_null(LEFT_ARM_SCREW_REPAIR_PATH if side == 0 else RIGHT_ARM_SCREW_REPAIR_PATH)
+	return controller != null and controller.has_method("has_loose_screws") \
+			and bool(controller.call("has_loose_screws"))
+
+
+## True while that arm is off its rest pose (the stress test keeps screws off it).
+func is_arm_raised(side: int) -> bool:
+	return _arm_pose(side) != ARM_POSE_DOWN
+
+
+func is_face_down() -> bool:
+	return _face_down
+
+
+func _set_arm_pose(side: int, pose: int) -> void:
+	var previous_pose := _arm_pose(side)
+	if side == 0:
+		_left_arm_pose = pose
+	else:
+		_right_arm_pose = pose
+	# Lowered back to rest from a raised pose: it lands on top of whatever covers her
+	# (if that says so) or back underneath it. It stays where it landed until lowered
+	# again.
+	if pose == ARM_POSE_DOWN and previous_pose != ARM_POSE_DOWN:
+		_arm_on_cover[side] = arm_rests_on_cover_check.is_valid() and bool(arm_rests_on_cover_check.call())
+	_play_wood_creak_sound()
+	_apply_visibility_state()
+	body_part_moved.emit(false)
+
+
+## Turns her face down (or back). Face down, every other part of her is hidden
+## behind the face_down body; turning back puts them as they were.
+func _set_face_down(value: bool) -> void:
+	if value == _face_down:
+		return
+	_face_down = value
+	if value:
+		_face_down_saved_visibility.clear()
+		for child in get_children():
+			if child is CanvasItem and not _is_face_down_exempt(child):
+				_face_down_saved_visibility[child] = (child as CanvasItem).visible
+	else:
+		for child in _face_down_saved_visibility:
+			if is_instance_valid(child):
+				(child as CanvasItem).visible = bool(_face_down_saved_visibility[child])
+		_face_down_saved_visibility.clear()
+
+
+func _is_face_down_exempt(child: Node) -> bool:
+	return child == get_node_or_null(FACE_DOWN_PATH) or _hover_boxes.has(child)
+
+
+## An arm out to the side swaps the lowered forearm and hand pose for the raised
+## forearm and palm-up hand; up above her head the whole arm (upper arm included)
+## swaps for the arm-up layers. Face down hides everything but the face_down body.
+func _apply_arm_and_face_down_state(resolved: Dictionary) -> void:
+	for side in 2:
+		var pose := _arm_pose(side)
+		for path in (LEFT_ARM_RAISED_PATHS if side == 0 else RIGHT_ARM_RAISED_PATHS):
+			resolved[path] = pose == ARM_POSE_OUT
+		for path in (LEFT_ARM_UP_PATHS if side == 0 else RIGHT_ARM_UP_PATHS):
+			resolved[path] = pose == ARM_POSE_UP
+		if pose != ARM_POSE_DOWN:
+			resolved[^"Arms/LeftArm/ForearmDown" if side == 0 else ^"Arms/RightArm/ForearmDown"] = false
+			for path in (LEFT_HAND_TEXTURE_OPTIONS if side == 0 else RIGHT_HAND_TEXTURE_OPTIONS):
+				resolved[path] = false
+		if pose == ARM_POSE_UP:
+			resolved[^"Arms/LeftArm/UpperArm" if side == 0 else ^"Arms/RightArm/UpperArm"] = false
+	resolved[FACE_DOWN_PATH] = _face_down
+
+
+## With an arm above her head, that side of the chest swaps its outline / details /
+## smooth overlay for the matching arm-up shoulder layer (plain / details / smooth,
+## picked by the same pad + human-skin logic as the chest), and the static shoulder
+## pad hides since it sits on the lowered arm. Runs after the chest overlay pass.
+func _apply_arm_up_shoulders(resolved: Dictionary) -> void:
+	var chest_visible := _robot_part_count("chest") >= 1 and not _head_animation_active()
+	for side in 2:
+		var shoulder_paths := LEFT_ARM_UP_SHOULDER_PATHS if side == 0 else RIGHT_ARM_UP_SHOULDER_PATHS
+		var up := _arm_pose(side) == ARM_POSE_UP
+		var pad_removed := _is_named_box_effect_active(
+				LEFT_SHOULDER_HOVER_BOX_NAME if side == 0 else RIGHT_SHOULDER_HOVER_BOX_NAME)
+		var mode := _chest_overlay_mode(pad_removed, _side_has_upper_arm(side))
+		for i in shoulder_paths.size():
+			resolved[shoulder_paths[i]] = up and chest_visible and i == mode
+		if up:
+			if side == 0:
+				resolved[CHEST_OUTLINE_LEFT_PATH] = false
+				resolved[CHEST_DETAILS_LEFT_PATH] = false
+				resolved[CHEST_SMOOTH_LEFT_PATH] = false
+				resolved[LEFT_SHOULDER_PAD_PATH] = false
+			else:
+				resolved[CHEST_OUTLINE_RIGHT_PATH] = false
+				resolved[CHEST_DETAILS_RIGHT_PATH] = false
+				resolved[CHEST_SMOOTH_RIGHT_PATH] = false
+				resolved[RIGHT_SHOULDER_PAD_PATH] = false
+
+
+## Face down: hide every other part of her (re-applied after each visibility pass,
+## since the pass itself turns some top-level layers back on).
+func _apply_face_down_hiding() -> void:
+	if not _face_down:
+		return
+	for child in get_children():
+		if child is CanvasItem and not _is_face_down_exempt(child):
+			(child as CanvasItem).visible = false
+
+
 func _is_hand_hover_box(box: Control) -> bool:
 	if box == null:
 		return false
@@ -1646,6 +2596,7 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 			return
 
 		if phase == ANIMATION_PHASE_PRE_OUTRO:
+			pre_outro_looped.emit(String(box.name))
 			var plays := int(state.get("pre_outro_plays", 0)) + 1
 			var repeat := maxi(1, int(box.get("pre_outro_repeat")))
 			if plays < repeat:
@@ -1660,7 +2611,9 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 				_set_animation_frame_for_box(box, ANIMATION_PHASE_OUTRO, 0)
 				_apply_visibility_state()
 				return
+			# No done clip for this box: the wind-down ends here instead.
 			_finish_outro_for_box(box)
+			done_animation_finished.emit()
 			return
 
 		if phase == ANIMATION_PHASE_OUTRO:
@@ -1670,6 +2623,7 @@ func _advance_animation_for_box(box: Control, delta: float) -> void:
 				_return_to_frozen_first_frame(box)
 			else:
 				_finish_outro_for_box(box)
+			done_animation_finished.emit()
 			return
 
 		_finish_animation_for_box(box)
@@ -1823,9 +2777,11 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_raised_leg_grip_hands(resolved)
 	_apply_leg_screw_pose()
 	_apply_hand_texture_selection(resolved)
+	_apply_arm_and_face_down_state(resolved)
 	_apply_hair_texture_selection(resolved)
 	_apply_head_texture_selection(resolved)
 	_apply_squint_eyes_state(resolved)
+	_apply_awareness_face_state(resolved)
 	_apply_human_skin_state(resolved)
 	_apply_syrup_state(resolved)
 	_apply_interrupt_outro_syrup_hidden(resolved)
@@ -1835,10 +2791,12 @@ func _apply_visibility_state(force_editor: bool = false) -> void:
 	_apply_chest_cover_state(resolved)
 	_apply_repair_hidden_hands_to_dictionary(resolved)
 	_apply_chest_overlay_state(resolved)
+	_apply_arm_up_shoulders(resolved)
 	_apply_neck_front_state(resolved)
 	_apply_torso_crunch_state(resolved)
 	_apply_partial_arm_static_override(resolved)
 	_apply_resolved_visibility(resolved)
+	_apply_face_down_hiding()
 	_apply_squint_eyes_offset()
 
 
@@ -1959,9 +2917,9 @@ func _apply_raised_leg_grip_hands(resolved: Dictionary) -> void:
 	if _is_named_box_effect_active("PelvisHoverBox"):
 		return
 	var shown := false
-	if _left_leg_pose == LEG_POSE_RAISED and _robot_part_count("leg") >= 1:
+	if _left_leg_pose == LEG_POSE_RAISED and _side_has_part("leg", 0):
 		shown = _show_side_intro_grip(resolved, true) or shown
-	if _right_leg_pose == LEG_POSE_RAISED and _robot_part_count("leg") >= 2:
+	if _right_leg_pose == LEG_POSE_RAISED and _side_has_part("leg", 1):
 		shown = _show_side_intro_grip(resolved, false) or shown
 	if shown and animation_layers_path != NodePath(""):
 		resolved[animation_layers_path] = true
@@ -1994,7 +2952,9 @@ func _apply_chest_cover_gated_animations(resolved: Dictionary) -> void:
 	# (owned, on a chest, and not taken off by the player). When the cover is off
 	# they show through, so removing the cover during the animation reveals them
 	# instead of leaving an empty gap.
-	if not _chest_cover_worn():
+	# A cover being carried off counts as off already, so what's under it shows the
+	# moment it is lifted.
+	if not _chest_cover_worn() or _carrying_chest_cover():
 		return
 	_hide_paths(resolved, CHEST_COVER_GATED_ANIM_PATHS)
 
@@ -2102,6 +3062,17 @@ func _apply_squint_eyes_state(resolved: Dictionary) -> void:
 	resolved[SQUINT_STATIC_PATH] = _squint_eyes_enabled and not head_active
 	if not _squint_eyes_enabled:
 		_hide_paths(resolved, SQUINT_ANIM_PATHS)
+
+
+## Shows the stress test's awareness faces on the static head. The angry face
+## and open eyes are layered over it (open eyes on top), hidden while the head
+## is raised in its talk animation.
+func _apply_awareness_face_state(resolved: Dictionary) -> void:
+	var head_active := _is_named_box_effect_active("HeadHoverBox")
+	var happy := _happy_face_stage > 0 and not _open_eyes_enabled
+	resolved[ANGRY_FACE_STATIC_PATH] = _angry_face_enabled and not happy and not head_active
+	resolved[OPEN_EYES_STATIC_PATH] = _open_eyes_enabled and not head_active
+	resolved[HAPPY_FACE_STATIC_PATH] = happy and not head_active
 
 
 ## Resolves the "human" skin set. All three overlays (stomach skin and both chest
@@ -2295,13 +3266,11 @@ func _apply_robot_part_availability_to_dictionary(resolved: Dictionary) -> void:
 	_apply_paths_available(resolved, RIGHT_ARM_SHOULDER_PATHS, _side_has_upper_arm(1))
 	_apply_paths_available(resolved, RIGHT_FULL_ARM_PATHS, _side_has_full_arm(1))
 
-	var hand_count := _robot_part_count("hand")
-	_apply_paths_available(resolved, LEFT_HAND_PART_PATHS, hand_count >= 1)
-	_apply_paths_available(resolved, RIGHT_HAND_PART_PATHS, hand_count >= 2)
+	_apply_paths_available(resolved, LEFT_HAND_PART_PATHS, _side_has_part("hand", 0))
+	_apply_paths_available(resolved, RIGHT_HAND_PART_PATHS, _side_has_part("hand", 1))
 
-	var leg_count := _robot_part_count("leg")
-	_apply_paths_available(resolved, LEFT_LEG_PART_PATHS, leg_count >= 1)
-	_apply_paths_available(resolved, RIGHT_LEG_PART_PATHS, leg_count >= 2)
+	_apply_paths_available(resolved, LEFT_LEG_PART_PATHS, _side_has_part("leg", 0))
+	_apply_paths_available(resolved, RIGHT_LEG_PART_PATHS, _side_has_part("leg", 1))
 
 
 ## Hides each cosmetic chest overlay whose GameState item the player does not
@@ -2566,6 +3535,9 @@ func _robot_part_count(id: String) -> int:
 	var state := get_node_or_null("/root/GameState")
 	if state == null:
 		return 0
+	# What's on her - the parts in her slots (GameState.equipped_parts).
+	if state.has_method("get_attached_part_count"):
+		return int(state.call("get_attached_part_count", id))
 	if state.has_method("get_robot_part_count"):
 		return int(state.call("get_robot_part_count", id))
 	if id == "leg":
@@ -2573,37 +3545,60 @@ func _robot_part_count(id: String) -> int:
 	return 0
 
 
-## Loose upper-arm sub-assemblies the player is carrying (the upper_arm ingredient).
-func _upper_arm_inventory_count() -> int:
+## Whether `side_index`'s arm is part-built on her as far as its upper arm (see
+## GameState.limb_segments) - never the upper arms in the inventory.
+func _side_has_built_upper_arm(side_index: int) -> bool:
 	if Engine.is_editor_hint():
-		return 0
+		return false
 	var state := get_node_or_null("/root/GameState")
-	if state == null:
-		return 0
-	var ingredients = state.get("ingredients")
-	if ingredients is Dictionary:
-		return maxi(0, int(ingredients.get("upper_arm", 0)))
-	return 0
+	if state == null or not state.has_method("get_limb_segments"):
+		return false
+	return (state.call("get_limb_segments", "arm", "left" if side_index == 0 else "right") as Array).has("upper_arm")
 
 
-## Number of sides (0-2) that have at least an upper arm: full arms plus loose
-## upper-arm sub-assemblies, filled left side first (like the full-arm count).
-func _upper_arm_side_count() -> int:
-	return mini(2, _robot_part_count("arm") + _upper_arm_inventory_count())
+## Whether paired part `id` (arm / leg / hand) is on her on `side_index` (0 = left,
+## 1 = right) - the laptop can take off one particular side.
+func _side_has_part(id: String, side_index: int) -> bool:
+	if Engine.is_editor_hint():
+		return true
+	var state := get_node_or_null("/root/GameState")
+	if state != null and state.has_method("is_part_attached_on"):
+		return bool(state.call("is_part_attached_on", id, "left" if side_index == 0 else "right"))
+	return _robot_part_count(id) > side_index
 
 
-## side_index 0 = left, 1 = right.
+## side_index 0 = left, 1 = right. A side has an upper arm if it has a full arm, or one
+## built on her as far as its upper arm.
 func _side_has_upper_arm(side_index: int) -> bool:
-	return _upper_arm_side_count() > side_index
+	return _side_has_full_arm(side_index) or _side_has_built_upper_arm(side_index)
 
 
 ## A full arm (upper arm + forearm) is present on this side.
 func _side_has_full_arm(side_index: int) -> bool:
-	return _robot_part_count("arm") > side_index
+	return _side_has_part("arm", side_index)
 
 
 func _is_hover_box_available(box: Control) -> bool:
 	if box == null or not is_instance_valid(box):
+		return false
+	# Face down, only the turn-over box responds.
+	if _face_down:
+		return box.name == FACE_DOWN_HOVER_BOX_NAME
+	if box.name == FACE_DOWN_HOVER_BOX_NAME:
+		return _left_arm_pose == ARM_POSE_UP and _right_arm_pose == ARM_POSE_UP \
+				and _animation_states.is_empty() and not _leg_prestage_active
+	if _is_arm_raise_hover_box(box):
+		var side := _arm_side_for_box(box)
+		if not _side_has_full_arm(side) or not _animation_states.is_empty() or _leg_prestage_active:
+			return false
+		if _arm_has_loose_screws(side):
+			return false
+		# Each box only works from its own pose (see ARM_BOX_POSES).
+		return _arm_pose(side) == int(ARM_BOX_POSES[String(box.name)][0])
+	# Arms up: the head and pelvis animations wait (their art has the arms down).
+	if (box.name == "HeadHoverBox" or box.name == "PelvisHoverBox") \
+			and (_left_arm_pose != ARM_POSE_DOWN or _right_arm_pose != ARM_POSE_DOWN) \
+			and not _animation_states.has(box):
 		return false
 	if _is_hover_box_blocked_by_repair(box):
 		return false
@@ -2627,15 +3622,15 @@ func _is_hover_box_available(box: Control) -> bool:
 	# that side has an arm at all (a full arm OR just an upper arm).
 	if _is_shoulder_hover_box(box):
 		var side_index := 0 if String(box.name) == LEFT_SHOULDER_HOVER_BOX_NAME else 1
-		return _side_has_upper_arm(side_index)
+		# Above her head the pad is off and the arm covers the shoulder.
+		return _side_has_upper_arm(side_index) and _arm_pose(side_index) != ARM_POSE_UP
 	if box.name == LEFT_HAND_HOVER_BOX_NAME:
-		return _robot_part_count("hand") >= 1
+		return _side_has_part("hand", 0) and _left_arm_pose == ARM_POSE_DOWN
 	if box.name == RIGHT_HAND_HOVER_BOX_NAME:
-		return _robot_part_count("hand") >= 2
+		return _side_has_part("hand", 1) and _right_arm_pose == ARM_POSE_DOWN
 	if _is_leg_pose_hover_box(box):
-		# Need the leg itself (left needs one leg, right needs two).
-		var needed := 1 if _is_left_leg_box(box) else 2
-		if _robot_part_count("leg") < needed:
+		# Need the leg itself on that side.
+		if not _side_has_part("leg", 0 if _is_left_leg_box(box) else 1):
 			return false
 		# While the pelvis animation is actually playing, the legs are driven by
 		# the animation, so none of the leg boxes accept clicks.
@@ -2773,6 +3768,9 @@ func _apply_sheet_frame(node: Sprite2D, frame: int, window_y: float, window_h: f
 	var layer := String(node.get_meta(PackedSpriteSheet.SHEET_LAYER_META, ""))
 	if layer == "" or not PackedSpriteSheet.has_data(node.texture):
 		return false
+	# Packed pieces sit edge to edge in the sheet with no padding; without the clip,
+	# a scaled sprite can sample a neighbouring piece's outline as a 1px line.
+	node.region_filter_clip_enabled = true
 	var piece := PackedSpriteSheet.get_piece(node.texture, layer, frame)
 	if piece.is_empty():
 		# Empty cel: nothing to draw this frame.

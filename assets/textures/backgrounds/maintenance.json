@@ -1,0 +1,134 @@
+{ "frames": {
+   "placeholder_personality_test (og_background).ase": {
+    "frame": { "x": 0, "y": 0, "w": 500, "h": 400 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 500, "h": 400 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (buncha_background_shit).ase": {
+    "frame": { "x": 500, "y": 0, "w": 500, "h": 394 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 500, "h": 394 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (table).ase": {
+    "frame": { "x": 251, "y": 534, "w": 192, "h": 162 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 154, "y": 238, "w": 192, "h": 162 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (floor_shit).ase": {
+    "frame": { "x": 693, "y": 591, "w": 120, "h": 76 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 8, "y": 260, "w": 120, "h": 76 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (powertools_valve_pipe).ase": {
+    "frame": { "x": 443, "y": 591, "w": 128, "h": 130 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 222, "y": 108, "w": 128, "h": 130 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (valve_powertool).ase": {
+    "frame": { "x": 911, "y": 394, "w": 61, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 286, "y": 153, "w": 61, "h": 64 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (switches_cabinet_shelf).ase": {
+    "frame": { "x": 571, "y": 591, "w": 122, "h": 118 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 323, "y": 170, "w": 122, "h": 118 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (shelf).ase": {
+    "frame": { "x": 813, "y": 591, "w": 96, "h": 92 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 303, "y": 206, "w": 96, "h": 92 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (spool_gear).ase": {
+    "frame": { "x": 911, "y": 514, "w": 47, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 316, "y": 221, "w": 47, "h": 25 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (mp3).ase": {
+    "frame": { "x": 911, "y": 458, "w": 64, "h": 56 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 318, "y": 220, "w": 64, "h": 56 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (poster_switch_wire).ase": {
+    "frame": { "x": 251, "y": 400, "w": 249, "h": 134 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 180, "y": 88, "w": 249, "h": 134 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (white_exit_door).ase": {
+    "frame": { "x": 500, "y": 394, "w": 411, "h": 197 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 32, "y": 66, "w": 411, "h": 197 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   },
+   "placeholder_personality_test (big_table).ase": {
+    "frame": { "x": 0, "y": 400, "w": 251, "h": 199 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 123, "y": 201, "w": 251, "h": 199 },
+    "sourceSize": { "w": 500, "h": 400 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "maintenance.png",
+  "format": "RGBA8888",
+  "size": { "w": 1000, "h": 721 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "og_background", "opacity": 255, "blendMode": "normal" },
+   { "name": "buncha_background_shit", "opacity": 255, "blendMode": "normal" },
+   { "name": "table", "opacity": 255, "blendMode": "normal" },
+   { "name": "floor_shit", "opacity": 255, "blendMode": "normal" },
+   { "name": "powertools_valve_pipe", "opacity": 255, "blendMode": "normal" },
+   { "name": "valve_powertool", "opacity": 255, "blendMode": "normal" },
+   { "name": "switches_cabinet_shelf", "opacity": 255, "blendMode": "normal" },
+   { "name": "shelf", "opacity": 255, "blendMode": "normal" },
+   { "name": "spool_gear", "opacity": 255, "blendMode": "normal" },
+   { "name": "mp3", "opacity": 255, "blendMode": "normal" },
+   { "name": "poster_switch_wire", "opacity": 255, "blendMode": "normal" },
+   { "name": "white_exit_door", "opacity": 255, "blendMode": "normal" },
+   { "name": "big_table", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

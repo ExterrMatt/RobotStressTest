@@ -1,0 +1,463 @@
+{ "frames": {
+   "Personality Test Bot (shadow).ase": {
+    "frame": { "x": 300, "y": 0, "w": 175, "h": 239 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 65, "y": 211, "w": 175, "h": 239 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (stomach).ase": {
+    "frame": { "x": 108, "y": 309, "w": 78, "h": 75 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 112, "y": 189, "w": 78, "h": 75 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (stomach_crunch).ase": {
+    "frame": { "x": 415, "y": 330, "w": 78, "h": 72 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 112, "y": 189, "w": 78, "h": 72 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (chest).ase": {
+    "frame": { "x": 415, "y": 239, "w": 58, "h": 68 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 122, "y": 130, "w": 58, "h": 68 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (chest_holes).ase": {
+    "frame": { "x": 153, "y": 429, "w": 52, "h": 36 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 125, "y": 143, "w": 52, "h": 36 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_arm).ase": {
+    "frame": { "x": 186, "y": 331, "w": 47, "h": 98 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 180, "y": 168, "w": 47, "h": 98 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_shoulder_pad).ase": {
+    "frame": { "x": 24, "y": 432, "w": 24, "h": 36 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 177, "y": 134, "w": 24, "h": 36 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_smooth_shoulder).ase": {
+    "frame": { "x": 153, "y": 384, "w": 26, "h": 42 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 175, "y": 136, "w": 26, "h": 42 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_shoulder).ase": {
+    "frame": { "x": 70, "y": 343, "w": 24, "h": 41 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 177, "y": 137, "w": 24, "h": 41 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_arm).ase": {
+    "frame": { "x": 108, "y": 179, "w": 110, "h": 130 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 74, "y": 136, "w": 110, "h": 130 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_smooth_shoulder).ase": {
+    "frame": { "x": 572, "y": 330, "w": 26, "h": 43 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 136, "w": 26, "h": 43 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_shoulder).ase": {
+    "frame": { "x": 451, "y": 402, "w": 24, "h": 41 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 137, "w": 24, "h": 41 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_shoulder_pad).ase": {
+    "frame": { "x": 0, "y": 432, "w": 24, "h": 37 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 101, "y": 134, "w": 24, "h": 37 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_shoulder_pad_bulky).ase": {
+    "frame": { "x": 281, "y": 239, "w": 62, "h": 152 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 97, "y": 133, "w": 62, "h": 152 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_shoulder_pad_bulky).ase": {
+    "frame": { "x": 218, "y": 179, "w": 63, "h": 152 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 142, "y": 133, "w": 63, "h": 152 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (small_coconuts).ase": {
+    "frame": { "x": 493, "y": 401, "w": 60, "h": 41 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 121, "y": 149, "w": 60, "h": 41 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (small_pepperonis).ase": {
+    "frame": { "x": 415, "y": 316, "w": 52, "h": 8 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 125, "y": 174, "w": 52, "h": 8 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (medium_coconuts).ase": {
+    "frame": { "x": 0, "y": 391, "w": 68, "h": 41 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 117, "y": 149, "w": 68, "h": 41 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (medium_pepperonis).ase": {
+    "frame": { "x": 415, "y": 307, "w": 60, "h": 9 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 121, "y": 175, "w": 60, "h": 9 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (big_coconuts).ase": {
+    "frame": { "x": 0, "y": 343, "w": 70, "h": 48 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 116, "y": 144, "w": 70, "h": 48 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (big_coco_lines).ase": {
+    "frame": { "x": 343, "y": 344, "w": 68, "h": 48 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 117, "y": 143, "w": 68, "h": 48 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (big_pepperonis).ase": {
+    "frame": { "x": 382, "y": 438, "w": 62, "h": 9 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 120, "y": 177, "w": 62, "h": 9 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (neck_smoothskin).ase": {
+    "frame": { "x": 343, "y": 239, "w": 72, "h": 105 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 113, "y": 64, "w": 72, "h": 105 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (medium_chest_cover).ase": {
+    "frame": { "x": 315, "y": 392, "w": 68, "h": 38 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 117, "y": 157, "w": 68, "h": 38 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (big_chest_cover).ase": {
+    "frame": { "x": 383, "y": 402, "w": 68, "h": 36 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 117, "y": 159, "w": 68, "h": 36 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_thigh).ase": {
+    "frame": { "x": 70, "y": 384, "w": 49, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 151, "y": 223, "w": 49, "h": 64 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_shin).ase": {
+    "frame": { "x": 119, "y": 384, "w": 34, "h": 82 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 152, "y": 274, "w": 34, "h": 82 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_foot).ase": {
+    "frame": { "x": 361, "y": 430, "w": 21, "h": 36 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 155, "y": 353, "w": 21, "h": 36 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_thigh).ase": {
+    "frame": { "x": 233, "y": 331, "w": 48, "h": 65 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 102, "y": 222, "w": 48, "h": 65 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_shin).ase": {
+    "frame": { "x": 281, "y": 391, "w": 34, "h": 81 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 115, "y": 275, "w": 34, "h": 81 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_foot).ase": {
+    "frame": { "x": 205, "y": 429, "w": 26, "h": 36 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 122, "y": 353, "w": 26, "h": 36 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (left_leg_out).ase": {
+    "frame": { "x": 475, "y": 166, "w": 108, "h": 164 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 39, "y": 223, "w": 108, "h": 164 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (right_leg_out).ase": {
+    "frame": { "x": 0, "y": 179, "w": 108, "h": 164 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 154, "y": 223, "w": 108, "h": 164 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (hair_back).ase": {
+    "frame": { "x": 493, "y": 330, "w": 79, "h": 71 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 112, "y": 62, "w": 79, "h": 71 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (neck).ase": {
+    "frame": { "x": 186, "y": 309, "w": 24, "h": 19 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 139, "y": 124, "w": 24, "h": 19 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (head).ase": {
+    "frame": { "x": 233, "y": 396, "w": 40, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 131, "y": 79, "w": 40, "h": 54 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (open_eyes).ase": {
+    "frame": { "x": 553, "y": 439, "w": 38, "h": 9 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 132, "y": 103, "w": 38, "h": 9 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_forward).ase": {
+    "frame": { "x": 572, "y": 376, "w": 26, "h": 3 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 138, "y": 107, "w": 26, "h": 3 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_forward_left_1).ase": {
+    "frame": { "x": 186, "y": 328, "w": 27, "h": 3 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 136, "y": 107, "w": 27, "h": 3 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_forward_left_2).ase": {
+    "frame": { "x": 572, "y": 373, "w": 27, "h": 3 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 136, "y": 107, "w": 27, "h": 3 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_forward_right_1).ase": {
+    "frame": { "x": 572, "y": 379, "w": 26, "h": 3 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 139, "y": 107, "w": 26, "h": 3 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_forward_right_2).ase": {
+    "frame": { "x": 572, "y": 382, "w": 26, "h": 3 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 140, "y": 107, "w": 26, "h": 3 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_down_1).ase": {
+    "frame": { "x": 415, "y": 324, "w": 30, "h": 6 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 136, "y": 105, "w": 30, "h": 6 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_down_2).ase": {
+    "frame": { "x": 445, "y": 324, "w": 30, "h": 6 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 136, "y": 105, "w": 30, "h": 6 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (iris_up).ase": {
+    "frame": { "x": 383, "y": 392, "w": 30, "h": 5 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 136, "y": 105, "w": 30, "h": 5 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (hair_front_bangs).ase": {
+    "frame": { "x": 315, "y": 430, "w": 46, "h": 37 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 127, "y": 79, "w": 46, "h": 37 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (hair_front_swing).ase": {
+    "frame": { "x": 553, "y": 401, "w": 46, "h": 38 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 129, "y": 76, "w": 46, "h": 38 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (HUD).ase": {
+    "frame": { "x": 0, "y": 0, "w": 300, "h": 179 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 300, "h": 179 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   },
+   "Personality Test Bot (alternate_shouder_pads).ase": {
+    "frame": { "x": 475, "y": 0, "w": 120, "h": 166 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 91, "y": 62, "w": 120, "h": 166 },
+    "sourceSize": { "w": 300, "h": 450 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "personality_test_bot.png",
+  "format": "RGBA8888",
+  "size": { "w": 599, "h": 472 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "shadow", "opacity": 255, "blendMode": "normal" },
+   { "name": "torso" },
+   { "name": "stomach", "group": "torso", "opacity": 255, "blendMode": "normal" },
+   { "name": "stomach_crunch", "group": "torso", "opacity": 255, "blendMode": "normal" },
+   { "name": "chest", "group": "torso", "opacity": 255, "blendMode": "normal" },
+   { "name": "chest_holes", "group": "torso", "opacity": 255, "blendMode": "normal" },
+   { "name": "arms" },
+   { "name": "right_arm", "group": "arms", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_shoulder_pad", "group": "arms", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_smooth_shoulder", "group": "arms", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_shoulder", "group": "arms", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_arm", "group": "arms", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "left_smooth_shoulder", "group": "arms", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "left_shoulder", "group": "arms", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "left_shoulder_pad", "group": "arms", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "left_shoulder_pad_bulky", "group": "arms", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_shoulder_pad_bulky", "group": "arms", "opacity": 255, "blendMode": "normal" },
+   { "name": "chest_stuff" },
+   { "name": "small_coconuts", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "small_pepperonis", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "medium_coconuts", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "medium_pepperonis", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "big_coconuts", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "big_coco_lines", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "big_pepperonis", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "neck_smoothskin", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "medium_chest_cover", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "big_chest_cover", "group": "chest_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "legs" },
+   { "name": "right_thigh", "group": "legs", "opacity": 255, "blendMode": "normal", "color": "#68c2d3ff" },
+   { "name": "right_shin", "group": "legs", "opacity": 255, "blendMode": "normal", "color": "#68c2d3ff" },
+   { "name": "right_foot", "group": "legs", "opacity": 255, "blendMode": "normal", "color": "#68c2d3ff" },
+   { "name": "left_thigh", "group": "legs", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "left_shin", "group": "legs", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "left_foot", "group": "legs", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "left_leg_out", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_leg_out", "group": "legs", "opacity": 255, "blendMode": "normal" },
+   { "name": "head" },
+   { "name": "hair_back", "group": "head", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "neck", "group": "head", "opacity": 255, "blendMode": "normal", "color": "#8ab060ff" },
+   { "name": "head", "group": "head", "opacity": 255, "blendMode": "normal", "color": "#8ab060ff" },
+   { "name": "open_eyes", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_forward", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_forward_left_1", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_forward_left_2", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_forward_right_1", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_forward_right_2", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_down_1", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_down_2", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "iris_up", "group": "head", "opacity": 255, "blendMode": "normal" },
+   { "name": "hair_front_bangs", "group": "head", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "hair_front_swing", "group": "head", "opacity": 255, "blendMode": "normal", "color": "#b45252ff" },
+   { "name": "HUD", "opacity": 255, "blendMode": "normal" },
+   { "name": "alternate_shouder_pads", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

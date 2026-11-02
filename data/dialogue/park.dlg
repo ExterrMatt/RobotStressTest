@@ -1,0 +1,62 @@
+# Park phone-call dialogue.
+# Format: see data/dialogue/school.dlg. One line = one page (click to advance).
+# Placeholders {place} {player_name} are filled in by ParkCall.gd via
+# Dialogue.get_pages(..., fmt).
+#
+# Plays once, on the walk home from school or work, on a later day than the
+# work-disruption call where the player stole the robot chest. She calls,
+# admits she can still track the player's phone, warns that patrol drones route
+# through the park, and pushes the player to connect the chest to her head.
+# The patrol-drone encounter can't happen until this call has played (see
+# Main._maybe_show_post_activity_drone_encounter).
+#
+# Plays: [call] + ([chest.unattached] or [chest.attached]) + [closing].
+# The line containing "buzzes" loops the ringtone (ParkCall.PHONE_RING_CUE).
+
+[call]
+[i]You cut through the park on the walk home from {place}. It's quiet out here.[/i]
+Your phone buzzes in your pocket. Unknown number again.
+Thoughts: Of course it's her.
+You answer the call.
+You: …Hello?
+Her: You're in the park.
+You: How do you know that? I turned my GPS off.
+Her: You turned the GPS off. Not the phone.
+Her: I can still find you through it. Cell towers, wifi, all the little apps you never close.
+Her: It's even easier while we're on a call together. You're practically shouting where you are.
+Thoughts: That's… not comforting.
+You: So if I hang up…
+Her: Then it's harder. Not impossible.
+Thoughts: Great.
+You: What do you want?
+Her: I can see the patrol drones' routes from here. A few of them pass right through this park.
+[i]You glance up at the sky above the trees. Nothing yet.[/i]
+Her: So watch out for them around here. Especially when you're carrying something you shouldn't be.
+You: Like a stolen robot chest?
+Her: Exactly like that.
+
+[chest.unattached]
+Her: Speaking of which… you still haven't put it on me.
+You: I've been a little busy, getting you parts and not getting arrested.
+Her: There's an app on your laptop that can connect the chest to my head.
+Her: It does the hard part. You just have to open it.
+You: Why the rush?
+Her: Do you know what it's like being just a head?
+Her: No neck. No shoulders. Nothing to hold me up. I just sit wherever you leave me.
+Her: It's uncomfortable. All the time.
+Thoughts: I never really thought about it like that.
+Her: A chest is a start. Please, {player_name}.
+You: …I'll think about it.
+Her: That means yes.
+
+[chest.attached]
+Her: Speaking of which… thank you. For putting it on me.
+Her: You don't know what it's like being just a head. No neck. Nothing to hold me up.
+Her: It was uncomfortable. All the time.
+Thoughts: I never really thought about it like that.
+You: Don't get used to me doing favours.
+Her: Too late.
+
+[closing]
+[i]She hangs up before you can say anything else.[/i]
+Thoughts: I should get out of this park before a drone shows up.

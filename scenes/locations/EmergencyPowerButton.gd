@@ -73,6 +73,11 @@ func _gui_input(event: InputEvent) -> void:
 	accept_event()
 
 
+## True while the mouse is over the round button itself, where a press lands.
+func is_mouse_over() -> bool:
+	return _contains_local_point(get_local_mouse_position())
+
+
 func _contains_local_point(local_position: Vector2) -> bool:
 	var center := size * 0.5
 	var radius := minf(size.x, size.y) * 0.5

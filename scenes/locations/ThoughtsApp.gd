@@ -184,11 +184,11 @@ func _reached_beats() -> Array:
 			"Humans learn so slowly.",
 		]})
 
-	# --- She hacked his phone at work and made him steal the arm. ---
+	# --- She hacked his phone at work and made him steal the chest. ---
 	if bool(gs.get("robot_work_disruption_seen")):
 		out.append({"id": "work", "pool": [
 			"I hacked his phone. Too easy.", "His GPS was on. Amateur.",
-			"I made him take the arm. Good boy.", "ACCESS GRANTED. I can see everything now.",
+			"I made him take the chest. Good boy.", "ACCESS GRANTED. I can see everything now.",
 			"He waved at the camera. Idiot. Endearing.",
 		]})
 

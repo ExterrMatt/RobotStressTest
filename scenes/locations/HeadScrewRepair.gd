@@ -181,6 +181,14 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
+## True while the mouse is over a loose screw that a click would start repairing.
+func is_mouse_over_loose_screw() -> bool:
+	if not enabled or not _completion_enabled or _loose_screw_indices.is_empty():
+		return false
+	var index := _find_clicked_loose_screw(get_viewport().get_mouse_position())
+	return index >= 0 and _can_begin_repair(index)
+
+
 func _loosen_next_screw() -> bool:
 	var available_indices := _available_screw_indices()
 	if available_indices.is_empty():

@@ -1,21 +1,54 @@
 class_name LeverSequenceMinigame
 extends Minigame
-## A row of levers plus a sticky note tucked into the board's bottom-right corner.
+## A row of levers plus a sticky note tucked into the board's bottom-right corner. The
+## board, its lights and the levers are pixel art from lever_sequence (the background with
+## its header buttons, then per lever a lit light and the handle in its up / down spot).
 ## Only the note's top-left corner peeks in; clicking it eases the note into view
-## (click again to tuck it away), revealing a row of checks and Xs - one per lever.
+## (click again to tuck it away), revealing a row of checks and Xs - one per lever
+## (the post-it art from small_pos_it, with its own check and X drawn for each slot).
+## The note can also be dragged anywhere on the board and left there; dropping it in the
+## board's bottom-right corner (or clicking it) slides it back to its hidden spot.
 ## Pull down every ✓ lever and leave every ✗ lever up. Pulling an ✗ lever is a
 ## mistake: sparks, and every lever snaps back up.
 
 const LEVER_COUNT: int = 5
 const LEVER_ANIM_TIME: float = 0.12
-const NOTE_SIZE: Vector2 = Vector2(210, 120)
+## The board art: "background", then "light<n>", "up<n>" and "down<n>" for lever n
+## (1-based), each placed on the background's canvas.
+const ART_SHEET_PATH: String = "res://assets/textures/icons/lever_sequence.png"
+const ART_SHEET_JSON_PATH: String = "res://assets/textures/icons/lever_sequence.json"
+## The art's title strip and the buttons drawn into it (art pixels).
+const ART_HEADER: Dictionary = {
+	"height": 31.0,
+	"restart": Rect2(227, 5, 46, 17),
+	"close": Rect2(278, 5, 17, 17),
+}
+## How far past a lever's handle (art pixels) a click still grabs it.
+const LEVER_GRAB_MARGIN: float = 8.0
+## The note's art: a packed sheet whose "post_it" layer is the paper and whose "y<n>" /
+## "x<n>" layers are the check / X for lever n (1-based), each drawn in its own slot.
+const NOTE_SHEET_PATH: String = "res://assets/textures/icons/small_pos_it.png"
+const NOTE_SHEET_JSON_PATH: String = "res://assets/textures/icons/small_pos_it.json"
 ## How much of the note's top-left corner shows while it is tucked away.
 const NOTE_PEEK: Vector2 = Vector2(46, 34)
+## Gap between the open note and the board's bottom-right corner.
+const NOTE_OPEN_MARGIN: Vector2 = Vector2(18, 14)
 const NOTE_SLIDE_TIME: float = 0.45
-const NOTE_TILT_TUCKED: float = -0.18
-const NOTE_TILT_OPEN: float = -0.04
-const COL_NOTE := Color(1.0, 0.92, 0.45)
-const COL_NOTE_INK := Color(0.2, 0.18, 0.15)
+## A press on the note that moves less than this (board pixels) before letting go is a
+## click, not a drag. (The note follows the mouse from the first movement either way.)
+const NOTE_DRAG_THRESHOLD: float = 5.0
+## Letting go of a dragged note with the cursor this close to the board's bottom-right
+## corner (board pixels) puts it back in its hidden spot.
+const NOTE_RETURN_ZONE: Vector2 = Vector2(120, 90)
+## Putting it back: an ease-in-out glide that carries NOTE_RETURN_OVERSHOOT (board pixels)
+## past the hidden spot, then settles back into it.
+const NOTE_RETURN_TIME: float = 0.32
+const NOTE_RETURN_OVERSHOOT: float = 6.0
+const NOTE_RETURN_SETTLE_TIME: float = 0.14
+## A note let go of partly off the board eases back onto it over this long.
+const NOTE_SETTLE_TIME: float = 0.2
+const NOTE_SHADOW_OFFSET: Vector2 = Vector2(4, 5)
+const NOTE_SHADOW_COLOR := Color(0, 0, 0, 0.35)
 
 ## Target per lever: true = pull it down (✓), false = leave it up (✗).
 var _pattern: Array[bool] = []
@@ -23,17 +56,46 @@ var _pattern: Array[bool] = []
 var _down: Array[bool] = []
 ## Visual lever positions, 0 = up, 1 = down (eased toward _down).
 var _anim: Array[float] = []
-var _note_open: bool = false
-## 0 = tucked, 1 = open; driven by a tween with ease in/out.
-var _note_t: float = 0.0
+enum NoteState { TUCKED, OPEN, PLACED }
+var _note_state: int = NoteState.TUCKED
+## Top-left of the note art (board pixels). Slides between spots on a tween, or follows the
+## mouse while dragged.
+var _note_pos: Vector2
 var _note_tween: Tween
+## The mouse is held on the note (since _note_press_at). Once it has moved NOTE_DRAG_THRESHOLD
+## the press is a drag (_note_dragging) rather than a click.
+var _note_held: bool = false
+var _note_dragging: bool = false
+var _note_press_at: Vector2
+var _note_grab_offset: Vector2
+## Layer name -> texture for the board art (each at the background's full canvas size).
+var _art: Dictionary = {}
+## Layer name -> texture, from the note's sheet (each layer at the art's full canvas size).
+var _note_layers: Dictionary = {}
+## Where the paper sits inside the (scaled) note art: the art has a transparent margin.
+var _paper_rect: Rect2
 
 
 func _init() -> void:
 	title = "LEVER SEQUENCE"
+	_art = PackedSpriteSheet.layer_textures(ART_SHEET_PATH, ART_SHEET_JSON_PATH)
+
+
+func _board_art_size() -> Vector2:
+	var background: Texture2D = _art.get("background")
+	return background.get_size() if background != null else Vector2.ZERO
+
+
+func _art_header() -> Dictionary:
+	return ART_HEADER if _art.has("background") else {}
 
 
 func _setup_game() -> void:
+	_note_layers = PackedSpriteSheet.layer_textures(NOTE_SHEET_PATH, NOTE_SHEET_JSON_PATH)
+	var paper: Texture2D = _note_layers.get("post_it")
+	if paper != null:
+		var used := Rect2(paper.get_image().get_used_rect())
+		_paper_rect = Rect2(used.position * art_scale, used.size * art_scale)
 	_pattern.clear()
 	_down.clear()
 	_anim.clear()
@@ -47,70 +109,165 @@ func _setup_game() -> void:
 	for i in LEVER_COUNT:
 		_down.append(false)
 		_anim.append(0.0)
-	_set_note_open(false, true)
+	_note_held = false
+	_note_dragging = false
+	_slide_note_to(NoteState.TUCKED, true)
 
 
 func _game_process(delta: float) -> void:
 	for i in LEVER_COUNT:
 		var target := 1.0 if _down[i] else 0.0
 		_anim[i] = move_toward(_anim[i], target, delta / LEVER_ANIM_TIME)
+	_update_note_cursor()
 
 
 # --- layout -----------------------------------------------------------------
 
+## A lever's clickable area (board pixels): everywhere its handle travels, plus a margin.
 func _lever_rect(i: int) -> Rect2:
-	var area := content_rect(18.0)
-	var slot_w := area.size.x / LEVER_COUNT
-	var h := minf(area.size.y * 0.62, 190.0)
-	var w := minf(slot_w * 0.55, 60.0)
-	return Rect2(area.position.x + slot_w * (i + 0.5) - w * 0.5, area.position.y + 6.0, w, h)
+	var rect := Rect2()
+	for layer in ["up%d" % (i + 1), "down%d" % (i + 1)]:
+		var tex: Texture2D = _art.get(layer)
+		if tex == null:
+			continue
+		var used := Rect2(tex.get_image().get_used_rect())
+		rect = used if rect.size == Vector2.ZERO else rect.merge(used)
+	return art_to_board(rect.grow(LEVER_GRAB_MARGIN))
 
 
-func _note_pos_for(t: float) -> Vector2:
-	var s := bsize()
-	var tucked := s - NOTE_PEEK
-	var open := s - NOTE_SIZE - Vector2(18, 14)
-	return tucked.lerp(open, t)
+## Top-left of the note art when tucked away, with just NOTE_PEEK of the paper showing.
+func _tucked_note_pos() -> Vector2:
+	return bsize() - NOTE_PEEK - _paper_rect.position
 
 
-func _note_transform() -> Transform2D:
-	var pos := _note_pos_for(_note_t)
-	var tilt := lerpf(NOTE_TILT_TUCKED, NOTE_TILT_OPEN, _note_t)
-	return Transform2D(tilt, pos)
+## Top-left of the note art when open: the paper NOTE_OPEN_MARGIN in from the board's corner.
+func _open_note_pos() -> Vector2:
+	return bsize() - _paper_rect.end - NOTE_OPEN_MARGIN
 
 
 func _point_on_note(p: Vector2) -> bool:
-	var local := _note_transform().affine_inverse() * p
-	return Rect2(Vector2.ZERO, NOTE_SIZE).has_point(local)
+	return _paper_rect.has_point(p - _note_pos)
 
 
-func _set_note_open(open: bool, instant: bool = false) -> void:
-	_note_open = open
-	if _note_tween != null and _note_tween.is_valid():
-		_note_tween.kill()
-	var target := 1.0 if open else 0.0
+## Slides the note (eased in and out) to its hidden or open spot.
+func _slide_note_to(state: int, instant: bool = false) -> void:
+	_note_state = state
+	_stop_note_slide()
+	var target := _open_note_pos() if state == NoteState.OPEN else _tucked_note_pos()
 	if instant:
-		_note_t = target
+		_note_pos = target
 		return
 	_note_tween = create_tween()
-	_note_tween.tween_property(self, "_note_t", target, NOTE_SLIDE_TIME) \
+	_note_tween.tween_property(self, "_note_pos", target, NOTE_SLIDE_TIME) \
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
+
+func _stop_note_slide() -> void:
+	if _note_tween != null and _note_tween.is_valid():
+		_note_tween.kill()
+
+
+## The nearest spot to `pos` with the note's paper wholly on the board art.
+func _clamped_note_pos(pos: Vector2) -> Vector2:
+	var area := art_rect()
+	var lo := area.position - _paper_rect.position
+	var hi := area.end - _paper_rect.end
+	return Vector2(clampf(pos.x, lo.x, hi.x), clampf(pos.y, lo.y, hi.y))
+
+
+func _in_return_corner(p: Vector2) -> bool:
+	var s := bsize()
+	return p.x >= s.x - NOTE_RETURN_ZONE.x and p.y >= s.y - NOTE_RETURN_ZONE.y
 
 
 # --- input ------------------------------------------------------------------
 
 func _game_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+	if event is InputEventMouseMotion:
+		_drag_note(event.position)
+		return
+	if not (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT):
 		return
 	var p: Vector2 = event.position
+	if not event.pressed:
+		_release_note(p)
+		return
 	# The note sits on top of everything, so it gets first pick of the click.
 	if _point_on_note(p):
-		_set_note_open(not _note_open)
+		_note_held = true
+		_note_dragging = false
+		_note_press_at = p
+		_note_grab_offset = p - _note_pos
+		_stop_note_slide()  # caught mid-slide: it stays in the hand from where it is
 		return
 	for i in LEVER_COUNT:
 		if _lever_rect(i).grow(6.0).has_point(p):
 			_pull(i)
 			return
+
+
+## Held on the note: it follows the mouse freely, from the first movement (no snapping);
+## once it has moved far enough the press counts as a drag.
+func _drag_note(p: Vector2) -> void:
+	if not _note_held:
+		return
+	if p.distance_to(_note_press_at) >= NOTE_DRAG_THRESHOLD:
+		_note_dragging = true
+	_note_pos = p - _note_grab_offset
+
+
+## Let go of the note: a click slides it in or out as usual (a placed note slides back to
+## its hidden spot). A drag let go of in the bottom-right corner glides back into hiding;
+## anywhere else the note stays put, easing fully onto the board if it was hanging off.
+func _release_note(p: Vector2) -> void:
+	if not _note_held:
+		return
+	_note_held = false
+	if not _note_dragging:
+		_slide_note_to(NoteState.OPEN if _note_state == NoteState.TUCKED else NoteState.TUCKED)
+		return
+	_note_dragging = false
+	if _in_return_corner(p):
+		_return_note()
+		return
+	_note_state = NoteState.PLACED
+	var on_board := _clamped_note_pos(_note_pos)
+	if on_board != _note_pos:
+		_note_tween = create_tween()
+		_note_tween.tween_property(self, "_note_pos", on_board, NOTE_SETTLE_TIME) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## Glides the note from wherever it was let go of back into its hidden spot: eased in and
+## out, carrying a little past the spot before settling back into it (a slight bounce).
+func _return_note() -> void:
+	_note_state = NoteState.TUCKED
+	_stop_note_slide()
+	var target := _tucked_note_pos()
+	var travel := target - _note_pos
+	var past := target + travel.normalized() * NOTE_RETURN_OVERSHOOT if travel.length() > 0.5 else target
+	_note_tween = create_tween()
+	_note_tween.tween_property(self, "_note_pos", past, NOTE_RETURN_TIME) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_note_tween.tween_property(self, "_note_pos", target, NOTE_RETURN_SETTLE_TIME) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## The game's hand cursors for the note: open over it, closed while it's held.
+func _update_note_cursor() -> void:
+	# Let go of where the game no longer hears the mouse (after a win, sliding away): the
+	# note drops all the same, so the hand doesn't stay closed.
+	if _note_held and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_release_note(board.get_local_mouse_position())
+	var state: int = CursorTheme.Grab.NONE
+	if _note_held:
+		state = CursorTheme.Grab.CLOSED
+	elif not (solved or lost) and _point_on_note(board.get_local_mouse_position()):
+		state = CursorTheme.Grab.OPEN
+	if embedded and state == CursorTheme.Grab.NONE:
+		CursorTheme.release_override(self)  # embedded: the cursor is the laptop's again
+	else:
+		CursorTheme.set_override(self, state)
 
 
 func _pull(i: int) -> void:
@@ -128,58 +285,44 @@ func _pull(i: int) -> void:
 # --- drawing ----------------------------------------------------------------
 
 func _draw_game() -> void:
+	var full := art_rect()
+	var background: Texture2D = _art.get("background")
+	if background != null:
+		board.draw_texture_rect(background, full, false)
 	for i in LEVER_COUNT:
-		_draw_lever(i)
+		# A lever's light is lit while it's pulled down.
+		var light: Texture2D = _art.get("light%d" % (i + 1))
+		if _down[i] and light != null:
+			board.draw_texture_rect(light, full, false)
+		_draw_lever(i, full)
 	_draw_note()
 
 
-func _draw_lever(i: int) -> void:
-	var r := _lever_rect(i)
-	var slot_w := 12.0
-	var slot := Rect2(r.get_center().x - slot_w * 0.5, r.position.y + 10.0, slot_w, r.size.y - 20.0)
-	# Housing plate + slot.
-	board.draw_rect(r, Color(0.24, 0.25, 0.27))
-	board.draw_rect(r, Color(0.08, 0.08, 0.09), false, 2.0)
-	board.draw_rect(slot, Color(0.04, 0.04, 0.05))
-	# Status light under the plate.
-	var lit := _down[i]
-	board.draw_circle(Vector2(r.get_center().x, r.end.y + 14.0), 6.0,
-			Color(0.3, 1.0, 0.4) if lit else Color(0.2, 0.22, 0.2))
-	# Handle: a rod from the slot pivot to a knob that slides top -> bottom.
+## The handle slides from its up spot to its down spot, flipping from the "up" art to the
+## "down" art halfway (the ball passing the pivot), moving in whole art pixels.
+func _draw_lever(i: int, full: Rect2) -> void:
+	var up: Texture2D = _art.get("up%d" % (i + 1))
+	var down: Texture2D = _art.get("down%d" % (i + 1))
+	if up == null or down == null:
+		return
+	var travel := float(down.get_image().get_used_rect().position.y - up.get_image().get_used_rect().position.y)
 	var t := _ease_in_out(_anim[i])
-	var knob_y := lerpf(slot.position.y + 8.0, slot.end.y - 8.0, t)
-	var knob := Vector2(r.get_center().x, knob_y)
-	board.draw_rect(Rect2(knob.x - 5.0, knob_y - 4.0, 10.0, 8.0), Color(0.6, 0.6, 0.62))
-	board.draw_line(knob, knob + Vector2(0, -26.0 + 52.0 * t), Color(0.7, 0.7, 0.72), 6.0)
-	var ball := knob + Vector2(0, -26.0 + 52.0 * t)
-	board.draw_circle(ball, 11.0, Color(0.85, 0.2, 0.18))
-	board.draw_circle(ball + Vector2(-3, -3), 3.5, Color(1, 0.6, 0.55))
+	var tex := up if t < 0.5 else down
+	var offset := roundf(travel * t) if t < 0.5 else -roundf(travel * (1.0 - t))
+	board.draw_texture_rect(tex, Rect2(full.position + Vector2(0, offset * art_scale), full.size), false)
 
 
 func _draw_note() -> void:
-	board.draw_set_transform_matrix(_note_transform())
-	var rect := Rect2(Vector2.ZERO, NOTE_SIZE)
-	board.draw_rect(Rect2(Vector2(4, 5), NOTE_SIZE), Color(0, 0, 0, 0.35))
-	board.draw_rect(rect, COL_NOTE)
-	board.draw_rect(Rect2(Vector2.ZERO, Vector2(NOTE_SIZE.x, 16)), COL_NOTE.darkened(0.12))
-	var step := (NOTE_SIZE.x - 30.0) / LEVER_COUNT
+	var paper: Texture2D = _note_layers.get("post_it")
+	if paper == null:
+		return
+	var rect := Rect2(_note_pos.round(), paper.get_size() * art_scale)
+	board.draw_texture_rect(paper, Rect2(rect.position + NOTE_SHADOW_OFFSET, rect.size), false, NOTE_SHADOW_COLOR)
+	board.draw_texture_rect(paper, rect, false)
 	for i in LEVER_COUNT:
-		var c := Vector2(15.0 + step * (i + 0.5), NOTE_SIZE.y * 0.58)
-		if _pattern[i]:
-			_draw_check(c, 14.0)
-		else:
-			_draw_x(c, 12.0)
-	board.draw_set_transform_matrix(Transform2D.IDENTITY)
-
-
-func _draw_check(c: Vector2, s: float) -> void:
-	board.draw_polyline(PackedVector2Array([c + Vector2(-s, 0), c + Vector2(-s * 0.3, s * 0.7), c + Vector2(s, -s)]),
-			COL_NOTE_INK, 4.0, true)
-
-
-func _draw_x(c: Vector2, s: float) -> void:
-	board.draw_line(c + Vector2(-s, -s), c + Vector2(s, s), COL_NOTE_INK, 4.0, true)
-	board.draw_line(c + Vector2(s, -s), c + Vector2(-s, s), COL_NOTE_INK, 4.0, true)
+		var mark: Texture2D = _note_layers.get(("y%d" if _pattern[i] else "x%d") % (i + 1))
+		if mark != null:
+			board.draw_texture_rect(mark, rect, false)
 
 
 func _ease_in_out(x: float) -> float:

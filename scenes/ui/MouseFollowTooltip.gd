@@ -16,11 +16,24 @@ const FONT_SIZE: int = 22
 
 var _panel: Panel = null
 var _label: Label = null
+## Shows the text instead of _label when it has BBCode in it (colours); see show_text.
+var _rich_label: RichTextLabel = null
 var _last_text: String = ""
+var _last_rich: bool = false
 var _last_mouse_position: Vector2 = Vector2.INF
 var _pending_text: String = ""
+var _pending_rich: bool = false
 var _pending_elapsed_seconds: float = 0.0
 var _pending_show: bool = false
+## When it has an area, the tooltip sits centred under this rect (viewport coordinates)
+## instead of following the mouse; see show_text.
+var _anchor: Rect2 = Rect2()
+
+## Gap between an anchor rect and the tooltip under it.
+const ANCHOR_GAP: float = 6.0
+
+## BBCode tags, stripped out to measure a rich tooltip's text.
+static var _bbcode_tags: RegEx = null
 
 
 ## We extend plain Control (not PanelContainer) and lay the background +
@@ -54,6 +67,18 @@ func _ready() -> void:
 	_label.add_theme_color_override("font_color", Color(1.0, 0.96, 0.74, 1.0))
 	add_child(_label)
 
+	_rich_label = RichTextLabel.new()
+	_rich_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rich_label.bbcode_enabled = true
+	_rich_label.scroll_active = false
+	_rich_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_rich_label.clip_contents = false
+	_rich_label.visible = false
+	_rich_label.add_theme_font_override("normal_font", PIXEL_FONT)
+	_rich_label.add_theme_font_size_override("normal_font_size", FONT_SIZE)
+	_rich_label.add_theme_color_override("default_color", Color(1.0, 0.96, 0.74, 1.0))
+	add_child(_rich_label)
+
 	_warm_up_font()
 
 
@@ -69,57 +94,70 @@ func _warm_up_font() -> void:
 	PIXEL_FONT.get_multiline_string_size(SAMPLE + "\n" + SAMPLE, HORIZONTAL_ALIGNMENT_LEFT, -1.0, FONT_SIZE)
 
 
-func show_text(text: String) -> void:
+## Shows `text` after the delay. With `rich`, it's BBCode (e.g. [color] tags), on one line.
+## Given an `anchor` rect (viewport coordinates), it shows centred under that instead of
+## following the mouse.
+func show_text(text: String, rich: bool = false, anchor: Rect2 = Rect2()) -> void:
 	if text.strip_edges().is_empty():
 		hide_tooltip()
 		return
-	if _pending_show and text == _pending_text:
+	_anchor = anchor
+	if _pending_show and text == _pending_text and rich == _pending_rich:
 		return
-	if visible and text == _last_text:
+	if visible and text == _last_text and rich == _last_rich:
 		return
 	if show_delay_seconds <= 0.0:
 		_pending_show = false
 		_pending_text = ""
 		_pending_elapsed_seconds = 0.0
-		_show_now(text)
+		_show_now(text, rich)
 		return
 	_pending_text = text
+	_pending_rich = rich
 	_pending_elapsed_seconds = 0.0
 	_pending_show = true
 	visible = false
 	_last_mouse_position = Vector2.INF
 
 
-func _show_now(text: String) -> void:
+func _show_now(text: String, rich: bool = false) -> void:
 	if _label == null:
 		return
 	var was_visible := visible
-	if text != _last_text:
-		_resize_to_text(text)
+	if text != _last_text or rich != _last_rich:
+		_resize_to_text(text, rich)
 		_last_text = text
+		_last_rich = rich
 		# Safety net: if the font cache was still cold on this first measure
 		# (so the box came out the wrong size), re-measuring one frame later
 		# hits a hot cache and corrects it. A no-op once the cache is warm.
-		call_deferred("_remeasure_if_current", text)
+		call_deferred("_remeasure_if_current", text, rich)
 	visible = true
 	if not was_visible:
 		_update_position(true)
 
 
 ## Measure `text`, then size the label and panel to fit it.
-func _resize_to_text(text: String) -> void:
-	var content_size := _apply_label_text(text)
+func _resize_to_text(text: String, rich: bool = false) -> void:
+	var content_size := _apply_rich_text(text) if rich else _apply_label_text(text)
 	var panel_size := content_size + Vector2(CONTENT_MARGIN, CONTENT_MARGIN) * 2.0
 	custom_minimum_size = panel_size
 	size = panel_size
 
 
-func _remeasure_if_current(text: String) -> void:
-	if _last_text != text or not is_instance_valid(self):
+func _remeasure_if_current(text: String, rich: bool = false) -> void:
+	if _last_text != text or _last_rich != rich or not is_instance_valid(self):
 		return
-	_resize_to_text(text)
+	_resize_to_text(text, rich)
 	if visible:
 		_update_position(true)
+
+
+## Hides the tooltip only if it's showing (or about to show) `text` - for a caller giving up
+## its tooltip without hiding one something else has put up since.
+func hide_text(text: String) -> void:
+	if (_pending_show and _pending_text == text) or (visible and _last_text == text):
+		hide_tooltip()
 
 
 func hide_tooltip() -> void:
@@ -138,7 +176,7 @@ func _process(delta: float) -> void:
 			_pending_show = false
 			_pending_text = ""
 			_pending_elapsed_seconds = 0.0
-			_show_now(text)
+			_show_now(text, _pending_rich)
 	if visible:
 		_update_position()
 
@@ -149,8 +187,10 @@ func _update_position(force: bool = false) -> void:
 		return
 	_last_mouse_position = mouse_position
 	var viewport_size := get_viewport_rect().size
-	var desired := mouse_position + mouse_offset
 	var tooltip_size := size
+	var desired := mouse_position + mouse_offset
+	if _anchor.has_area():
+		desired = Vector2(_anchor.get_center().x - tooltip_size.x * 0.5, _anchor.end.y + ANCHOR_GAP).round()
 	position = Vector2(
 		clampf(desired.x, viewport_margin, maxf(viewport_margin, viewport_size.x - tooltip_size.x - viewport_margin)),
 		clampf(desired.y, viewport_margin, maxf(viewport_margin, viewport_size.y - tooltip_size.y - viewport_margin))
@@ -162,6 +202,8 @@ func _update_position(force: bool = false) -> void:
 ## the content size. Measured directly from the font, so it's correct in the
 ## same frame the text is set.
 func _apply_label_text(text: String) -> Vector2:
+	_label.visible = true
+	_rich_label.visible = false
 	var wrapped := _wrap_text(text, FONT_SIZE, maxf(1.0, max_label_width))
 	_label.text = wrapped
 	# width = -1 measures the block honoring only the explicit "\n" breaks.
@@ -194,3 +236,19 @@ func _wrap_text(text: String, font_size: int, max_width: float) -> String:
 	if not current.is_empty():
 		lines.append(current)
 	return "\n".join(lines)
+
+
+## A BBCode tooltip: shown on the rich label, sized by measuring its text with the tags
+## stripped (colours don't change the size). One line, never wrapped.
+func _apply_rich_text(bbcode: String) -> Vector2:
+	_label.visible = false
+	_rich_label.visible = true
+	if _bbcode_tags == null:
+		_bbcode_tags = RegEx.create_from_string("\\[[^\\]]*\\]")
+	var plain := _bbcode_tags.sub(bbcode, "", true)
+	var block := PIXEL_FONT.get_string_size(plain, HORIZONTAL_ALIGNMENT_LEFT, -1.0, FONT_SIZE)
+	var content_size := Vector2(ceilf(block.x) + 1.0, ceilf(PIXEL_FONT.get_height(FONT_SIZE)))
+	_rich_label.text = bbcode
+	_rich_label.size = content_size
+	_rich_label.position = Vector2(CONTENT_MARGIN, CONTENT_MARGIN)
+	return content_size

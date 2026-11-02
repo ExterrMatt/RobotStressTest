@@ -115,6 +115,13 @@ func start_drag() -> void:
 	drag_started.emit(self)
 
 
+## Lets go without a drop (no drag_released): e.g. a right-click putting an item that was
+## taken out of the inventory back. The caller decides where it goes.
+func cancel_drag() -> void:
+	_dragging = false
+	_kill_grab_offset_tween()
+
+
 ## Tween back to the home slot's center. Used when the drop is invalid.
 func snap_home() -> void:
 	if home_slot == null:

@@ -1,0 +1,416 @@
+{ "frames": {
+   "bedroom (carpet).aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 600, "h": 400 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 600, "h": 400 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (stuff_shadow).aseprite": {
+    "frame": { "x": 600, "y": 0, "w": 600, "h": 400 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 600, "h": 400 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (wall).aseprite": {
+    "frame": { "x": 294, "y": 1028, "w": 599, "h": 53 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1, "y": 0, "w": 599, "h": 53 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (stuff).aseprite": {
+    "frame": { "x": 1200, "y": 0, "w": 600, "h": 400 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 600, "h": 400 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (coin).aseprite": {
+    "frame": { "x": 1178, "y": 1022, "w": 69, "h": 34 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 457, "y": 55, "w": 69, "h": 34 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (left_stuff_under).aseprite": {
+    "frame": { "x": 412, "y": 800, "w": 175, "h": 110 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 175, "h": 110 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (left_stuff).aseprite": {
+    "frame": { "x": 1143, "y": 800, "w": 180, "h": 87 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 180, "h": 87 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (drawer).aseprite": {
+    "frame": { "x": 1261, "y": 1021, "w": 109, "h": 62 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 0, "y": 41, "w": 109, "h": 62 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (boots).aseprite": {
+    "frame": { "x": 1143, "y": 887, "w": 153, "h": 72 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 21, "y": 85, "w": 153, "h": 72 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (bedframe).aseprite": {
+    "frame": { "x": 1088, "y": 400, "w": 303, "h": 400 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 153, "y": 0, "w": 303, "h": 400 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (mattress_texture).aseprite": {
+    "frame": { "x": 0, "y": 800, "w": 294, "h": 345 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 157, "y": 29, "w": 294, "h": 345 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (mattress_texture_indent_2).aseprite": {
+    "frame": { "x": 1391, "y": 746, "w": 294, "h": 350 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 157, "y": 24, "w": 294, "h": 350 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (mattress_edge).aseprite": {
+    "frame": { "x": 600, "y": 673, "w": 299, "h": 355 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 153, "y": 26, "w": 299, "h": 355 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (pillow_shadow_light).aseprite": {
+    "frame": { "x": 412, "y": 910, "w": 131, "h": 64 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 241, "y": 35, "w": 131, "h": 64 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (pillow_shadow_heavy).aseprite": {
+    "frame": { "x": 412, "y": 974, "w": 121, "h": 54 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 245, "y": 29, "w": 121, "h": 54 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (pillow).aseprite": {
+    "frame": { "x": 1143, "y": 959, "w": 118, "h": 63 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 246, "y": 17, "w": 118, "h": 63 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (pillow_slightly_indented).aseprite": {
+    "frame": { "x": 1261, "y": 959, "w": 118, "h": 62 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 246, "y": 18, "w": 118, "h": 62 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (pillow_indented).aseprite": {
+    "frame": { "x": 899, "y": 969, "w": 118, "h": 59 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 246, "y": 21, "w": 118, "h": 59 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (bot_full_shadow_light).aseprite": {
+    "frame": { "x": 1017, "y": 800, "w": 126, "h": 232 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 241, "y": 97, "w": 126, "h": 232 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (bot_full_shadow_heavy).aseprite": {
+    "frame": { "x": 294, "y": 800, "w": 118, "h": 228 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 245, "y": 97, "w": 118, "h": 228 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (bot_placeholder).aseprite": {
+    "frame": { "x": 899, "y": 673, "w": 118, "h": 296 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 245, "y": 19, "w": 118, "h": 296 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (torso_neck_back).aseprite": {
+    "frame": { "x": 2378, "y": 763, "w": 18, "h": 9 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 296, "y": 71, "w": 18, "h": 9 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (torso).aseprite": {
+    "frame": { "x": 1017, "y": 673, "w": 56, "h": 101 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 277, "y": 71, "w": 56, "h": 101 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (hair_back).aseprite": {
+    "frame": { "x": 1296, "y": 887, "w": 73, "h": 56 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 268, "y": 18, "w": 73, "h": 56 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (neck).aseprite": {
+    "frame": { "x": 2378, "y": 746, "w": 18, "h": 17 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 296, "y": 64, "w": 18, "h": 17 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (head).aseprite": {
+    "frame": { "x": 935, "y": 1028, "w": 34, "h": 42 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 288, "y": 28, "w": 34, "h": 42 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (squint_eyes).aseprite": {
+    "frame": { "x": 1323, "y": 851, "w": 25, "h": 5 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 293, "y": 48, "w": 25, "h": 5 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (hair_front_normal).aseprite": {
+    "frame": { "x": 893, "y": 1028, "w": 42, "h": 49 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 286, "y": 26, "w": 42, "h": 49 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (hair_front_bangs).aseprite": {
+    "frame": { "x": 1323, "y": 800, "w": 43, "h": 51 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 285, "y": 26, "w": 43, "h": 51 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (left_leg).aseprite": {
+    "frame": { "x": 2343, "y": 746, "w": 35, "h": 167 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 270, "y": 148, "w": 35, "h": 167 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (right_leg).aseprite": {
+    "frame": { "x": 2343, "y": 913, "w": 35, "h": 167 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 305, "y": 148, "w": 35, "h": 167 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (left_arm).aseprite": {
+    "frame": { "x": 543, "y": 910, "w": 35, "h": 93 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 251, "y": 74, "w": 35, "h": 93 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (right_arm).aseprite": {
+    "frame": { "x": 1143, "y": 1022, "w": 35, "h": 93 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 324, "y": 74, "w": 35, "h": 93 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (left_palm_up).aseprite": {
+    "frame": { "x": 1366, "y": 800, "w": 25, "h": 28 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 235, "y": 163, "w": 25, "h": 28 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (right_palm_up).aseprite": {
+    "frame": { "x": 1366, "y": 828, "w": 25, "h": 28 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 350, "y": 163, "w": 25, "h": 28 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (boob_cover).aseprite": {
+    "frame": { "x": 1017, "y": 774, "w": 52, "h": 25 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 279, "y": 90, "w": 52, "h": 25 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (blanket).aseprite": {
+    "frame": { "x": 2038, "y": 746, "w": 305, "h": 334 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 152, "y": 66, "w": 305, "h": 334 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (blanket_bump_4).aseprite": {
+    "frame": { "x": 1685, "y": 746, "w": 353, "h": 290 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 120, "y": 110, "w": 353, "h": 290 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (blanket_bump_3).aseprite": {
+    "frame": { "x": 1391, "y": 400, "w": 336, "h": 346 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 124, "y": 54, "w": 336, "h": 346 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (blanket_bump_2).aseprite": {
+    "frame": { "x": 1727, "y": 400, "w": 333, "h": 346 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 124, "y": 54, "w": 333, "h": 346 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (blanket_bump_1).aseprite": {
+    "frame": { "x": 2060, "y": 400, "w": 333, "h": 346 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 124, "y": 54, "w": 333, "h": 346 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (darkness).aseprite": {
+    "frame": { "x": 1800, "y": 0, "w": 600, "h": 400 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 600, "h": 400 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (darkness 2).aseprite": {
+    "frame": { "x": 0, "y": 400, "w": 600, "h": 400 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 600, "h": 400 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   },
+   "bedroom (light).aseprite": {
+    "frame": { "x": 600, "y": 400, "w": 488, "h": 273 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 57, "y": 0, "w": 488, "h": 273 },
+    "sourceSize": { "w": 600, "h": 400 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "bedroom.png",
+  "format": "RGBA8888",
+  "size": { "w": 2400, "h": 1145 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "carpet", "opacity": 255, "blendMode": "normal" },
+   { "name": "stuff_shadow", "opacity": 255, "blendMode": "normal" },
+   { "name": "wall", "opacity": 255, "blendMode": "normal" },
+   { "name": "stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "coin", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_stuff_under", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_stuff", "opacity": 255, "blendMode": "normal" },
+   { "name": "bed" },
+   { "name": "drawer", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "boots", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "bedframe", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "mattress_texture", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "mattress_texture_indent_2", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "mattress_edge", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "pillow_shadow_light", "group": "bed", "opacity": 69, "blendMode": "normal" },
+   { "name": "pillow_shadow_heavy", "group": "bed", "opacity": 135, "blendMode": "normal" },
+   { "name": "pillow", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "pillow_slightly_indented", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "pillow_indented", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "bot_full_shadow_light", "group": "bed", "opacity": 69, "blendMode": "normal" },
+   { "name": "bot_full_shadow_heavy", "group": "bed", "opacity": 102, "blendMode": "normal" },
+   { "name": "bot_placeholder", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "Group 1", "group": "bed" },
+   { "name": "torso_neck_back", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "torso", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "Head", "group": "Group 1" },
+   { "name": "hair_back", "group": "Head", "opacity": 255, "blendMode": "normal" },
+   { "name": "neck", "group": "Head", "opacity": 255, "blendMode": "normal" },
+   { "name": "head", "group": "Head", "opacity": 255, "blendMode": "normal" },
+   { "name": "squint_eyes", "group": "Head", "opacity": 255, "blendMode": "normal" },
+   { "name": "hair_front_normal", "group": "Head", "opacity": 255, "blendMode": "normal" },
+   { "name": "hair_front_bangs", "group": "Head", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_leg", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_leg", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_arm", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_arm", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "left_palm_up", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_palm_up", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "boob_cover", "group": "Group 1", "opacity": 255, "blendMode": "normal" },
+   { "name": "blanket", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "blanket_bump_4", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "blanket_bump_3", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "blanket_bump_2", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "blanket_bump_1", "group": "bed", "opacity": 255, "blendMode": "normal" },
+   { "name": "darkness", "opacity": 201, "blendMode": "multiply" },
+   { "name": "darkness 2", "opacity": 224, "blendMode": "normal" },
+   { "name": "light", "opacity": 56, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

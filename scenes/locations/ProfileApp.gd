@@ -3,6 +3,9 @@ class_name ProfileApp
 ## Laptop desktop app: lets the player change their name. Writes through
 ## GameState.set_player_name (which normalizes it the same way the intro name prompt does).
 
+## BACK pressed: the desktop returns to the menu this app was opened from.
+signal back_requested
+
 var _field: LineEdit = null
 var _status: Label = null
 var _current: Label = null
@@ -12,9 +15,17 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 4)
+	LaptopUI.screen_margin(self).add_child(outer)
+	var back := LaptopUI.button("< BACK", 11)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	back.pressed.connect(func() -> void: back_requested.emit())
+	outer.add_child(back)
+
 	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	LaptopUI.screen_margin(self).add_child(center)
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(center)
 
 	var box := LaptopUI.box()
 	center.add_child(box)

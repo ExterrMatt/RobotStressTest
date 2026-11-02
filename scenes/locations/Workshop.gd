@@ -203,13 +203,13 @@ func _show_intro_choices() -> void:
 	_clear_choice_buttons()
 	choice_grid.visible = true
 
-	var tinker_btn := _build_choice_button(dlg_line("workshop", "intro.tinker"))
-	tinker_btn.pressed.connect(_on_tinker_pressed)
-	choice_grid.add_child(tinker_btn)
-
 	var construct_btn := _build_choice_button(dlg_line("workshop", "intro.construct"))
 	construct_btn.pressed.connect(_on_construct_limb_pressed)
 	choice_grid.add_child(construct_btn)
+
+	var tinker_btn := _build_choice_button(dlg_line("workshop", "intro.tinker"))
+	tinker_btn.pressed.connect(_on_tinker_pressed)
+	choice_grid.add_child(tinker_btn)
 
 
 # --- tinker path ---
@@ -328,7 +328,11 @@ func debug_recalibrate() -> void:
 		_minigame.call("debug_recalibrate")
 
 
+## Outside the guided intro the minigame banks the part itself and stays open for the next
+## build; only the intro's head ends the scene here.
 func _on_minigame_collected(part_id: String) -> void:
+	if not _intro_workshop:
+		return
 	var ingredients: Dictionary = {part_id: 1}
 	finish(
 		0,

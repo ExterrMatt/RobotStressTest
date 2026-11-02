@@ -238,6 +238,9 @@ func _mirror_canvas_item_state(shadow_node: Node, source_node: Node) -> void:
 
 	if shadow_node is TextureRect and source_node is TextureRect:
 		(shadow_node as TextureRect).texture = (source_node as TextureRect).texture
+		# A piece being carried off her (shoulder pad, chest cover) moves its layer;
+		# the shadow follows it frame by frame instead of staying where it was.
+		(shadow_node as TextureRect).position = (source_node as TextureRect).position
 		return
 
 	if shadow_node is Sprite2D and source_node is Sprite2D:
@@ -248,6 +251,8 @@ func _mirror_canvas_item_state(shadow_node: Node, source_node: Node) -> void:
 		shadow_sprite.region_rect = source_sprite.region_rect
 		# Packed sheets position each trimmed piece via offset.
 		shadow_sprite.offset = source_sprite.offset
+		# Follows a carried animation copy of an item, as with the static layers.
+		shadow_sprite.position = source_sprite.position
 
 
 func _apply_hidden_shadow_paths() -> void:

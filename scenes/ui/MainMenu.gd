@@ -873,6 +873,13 @@ func _start_endless() -> void:
 		# lessons/shifts from the very first visit instead of the cutscene version.
 		GameState.robot_class_disruption_seen = true
 		GameState.robot_work_disruption_seen = true
+		# Same for the follow-up park call (it talks about the stolen chest, which
+		# endless never hands out) - this also leaves the patrol drone unlocked.
+		GameState.robot_park_call_seen = true
+		# Endless never hands out the stolen chest either, so open Maintenance
+		# from the start.
+		GameState.maintenance_unlocked = true
+		GameState.maintenance_intro_seen = true
 		# The head is normally crafted during the intro; endless skips the intro, so
 		# grant it up front so the player starts with the robot's head.
 		GameState.set_robot_part_count("head", 1)

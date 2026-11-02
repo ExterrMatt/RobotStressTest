@@ -34,22 +34,25 @@ const FACTORY_BOX_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backg
 const WORK_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work.png"
 const WORK_SCRAP_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work_scrap.png"
 ## The work-disruption robot call (first upper-arm shift after the intro) plays
-## over the work-table background, with the stealable upper arm drawn on top.
-const WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/work_table.png"
+## over the work table. Its Aseprite sheet packs the table ("Background") with the
+## stealable robot chest and its shadow as separate layers, so the chest can come
+## off the table when the player pockets it (WORK_CHEST_PACKED_CUE).
+const WORK_TABLE_SHEET_PATH: String = "res://assets/textures/backgrounds/work_table.png"
+const WORK_TABLE_SHEET_JSON_PATH: String = "res://assets/textures/backgrounds/work_table.json"
+const WORK_TABLE_BACKGROUND_LAYER: String = "Background"
+## Drawn over the table in this order (shadow under the chest).
+const WORK_TABLE_CHEST_LAYERS: Array[String] = ["shadow", "chest"]
 ## Shown (same 500x125 footprint) while the player looks up at the robot's camera
 ## and the ceiling lights flash blue — see CAMERA_ABOVE_CUE — until they look back
-## down to pack the arm (WORK_ARM_PACKED_CUE).
+## down to pack the chest (WORK_CHEST_PACKED_CUE).
 const FACTORY_LIGHTS_BLUE_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/factory_lights_blue.png"
-## The upper-arm overlay shown over the table (same 500x125 footprint as the
-## background) until the player pockets it — see WORK_ARM_PACKED_CUE.
-const WORK_ARM_OVERLAY_TEXTURE_PATH: String = "res://assets/textures/icons/work_arm.png"
-## Lower-cased fragment of the disruption line that hides the arm overlay.
-const WORK_ARM_PACKED_CUE: String = "pack the upper arm"
+## Lower-cased fragment of the disruption line that hides the chest overlay.
+const WORK_CHEST_PACKED_CUE: String = "pack the chest"
 ## Lower-cased fragment of the disruption line where the player looks up and sees
 ## the blue light of the robot's ceiling camera.
 const CAMERA_ABOVE_CUE: String = "camera above"
 ## Lower-cased fragment of the disruption line where the player looks back down at
-## the table (still with the arm on it, one line before they pocket it).
+## the table (still with the chest on it, one line before they pocket it).
 const LOOK_BACK_DOWN_CUE: String = "taking you apart"
 ## The robot's phone call opens the disruption with the phone buzzing in the
 ## player's pocket. The ringtone loops while that line is on screen and ends its
@@ -125,9 +128,9 @@ var _work_timed_out: bool = false
 ## shape-sorting one. Only ever set for a normal (non-intro) shift.
 var _arm_variant: bool = false
 var _arm_minigame: WorkArmMinigame = null
-## The upper-arm sprite shown over the work table during the disruption call, and
+## The chest (+ shadow) shown over the work table during the disruption call, and
 ## the pages driving that call (so a page index maps back to its text).
-var _work_arm_overlay: TextureRect = null
+var _work_chest_overlay: Control = null
 var _work_disruption_pages: Array = []
 ## Metal-footsteps player for the intro hallway walk (cut on the box-trip line).
 var _footsteps_player: AudioStreamPlayer = null
@@ -424,12 +427,12 @@ func _on_dialogue_page_advanced(index: int) -> void:
 			# Look up at the robot's camera: the ceiling lights flash blue.
 			if lower.contains(CAMERA_ABOVE_CUE):
 				_look_up_at_camera()
-			# Look back down at the table — the arm is still sitting on it.
+			# Look back down at the table — the chest is still sitting on it.
 			if lower.contains(LOOK_BACK_DOWN_CUE):
 				_look_back_down_from_camera()
-			# The next line pockets the arm: take it off the table.
-			if lower.contains(WORK_ARM_PACKED_CUE):
-				_hide_work_arm_overlay()
+			# The next line pockets the chest: take it off the table.
+			if lower.contains(WORK_CHEST_PACKED_CUE):
+				_hide_work_chest_overlay()
 
 
 func _set_scene_image(texture_path: String) -> void:
@@ -445,12 +448,19 @@ func _set_main_scene_image_and_frame(
 		frame_size: Vector2,
 		outer_width: float
 ) -> void:
+	_set_main_scene_texture_and_frame(load(texture_path) as Texture2D, frame_size, outer_width)
+
+
+func _set_main_scene_texture_and_frame(
+		texture: Texture2D,
+		frame_size: Vector2,
+		outer_width: float
+) -> void:
 	var main: Node = get_tree().current_scene
 	if main == null:
 		return
 	if not ("scene_image" in main):
 		return
-	var texture := load(texture_path) as Texture2D
 	if texture != null:
 		main.scene_image.texture = texture
 	if main.has_method("_animate_frame_to"):
@@ -543,6 +553,8 @@ func _apply_completion_screen() -> void:
 func _enter_work_disruption() -> void:
 	# One-time: mark it seen the moment it starts so it never replays.
 	GameState.robot_work_disruption_seen = true
+	# The park call follows up on a later day.
+	GameState.robot_work_disruption_day = GameState.day
 	_disable_work_hud_timer()
 	set_process(false)
 	_scene_phase = WorkPhase.WORK_DISRUPTION
@@ -557,16 +569,12 @@ func _apply_work_disruption_screen() -> void:
 	_teardown_work_minigame_visuals()
 	var main: Node = get_tree().current_scene
 	# The call runs over the 500x125 work-table background.
-	_set_main_scene_image_and_frame(
-		WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH,
-		WORK_DISRUPTION_FRAME_SIZE,
-		WORK_DISRUPTION_FRAME_SIZE.x
-	)
+	_show_work_table()
 	if main and main.has_method("_apply_scene_presentation_mode"):
 		main._apply_scene_presentation_mode()
 
-	# Draw the upper arm on the table; it stays until the player pockets it.
-	_show_work_arm_overlay()
+	# Draw the chest on the table; it stays until the player pockets it.
+	_show_work_chest_overlay()
 
 	_set_node_visible(choice_grid, false)
 	_set_node_visible(dialogue_box, true)
@@ -575,52 +583,67 @@ func _apply_work_disruption_screen() -> void:
 	dialogue_box.play_pages(_work_disruption_pages)
 
 
-## Shows the upper-arm sprite as a full-frame overlay over the work table (both
-## are 500x125, so it lines up exactly with the background).
-func _show_work_arm_overlay() -> void:
+## The work-table sheet's layers, each rebuilt at the full 500x125 cell.
+func _work_table_layer(layer: String) -> Texture2D:
+	return PackedSpriteSheet.layer_textures(WORK_TABLE_SHEET_PATH, WORK_TABLE_SHEET_JSON_PATH).get(layer) as Texture2D
+
+
+func _show_work_table() -> void:
+	_set_main_scene_texture_and_frame(
+		_work_table_layer(WORK_TABLE_BACKGROUND_LAYER),
+		WORK_DISRUPTION_FRAME_SIZE,
+		WORK_DISRUPTION_FRAME_SIZE.x
+	)
+
+
+## Shows the chest (and its shadow) as a full-frame overlay over the work table
+## (every sheet layer is 500x125, so it lines up exactly with the background).
+func _show_work_chest_overlay() -> void:
 	var main: Node = get_tree().current_scene
 	if main == null or not main.has_method("show_scene_overlay"):
 		return
-	var texture := load(WORK_ARM_OVERLAY_TEXTURE_PATH) as Texture2D
-	if texture == null:
-		return
-	_work_arm_overlay = TextureRect.new()
-	_work_arm_overlay.name = "WorkArmOverlay"
-	_work_arm_overlay.texture = texture
-	_work_arm_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_work_arm_overlay.stretch_mode = TextureRect.STRETCH_SCALE
-	_work_arm_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_work_arm_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	main.show_scene_overlay(_work_arm_overlay)
+	_work_chest_overlay = Control.new()
+	_work_chest_overlay.name = "WorkChestOverlay"
+	_work_chest_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for layer in WORK_TABLE_CHEST_LAYERS:
+		var texture := _work_table_layer(layer)
+		if texture == null:
+			continue
+		var rect := TextureRect.new()
+		rect.name = layer.capitalize()
+		rect.texture = texture
+		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		rect.stretch_mode = TextureRect.STRETCH_SCALE
+		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_work_chest_overlay.add_child(rect)
+	main.show_scene_overlay(_work_chest_overlay)
 
 
-func _hide_work_arm_overlay() -> void:
-	if _work_arm_overlay != null and is_instance_valid(_work_arm_overlay):
-		_work_arm_overlay.visible = false
+func _hide_work_chest_overlay() -> void:
+	if _work_chest_overlay != null and is_instance_valid(_work_chest_overlay):
+		_work_chest_overlay.visible = false
 
 
 ## The player looks up at the robot's ceiling camera: show the blue factory-lights
 ## background (same 500x125 frame, so it's a straight texture swap) and hide the
-## table arm while we're not looking at the table.
+## table chest while we're not looking at the table.
 func _look_up_at_camera() -> void:
 	_set_main_scene_image_and_frame(
 		FACTORY_LIGHTS_BLUE_BACKGROUND_TEXTURE_PATH,
 		WORK_DISRUPTION_FRAME_SIZE,
 		WORK_DISRUPTION_FRAME_SIZE.x
 	)
-	_hide_work_arm_overlay()
+	_hide_work_chest_overlay()
 
 
 ## Look back down at the work table (restores the disruption background) with the
-## arm still on it — the player hasn't pocketed it yet.
+## chest still on it — the player hasn't pocketed it yet.
 func _look_back_down_from_camera() -> void:
-	_set_main_scene_image_and_frame(
-		WORK_DISRUPTION_BACKGROUND_TEXTURE_PATH,
-		WORK_DISRUPTION_FRAME_SIZE,
-		WORK_DISRUPTION_FRAME_SIZE.x
-	)
-	if _work_arm_overlay != null and is_instance_valid(_work_arm_overlay):
-		_work_arm_overlay.visible = true
+	_show_work_table()
+	if _work_chest_overlay != null and is_instance_valid(_work_chest_overlay):
+		_work_chest_overlay.visible = true
 
 
 func _start_hallway_footsteps() -> void:
@@ -764,7 +787,7 @@ func _on_dialogue_finished() -> void:
 		WorkPhase.WORK_DISRUPTION:
 			# The robot talked the player into pocketing the arm; the shift ends
 			# there, with no separate scrap steal choice.
-			_finish_work_arm_disruption()
+			_finish_work_chest_disruption()
 		_:
 			pass
 
@@ -823,18 +846,21 @@ func _finish_work(stole: bool) -> void:
 
 
 ## Ends the work-disruption shift: the player completed the shift AND pocketed
-## the upper arm the robot pointed out, so they get the normal completion reward
-## plus the steal's suspicion, and carry the arm as contraband (the patrol drone
-## branches on it). There is no scrap steal here - the arm is the only theft.
-func _finish_work_arm_disruption() -> void:
+## the robot chest she pointed out, so they get the normal completion reward
+## plus the steal's suspicion, and carry the chest as contraband (the patrol drone
+## branches on it). There is no scrap steal here - the chest is the only theft.
+func _finish_work_chest_disruption() -> void:
 	_disable_work_hud_timer()
 	set_process(false)
 	var money: int = int(REWARD_COMPLETE.get("money", 0))
 	var suspicion: int = int(REWARD_COMPLETE.get("suspicion", 0)) + int(REWARD_STEAL.get("suspicion", 0))
 	var ingredients: Dictionary = _copy_ingredients(REWARD_COMPLETE.get("ingredients", {}))
-	# The pocketed arm is a real inventory item now (shows up in the workshop).
-	ingredients["upper_arm"] = int(ingredients.get("upper_arm", 0)) + 1
-	finish(money, suspicion, 0, ingredients, false, "upper arm")
+	# The pocketed chest is a real robot part (Main routes robot part ids in the
+	# result to GameState.add_robot_part, which also grants the torso cosmetics).
+	ingredients["chest"] = int(ingredients.get("chest", 0)) + 1
+	# Bringing the chest home is what opens up Maintenance.
+	GameState.maintenance_unlocked = true
+	finish(money, suspicion, 0, ingredients, false, "robot chest")
 
 
 func _finish_work_timeout() -> void:

@@ -1,0 +1,16 @@
+[AUDIT] step bedroom
+[AUDIT]   current=res://scenes/locations/IntroDialogue.tscn
+[AUDIT] done
+[AUDIT] step stress_test
+[AUDIT]   current=res://scenes/locations/IntroDialogue.tscn
+[AUDIT] step stress_test_laptop_overlay
+[AUDIT]   current=res://scenes/locations/IntroDialogue.tscn
+[AUDIT] done
+[AUDIT] step workshop
+[AUDIT]   current=res://scenes/locations/Workshop.tscn
+[AUDIT] step workshop_minigame
+[AUDIT]   current=res://scenes/locations/Workshop.tscn
+[AUDIT] done
+[AUDIT] step sleep
+[AUDIT]   current=res://scenes/locations/IntroDialogue.tscn
+[AUDIT] done

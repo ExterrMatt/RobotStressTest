@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://_claude_tmp/blur/audit.gd" id="1"]
+
+[node name="BlurAudit" type="Node"]
+script = ExtResource("1")

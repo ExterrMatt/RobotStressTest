@@ -1,0 +1,71 @@
+{ "frames": {
+   "laptop_drag_down (background).aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 194, "h": 18 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 3, "y": 1, "w": 194, "h": 18 },
+    "sourceSize": { "w": 200, "h": 20 },
+    "duration": 100
+   },
+   "laptop_drag_down (laptop word).aseprite": {
+    "frame": { "x": 194, "y": 0, "w": 44, "h": 8 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 78, "y": 6, "w": 44, "h": 8 },
+    "sourceSize": { "w": 200, "h": 20 },
+    "duration": 100
+   },
+   "laptop_drag_down (arrow_4).aseprite": {
+    "frame": { "x": 238, "y": 0, "w": 10, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 162, "y": 7, "w": 10, "h": 7 },
+    "sourceSize": { "w": 200, "h": 20 },
+    "duration": 100
+   },
+   "laptop_drag_down (arrow_3).aseprite": {
+    "frame": { "x": 238, "y": 0, "w": 10, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 137, "y": 7, "w": 10, "h": 7 },
+    "sourceSize": { "w": 200, "h": 20 },
+    "duration": 100
+   },
+   "laptop_drag_down (arrow_2).aseprite": {
+    "frame": { "x": 238, "y": 0, "w": 10, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 53, "y": 7, "w": 10, "h": 7 },
+    "sourceSize": { "w": 200, "h": 20 },
+    "duration": 100
+   },
+   "laptop_drag_down (arrow_1).aseprite": {
+    "frame": { "x": 238, "y": 0, "w": 10, "h": 7 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 28, "y": 7, "w": 10, "h": 7 },
+    "sourceSize": { "w": 200, "h": 20 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.1-x64",
+  "image": "laptop_drag_down.png",
+  "format": "RGBA8888",
+  "size": { "w": 248, "h": 18 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "background", "opacity": 255, "blendMode": "normal" },
+   { "name": "laptop word", "opacity": 255, "blendMode": "normal" },
+   { "name": "arrow_4", "opacity": 255, "blendMode": "normal" },
+   { "name": "arrow_3", "opacity": 255, "blendMode": "normal" },
+   { "name": "arrow_2", "opacity": 255, "blendMode": "normal" },
+   { "name": "arrow_1", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

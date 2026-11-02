@@ -7,6 +7,13 @@ const PAN_DURATION: float = 0.35
 const PAN_TRANS: int = Tween.TRANS_SINE
 const PAN_EASE: int = Tween.EASE_IN_OUT
 const BASE_SCENE_SIZE: Vector2 = Vector2(500.0, 400.0)
+## The room art is a packed Aseprite sheet (Split Layers + Trim); Background shows its
+## layers flattened back into the 500x400 room.
+const BACKGROUND_SHEET_PATH: String = "res://assets/textures/backgrounds/maintenance.png"
+const BACKGROUND_SHEET_JSON_PATH: String = "res://assets/textures/backgrounds/maintenance.json"
+## Layers left out of the flattened room: the white outline around the hazard door
+## reads as a highlight, not part of the room.
+const BACKGROUND_SKIPPED_LAYERS: Array[String] = ["white_exit_door"]
 const ZOOM_MULTIPLIER: float = 2.0
 const SCROLL_STEP_VIEW_FRACTION: float = 0.5
 ## The oil (motor oil can) item. Held over the robot it pours, draining a reservoir.
@@ -32,9 +39,24 @@ const OIL_FALL_SECONDS: float = 0.8
 ## Awareness label.
 const OIL_LABEL_COLOR: Color = Color(1, 0.42, 0.42, 1)
 const OIL_LABEL_FONT_SIZE: int = 28
-const MAINTENANCE_ITEM_IDS: Array[StringName] = [
-	&"taser",
-]
+## Dock items that glide into a full-robot drop slot when let go over her (none at the
+## moment - the taser has its own handling, below).
+const MAINTENANCE_ITEM_IDS: Array[StringName] = []
+## The taser is single-use: let go over the robot, it zaps her (TaserZapEffect plus a zap
+## sound), is used up and leaves the dock, and her anger rises by TASER_ANGER. It does
+## nothing for her (yet). Let go anywhere else, it just goes back to the dock.
+const TASER_ITEM_ID: StringName = &"taser"
+const TASER_ANGER: int = 20
+const TASER_ZAP_SOUND_PATH: String = "res://assets/sounds/zap/zap_1.mp3"
+## Suspicion / anger / fatigue under the oil readout, in the colours the rest of the
+## game's HUD gives them.
+const STAT_LABEL_FONT_SIZE: int = 24
+const STAT_LABEL_HEIGHT: float = 30.0
+const STAT_LABEL_COLORS: Dictionary = {
+	"suspicion": Color("e8c878"),
+	"anger": Color("e0906a"),
+	"fatigue": Color("9ab4d8"),
+}
 ## The battery is not a generic full-robot drop; it targets the pelvis hover box
 ## and plays the battery-insert animation (see _spawn_pose_boxes / _on_battery_released).
 const BATTERY_ITEM_ID: StringName = &"battery"
@@ -42,6 +64,46 @@ const BATTERY_ITEM_ID: StringName = &"battery"
 ## makes them vanish at the drop point and spawns the spreading NanobotEffect there
 ## (see _connect_nanobot_item / _on_nanobots_released).
 const NANOBOT_ITEM_ID: StringName = &"quick_patch"
+## The four items are taken out of the inventory into the player's hand (see
+## grab_inventory_item): inventory id -> the dock item that does the work. Any other item
+## can be held too, but does nothing when let go.
+const INVENTORY_DOCK_ITEM_IDS: Dictionary = {
+	"oil": OIL_ITEM_ID,
+	"battery": BATTERY_ITEM_ID,
+	"nanobots": NANOBOT_ITEM_ID,
+	"taser": TASER_ITEM_ID,
+}
+## A held item is drawn the size those four are in hand: their icons are 96px, drawn at the
+## background's pixel ratio (see _match_item_to_background). Any other icon is sized as if it
+## were 96px too, whatever its own resolution, inside the dock items' 56px rect.
+const HELD_ITEM_TEXELS: float = 96.0
+const HELD_ITEM_RECT_SIZE: Vector2 = Vector2(56, 56)
+## A robot part in the inventory (one taken off her on the laptop, or any spare) can be taken
+## out of the inventory too: it's held as its own art (see MaintenanceRobot.part_textures),
+## snaps into a free slot once it's within LIMB_SNAP_DISTANCE robot pixels of where it
+## belongs, and goes on - used up from the inventory - if let go there (see
+## _place_or_drop_held_limb).
+const LIMB_SNAP_DISTANCE: float = 28.0
+## A leg (or a leg piece) also snaps when held up to this much higher (robot pixels) than
+## its hold point - its middle sits low, mostly off the bottom of the view, so this lets it
+## be dropped in up by her hips.
+const LEG_SNAP_EXTRA_UP: float = 40.0
+## A held piece is held by its middle, or (for one partly off screen, like her feet) by the
+## nearest point to it at least this far (robot pixels) inside the screen's edge.
+const LIMB_HOLD_SCREEN_MARGIN: float = 16.0
+## Putting a part on plays a place thunk with a decompress hiss at the same time: the heavy
+## ones for whole limbs and body parts, the small ones for a hand or a limb segment (a limb
+## can also be built up on her piece by piece - see GameState.LIMB_SEGMENTS).
+const LIMB_PLACE_SOUND_DIR: String = "res://assets/sounds/maintenance_place/"
+const LIMB_PLACE_SOUNDS: Array[String] = ["heavy_limb_place_1.mp3", "heavy_limb_place_2.mp3"]
+const LIMB_DECOMPRESS_SOUNDS: Array[String] = ["decompress.mp3"]
+const SMALL_PLACE_SOUNDS: Array[String] = ["small_limb_place_1.mp3", "small_limb_place_2.mp3"]
+const SMALL_DECOMPRESS_SOUNDS: Array[String] = ["small_decompress.mp3", "small_decompress_2.mp3"]
+const SMALL_PLACE_PART_IDS: Array[String] = ["hand"]
+## The hiss follows the thunk by this many seconds; both play pitched up or down by a random
+## whole percent, up to this much.
+const LIMB_DECOMPRESS_DELAY: float = 0.05
+const LIMB_PLACE_PITCH_VARIATION_PERCENT: int = 10
 
 @export var robot_border_buffer: int = 10
 @export_range(0.0, 1.0, 0.01) var robot_alpha_threshold: float = 0.05
@@ -74,22 +136,32 @@ const NANOBOT_ITEM_ID: StringName = &"quick_patch"
 ## snappier, lower is floatier.
 @export_range(1.0, 30.0, 0.5) var mouse_follow_smoothing: float = 8.0
 
-## Design values for the corner END button, kept in sync with Main's shared
-## floating END/LEAVE button: the GoldHudButton look at 1.5x font + padding.
-const END_BUTTON_FONT_SIZE: int = 48         # Main.LARGE_SCENE_HUD_FONT_SIZE (32) * 1.5
-const END_BUTTON_PADDING_SCALE: float = 1.5  # Main.LARGE_SCENE_END_BUTTON_SIZE_SCALE
-
 @onready var camera_window: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow
 @onready var scene_canvas: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas
+@onready var background: TextureRect = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/Background
 @onready var robot: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/SceneCanvas/RobotLayer/MaintenanceRobot
 @onready var end_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/EndButton
-@onready var laptop_button: Button = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/LaptopButton
+## The (hidden) dock the four items rest in between uses; held items are dragged in its space.
+@onready var item_dock: Control = $FullscreenLayer/FullscreenRoot/SceneScaler/CameraWindow/ItemDock
 ## Idle template of the nanobot spread effect. Its exported variables are tuned in the
 ## editor; each nanobot drop duplicates it so the copy carries those settings.
 @onready var _nanobot_effect_template: NanobotEffect = $NanobotEffectTemplate
 
 ## The laptop overlay while it is open (assembly app); null when closed.
 var _laptop_overlay: Node = null
+## The swipe-down laptop bar (same as the stress test's left view), its invisible
+## placement anchor in the camera window, and whether it can trigger (false after a
+## flip until the cursor leaves the bar).
+var _laptop_bar: LaptopDragBar = null
+var _laptop_bar_anchor: Control = null
+var _laptop_bar_armed: bool = true
+## The INVENTORY button in the bottom-left corner, and the anchor it copies (like the bar).
+var _inventory_button: InventoryButton = null
+var _inventory_button_anchor: Control = null
+## The bar draws just above the laptop overlay (canvas layer 40).
+const LAPTOP_BAR_CANVAS_LAYER: int = 41
+## Just above the inventory overlay (InventoryOverlay, layer 100).
+const INVENTORY_BUTTON_CANVAS_LAYER: int = 101
 ## While the laptop is open the camera sway is damped to a fifth so it barely drifts.
 const LAPTOP_CAMERA_SWAY_FACTOR: float = 0.2
 var _camera_sway_factor: float = 1.0
@@ -100,10 +172,29 @@ var _drop_slots: Array[DropSlot] = []
 ## Per-leg hover boxes (click to swing that leg out) and the pelvis battery-drop
 ## box, keyed "left"/"right"/"pelvis". Created in _spawn_pose_boxes().
 var _pose_boxes: Dictionary = {}
+## True from a click on a leg until the mouse button is let go (closed-hand cursor).
+var _leg_grip: bool = false
+## The item in the player's hand, taken out of the inventory (null when empty-handed), and
+## whether it's one of the others (a plain sprite that does nothing) rather than a dock item.
+var _held_item: DraggableItem = null
+var _held_generic: bool = false
+## A limb in the hand, taken out of the inventory to go back on her (null when not), drawn in
+## the robot's own space: which part, which side (paired parts), the robot-canvas point the
+## cursor holds it by (its art's middle), and whether it has snapped into its place.
+var _held_limb: Control = null
+var _held_limb_id: String = ""
+var _held_limb_side: String = ""
+var _held_limb_centre: Vector2 = Vector2.ZERO
+var _held_limb_snapped: bool = false
+## Side -> [its art (full-canvas textures, back to front), the rect that art covers on her].
+var _held_limb_art: Dictionary = {}
 var _battery_item: DraggableItem = null
 var _nanobot_item: DraggableItem = null
+var _taser_item: DraggableItem = null
 var _oil_item: DraggableItem = null
 var _oil_label: Label = null
+## The suspicion / anger / fatigue readouts, keyed by stat.
+var _stat_labels: Dictionary = {}
 var _oil_remaining: float = OIL_TOTAL
 ## True once the can has run dry: it tips over (top west) and, on release, falls away.
 var _oil_empty: bool = false
@@ -123,6 +214,7 @@ var _mouse_follow_offset: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
+	_apply_background()
 	if camera_window != null and not camera_window.resized.is_connected(_on_camera_window_resized):
 		camera_window.resized.connect(_on_camera_window_resized)
 	_apply_default_canvas_transform()
@@ -133,17 +225,29 @@ func _ready() -> void:
 	_spawn_pose_boxes()
 	_connect_battery_item()
 	_connect_nanobot_item()
+	_connect_taser_item()
 	_connect_item_grab_scaling()
+	_hide_item_dock()
+	add_to_group(InventoryOverlay.GRABBER_GROUP)
 	_spawn_oil_label()
-	_style_button_like_workshop(end_button)
-	_style_button_like_workshop(laptop_button)
-	if laptop_button != null and not laptop_button.pressed.is_connected(_on_laptop_button_pressed):
-		laptop_button.pressed.connect(_on_laptop_button_pressed)
+	_spawn_stat_labels()
+	style_corner_button(end_button)
+	_create_laptop_bar()
 	_connect_inventory_signals()
 	call_deferred("_cache_oil_item")
 	# Pre-build the robot silhouette mask now (off the drop) so the first nanobot drop,
 	# which needs it, doesn't pay the one-time build cost as a visible hitch.
 	call_deferred("_warm_nanobot_mask")
+
+
+func _apply_background() -> void:
+	if background == null:
+		return
+	var texture := PackedSpriteSheet.flattened_texture(
+		BACKGROUND_SHEET_PATH, BACKGROUND_SHEET_JSON_PATH, BACKGROUND_SKIPPED_LAYERS
+	)
+	if texture != null:
+		background.texture = texture
 
 
 ## Keep the robot in sync with the player's inventory while the scene is open: the
@@ -166,7 +270,7 @@ func _on_robot_inventory_changed(_data: Dictionary = {}) -> void:
 	_refresh_robot_parts()
 
 
-## Rebuilds the robot's layer stack from the current inventory and re-derives every
+## Rebuilds the robot's layer stack from what she's wearing and re-derives every
 ## interaction region that depends on which parts are shown (the hover box, item drop
 ## slots, and the leg / shoulder / chest-cover / pelvis pose boxes), so clicks and drops
 ## keep tracking the robot after its parts change.
@@ -183,6 +287,27 @@ func _refresh_robot_parts() -> void:
 	call_deferred("_warm_nanobot_mask")
 
 
+## The robot's look settings, for the Shift+Tab debug menu (see MaintenanceRobot.DEBUG_SETTINGS).
+func debug_setting_keys() -> Array:
+	if robot == null or not is_instance_valid(robot) or not robot.has_method("debug_setting_keys"):
+		return []
+	return robot.call("debug_setting_keys")
+
+
+func debug_setting_label(key: String) -> String:
+	if robot == null or not is_instance_valid(robot) or not robot.has_method("debug_setting_label"):
+		return key
+	return String(robot.call("debug_setting_label", key))
+
+
+## Steps one look setting, then rebuilds her so it shows (and the hover boxes follow).
+func debug_cycle_setting(key: String) -> void:
+	if robot == null or not is_instance_valid(robot) or not robot.has_method("debug_cycle_setting"):
+		return
+	robot.call("debug_cycle_setting", key)
+	_refresh_robot_parts()
+
+
 ## Pre-builds (and caches) the robot's silhouette mask so a later nanobot drop reads it
 ## instead of building it mid-effect. Cheap when the cache is already warm.
 func _warm_nanobot_mask() -> void:
@@ -190,42 +315,127 @@ func _warm_nanobot_mask() -> void:
 		robot.call("get_opaque_mask")
 
 
-## Restyle the in-scene END button to match Main's shared corner END/LEAVE button
-## (the gold-bordered GoldHudButton look at 1.5x font + padding). Only the design
-## changes: the button keeps its authored bottom-right anchor and offsets, and
-## since it grows toward the top-left (grow direction BEGIN) its bottom-right
-## corner stays exactly where it is while the larger design expands up and left.
-func _style_button_like_workshop(btn: Button) -> void:
-	if btn == null:
+# --- laptop -------------------------------------------------------------------
+
+## The stress test's laptop bar: a wide strip along the bottom of the screen. Swiping
+## the mouse down onto it flips the laptop (assembly app) up, and - since it stays on
+## screen over the open laptop - swiping down onto it again puts the laptop away. After
+## each flip the cursor has to leave the bar before it can trigger again, so one swipe
+## never opens and closes it in one go.
+##
+## The bar lives on its own canvas layer just above the laptop's, and each frame copies
+## the placement of an invisible anchor laid out along the bottom of the full-screen root
+## (not the camera window, which overflows the screen here), so it stays on screen.
+func _create_laptop_bar() -> void:
+	var hud_root := get_node_or_null(^"FullscreenLayer/FullscreenRoot") as Control
+	if hud_root == null:
 		return
-	btn.theme_type_variation = &"GoldHudButton"
-	btn.focus_mode = Control.FOCUS_NONE
-	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.add_theme_font_size_override("font_size", END_BUTTON_FONT_SIZE)
-	# Scale each state's stylebox padding to match the enlarged font while leaving
-	# the theme's border width untouched (so it stays crisp, like Main's button).
-	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var base := btn.get_theme_stylebox(state)
-		if base == null:
-			continue
-		var sb := base.duplicate() as StyleBox
-		sb.content_margin_left = base.get_margin(SIDE_LEFT) * END_BUTTON_PADDING_SCALE
-		sb.content_margin_top = base.get_margin(SIDE_TOP) * END_BUTTON_PADDING_SCALE
-		sb.content_margin_right = base.get_margin(SIDE_RIGHT) * END_BUTTON_PADDING_SCALE
-		sb.content_margin_bottom = base.get_margin(SIDE_BOTTOM) * END_BUTTON_PADDING_SCALE
-		btn.add_theme_stylebox_override(state, sb)
+	_laptop_bar_anchor = Control.new()
+	_laptop_bar_anchor.name = "LaptopBarAnchor"
+	_laptop_bar_anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_laptop_bar_anchor.anchor_left = 0.22
+	_laptop_bar_anchor.anchor_right = 0.78
+	_laptop_bar_anchor.anchor_top = 1.0
+	_laptop_bar_anchor.anchor_bottom = 1.0
+	# The bar art at 3x (600 x 60) fits this slot (see LaptopDragBar). Sits 7px off the
+	# bottom, the same spot the stress test's bar lands on screen.
+	_laptop_bar_anchor.offset_top = -67.0
+	_laptop_bar_anchor.offset_bottom = -7.0
+	_laptop_bar_anchor.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	hud_root.add_child(_laptop_bar_anchor)
+
+	var layer := CanvasLayer.new()
+	layer.name = "LaptopBarLayer"
+	layer.layer = LAPTOP_BAR_CANVAS_LAYER
+	add_child(layer)
+	_laptop_bar = LaptopDragBar.new()
+	_laptop_bar.name = "LaptopBar"
+	_laptop_bar.mouse_filter = Control.MOUSE_FILTER_PASS
+	_laptop_bar.gui_input.connect(_on_laptop_bar_input)
+	layer.add_child(_laptop_bar)
+
+	# The inventory button in the bottom-left corner, placed like the bar (copying an
+	# anchor laid out in the full-screen root, 7px off the edges). Its layer sits just above
+	# the inventory overlay's, as the bar's sits above the laptop's, so it can be swiped
+	# again to put the inventory away.
+	var inventory_layer := CanvasLayer.new()
+	inventory_layer.name = "InventoryButtonLayer"
+	inventory_layer.layer = INVENTORY_BUTTON_CANVAS_LAYER
+	add_child(inventory_layer)
+	_inventory_button = InventoryButton.new()
+	_inventory_button.name = "InventoryButton"
+	_inventory_button.pressed.connect(_on_inventory_button_pressed)
+	inventory_layer.add_child(_inventory_button)
+	_inventory_button_anchor = Control.new()
+	_inventory_button_anchor.name = "InventoryButtonAnchor"
+	_inventory_button_anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var button_size := _inventory_button.canvas_size() * InventoryButton.ART_SCALE
+	_inventory_button_anchor.anchor_top = 1.0
+	_inventory_button_anchor.anchor_bottom = 1.0
+	_inventory_button_anchor.offset_left = 7.0
+	_inventory_button_anchor.offset_right = 7.0 + button_size.x
+	_inventory_button_anchor.offset_top = -7.0 - button_size.y
+	_inventory_button_anchor.offset_bottom = -7.0
+	hud_root.add_child(_inventory_button_anchor)
 
 
-## Open the laptop (assembly app) as a fullscreen overlay on top of maintenance —
-## the same "instantiate the scene and show it over this one" approach the workshop
-## uses for its minigame. While it is up, maintenance's own robot input is paused so
-## clicks belong to the laptop; closing it restores everything.
-func _on_laptop_button_pressed() -> void:
-	if _laptop_overlay != null and is_instance_valid(_laptop_overlay):
+## The inventory button (click or swipe down): opens or puts away the inventory, like
+## pressing Space.
+func _on_inventory_button_pressed() -> void:
+	var node := get_parent()
+	while node != null and not node.has_method("toggle_inventory"):
+		node = node.get_parent()
+	if node != null:
+		node.call("toggle_inventory")
+
+
+## Swipe down onto the bar: open the laptop, or close it if it's already open.
+func _on_laptop_bar_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and event.relative.y > 0.0 and _laptop_bar_armed:
+		_laptop_bar_armed = false
+		if _laptop_open():
+			_close_laptop()
+		else:
+			_open_laptop_overlay()
+
+
+func _laptop_open() -> bool:
+	return _laptop_overlay != null and is_instance_valid(_laptop_overlay)
+
+
+## Keeps the bar on its anchor's spot, redraws its pulse, and re-arms it once the
+## cursor is off it.
+func _update_laptop_bar() -> void:
+	if _laptop_bar == null:
 		return
+	if _laptop_bar_anchor != null:
+		_laptop_bar.position = _laptop_bar_anchor.global_position
+		_laptop_bar.size = _laptop_bar_anchor.size
+		_laptop_bar.scale = _laptop_bar_anchor.get_global_transform().get_scale()
+	if _inventory_button != null and _inventory_button_anchor != null:
+		_inventory_button.position = _inventory_button_anchor.global_position
+		_inventory_button.scale = _inventory_button_anchor.get_global_transform().get_scale()
+	_laptop_bar.queue_redraw()
+	if not _laptop_bar.contains_global_point(_laptop_bar.get_global_mouse_position()):
+		_laptop_bar_armed = true
+
+
+## Opens the laptop (assembly app) as an overlay on top of maintenance. The open
+## animation plays every time; a click on the transparent background shuts it on the
+## spot (no close animation), as in the stress test. While it is up, maintenance's own
+## robot input is paused so clicks belong to the laptop.
+func _open_laptop_overlay() -> void:
+	if _laptop_open():
+		return
+	# Whatever's in hand goes back in the inventory first.
+	if _held_limb != null:
+		_cancel_held_limb()
+	if _held_item != null:
+		_cancel_held_item()
 	var laptop: Node = LAPTOP_SCENE.instantiate()
 	# Laptop.gd has no class_name, so drive it dynamically.
 	laptop.set("overlay_mode", true)
+	laptop.set("instant", true)
 	laptop.set("app_mode", "assembly")
 	# Restricted desktop: maintenance app + settings only.
 	laptop.set("desktop_context", "maintenance")
@@ -244,11 +454,45 @@ func _on_laptop_overlay_closed() -> void:
 	_camera_sway_factor = 1.0
 
 
+## Shuts the laptop through its own close path (which emits `closed`).
+func _close_laptop() -> void:
+	if not _laptop_open():
+		return
+	var laptop := _laptop_overlay
+	if laptop.has_method("_on_leave_pressed"):
+		laptop.call("_on_leave_pressed")
+	else:
+		laptop.queue_free()
+		_on_laptop_overlay_closed()
+
+
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton):
 		return
 	var mouse_event := event as InputEventMouseButton
+	# A limb in hand: a right-click puts it back; letting go puts it on her if it's in place.
+	if _held_limb != null:
+		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
+			_cancel_held_limb()
+		elif mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
+			_place_or_drop_held_limb()
+		get_viewport().set_input_as_handled()
+		return
+	# An item in hand: a right-click puts it back; letting go uses it (a dock item's release
+	# is caught by the dock, ItemDock, before it gets here). Nothing else takes clicks.
+	if _held_item != null:
+		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
+			_cancel_held_item()
+		elif _held_generic and mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
+			var item := _held_item
+			_held_item = null
+			item.end_drag(mouse_event.global_position)
+		get_viewport().set_input_as_handled()
+		return
 	if not mouse_event.pressed:
+		if _leg_grip and mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			_leg_grip = false
+			_update_leg_cursor()
 		return
 
 	if robot_box_zoom_enabled and _zoomed \
@@ -260,6 +504,10 @@ func _input(event: InputEvent) -> void:
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 		return
 
+	# The hand closes on the click on a leg itself, before it swings.
+	if _leg_box_under(mouse_event.global_position):
+		_leg_grip = true
+		_update_leg_cursor()
 	# Pose hover boxes (shoulders / chest cover / legs) take clicks before the robot
 	# zoom, so their toggles aren't swallowed by it.
 	if _handle_pose_box_click(mouse_event.global_position):
@@ -283,6 +531,9 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	_update_camera_mouse_follow(delta)
+	_update_laptop_bar()
+	_update_held_limb()
+	_update_leg_cursor()
 	_update_oil_pour(delta)
 	if _hover_box == null or not is_instance_valid(_hover_box):
 		return
@@ -416,10 +667,11 @@ func _spawn_pose_boxes() -> void:
 	if robot == null or not is_instance_valid(robot):
 		return
 
-	# Leg boxes: click to swing that leg out.
-	if robot.has_method("leg_rect") and robot.has_method("has_leg"):
+	# Leg boxes: click to swing that leg out (only while she sits up - leaning back on
+	# fewer than two thighs, her legs stay put).
+	if robot.has_method("leg_rect") and robot.has_method("can_leg_out"):
 		for side in ["left", "right"]:
-			if not bool(robot.call("has_leg", side)):
+			if not bool(robot.call("can_leg_out", side)):
 				continue
 			var rect: Rect2 = robot.call("leg_rect", side)
 			if rect.size != Vector2.ZERO:
@@ -494,6 +746,31 @@ func _handle_pose_box_click(global_pos: Vector2) -> bool:
 	return handled
 
 
+## Whether a leg (the limbs that move here) is under `global_pos`.
+func _leg_box_under(global_pos: Vector2) -> bool:
+	return _pose_box_hit("leg_left", global_pos) or _pose_box_hit("leg_right", global_pos)
+
+
+## The grab cursor for her legs: a closed hand from the click on a leg until the mouse
+## button is let go, an open hand while a leg is under the mouse. Off while the laptop
+## is up (it owns the mouse then).
+func _update_leg_cursor() -> void:
+	# A release something else took (an overlay up over the scene) still lets go of the leg.
+	if _laptop_open() or not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_leg_grip = false
+	var state: int = CursorTheme.Grab.NONE
+	# The hand grips whatever it's holding from the inventory.
+	if _leg_grip or _held_item != null or _held_limb != null:
+		state = CursorTheme.Grab.CLOSED
+	elif not _laptop_open() and _leg_box_under(get_global_mouse_position()):
+		state = CursorTheme.Grab.OPEN
+	CursorTheme.set_grab(self, state)
+
+
+func _exit_tree() -> void:
+	CursorTheme.set_grab(self, CursorTheme.Grab.NONE)
+
+
 func _pose_box_hit(key: String, global_pos: Vector2) -> bool:
 	var box: Control = _pose_boxes.get(key)
 	return box != null and is_instance_valid(box) and box.is_visible_in_tree() \
@@ -548,6 +825,71 @@ func _both_legs_out() -> bool:
 	if robot == null or not is_instance_valid(robot) or not robot.has_method("is_leg_out"):
 		return false
 	return bool(robot.call("is_leg_out", "left")) and bool(robot.call("is_leg_out", "right"))
+
+
+## Wire the dock's taser: let go over the robot, it zaps her (see TASER_ITEM_ID).
+func _connect_taser_item() -> void:
+	_taser_item = _find_draggable_item_by_id(self, TASER_ITEM_ID)
+	if _taser_item != null and not _taser_item.drag_released.is_connected(_on_taser_released):
+		_taser_item.drag_released.connect(_on_taser_released)
+	_update_taser_item_availability()
+
+
+## The dock taser shows (and can be grabbed) only while the player owns one.
+func _update_taser_item_availability() -> void:
+	if _taser_item == null or not is_instance_valid(_taser_item):
+		return
+	var owned := GameState.has_tool(String(TASER_ITEM_ID))
+	_taser_item.visible = owned
+	_taser_item.mouse_filter = Control.MOUSE_FILTER_PASS if owned else Control.MOUSE_FILTER_IGNORE
+
+
+func _on_taser_released(item: DraggableItem, release_global_pos: Vector2) -> void:
+	# Only over the robot; anywhere else WorkInventory flies it back to the dock.
+	if _hover_box == null or not is_instance_valid(_hover_box) or not _hover_box.is_visible_in_tree():
+		return
+	if not _hover_box.get_global_rect().has_point(release_global_pos):
+		return
+	if not GameState.has_tool(String(TASER_ITEM_ID)):
+		return
+	_spawn_taser_zap(release_global_pos)
+	_play_one_shot(TASER_ZAP_SOUND_PATH)
+	GameState.add_anger(TASER_ANGER)
+	GameState.use_up_tool(String(TASER_ITEM_ID))
+	# Gone from the spot it was let go - straight back to its dock slot (no glide home),
+	# where it stays hidden unless there's another.
+	if item.home_slot != null and is_instance_valid(item.home_slot):
+		item.place_in(item.home_slot)
+	_update_taser_item_availability()
+
+
+## The taser's bolts and flicker, laid over the robot like the nanobot effect so its
+## local space is her pixel space.
+func _spawn_taser_zap(release_global_pos: Vector2) -> void:
+	if robot == null or not is_instance_valid(robot) or robot.get_parent() == null:
+		return
+	var effect := TaserZapEffect.new()
+	effect.robot = robot
+	robot.get_parent().add_child(effect)
+	effect.position = robot.position
+	effect.scale = robot.scale
+	effect.rotation = robot.rotation
+	effect.pivot_offset = robot.pivot_offset
+	effect.size = robot.size
+	effect.start(robot.get_global_transform().affine_inverse() * release_global_pos)
+
+
+## Plays `path` once (at `pitch`) on a throwaway player that frees itself when done.
+func _play_one_shot(path: String, pitch: float = 1.0) -> void:
+	var stream := load(path) as AudioStream
+	if stream == null:
+		return
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.pitch_scale = pitch
+	add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
 
 
 ## Wire the dock's nanobot (quick_patch) draggable so releasing it over the robot spawns
@@ -608,7 +950,7 @@ func _spawn_nanobot_effect(release_global_pos: Vector2) -> void:
 ## release: the grab applies the scene-matched scale, the release restores the resting scale
 ## (the slot supplies the 2x again).
 func _connect_item_grab_scaling() -> void:
-	var ids: Array[StringName] = [OIL_ITEM_ID, NANOBOT_ITEM_ID, BATTERY_ITEM_ID]
+	var ids: Array[StringName] = [OIL_ITEM_ID, NANOBOT_ITEM_ID, BATTERY_ITEM_ID, TASER_ITEM_ID]
 	for id in MAINTENANCE_ITEM_IDS:
 		ids.append(id)
 	for id in ids:
@@ -626,6 +968,8 @@ func _on_dock_item_grabbed(item: DraggableItem) -> void:
 
 
 func _on_dock_item_released(item: DraggableItem, _release_global_pos: Vector2) -> void:
+	if item == _held_item:
+		_held_item = null
 	if item == null or not is_instance_valid(item):
 		return
 	# A spent oil can falls away with gravity instead of snapping home at the resting scale.
@@ -661,6 +1005,295 @@ func _match_item_to_background(item: DraggableItem) -> void:
 	item.scale = Vector2(factor, factor)
 
 
+# --- items from the inventory ----------------------------------------------
+
+## The four items used to sit in a dock down the sides of the screen; now they come out of
+## the inventory (grab_inventory_item). The dock's slots stay, hidden, as the items' homes
+## between uses - anything dropped back "home" simply disappears.
+func _hide_item_dock() -> void:
+	if item_dock == null:
+		return
+	for column_name in ["LeftColumn", "RightColumn"]:
+		var column := item_dock.get_node_or_null(NodePath(column_name)) as CanvasItem
+		if column != null:
+			column.visible = false
+
+
+## Items can be taken out of the inventory (InventoryOverlay.GRABBER_GROUP) while the hand
+## is empty and the laptop isn't up.
+func can_grab_inventory_items() -> bool:
+	return _held_item == null and _held_limb == null and not _laptop_open() and item_dock != null
+
+
+## Takes the inventory item `entry` into the hand: one of the four picks up its dock item,
+## which then works just as it did from the dock (oil pours over her, the battery seats in
+## the pelvis, the nanobots spread, the taser zaps) when let go; anything else is held as its
+## icon and does nothing when let go. Either way it's centred under the cursor at the held
+## size, and a right-click puts it back (see _cancel_held_item).
+func grab_inventory_item(entry: Dictionary) -> bool:
+	if not can_grab_inventory_items():
+		return false
+	var id := String(entry.get("id", ""))
+	# A robot part with a free slot on her is held up to her to put on (it snaps in only once
+	# what it anchors to is on her). With no free slot, it's only held as its icon (below).
+	if String(entry.get("kind", "")) == "robot_part" and GameState.get_robot_part_count(id) > 0 \
+			and _grab_limb(id):
+		return true
+	# A limb segment (thigh, forearm...) that can go on next somewhere builds that limb up.
+	if GameState.limb_for_segment(id) != "" and _grab_limb(id):
+		return true
+	var item: DraggableItem = null
+	if INVENTORY_DOCK_ITEM_IDS.has(id):
+		item = _find_draggable_item_by_id(item_dock, INVENTORY_DOCK_ITEM_IDS[id])
+	_held_generic = item == null
+	if item == null:
+		item = _make_generic_held_item(entry.get("texture") as Texture2D)
+		if item == null:
+			return false
+	elif item.get_parent() != item_dock:
+		item.get_parent().remove_child(item)
+		item_dock.add_child(item)
+	item.visible = true
+	item.scale = Vector2.ONE
+	item.position = item_dock.get_local_mouse_position() - item.size * 0.5
+	_held_item = item
+	item.start_drag()
+	if _held_generic:
+		_size_generic_held_item(item)
+	return true
+
+
+## A plain held icon for an item with no use here; it's freed when let go or put back.
+func _make_generic_held_item(texture: Texture2D) -> DraggableItem:
+	if texture == null:
+		return null
+	var item := DraggableItem.new()
+	item.name = "HeldItem"
+	item.texture = texture
+	item.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	item.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	item.size = HELD_ITEM_RECT_SIZE
+	item_dock.add_child(item)
+	item.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item.drag_released.connect(func(released: DraggableItem, _at: Vector2) -> void: released.queue_free())
+	return item
+
+
+## Sizes a plain held icon like the four dock items in hand: as a 96px icon would be at the
+## background's pixel ratio (HELD_ITEM_TEXELS), whatever the icon's own resolution.
+func _size_generic_held_item(item: DraggableItem) -> void:
+	var tex_size := item.texture.get_size()
+	if tex_size.x <= 0.0 or tex_size.y <= 0.0 or scene_canvas == null:
+		return
+	var fit := minf(item.size.x / tex_size.x, item.size.y / tex_size.y)
+	var factor := scene_canvas.scale.x * HELD_ITEM_TEXELS / (fit * maxf(tex_size.x, tex_size.y))
+	item.pivot_offset = item.size * 0.5
+	item.scale = Vector2(factor, factor)
+
+
+## Right-click while holding: the item goes back into the inventory unused. (An oil can
+## that has run dry is spent either way, so it falls away as if let go.)
+func _cancel_held_item() -> void:
+	var item := _held_item
+	_held_item = null
+	if item == null or not is_instance_valid(item):
+		return
+	item.cancel_drag()
+	if _held_generic:
+		item.queue_free()
+		return
+	if item == _oil_item and _oil_empty:
+		_start_oil_can_fall()
+		return
+	item.scale = Vector2.ONE
+	if item.home_slot != null and is_instance_valid(item.home_slot):
+		item.place_in(item.home_slot)
+
+
+# --- limbs from the inventory ----------------------------------------------
+
+## Takes a robot part (or limb segment) out of the inventory into the hand, held as its own
+## art in the robot's space, by its middle. For an arm / leg / hand with both sides free,
+## it's whichever side the cursor is nearer (see _update_held_limb).
+func _grab_limb(id: String) -> bool:
+	if robot == null or not robot.has_method("part_textures") or _limb_sides(id).is_empty():
+		return false
+	_held_limb_id = id
+	_held_limb_side = ""
+	_held_limb_snapped = false
+	# Each side's art and the rect it covers on her, worked out once.
+	_held_limb_art = {}
+	for side in _limb_sides(id):
+		var textures := _held_limb_textures(side)
+		_held_limb_art[side] = [textures, _art_rect(textures)]
+	_held_limb = Control.new()
+	_held_limb.name = "HeldLimb"
+	_held_limb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_held_limb.size = robot.size
+	robot.get_parent().add_child(_held_limb)
+	_update_held_limb()
+	return true
+
+
+## The sides part `id` can go on: each free side of an arm / leg / hand, or [""] for any
+## other part whose slot is free. For a limb segment, the sides whose limb it's next for.
+## Empty when there are none.
+func _limb_sides(id: String) -> Array[String]:
+	var sides: Array[String] = []
+	var limb := GameState.limb_for_segment(id)
+	if limb != "":
+		for side in GameState.PART_SIDES:
+			if GameState.next_limb_segment(limb, side) == id:
+				sides.append(side)
+	elif GameState.is_paired_part(id):
+		for side in GameState.PART_SIDES:
+			if not GameState.is_part_attached_on(id, side):
+				sides.append(side)
+	elif GameState.is_robot_part_id(id) and GameState.get_attached_part_count(id) < 1:
+		sides.append("")
+	return sides
+
+
+## Draws the held limb as `side`'s art (full-canvas layers in place).
+func _show_held_limb_side(side: String) -> void:
+	for child in _held_limb.get_children():
+		child.queue_free()
+	_held_limb_side = side
+	var art: Array = _held_limb_art.get(side, [[], Rect2(Vector2.ZERO, robot.size)])
+	for tex in art[0]:
+		var layer := TextureRect.new()
+		layer.texture = tex
+		layer.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		layer.texture_filter = robot.texture_filter
+		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.size = robot.size
+		_held_limb.add_child(layer)
+
+
+## The rect the opaque pixels cover across full-canvas `textures` (the whole robot if none).
+func _art_rect(textures: Array[Texture2D]) -> Rect2:
+	var used := Rect2i()
+	for tex in textures:
+		var image := tex.get_image()
+		if image == null:
+			continue
+		var rect := image.get_used_rect()
+		if rect.size != Vector2i.ZERO:
+			used = rect if used.size == Vector2i.ZERO else used.merge(rect)
+	return Rect2(used) if used.size != Vector2i.ZERO else Rect2(Vector2.ZERO, robot.size)
+
+
+## The point (robot pixels) a piece covering `art` is held by: its middle - pulled onto the
+## part of it that's on screen when that's off it, or onto the nearest point on screen when
+## all of it is (her shins and feet run off the bottom of the view), so its place can always
+## be reached with the cursor.
+func _hold_point(art: Rect2) -> Vector2:
+	var to_robot := robot.get_global_transform_with_canvas().affine_inverse()
+	var view := (to_robot * get_viewport().get_visible_rect()).grow(-LIMB_HOLD_SCREEN_MARGIN)
+	var reachable := art.intersection(view)
+	if reachable.size == Vector2.ZERO:
+		reachable = view
+	return art.get_center().clamp(reachable.position, reachable.end)
+
+
+## The art for the held part on `side`.
+func _held_limb_textures(side: String) -> Array[Texture2D]:
+	return robot.call("part_textures", _held_limb_id, side)
+
+
+## Each frame while a limb is held: it follows the cursor by its middle - on the side nearer
+## the cursor, for a paired part - and snaps into its place on her once it's within
+## LIMB_SNAP_DISTANCE of it and can go on there.
+func _update_held_limb() -> void:
+	if _held_limb == null or not is_instance_valid(_held_limb):
+		return
+	var mouse := robot.get_local_mouse_position()
+	var best_side := _held_limb_side
+	var best_distance := INF
+	for side in _held_limb_art:
+		var distance := mouse.distance_to(_hold_point(_held_limb_art[side][1]))
+		if distance < best_distance:
+			best_distance = distance
+			best_side = side
+	if best_side != _held_limb_side or _held_limb.get_child_count() == 0:
+		_show_held_limb_side(best_side)
+	_held_limb_centre = _hold_point(_held_limb_art[_held_limb_side][1])
+	var offset := mouse - _held_limb_centre
+	_held_limb_snapped = _snap_distance(offset) <= LIMB_SNAP_DISTANCE and _limb_placeable(_held_limb_id, _held_limb_side)
+	_held_limb.position = robot.position + (Vector2.ZERO if _held_limb_snapped else offset)
+
+
+## How far the cursor (`offset` from the held piece's hold point) is from where it snaps in:
+## the hold point itself, or for a leg piece anywhere on the line from it up
+## LEG_SNAP_EXTRA_UP (so its snap zone is stretched up towards her hips).
+func _snap_distance(offset: Vector2) -> float:
+	if _held_limb_id != "leg" and GameState.limb_for_segment(_held_limb_id) != "leg":
+		return offset.length()
+	return offset.distance_to(Vector2(0.0, clampf(offset.y, -LEG_SNAP_EXTRA_UP, 0.0)))
+
+
+## Whether part `id` can go on `side` now: it needs what it anchors to on her - a leg the
+## stomach, a hand its arm, the stomach and an arm the chest - and neither a leg nor an arm
+## goes where one is part-built. A limb segment goes on only as the next piece of its limb.
+func _limb_placeable(id: String, side: String) -> bool:
+	var limb := GameState.limb_for_segment(id)
+	if limb != "":
+		return GameState.next_limb_segment(limb, side) == id
+	return GameState.can_equip_part(id, side)
+
+
+## Let go of the held limb: snapped into place, it goes on her with its place sounds, used up
+## from the inventory - a whole part into its slot (and that slot locked, as on the laptop), a
+## segment onto the limb it builds (the last one makes the limb whole). Anywhere else it goes
+## back in the inventory.
+func _place_or_drop_held_limb() -> void:
+	var placed := _held_limb_snapped
+	var id := _held_limb_id
+	var side := _held_limb_side
+	_clear_held_limb()
+	if not placed:
+		return
+	var limb := GameState.limb_for_segment(id)
+	if limb != "":
+		if not GameState.add_limb_segment(limb, side, id):
+			return
+	elif GameState.lock_limb(id, side).is_empty():
+		return
+	_play_limb_place_sounds(id)
+
+
+func _cancel_held_limb() -> void:
+	_clear_held_limb()
+
+
+func _clear_held_limb() -> void:
+	if _held_limb != null and is_instance_valid(_held_limb):
+		_held_limb.queue_free()
+	_held_limb = null
+	_held_limb_snapped = false
+
+
+## The thunk of a part going on, then its decompress hiss LIMB_DECOMPRESS_DELAY later: the
+## heavy pair for a whole limb or body part, the small pair for a hand or a limb segment.
+## Each plays at its own random pitch (see _random_place_pitch).
+func _play_limb_place_sounds(id: String) -> void:
+	var small := id in SMALL_PLACE_PART_IDS or GameState.limb_for_segment(id) != ""
+	var places: Array[String] = SMALL_PLACE_SOUNDS if small else LIMB_PLACE_SOUNDS
+	var hisses: Array[String] = SMALL_DECOMPRESS_SOUNDS if small else LIMB_DECOMPRESS_SOUNDS
+	_play_one_shot(LIMB_PLACE_SOUND_DIR + places[randi() % places.size()], _random_place_pitch())
+	var hiss := LIMB_PLACE_SOUND_DIR + hisses[randi() % hisses.size()]
+	get_tree().create_timer(LIMB_DECOMPRESS_DELAY).timeout.connect(func() -> void:
+		if is_inside_tree():
+			_play_one_shot(hiss, _random_place_pitch()))
+
+
+## A random pitch for the place sounds: up or down by a whole percent, at most
+## LIMB_PLACE_PITCH_VARIATION_PERCENT.
+func _random_place_pitch() -> float:
+	var percent := randi_range(-LIMB_PLACE_PITCH_VARIATION_PERCENT, LIMB_PLACE_PITCH_VARIATION_PERCENT)
+	return 1.0 + float(percent) / 100.0
+
+
 ## The red top-right oil readout, styled like the stress-test HUD labels. Parented to the
 ## full-screen HUD root (not the CameraWindow, which overflows/clips under the aspect COVER,
 ## nor the scene) so it stays pinned to the top-right of the view, never the background.
@@ -688,6 +1321,45 @@ func _spawn_oil_label() -> void:
 	_oil_label.z_index = 120
 	hud_root.add_child(_oil_label)
 	_refresh_oil_label()
+
+
+## Suspicion, anger and fatigue, stacked under the oil readout in the top-right and kept
+## up to date as they change.
+func _spawn_stat_labels() -> void:
+	var hud_root: Node = _oil_label.get_parent() if _oil_label != null else null
+	if hud_root == null:
+		return
+	var top := _oil_label.offset_bottom
+	for stat in ["suspicion", "anger", "fatigue"]:
+		var label := Label.new()
+		label.name = String(stat).capitalize() + "Label"
+		label.anchor_left = 1.0
+		label.anchor_right = 1.0
+		label.offset_left = -220.0
+		label.offset_right = -12.0
+		label.offset_top = top
+		label.offset_bottom = top + STAT_LABEL_HEIGHT
+		label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		label.add_theme_color_override("font_color", STAT_LABEL_COLORS[stat])
+		label.add_theme_font_size_override("font_size", STAT_LABEL_FONT_SIZE)
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.z_index = _oil_label.z_index
+		hud_root.add_child(label)
+		_stat_labels[stat] = label
+		top += STAT_LABEL_HEIGHT
+	for changed in [GameState.suspicion_changed, GameState.anger_changed, GameState.fatigue_changed]:
+		if not changed.is_connected(_refresh_stat_labels):
+			changed.connect(_refresh_stat_labels)
+	_refresh_stat_labels()
+
+
+func _refresh_stat_labels(_value: int = 0) -> void:
+	var values := {"suspicion": GameState.suspicion, "anger": GameState.anger, "fatigue": GameState.fatigue}
+	for stat in _stat_labels:
+		var label: Label = _stat_labels[stat]
+		if is_instance_valid(label):
+			label.text = "%s: %d" % [String(stat).capitalize(), int(values[stat])]
 
 
 ## Caches the oil draggable and builds its idle texture + pour-animation frames.
@@ -778,25 +1450,22 @@ func _start_oil_can_fall() -> void:
 	tw.chain().tween_callback(_resolve_oil_after_fall)
 
 
-## After the can falls: if the player owns another oil can, consume it and hand back a full
-## 100/100 can in the dock; otherwise the can is spent and gone.
+## After the can falls: it was one of the player's oil cans (each "oil" in the inventory is a
+## can of OIL_TOTAL), so it's used up. The next can taken out of the inventory is full.
 func _resolve_oil_after_fall() -> void:
 	var item := _oil_item
 	if item == null or not is_instance_valid(item):
 		return
 	if int(GameState.ingredients.get("oil", 0)) >= 1:
 		GameState.add_ingredient("oil", -1)
-		_oil_remaining = OIL_TOTAL
-		_oil_empty = false
-		item.rotation = 0.0
-		item.scale = Vector2.ONE
-		if _oil_idle_texture != null:
-			item.texture = _oil_idle_texture
-		item.visible = true
-		if item.home_slot != null and is_instance_valid(item.home_slot):
-			item.place_in(item.home_slot)
-	else:
-		item.visible = false
+	_oil_remaining = OIL_TOTAL
+	_oil_empty = false
+	item.rotation = 0.0
+	item.scale = Vector2.ONE
+	if _oil_idle_texture != null:
+		item.texture = _oil_idle_texture
+	if item.home_slot != null and is_instance_valid(item.home_slot):
+		item.place_in(item.home_slot)
 	_refresh_oil_label()
 
 
@@ -952,7 +1621,9 @@ func _update_camera_mouse_follow(delta: float) -> void:
 	var smoothing := 1.0 - exp(-mouse_follow_smoothing * maxf(0.0, delta))
 	var following := _camera_mouse_follow_enabled() and at_default_view
 	var target := _mouse_follow_target() if following else Vector2.ZERO
-	_mouse_follow_offset = _mouse_follow_offset.lerp(target, smoothing)
+	# The sway holds still while the inventory is open.
+	if not InventoryOverlay.is_open(get_tree()):
+		_mouse_follow_offset = _mouse_follow_offset.lerp(target, smoothing)
 	# The robot-box zoom tween owns the canvas position while it runs; only steer the
 	# resting default view here.
 	if at_default_view:

@@ -1,21 +1,43 @@
 class_name ScrewTurnMinigame
 extends Minigame
-## One big screw head. Click and hold anywhere on it, then circle the mouse
-## clockwise around its centre - the screw turns with the cursor, pivoting on the
-## centre of the art. Drive it in TURNS_REQUIRED full rotations to win. Turning
+## One big screw head, set over the hole in the mounting plate on the board art
+## (big_screw_minigame: the board with its header buttons and the plate). Click and hold
+## anywhere on the screw, then circle the mouse clockwise around its centre - the screw
+## turns with the cursor. Drive it in TURNS_REQUIRED full rotations to win. Turning
 ## counter-clockwise backs it out again (never past where it started).
 
-## Placeholder art until the real screw PNG exists.
-const SCREW_TEXTURE_PATH: String = "res://assets/textures/icons/placeholder_item.png"
+const BOARD_TEXTURE_PATH: String = "res://assets/textures/icons/big_screw_minigame.png"
+## The art's title strip and the buttons drawn into it (art pixels).
+const ART_HEADER: Dictionary = {
+	"height": 31.0,
+	"restart": Rect2(127, 5, 46, 17),
+	"close": Rect2(178, 5, 17, 17),
+}
+## The screw head's art: square frames stacked top to bottom, its cross turned a step
+## further clockwise in each (the shine stays put). The cross looks the same every quarter
+## turn, so the frames cover one quarter turn and repeat; the screw shows the frame nearest
+## its angle instead of rotating the art (which would smear the pixels).
+const SCREW_TEXTURE_PATH: String = "res://assets/textures/icons/big_screw.png"
+const SCREW_FRAMES: int = 4
+## Top-left of the screw head on the board art (art pixels): centred over the plate's hole.
+const SCREW_ART_POS: Vector2 = Vector2(66, 96)
+## Where the hint and the turn count sit on the board art (art pixels): the middle of the
+## gap above the plate, and of the gap below it.
+const HINT_ART_POS: Vector2 = Vector2(100, 54.5)
+const COUNT_ART_POS: Vector2 = Vector2(100, 205)
+## Text size (art pixels) and the widest the hint may run.
+const TEXT_ART_SIZE: float = 10.0
+const HINT_ART_MAX_WIDTH: float = 184.0
 const TURNS_REQUIRED: float = 2.5
-## On-screen diameter of the screw as a fraction of the play area's height.
-const SCREW_SIZE_FRACTION: float = 0.66
 ## Mouse samples this close to the centre give a jumpy angle, so they're ignored.
 const DEAD_ZONE: float = 12.0
-## How much the head shrinks / darkens as it sinks in (visual "driving in").
-const SINK_SCALE: float = 0.12
+## How much the head darkens as it sinks in (visual "driving in").
+const SINK_SHADE: float = 0.3
 
+var _board_tex: Texture2D
 var _tex: Texture2D
+## Size of one frame of the screw art (art pixels).
+var _frame_size: float = 1.0
 ## Net clockwise rotation in radians (progress); clamped at 0.
 var _turned: float = 0.0
 var _holding: bool = false
@@ -24,22 +46,38 @@ var _last_angle: float = 0.0
 
 func _init() -> void:
 	title = "TIGHTEN THE SCREW"
+	_board_tex = load(BOARD_TEXTURE_PATH) as Texture2D
+
+
+func _board_art_size() -> Vector2:
+	return _board_tex.get_size() if _board_tex != null else Vector2.ZERO
+
+
+func _art_header() -> Dictionary:
+	return ART_HEADER if _board_tex != null else {}
 
 
 func _setup_game() -> void:
 	_tex = load(SCREW_TEXTURE_PATH) as Texture2D
+	if _tex != null:
+		_frame_size = _tex.get_size().x
 	# Pixel art: keep it crisp when scaled up.
 	board.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_turned = 0.0
 	_holding = false
 
 
+## Where the screw head is drawn (board pixels).
+func _screw_rect() -> Rect2:
+	return art_to_board(Rect2(SCREW_ART_POS, Vector2.ONE * _frame_size))
+
+
 func _center() -> Vector2:
-	return content_rect(0.0).get_center() + Vector2(0, -10)
+	return _screw_rect().get_center()
 
 
 func _radius() -> float:
-	return content_rect(0.0).size.y * SCREW_SIZE_FRACTION * 0.5
+	return _screw_rect().size.x * 0.5
 
 
 func _progress() -> float:
@@ -74,29 +112,19 @@ func _game_input(event: InputEvent) -> void:
 # --- drawing ----------------------------------------------------------------
 
 func _draw_game() -> void:
-	var c := _center()
-	var r := _radius()
-	var p := _progress()
+	if _board_tex != null:
+		board.draw_texture_rect(_board_tex, art_rect(), false)
 
-	# Progress ring around the screw.
-	board.draw_arc(c, r + 16.0, 0, TAU, 64, Color(0.05, 0.05, 0.06), 10.0)
-	if p > 0.0:
-		board.draw_arc(c, r + 16.0, -PI * 0.5, -PI * 0.5 + TAU * p, 64, COL_GOOD.darkened(0.15), 8.0)
-	# Hole / countersink.
-	board.draw_circle(c, r * 1.02, Color(0.04, 0.04, 0.05))
-
-	# The screw itself, rotated about its own centre and sinking as it goes in.
+	# The screw itself: the frame nearest its angle, darkening as it sinks in.
 	if _tex != null:
-		var sink := 1.0 - SINK_SCALE * p
-		var draw_size := Vector2.ONE * r * 2.0 * sink
-		var shade := Color.WHITE.darkened(0.3 * p)
-		board.draw_set_transform(c, _turned, Vector2.ONE)
-		board.draw_texture_rect(_tex, Rect2(-draw_size * 0.5, draw_size), false, shade)
-		board.draw_set_transform_matrix(Transform2D.IDENTITY)
+		var step := (TAU / 4.0) / SCREW_FRAMES
+		var frame := posmod(int(roundf(_turned / step)), SCREW_FRAMES)
+		var src := Rect2(0, frame * _frame_size, _frame_size, _frame_size)
+		var shade := Color.WHITE.darkened(SINK_SHADE * _progress())
+		board.draw_texture_rect_region(_tex, _screw_rect(), src, shade)
 
 	var turns := _turned / TAU
-	draw_text_centered("%.1f / %.1f turns" % [turns, TURNS_REQUIRED],
-			Vector2(c.x, content_rect(0.0).end.y - 14.0), 14, COL_TEXT)
+	draw_art_text("%.1f / %.1f turns" % [turns, TURNS_REQUIRED], COUNT_ART_POS, TEXT_ART_SIZE, true)
 	if _turned <= 0.0 and not _holding:
-		draw_text_centered("Hold on the screw and circle clockwise",
-				Vector2(c.x, content_rect(0.0).position.y + 14.0), 13, Color(COL_TEXT, 0.7))
+		draw_art_text("Hold on the screw and circle clockwise", HINT_ART_POS, TEXT_ART_SIZE, true,
+				Color(COL_TEXT, 0.7), HINT_ART_MAX_WIDTH)

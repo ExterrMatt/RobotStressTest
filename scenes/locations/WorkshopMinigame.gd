@@ -22,14 +22,16 @@ const EASY_MODE_OFFER_SECONDS: float = 60.0
 @export var hand_assembly_offset: Vector2 = Vector2.ZERO
 @export var stomach_assembly_offset: Vector2 = Vector2.ZERO
 @export var chest_assembly_offset: Vector2 = Vector2.ZERO
+## The opening of the bag in the background art (minigame-local; it sits just above the
+## top edge), which tray pages dive into and fly out of when cycled.
+@export var bag_mouth_position: Vector2 = Vector2(110, -15)
 
 # Craftable items. Two shapes live here:
 #   - SEGMENT parts carry a flat "recipe" of raw ingredients (scrap_metal, nuts_bolts, …).
-#   - COMPOSITE limbs (arm / leg / chest / stomach) carry a "segments" list instead. A composite is
-#     built from one of each listed segment, and each segment slot can be paid EITHER with
-#     the finished segment item OR with that segment's own raw ingredients (substitution),
-#     so e.g. an arm crafts from {upper_arm + forearm + hand} items, from all their raw
-#     ingredients, or from any mix. See _part_consumption for the matching rules.
+#   - COMPOSITE limbs (arm / leg / chest / stomach) carry a "segments" list instead (plus, for
+#     the stomach, "optional_segments"). Ingredients make components in the craft bin;
+#     components make limbs by dragging them from the inventory into the assembly area.
+#     See the "limb building" section.
 # head stays a single-recipe part (no segment breakdown yet).
 const CRAFTABLE_PARTS: Dictionary = {
 	"head": {
@@ -52,7 +54,7 @@ const CRAFTABLE_PARTS: Dictionary = {
 	},
 	"arm": {
 		"display_name": "Arm",
-		"segments": ["upper_arm", "forearm", "hand"],
+		"segments": ["upper_arm", "forearm"],
 	},
 
 	# --- leg + its segments ---
@@ -92,6 +94,18 @@ const CRAFTABLE_PARTS: Dictionary = {
 	},
 
 	# --- stomach + its segments ---
+	# The pelvis (metal shell) and outer plating are required; the internals are optional
+	# extras (see "optional_segments"). The shell and plating are built in one craft — the
+	# shell goes down, the outer skin goes over it — which yields both items.
+	"outer_plating": {
+		"display_name": "Outer Plating",
+		"recipe": {"scrap_metal": 7, "synth_skin": 3, "nanobots": 1, "nuts_bolts": 2, "electronics": 1},
+		"yields": {"pelvis": 1, "outer_plating": 1},
+	},
+	"external": {
+		"display_name": "External",
+		"recipe": {"scrap_metal": 1, "electronics": 1, "nuts_bolts": 1},
+	},
 	"tank": {
 		"display_name": "Tank",
 		"recipe": {"scrap_metal": 3, "nuts_bolts": 2, "synth_skin": 1},
@@ -106,7 +120,8 @@ const CRAFTABLE_PARTS: Dictionary = {
 	},
 	"stomach": {
 		"display_name": "Stomach",
-		"segments": ["tank", "pump", "huge_battery"],
+		"segments": ["pelvis", "outer_plating"],
+		"optional_segments": ["tank", "pump", "huge_battery", "external"],
 	},
 }
 
@@ -119,8 +134,9 @@ const INGREDIENT_PATHS: Dictionary = {
 	"head_segments": "res://assets/textures/icons/head_segments.png",
 	"oil":           "res://assets/textures/icons/oil.png",
 	"battery":       "res://assets/textures/icons/battery.png",
-	# Craftable segment items — these can be dropped into the bin as substitutes for a
-	# limb's raw ingredients, so the tray needs their icons (note: thigh art is thighs.png).
+	"shoulder_pad":  "res://assets/textures/icons/shoulder_pad.png",
+	# Craftable segment items — a limb is crafted by dropping these into the bin, so the
+	# tray needs their icons (note: thigh art is thighs.png).
 	"upper_arm":     "res://assets/textures/icons/upper_arm.png",
 	"forearm":       "res://assets/textures/icons/forearm.png",
 	"hand":          "res://assets/textures/icons/hand.png",
@@ -130,26 +146,51 @@ const INGREDIENT_PATHS: Dictionary = {
 	"ribcage":       "res://assets/textures/icons/ribcage.png",
 	"upper_plating": "res://assets/textures/icons/upper_plating.png",
 	"lower_plating": "res://assets/textures/icons/lower_plating.png",
-	# Stomach segments. Tank / pump have no art yet (placeholder); the huge battery reuses
-	# the maintenance battery icon until it gets its own.
-	"tank":          "res://assets/textures/icons/placeholder_item.png",
-	"pump":          "res://assets/textures/icons/placeholder_item.png",
-	"huge_battery":  "res://assets/textures/icons/battery.png",
+	"tank":          "res://assets/textures/icons/tank.png",
+	"pump":          "res://assets/textures/icons/pump.png",
+	"huge_battery":  "res://assets/textures/icons/huge_battery.png",
+	"pelvis":        "res://assets/textures/icons/pelvis.png",
+	"outer_plating": "res://assets/textures/icons/outer_plating.png",
+	"external":      "res://assets/textures/icons/external.png",
+	# Finished limbs (robot parts) — shown in the tray too, so a finished limb can be
+	# dragged back in to be disassembled (the stomach's art is the legacy torso.png).
+	"arm":           "res://assets/textures/icons/arm_no_hand.png",
+	"leg":           "res://assets/textures/icons/leg.png",
+	"stomach":       "res://assets/textures/icons/torso.png",
+	"chest":         "res://assets/textures/icons/chest.png",
+	"head":          "res://assets/textures/icons/head.png",
 }
 
-## Per-item render scale for tray / bin pieces (a piece draws at its texture's native size,
-## so higher-resolution icons come out too big). These normalize the oversized limb
-## sub-assembly icons down to the 96px baseline the upper arm uses; anything not listed
-## draws at 1.0. (Native sizes: forearm 192, ribcage/upper/lower plating 170, others ≤96.)
+## Tray / bin pieces draw at their art's native size, but no icon's visible art may be
+## bigger than the nuts & bolts': anything larger is scaled down until its longest side
+## matches (see _ingredient_visual_scale). Smaller icons stay as they are.
+const INGREDIENT_SIZE_REFERENCE_ID: String = "nuts_bolts"
+## Per-item scale overrides, still capped at the nuts & bolts' size.
 const INGREDIENT_VISUAL_SCALES: Dictionary = {
 	"head_segments": 1.05,
-	"forearm": 0.5,
-	"ribcage": 0.56,
-	"upper_plating": 0.56,
-	"lower_plating": 0.56,
-	"battery": 0.7,
-	"huge_battery": 0.85,
 }
+
+## The tray shows the inventory a page at a time; the arrow buttons in its top-left corner
+## cycle the pages, the old page diving into the bag as the new one flies out of it.
+const TRAY_PAGE_SIZE: int = 8
+const TRAY_SLOT_SIZE: Vector2 = Vector2(40, 40)
+## Slot centres (tray-local) for one page, in item order — a loose pile under the arrows,
+## hand-placed so the tiles overlap like they've been tipped out of the bag.
+const TRAY_SLOT_CENTERS: Array[Vector2] = [
+	Vector2(120, 45), Vector2(195, 45),
+	Vector2(29, 73), Vector2(120, 95), Vector2(195, 95),
+	Vector2(83, 91), Vector2(158, 145),
+	Vector2(28, 141),
+]
+const TRAY_PAGE_BUTTON_SIZE: Vector2 = Vector2(22, 22)
+const TRAY_PAGE_BUTTON_GAP: float = 6.0
+const TRAY_PAGE_TURN_DURATION: float = 0.35
+## How long each tile waits after the one before it sets off.
+const TRAY_PAGE_TURN_STAGGER: float = 0.035
+## How far a tile's flight time may stray from TRAY_PAGE_TURN_DURATION (0.4 = ±40%).
+const TRAY_PAGE_TURN_TIME_VARIATION: float = 0.4
+## How small a tile is at the bag's opening.
+const TRAY_BAG_SCALE: float = 0.1
 const HEAD_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot head"
 const HEAD_ASSEMBLY_SIZE: Vector2 = Vector2(200, 200)
 ## Back-to-front draw order for the assembled head. Godot draws later Control
@@ -232,22 +273,39 @@ const LEG_THIGH_SEGMENT_IDS: Array[StringName] = [
 	&"upper_thigh", &"mid_thigh", &"side_thigh", &"butt",
 	&"knee", &"knee_joint", &"knee_joint_axel",
 ]
+## The ankle axle and its cap ("ankle") stay together on the shin, as the knee's do on the
+## thigh and the elbow's on the upper arm.
 const LEG_SHIN_SEGMENT_IDS: Array[StringName] = [
-	&"calf", &"lower_leg", &"shin", &"ankle_axel",
+	&"calf", &"lower_leg", &"shin", &"ankle_axel", &"ankle",
 ]
 const LEG_FOOT_SEGMENT_IDS: Array[StringName] = [
-	&"ankle", &"heel", &"upper_foot", &"middle_foot", &"toes", &"toes_border",
+	&"heel", &"upper_foot", &"middle_foot", &"toes", &"toes_border",
 ]
-## Maps a composite's segment id to the assembly slots that make it up. When that segment is
-## supplied as a finished ITEM, those slots' pieces spawn pre-assembled as one bundle (see
-## _prebuilt_slot_groups / _link_component_bundles). Chest segments have no clean slot split,
-## so they're handled separately (whole chest, only if every chest segment is an item).
+## The chest's three components: the rib cage is the ribs under everything, the upper
+## plating the front plate with its two holes plus the upper sides, collar, shoulders and
+## neck, and the lower plating the bottom curve (the five lower pieces). (Slot keys carry
+## the chest's "chest_" prefix.)
+const CHEST_RIBCAGE_SLOT_IDS: Array[StringName] = [&"chest_ribs"]
+const CHEST_UPPER_PLATING_SLOT_IDS: Array[StringName] = [
+	&"chest_left_upper_chest", &"chest_right_upper_chest", &"chest_left_collar",
+	&"chest_right_collar", &"chest_mid_chest", &"chest_left_hole", &"chest_right_hole",
+	&"chest_left_shoulder", &"chest_right_shoulder", &"chest_turtle", &"chest_neck",
+]
+const CHEST_LOWER_PLATING_SLOT_IDS: Array[StringName] = [
+	&"chest_left_lower_chest", &"chest_right_lower_chest", &"chest_lower_mid_chest",
+	&"chest_lower_left_mid_chest", &"chest_lower_right_mid_chest",
+]
+## Maps a limb's component id to the assembly slots that make it up: dragging the finished
+## component into the assembly area fills them all at once.
 const COMPONENT_SLOT_GROUPS: Dictionary = {
 	&"upper_arm": UPPER_ARM_SEGMENT_IDS,
 	&"forearm": FOREARM_SEGMENT_IDS,
 	&"thigh": LEG_THIGH_SEGMENT_IDS,
 	&"shin": LEG_SHIN_SEGMENT_IDS,
 	&"foot": LEG_FOOT_SEGMENT_IDS,
+	&"ribcage": CHEST_RIBCAGE_SLOT_IDS,
+	&"upper_plating": CHEST_UPPER_PLATING_SLOT_IDS,
+	&"lower_plating": CHEST_LOWER_PLATING_SLOT_IDS,
 }
 ## The hand is grafted separately (recipe: nanobots). Its segments live in the
 ## same arm art directory. Back-to-front draw order, same convention as the arm.
@@ -277,22 +335,28 @@ const HAND_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"hand_right"]
 ## after the piece is placed (rather than acting as a pick-up-only drag hint).
 const ARM_PERSISTENT_OUTLINE_IDS: Array[StringName] = [&"elbow_inner_gears"]
 
-## The stomach and chest are built with `unified_outline` enabled: their
+## The outer plating and chest are built with `unified_outline` enabled: their
 ## "_outline" layers are authored as one contiguous block *behind* every base
 ## layer, so a placed piece keeps its outline (repainted behind all bases by a
 ## unified outline layer) instead of the arm/head behaviour where a placed
 ## outline is dropped.
 ##
-## (The stomach art still lives under the legacy "workshop robot body/torso"
-## folder; the segment names below are its texture filenames.)
+## (The outer plating and chest art comes from the packed torso sheet - see
+## TORSO_SHEET_PATH; the segment names below are its layer names.)
 const STOMACH_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso"
-const STOMACH_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
-## Back-to-front draw order for the assembled stomach. Godot draws later Control
-## siblings on top, so this is the reverse of the Aseprite layer stack (taken
-## bottom-to-top straight from the source .ase). The "_outline" layers are not
-## listed here — each is loaded as its base piece's outline, kept visible behind
-## all bases once placed.
-const STOMACH_SEGMENT_IDS: Array[StringName] = [
+## The outer plating craft: the metal shell goes down first, then the stomach's outer-skin
+## pieces over it; collecting it yields both the pelvis and the outer plating. Back-to-front
+## draw order (the Aseprite layer stack, bottom-to-top). The "_outline" layers are not listed
+## here — each is loaded as its base piece's outline, kept visible behind all bases once
+## placed. The shell comes from the stomach sheet, re-centred under the skin (see
+## _outer_plating_layers).
+const OUTER_PLATING_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
+const OUTER_PLATING_SHELL_SLOT: StringName = &"skin_metal_shell"
+## The chest's neck sits inside its turtle-neck collar, so the collar goes on first.
+const CHEST_TURTLE_SLOT: StringName = &"chest_turtle"
+const CHEST_NECK_SLOT: StringName = &"chest_neck"
+const OUTER_PLATING_SEGMENT_IDS: Array[StringName] = [
+	&"metal_shell",
 	&"top_torso",
 	&"belly_button",
 	&"gut",
@@ -303,17 +367,74 @@ const STOMACH_SEGMENT_IDS: Array[StringName] = [
 	&"right_socket",
 ]
 
-const CHEST_TEXTURE_DIR: String = "res://assets/textures/characters/robot/workshop/workshop robot body/chest"
+## The stomach itself, from its own packed sheet: the metal shell goes down first, the
+## internals sit inside it, and the outer plating covers everything. Each internal's
+## "<id>_internals" layer is how it looks once installed inside the shell; a placed piece
+## swaps to it (see _apply_installed_art).
+const STOMACH_SHEET_PATH: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso/stomach_internals.png"
+const STOMACH_SHEET_JSON_PATH: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso/stomach_internals.json"
+const STOMACH_ASSEMBLY_SIZE: Vector2 = Vector2(170, 170)
+## Back-to-front draw order (the sheet's layer stack, bottom-to-top, minus "_internals").
+const STOMACH_SEGMENT_IDS: Array[StringName] = [
+	&"metal_shell",
+	&"huge_battery",
+	&"internal",
+	&"bottom_socket",
+	&"right_tank",
+	&"left_tank",
+	&"right_wire",
+	&"left_wire",
+	&"external",
+	&"outer_plating",
+]
+## Slots only used while a component is crafted on its own. Installed in the stomach, the
+## pump and external are just their "_internals" art (which already shows the wires and the
+## socket), so these layers stay hidden there, as they are in the sheet.
+const STOMACH_UNINSTALLED_ONLY_SLOTS: Array[StringName] = [
+	&"stomach_bottom_socket", &"stomach_right_wire", &"stomach_left_wire",
+]
+const STOMACH_SLOT_PREFIX: String = "stomach_"
+## Which stomach slots each stomach component fills. The pelvis (shell) and outer plating
+## are required; the rest are optional internals. The components of the other limbs that
+## fill slots are in COMPONENT_SLOT_GROUPS.
+const STOMACH_COMPONENT_SLOTS: Dictionary = {
+	&"pelvis": [&"stomach_metal_shell"],
+	&"outer_plating": [&"stomach_outer_plating"],
+	# Crafting a tank in the bin builds just the one.
+	&"tank": [&"stomach_left_tank"],
+	&"left_tank": [&"stomach_left_tank"],
+	&"right_tank": [&"stomach_right_tank"],
+	&"pump": [&"stomach_internal", &"stomach_right_wire", &"stomach_left_wire"],
+	&"huge_battery": [&"stomach_huge_battery"],
+	&"external": [&"stomach_bottom_socket", &"stomach_external"],
+}
+## A stomach holds two tanks, one per side: each "tank" item goes into whichever side it's
+## dropped nearer (see _stomach_tank_side) and is tracked as that side's component.
+const STOMACH_TANK_SIDES: Array[StringName] = [&"left_tank", &"right_tank"]
+
+const CHEST_TEXTURE_DIR: String = STOMACH_TEXTURE_DIR
+## The chest and outer-plating layers (and their outlines) packed into one sheet by
+## Aseprite. Each layer is rebuilt at its full 337x337 canvas from it (see
+## PackedSpriteSheet.layer_textures). A layer missing from the sheet would fall
+## back to a loose "<layer>.png" in the torso folder, but none ship there now.
+const TORSO_SHEET_PATH: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso/workshop_torso.png"
+const TORSO_SHEET_JSON_PATH: String = "res://assets/textures/characters/robot/workshop/workshop robot body/torso/workshop_torso.json"
 const CHEST_ASSEMBLY_SIZE: Vector2 = Vector2(337, 337)
-## Back-to-front draw order for the assembled chest — reverse of the chest group's
-## Aseprite layer stack. Only some segments ship an "_outline" layer (collars,
-## shoulders and neck do not); the loader returns null for the rest, which is fine.
+## Back-to-front draw order for the assembled chest: the ribs at the back, then the chest
+## group's Aseprite layer stack, bottom-to-top. Each plating piece gets its own outline cut
+## from CHEST_OUTLINE_LAYERS — see _chest_layers.
 const CHEST_SEGMENT_IDS: Array[StringName] = [
-	&"left_chest",
-	&"right_chest",
+	&"ribs",
+	&"left_lower_chest",
+	&"left_upper_chest",
+	&"right_lower_chest",
+	&"right_upper_chest",
 	&"right_collar",
 	&"left_collar",
 	&"mid_chest",
+	&"lower_mid_chest",
+	&"lower_left_mid_chest",
+	&"lower_right_mid_chest",
 	&"left_hole",
 	&"right_hole",
 	&"left_shoulder",
@@ -321,6 +442,24 @@ const CHEST_SEGMENT_IDS: Array[StringName] = [
 	&"turtle",
 	&"neck",
 ]
+## The chest's authored outline layers. They trace the plating as it was before it was split
+## into components (one outline round each whole side piece, one round the centre plate and
+## its bottom curve), so each piece takes just the slice of them within this many pixels of
+## its own art.
+const CHEST_OUTLINE_LAYERS: Array[String] = [
+	"left_hole_outline", "right_hole_outline", "left_chest_outline",
+	"right_chest_outline", "mid_chest_outline", "turtle_outline",
+]
+const CHEST_OUTLINE_REACH: int = 3
+## The authored outlines only run round the finished plating, so where a piece meets another
+## plating piece (lower plating's top edge against the upper plating) it gets this many pixels
+## of black outline of its own. In the finished chest the neighbour's art covers it.
+const CHEST_SEAM_OUTLINE_WIDTH: int = 2
+const CHEST_SEAM_OUTLINE_COLOR: Color = Color.BLACK
+## The chest export has no ribs, so the rib cage's own art stands in, centred on the plating.
+const CHEST_RIBS_TEXTURE_PATH: String = "res://assets/textures/icons/ribcage.png"
+## Nudge from that centred spot (positive y = lower).
+const CHEST_RIBS_OFFSET: Vector2i = Vector2i(0, 7)
 const INGREDIENT_SHADOW_PATHS: Dictionary = {
 	"scrap_metal":   "res://assets/textures/icons/scrap_metal_shadow.png",
 	"nuts_bolts":    "res://assets/textures/icons/nuts_bolts_shadow.png",
@@ -352,12 +491,14 @@ var _head_assembly: Control = null
 var _arm_assembly: Control = null
 var _hand_assembly: Control = null
 var _stomach_assembly: Control = null
+var _outer_plating_assembly: Control = null
 var _chest_assembly: Control = null
 ## Slot ids actually built for the procedural hand/stomach/chest assemblies.
 ## Chest keys are namespaced (see the key_prefix in _build_segmented_assembly) so
 ## a shared segment name like "neck" can't collide with the head's slot.
 var _hand_assembly_slot_ids: Array[StringName] = []
 var _stomach_assembly_slot_ids: Array[StringName] = []
+var _outer_plating_assembly_slot_ids: Array[StringName] = []
 var _chest_assembly_slot_ids: Array[StringName] = []
 ## Back outline layers (one per unified-outline assembly) that repaint every
 ## placed piece's outline behind all base art.
@@ -371,10 +512,21 @@ var _active_drag_piece: WorkshopPiece = null
 
 var _crafted: bool = false
 var _crafted_part_id: String = ""
-## The composite's segment ids that were paid with a finished component ITEM this craft (as
-## opposed to raw ingredients). Those components spawn pre-assembled as one bundle so the
-## player doesn't reassemble what they already made. See _prebuilt_slot_groups.
-var _crafted_item_segments: Array[StringName] = []
+## Limb building: finished components dragged from the inventory into the assembly area.
+## The first one picks the limb (_crafted_part_id, with _crafted still false); after that
+## only that limb's components fit, until every one is dragged back out.
+var _limb_components: Array[StringName] = []
+## Placed component -> Array of its placed segments.
+var _limb_component_nodes: Dictionary = {}
+## The tray-sized tile being carried out of the assembly area: a component lifted back out,
+## or (with _carrying_limb) the finished part being dragged to the inventory to collect it.
+var _carry_piece: WorkshopPiece = null
+var _carrying_limb: bool = false
+
+var _tray_page: int = 0
+var _tray_animating: bool = false
+var _tray_prev_button: Button = null
+var _tray_next_button: Button = null
 ## True only while a multi-segment bundle is being dropped, so the leg drop scoring relaxes
 ## its "release point must be inside the slot" rule and lets each bundle member settle into
 ## its own slot by overlap (each segment only ever accepts its own slot anyway).
@@ -425,12 +577,23 @@ func _ready() -> void:
 		"AssemblyHand", HAND_TEXTURE_DIR, HAND_SEGMENT_IDS, HAND_ASSEMBLY_SIZE,
 		hand_assembly_offset, false, "hand_", _hand_assembly_slot_ids,
 		HAND_PERSISTENT_OUTLINE_IDS)
+	var torso_layers := PackedSpriteSheet.layer_textures(TORSO_SHEET_PATH, TORSO_SHEET_JSON_PATH)
+	var stomach_layers := PackedSpriteSheet.layer_textures(STOMACH_SHEET_PATH, STOMACH_SHEET_JSON_PATH)
+	# Each stomach piece carries its "_internals" art, swapped in once it's installed.
 	_stomach_assembly = _build_segmented_assembly(
 		"AssemblyStomach", STOMACH_TEXTURE_DIR, STOMACH_SEGMENT_IDS, STOMACH_ASSEMBLY_SIZE,
-		stomach_assembly_offset, true, "", _stomach_assembly_slot_ids)
+		stomach_assembly_offset, false, STOMACH_SLOT_PREFIX, _stomach_assembly_slot_ids, [],
+		stomach_layers, "_internals")
+	# The skin's unified outlines paint above the shell, which sits under everything.
+	_outer_plating_assembly = _build_segmented_assembly(
+		"AssemblyOuterPlating", STOMACH_TEXTURE_DIR, OUTER_PLATING_SEGMENT_IDS,
+		OUTER_PLATING_ASSEMBLY_SIZE, stomach_assembly_offset, true, "skin_",
+		_outer_plating_assembly_slot_ids, [], _outer_plating_layers(torso_layers, stomach_layers),
+		"", &"metal_shell")
 	_chest_assembly = _build_segmented_assembly(
 		"AssemblyChest", CHEST_TEXTURE_DIR, CHEST_SEGMENT_IDS, CHEST_ASSEMBLY_SIZE,
-		chest_assembly_offset, true, "chest_", _chest_assembly_slot_ids)
+		chest_assembly_offset, true, "chest_", _chest_assembly_slot_ids, [],
+		_chest_layers(torso_layers))
 	_configure_assembly_for_part("")
 
 	# Set up global shadow rendering layer (drawn entirely behind pieces)
@@ -472,6 +635,7 @@ func _ready() -> void:
 
 	_setup_placement_hint_layer()
 	_setup_place_audio()
+	_setup_tray_page_buttons()
 	_populate_ingredients_tray()
 
 	craft_bin.contents_changed.connect(_refresh_craft_button)
@@ -681,7 +845,7 @@ func _show_segment_placement_hints(segments: Array) -> void:
 			continue
 		if not is_instance_valid(segment) or segment.locked:
 			continue
-		if not _head_prerequisites_met(segment.segment_id):
+		if not _segment_prerequisites_met(segment.segment_id):
 			continue
 		for slot in _hint_slots_for_segment(segment):
 			if slot == null or slot.filled:
@@ -920,10 +1084,13 @@ func _input(event: InputEvent) -> void:
 		elif _active_drag_piece:
 			_active_drag_piece.update_drag(event.global_position)
 			get_viewport().set_input_as_handled()
+		elif _carry_piece:
+			_carry_piece.update_drag(event.global_position)
+			get_viewport().set_input_as_handled()
 
 
 func _handle_left_press(global_pos: Vector2) -> void:
-	if _active_drag_segment or _active_drag_piece:
+	if _active_drag_segment or _active_drag_piece or _carry_piece:
 		get_viewport().set_input_as_handled()
 		return
 
@@ -939,9 +1106,22 @@ func _handle_left_press(global_pos: Vector2) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
+	for btn in [_tray_prev_button, _tray_next_button]:
+		if _hit_button(btn, global_pos):
+			if btn.disabled or _tray_animating:
+				UI_SOUND.play_inaccessible_button(self)
+			else:
+				_turn_tray_page(-1 if btn == _tray_prev_button else 1)
+			get_viewport().set_input_as_handled()
+			return
+
 	var seg: WorkshopSegment = _find_topmost_segment_at(global_pos)
 	if seg != null:
 		_pick_up_segment(seg, global_pos)
+		get_viewport().set_input_as_handled()
+		return
+
+	if not _hit_button(collect_button, global_pos) and _try_pick_up_from_assembly(global_pos):
 		get_viewport().set_input_as_handled()
 		return
 
@@ -968,6 +1148,11 @@ func _handle_left_press(global_pos: Vector2) -> void:
 
 
 func _handle_left_release(global_pos: Vector2) -> void:
+	if _carry_piece != null:
+		_finish_carry(global_pos)
+		get_viewport().set_input_as_handled()
+		return
+
 	if _active_drag_segment != null:
 		_clear_placement_hints()
 		var master: WorkshopSegment = _active_drag_segment
@@ -1014,6 +1199,18 @@ func _handle_left_release(global_pos: Vector2) -> void:
 			_drop_into_bin(piece, global_pos)
 			get_viewport().set_input_as_handled()
 			return
+
+		# A finished component dropped on the assembly area joins the limb being built
+		# there (the first one picks which limb it is).
+		if assembly.get_global_rect().has_point(global_pos):
+			var key := _limb_component_key(String(piece.item_id), global_pos)
+			if key != &"":
+				_remove_and_free(piece)
+				_add_limb_component(key)
+				craft_bin.contents_changed.emit()
+				get_viewport().set_input_as_handled()
+				return
+			UI_SOUND.play_inaccessible_button(self)
 
 		_return_piece_home_or_discard(piece)
 		craft_bin.contents_changed.emit()
@@ -1124,7 +1321,7 @@ func _auto_assemble_slot_for_segment(segment: WorkshopSegment) -> WorkshopAssemb
 			continue
 		if not _slot_accepts_segment(slot, segment):
 			continue
-		if not _head_prerequisites_met(segment.segment_id):
+		if not _segment_prerequisites_met(segment.segment_id):
 			continue
 		return slot
 	return null
@@ -1207,7 +1404,7 @@ func _segment_drop_score(segment: WorkshopSegment, slot: WorkshopAssemblySlot, r
 		return -1.0e20
 	if not _slot_accepts_segment(slot, segment):
 		return -1.0e20
-	if not _head_prerequisites_met(segment.segment_id):
+	if not _segment_prerequisites_met(segment.segment_id):
 		return -1.0e20
 
 	var slot_hitbox: Rect2 = slot.get_global_hitbox()
@@ -1248,7 +1445,12 @@ func _rect_overlap_area(a: Rect2, b: Rect2) -> float:
 	return (right - left) * (bottom - top)
 
 
-func _head_prerequisites_met(segment_id: StringName) -> bool:
+func _segment_prerequisites_met(segment_id: StringName) -> bool:
+	if _crafted_part_id == "outer_plating":
+		# The metal shell goes down before the outer skin.
+		return segment_id == OUTER_PLATING_SHELL_SLOT or _slot_filled(OUTER_PLATING_SHELL_SLOT)
+	if segment_id == CHEST_NECK_SLOT:
+		return _slot_filled(CHEST_TURTLE_SLOT)
 	if _crafted_part_id != "head":
 		return true
 	if segment_id == &"metal_head":
@@ -1257,13 +1459,13 @@ func _head_prerequisites_met(segment_id: StringName) -> bool:
 	if metal_slot == null or not metal_slot.filled:
 		return false
 	if HEAD_EYELID_SEGMENT_IDS.has(segment_id):
-		return _head_slot_filled(&"left_eye") and _head_slot_filled(&"right_eye")
+		return _slot_filled(&"left_eye") and _slot_filled(&"right_eye")
 	if segment_id == &"hair":
-		return _head_slot_filled(&"left_ear") and _head_slot_filled(&"right_ear")
+		return _slot_filled(&"left_ear") and _slot_filled(&"right_ear")
 	return true
 
 
-func _head_slot_filled(segment_id: StringName) -> bool:
+func _slot_filled(segment_id: StringName) -> bool:
 	var slot: WorkshopAssemblySlot = _assembly_slots.get(segment_id)
 	return slot != null and slot.filled
 
@@ -1511,55 +1713,181 @@ func _drop_into_bin(piece: WorkshopPiece, global_drop_pos: Vector2) -> void:
 
 # --- ingredients tray ---
 
-func _populate_ingredients_tray() -> void:
+## Rebuilds the inventory tray's current page: every ingredient and component the player
+## owns, plus their finished limbs (robot parts), which can be dragged back in to be
+## disassembled — TRAY_PAGE_SIZE at a time. With `page_turn` the old page dives into the
+## bag while the new one flies out of it.
+func _populate_ingredients_tray(page_turn: bool = false) -> void:
+	var leaving: Array = []
 	for child in ingredients_tray.get_children():
-		child.queue_free()
+		if page_turn and String(child.name).begins_with("Tray_"):
+			# Renamed so nothing looks it up as a live tray slot while it animates away.
+			child.name = "Leaving_" + String(child.name).trim_prefix("Tray_")
+			leaving.append(child)
+		elif not String(child.name).begins_with("Leaving_"):
+			_remove_and_free(child)
 
-	const SLOT_SIZE: Vector2 = Vector2(40, 40)
-	const SLOT_PAD: Vector2 = Vector2(6, 6)
-	const MAX_COLS: int = 4
-
-	var col: int = 0
-	var row: int = 0
-	for id_key in GameState.ingredients.keys():
-		var id: String = String(id_key)
-		var count: int = int(GameState.ingredients[id])
-		if count <= 0:
-			continue
+	var ids: Array = _tray_ids()
+	var pages: int = maxi(1, ceili(float(ids.size()) / float(TRAY_PAGE_SIZE)))
+	_tray_page = posmod(_tray_page, pages)
+	var page_ids: Array = ids.slice(_tray_page * TRAY_PAGE_SIZE, (_tray_page + 1) * TRAY_PAGE_SIZE)
+	var arriving: Array = []
+	for i in page_ids.size():
+		var id: String = String(page_ids[i])
+		var count: int = _available_count(id)
 
 		var slot := Control.new()
 		slot.name = "Tray_" + id
-		slot.custom_minimum_size = SLOT_SIZE
-		slot.size = SLOT_SIZE
-		slot.position = Vector2(
-			col * (SLOT_SIZE.x + SLOT_PAD.x),
-			row * (SLOT_SIZE.y + SLOT_PAD.y),
-		)
+		slot.custom_minimum_size = TRAY_SLOT_SIZE
+		slot.size = TRAY_SLOT_SIZE
+		slot.position = TRAY_SLOT_CENTERS[i] - TRAY_SLOT_SIZE * 0.5
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ingredients_tray.add_child(slot)
+		arriving.append(slot)
 
-		var tile: WorkshopPiece = _make_ingredient_piece(id)
+		var tile: WorkshopPiece = _make_ingredient_piece(id) if count > 0 else null
 		if tile:
-			tile.size = SLOT_SIZE
+			tile.size = TRAY_SLOT_SIZE
 			tile.home_parent = slot
 			slot.add_child(tile)
 			tile.position = Vector2.ZERO
 
 		var badge := Label.new()
 		badge.name = "Count"
-		badge.text = "x%d" % count
+		badge.text = "x%d" % max(count, 0)
 		badge.add_theme_font_size_override("font_size", 10)
 		badge.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
 		badge.add_theme_color_override("font_outline_color", Color.BLACK)
 		badge.add_theme_constant_override("outline_size", 3)
-		badge.position = Vector2(SLOT_SIZE.x - 22, SLOT_SIZE.y - 14)
+		badge.position = Vector2(TRAY_SLOT_SIZE.x - 22, TRAY_SLOT_SIZE.y - 14)
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(badge)
 
-		col += 1
-		if col >= MAX_COLS:
-			col = 0
-			row += 1
+	var multi_page: bool = pages > 1
+	for btn in [_tray_prev_button, _tray_next_button]:
+		if btn != null:
+			btn.disabled = not multi_page
+			btn.modulate.a = 1.0 if multi_page else 0.4
+
+	# Pieces sitting in the bin go home to their tile (if it's on this page).
+	for piece in craft_bin.all_pieces():
+		piece.home_parent = ingredients_tray.get_node_or_null("Tray_" + String(piece.item_id)) as Control
+
+	if page_turn:
+		_animate_tray_page_turn(leaving, arriving)
+
+
+## Everything the tray can show, in inventory order: raw ingredients first, then the
+## components and finished limbs (the same split as the inventory screen's sections).
+func _tray_ids() -> Array:
+	var ingredients: Array = []
+	var parts: Array = []
+	var ids: Array = GameState.ingredients.keys()
+	for part_id in GameState.ROBOT_PART_IDS:
+		if not ids.has(part_id):
+			ids.append(part_id)
+	for id_key in ids:
+		var id: String = String(id_key)
+		if _inventory_count(id) <= 0:
+			continue
+		if id in InventoryOverlay.INGREDIENT_IDS:
+			ingredients.append(id)
+		else:
+			parts.append(id)
+	return ingredients + parts
+
+
+func _setup_tray_page_buttons() -> void:
+	_tray_prev_button = _make_tray_page_button("TrayPrevButton", "<", Vector2.ZERO)
+	_tray_next_button = _make_tray_page_button("TrayNextButton", ">", Vector2(TRAY_PAGE_BUTTON_SIZE.x + TRAY_PAGE_BUTTON_GAP, 0.0))
+
+
+## A small arrow button in the tray's top-left corner. Clicks reach it through the same
+## manual hit test as the other workshop buttons (see _handle_left_press).
+func _make_tray_page_button(button_name: String, text: String, offset: Vector2) -> Button:
+	var btn := Button.new()
+	btn.name = button_name
+	btn.text = text
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Same look as the CRAFT / COLLECT buttons.
+	btn.theme_type_variation = &"GoldHudButton"
+	btn.add_theme_font_size_override("font_size", 11)
+	btn.custom_minimum_size = TRAY_PAGE_BUTTON_SIZE
+	btn.position = ingredients_tray.position + offset
+	add_child(btn)
+	# The theme's padding is sized for word buttons; drop it so the arrows stay small squares.
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		var style: StyleBox = btn.get_theme_stylebox(state)
+		if style == null:
+			continue
+		style = style.duplicate()
+		style.set_content_margin_all(0)
+		btn.add_theme_stylebox_override(state, style)
+	btn.size = TRAY_PAGE_BUTTON_SIZE
+	return btn
+
+
+func _turn_tray_page(step: int) -> void:
+	UI_SOUND.play_button_click(self)
+	_tray_page += step
+	_populate_ingredients_tray(true)
+
+
+## The old page's slots shrink into the bag's opening while the new page's slots grow out
+## of it into place — small at the bag, full size in their slots, eased in and out.
+func _animate_tray_page_turn(leaving: Array, arriving: Array) -> void:
+	_tray_animating = true
+	var mouth: Vector2 = bag_mouth_position - ingredients_tray.position
+	var tw: Tween = create_tween().set_parallel(true)
+	tw.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var at_bag := Vector2.ONE * TRAY_BAG_SCALE
+	# Each tile sets off a beat after the one before, and takes its own time getting there,
+	# so the page moves as a scatter of tiles rather than one block.
+	for i in leaving.size():
+		var slot: Control = leaving[i]
+		_lock_tray_slot(slot, true)
+		slot.pivot_offset = slot.size * 0.5
+		var delay: float = i * TRAY_PAGE_TURN_STAGGER
+		var duration: float = _tray_tile_flight_time()
+		tw.tween_property(slot, "position", mouth - slot.size * 0.5, duration).set_delay(delay)
+		tw.tween_property(slot, "scale", at_bag, duration).set_delay(delay)
+	for i in arriving.size():
+		var slot: Control = arriving[i]
+		var target: Vector2 = slot.position
+		_lock_tray_slot(slot, true)
+		slot.pivot_offset = slot.size * 0.5
+		slot.position = mouth - slot.size * 0.5
+		slot.scale = at_bag
+		var delay: float = i * TRAY_PAGE_TURN_STAGGER
+		var duration: float = _tray_tile_flight_time()
+		tw.tween_property(slot, "position", target, duration).set_delay(delay)
+		tw.tween_property(slot, "scale", Vector2.ONE, duration).set_delay(delay)
+	tw.chain().tween_callback(_finish_tray_page_turn.bind(leaving, arriving))
+
+
+## One tile's flight time: TRAY_PAGE_TURN_DURATION, varied by up to
+## TRAY_PAGE_TURN_TIME_VARIATION either way.
+func _tray_tile_flight_time() -> float:
+	return TRAY_PAGE_TURN_DURATION * (1.0 + _spawn_rng.randf_range(-TRAY_PAGE_TURN_TIME_VARIATION, TRAY_PAGE_TURN_TIME_VARIATION))
+
+
+func _finish_tray_page_turn(leaving: Array, arriving: Array) -> void:
+	for slot in leaving:
+		_remove_and_free(slot)
+	for slot in arriving:
+		if is_instance_valid(slot):
+			_lock_tray_slot(slot, false)
+	_tray_animating = false
+
+
+## Tiles can't be picked up while their slot is flying to or from the bag.
+func _lock_tray_slot(slot: Node, locked: bool) -> void:
+	if not is_instance_valid(slot):
+		return
+	for child in slot.get_children():
+		if child is WorkshopPiece:
+			child.locked = locked
 
 
 func _make_ingredient_piece(id: String) -> WorkshopPiece:
@@ -1574,7 +1902,7 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	piece.segment_id = &""
 	piece.texture = load(tex_path)
 	piece.auto_center = true
-	piece.visual_scale = float(INGREDIENT_VISUAL_SCALES.get(id, 1.0))
+	piece.visual_scale = _ingredient_visual_scale(id, piece.texture)
 	if id == "head_segments":
 		piece.auto_top_center = true
 
@@ -1585,9 +1913,35 @@ func _make_ingredient_piece(id: String) -> WorkshopPiece:
 	return piece
 
 
+## Id -> visual scale, worked out once per icon.
+var _ingredient_scale_cache: Dictionary = {}
+
+
+func _ingredient_visual_scale(id: String, tex: Texture2D) -> float:
+	if _ingredient_scale_cache.has(id):
+		return _ingredient_scale_cache[id]
+	var cap: float = _icon_longest_side(String(INGREDIENT_PATHS.get(INGREDIENT_SIZE_REFERENCE_ID, "")))
+	var used: Vector2 = _used_rect_for_texture(tex).size
+	var longest: float = maxf(used.x, used.y)
+	var scale_value: float = float(INGREDIENT_VISUAL_SCALES.get(id, 1.0))
+	if cap > 0.0 and longest * scale_value > cap:
+		scale_value = cap / longest
+	_ingredient_scale_cache[id] = scale_value
+	return scale_value
+
+
+func _icon_longest_side(path: String) -> float:
+	if path == "" or not ResourceLoader.exists(path):
+		return 0.0
+	var used: Vector2 = _used_rect_for_texture(load(path)).size
+	return maxf(used.x, used.y)
+
+
 func _maybe_replace_tray_tile(id: String, source_slot: Control) -> void:
 	if source_slot == null or not is_instance_valid(source_slot):
 		return
+	if not String(source_slot.name).begins_with("Tray_"):
+		return  # a page that's diving into the bag
 	for child in source_slot.get_children():
 		if child is WorkshopPiece:
 			return
@@ -1609,17 +1963,29 @@ func _maybe_replace_tray_tile(id: String, source_slot: Control) -> void:
 	tile.position = Vector2.ZERO
 
 
+## What's left of `id` in the inventory once the pieces out of it are counted: in the bin,
+## in the limb being built, or in hand being dragged.
 func _available_count(id: String) -> int:
-	var total: int = int(GameState.ingredients.get(id, 0))
-	var in_bin: int = 0
+	var total: int = _inventory_count(id)
 	for piece in craft_bin.all_pieces():
 		if String(piece.item_id) == id:
-			in_bin += 1
-	return total - in_bin
+			total -= 1
+	if _limb_mode():
+		for key in _limb_components:
+			if _component_item_id(key) == id:
+				total -= 1
+	for held in [_active_drag_piece, _carry_piece]:
+		if held == null or not is_instance_valid(held) or String(held.item_id) != id:
+			continue
+		if not (held == _carry_piece and _carrying_limb):
+			total -= 1
+	return total
 
 
 func _refresh_tray_counts(remove_depleted_slots: bool = false) -> void:
 	for slot in ingredients_tray.get_children():
+		if not String(slot.name).begins_with("Tray_"):
+			continue
 		var id: String = String(slot.name).trim_prefix("Tray_")
 		var available: int = _available_count(id)
 		if remove_depleted_slots and available <= 0:
@@ -1630,13 +1996,16 @@ func _refresh_tray_counts(remove_depleted_slots: bool = false) -> void:
 		var badge: Label = slot.get_node_or_null("Count")
 		if badge:
 			badge.text = "x%d" % max(available, 0)
-		var has_piece: bool = false
+		var tile: WorkshopPiece = null
 		for child in slot.get_children():
 			if child is WorkshopPiece:
-				has_piece = true
+				tile = child
 				break
-		if not has_piece and available > 0:
+		if tile == null and available > 0:
 			_maybe_replace_tray_tile(id, slot)
+		elif tile != null and available <= 0:
+			# Everything of this item is out of the inventory now (in the bin or the limb).
+			_remove_and_free(tile)
 
 
 # --- assembly setup ---
@@ -1760,11 +2129,14 @@ func _load_arm_outline(segment_id: StringName) -> Texture2D:
 
 
 ## Builds a procedurally-assembled body part (hand, stomach, chest) from a
-## directory of per-segment PNGs, mirroring the arm setup. Each segment is one
-## draggable piece
-## with its "<id>_outline.png" loaded alongside. When `unified_outline` is true an
-## OutlineLayer is inserted behind every slot so placed pieces' outlines render as
-## one block behind all the base art (matching the authored Aseprite layering).
+## directory of per-segment PNGs, mirroring the arm setup - or, when
+## `packed_layers` is given, from a packed sheet's layers (layer name -> texture),
+## falling back to the directory for any layer the sheet lacks. Each segment is
+## one draggable piece with its "<id>_outline" loaded alongside (and, with `installed_suffix`,
+## its "<id><installed_suffix>" art for once it's installed). When `unified_outline` is
+## true an OutlineLayer is inserted behind every slot so placed pieces' outlines render as
+## one block behind all the base art (matching the authored Aseprite layering) — or, when
+## `outline_layer_above` names a segment, just above that segment's slot instead.
 func _build_segmented_assembly(
 	assembly_name: String,
 	texture_dir: String,
@@ -1775,6 +2147,9 @@ func _build_segmented_assembly(
 	key_prefix: String,
 	out_slot_ids: Array[StringName],
 	persistent_outline_ids: Array[StringName] = [],
+	packed_layers: Dictionary = {},
+	installed_suffix: String = "",
+	outline_layer_above: StringName = &"",
 ) -> Control:
 	var node := Control.new()
 	node.name = assembly_name
@@ -1782,8 +2157,9 @@ func _build_segmented_assembly(
 	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	node.visible = false
 
+	var outline_layer: Control = null
 	if unified_outline:
-		var outline_layer := Control.new()
+		outline_layer = Control.new()
 		outline_layer.name = "OutlineLayer"
 		outline_layer.size = assembly_size
 		outline_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1798,7 +2174,7 @@ func _build_segmented_assembly(
 	for segment_id in segment_ids:
 		# Textures load from the bare segment name; the dictionary/slot key is
 		# namespaced so shared names (e.g. "neck") don't collide across parts.
-		var tex: Texture2D = _load_texture("%s/%s.png" % [texture_dir, segment_id])
+		var tex: Texture2D = _segment_layer_texture(texture_dir, packed_layers, String(segment_id))
 		if tex == null:
 			push_warning("Workshop: missing %s layer '%s' in %s." % [assembly_name, segment_id, texture_dir])
 			continue
@@ -1824,14 +2200,20 @@ func _build_segmented_assembly(
 		if not slot.placed.is_connected(placed_callable):
 			slot.placed.connect(placed_callable)
 		node.add_child(slot)
+		if outline_layer != null and segment_id == outline_layer_above:
+			node.move_child(outline_layer, node.get_child_count() - 1)
 		_assembly_slots[seg_key] = slot
 		out_slot_ids.append(seg_key)
+		var installed: Texture2D = null
+		if installed_suffix != "":
+			installed = _segment_layer_texture(texture_dir, packed_layers, String(segment_id) + installed_suffix)
 		_segments[seg_key] = {
 			"pieces": [
 				{
 					"id": seg_key,
 					"texture": tex,
-					"outline": _load_texture("%s/%s_outline.png" % [texture_dir, segment_id]),
+					"outline": _segment_layer_texture(texture_dir, packed_layers, "%s_outline" % segment_id),
+					"installed": installed,
 					"shadow": null,
 					"unified_outline": unified_outline,
 					"persistent_outline": persistent_outline_ids.has(segment_id),
@@ -1887,6 +2269,120 @@ func _queue_unified_outline_redraw() -> void:
 			layer.queue_redraw()
 
 
+## One assembly layer: from the packed sheet's layers when it has it, otherwise
+## the per-segment PNG in `texture_dir` (null when neither exists).
+func _segment_layer_texture(texture_dir: String, packed_layers: Dictionary, layer_name: String) -> Texture2D:
+	if packed_layers.has(layer_name):
+		return packed_layers[layer_name]
+	return _load_texture("%s/%s.png" % [texture_dir, layer_name])
+
+
+## The torso sheet's layers plus the chest's ribs (see _chest_ribs_layer), with every
+## plating piece given its own "<id>_outline": the part of the authored chest outlines
+## (CHEST_OUTLINE_LAYERS) within CHEST_OUTLINE_REACH pixels of that piece. So a component
+## placed on its own is outlined round just its pieces, and the finished plating looks
+## exactly as authored.
+func _chest_layers(torso_layers: Dictionary) -> Dictionary:
+	var layers := torso_layers.duplicate()
+	var size := Vector2i(CHEST_ASSEMBLY_SIZE)
+	var ribs := _chest_ribs_layer(torso_layers)
+	if ribs != null:
+		layers["ribs"] = ribs
+	var outlines := Image.create_empty(size.x, size.y, false, Image.FORMAT_RGBA8)
+	for layer_name in CHEST_OUTLINE_LAYERS:
+		var tex: Texture2D = torso_layers.get(layer_name)
+		if tex != null:
+			var src: Image = tex.get_image()
+			outlines.blend_rect(src, Rect2i(Vector2i.ZERO, src.get_size()), Vector2i.ZERO)
+	# Every plating piece's art together, to find where one piece meets another.
+	var plating := Image.create_empty(size.x, size.y, false, Image.FORMAT_RGBA8)
+	for segment_id in CHEST_SEGMENT_IDS:
+		var tex: Texture2D = torso_layers.get(String(segment_id))
+		if tex != null:
+			var src: Image = tex.get_image()
+			plating.blend_rect(src, Rect2i(Vector2i.ZERO, src.get_size()), Vector2i.ZERO)
+	for segment_id in CHEST_SEGMENT_IDS:
+		var tex: Texture2D = torso_layers.get(String(segment_id))
+		if tex == null:
+			continue  # (the ribs aren't in the sheet and bring their own outline)
+		var img: Image = tex.get_image()
+		var used: Rect2i = img.get_used_rect()
+		if used.size == Vector2i.ZERO:
+			continue
+		var reach: Rect2i = used.grow(CHEST_OUTLINE_REACH).intersection(Rect2i(Vector2i.ZERO, size))
+		var near := BitMap.new()
+		near.create_from_image_alpha(img, 0.1)
+		near.grow_mask(CHEST_OUTLINE_REACH, reach)
+		var seam := BitMap.new()
+		seam.create_from_image_alpha(img, 0.1)
+		seam.grow_mask(CHEST_SEAM_OUTLINE_WIDTH, reach)
+		var own := Image.create_empty(size.x, size.y, false, Image.FORMAT_RGBA8)
+		for y in range(reach.position.y, reach.end.y):
+			for x in range(reach.position.x, reach.end.x):
+				if not near.get_bit(x, y):
+					continue
+				var c: Color = outlines.get_pixel(x, y)
+				if c.a > 0.0:
+					own.set_pixel(x, y, c)
+				elif seam.get_bit(x, y) and img.get_pixel(x, y).a <= 0.1 \
+						and plating.get_pixel(x, y).a > 0.1:
+					own.set_pixel(x, y, CHEST_SEAM_OUTLINE_COLOR)
+		layers["%s_outline" % segment_id] = ImageTexture.create_from_image(own)
+	return layers
+
+
+## The rib cage's art on the chest's canvas, centred on the chest plating so the plating
+## closes over it. Null if either is missing.
+func _chest_ribs_layer(torso_layers: Dictionary) -> Texture2D:
+	if not ResourceLoader.exists(CHEST_RIBS_TEXTURE_PATH):
+		return null
+	var ribs: Image = (load(CHEST_RIBS_TEXTURE_PATH) as Texture2D).get_image()
+	if ribs.is_compressed():
+		ribs.decompress()
+	ribs.convert(Image.FORMAT_RGBA8)
+	var plating := Rect2()
+	for segment_id in CHEST_SEGMENT_IDS:
+		var tex: Texture2D = torso_layers.get(String(segment_id))
+		if tex == null:
+			continue
+		var used: Rect2 = _used_rect_for_texture(tex)
+		plating = used if plating.size == Vector2.ZERO else plating.merge(used)
+	if plating.size == Vector2.ZERO:
+		return null
+	var ribs_used := Rect2(ribs.get_used_rect())
+	var offset := Vector2i((plating.get_center() - ribs_used.get_center()).round()) + CHEST_RIBS_OFFSET
+	var size := Vector2i(CHEST_ASSEMBLY_SIZE)
+	var canvas := Image.create_empty(size.x, size.y, false, Image.FORMAT_RGBA8)
+	canvas.blit_rect(ribs, Rect2i(Vector2i.ZERO, ribs.get_size()), offset)
+	return ImageTexture.create_from_image(canvas)
+
+
+## The torso sheet's layers plus the stomach's metal shell, re-centred (and bottom-aligned)
+## under the outer-skin pieces on their larger canvas, so the outer plating craft can lay the
+## shell down first and the skin over it.
+func _outer_plating_layers(torso_layers: Dictionary, stomach_layers: Dictionary) -> Dictionary:
+	var layers := torso_layers.duplicate()
+	var shell: Texture2D = stomach_layers.get("metal_shell")
+	if shell == null:
+		return layers
+	var skin_bounds := Rect2()
+	for segment_id in OUTER_PLATING_SEGMENT_IDS:
+		var tex: Texture2D = torso_layers.get(String(segment_id))
+		if tex == null:
+			continue
+		var used: Rect2 = _used_rect_for_texture(tex)
+		skin_bounds = used if skin_bounds.size == Vector2.ZERO else skin_bounds.merge(used)
+	var shell_used: Rect2 = _used_rect_for_texture(shell)
+	var offset := Vector2i(
+		roundi(skin_bounds.get_center().x - shell_used.get_center().x),
+		roundi(skin_bounds.end.y - shell_used.end.y))
+	var canvas := Image.create_empty(int(OUTER_PLATING_ASSEMBLY_SIZE.x), int(OUTER_PLATING_ASSEMBLY_SIZE.y), false, Image.FORMAT_RGBA8)
+	var src: Image = shell.get_image()
+	canvas.blit_rect(src, Rect2i(Vector2i.ZERO, src.get_size()), offset)
+	layers["metal_shell"] = ImageTexture.create_from_image(canvas)
+	return layers
+
+
 func _load_texture(path: String) -> Texture2D:
 	if not ResourceLoader.exists(path):
 		return null
@@ -1936,7 +2432,7 @@ func _configure_assembly_for_part(part_id: String) -> void:
 	var leg_parts := ["leg", "thigh", "shin", "foot"]
 	var arm_parts := ["arm", "upper_arm", "forearm"]
 	var chest_parts := ["chest", "ribcage", "upper_plating", "lower_plating"]
-	var stomach_parts := ["stomach", "tank", "pump", "huge_battery"]
+	var stomach_parts := ["stomach", "tank", "pump", "huge_battery", "external"]
 	var leg_node := assembly.get_node_or_null("AssemblyLeg") as CanvasItem
 	if leg_node != null:
 		leg_node.visible = part_id == "" or part_id in leg_parts
@@ -1948,6 +2444,8 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		_hand_assembly.visible = part_id == "hand"
 	if _stomach_assembly != null:
 		_stomach_assembly.visible = part_id in stomach_parts
+	if _outer_plating_assembly != null:
+		_outer_plating_assembly.visible = part_id == "outer_plating"
 	if _chest_assembly != null:
 		_chest_assembly.visible = part_id in chest_parts
 
@@ -1966,12 +2464,22 @@ func _configure_assembly_for_part(part_id: String) -> void:
 		_append_active_slots(FOREARM_SEGMENT_IDS)
 	elif part_id == "hand":
 		_active_assembly_slot_ids.assign(_hand_assembly_slot_ids)
-	elif part_id in stomach_parts:
-		# Stomach and its segments share the whole stomach assembly (no clean slot split).
+	elif part_id == "stomach":
 		_active_assembly_slot_ids.assign(_stomach_assembly_slot_ids)
-	elif part_id in chest_parts:
-		# Chest and its segments share the whole chest assembly (no clean slot split).
+	elif part_id in stomach_parts:
+		# A stomach component on its own: just its slice of the stomach assembly.
+		var ids: Array[StringName] = []
+		ids.assign(STOMACH_COMPONENT_SLOTS.get(StringName(part_id), []))
+		_append_active_slots(ids)
+	elif part_id == "outer_plating":
+		_active_assembly_slot_ids.assign(_outer_plating_assembly_slot_ids)
+	elif part_id == "chest":
 		_active_assembly_slot_ids.assign(_chest_assembly_slot_ids)
+	elif part_id in chest_parts:
+		# A chest component on its own: just its share of the chest's plating.
+		var ids: Array[StringName] = []
+		ids.assign(COMPONENT_SLOT_GROUPS.get(StringName(part_id), []))
+		_append_active_slots(ids)
 	elif part_id == "leg":
 		_active_assembly_slot_ids.assign(_leg_assembly_slot_ids)
 	elif part_id == "thigh":
@@ -1997,7 +2505,13 @@ func _refresh_craft_button() -> void:
 	if _crafted:
 		craft_button.disabled = true
 		return
-	var part_id := _matching_recipe_part_id()
+	var limb_id := _disassemble_target()
+	if limb_id != "":
+		craft_button.disabled = false
+		craft_button.text = "DISASSEMBLE %s" % _part_display_name(limb_id).to_upper()
+		return
+	# A limb being built holds the assembly area, so nothing else can be crafted into it.
+	var part_id := "" if _limb_mode() else _matching_recipe_part_id()
 	craft_button.disabled = part_id == ""
 	craft_button.text = "CRAFT" if part_id == "" else "CRAFT %s" % _part_display_name(part_id).to_upper()
 
@@ -2012,24 +2526,21 @@ func _matching_recipe_part_id() -> String:
 		if CRAFTABLE_PARTS.get(forced_part_id, {}).is_empty():
 			return ""
 		return forced_part_id if not _part_consumption(counts, forced_part_id).is_empty() else ""
-	# Pick the most specific satisfied recipe — the one whose fully-expanded raw cost is
-	# largest — so a bin holding all of an arm's segments (or their raw ingredients) crafts
-	# the full arm rather than just one of its segments (e.g. upper_arm). Segment / raw
-	# recipes with distinct ingredients never collide; this weighting only disambiguates a
-	# composite limb from the segments nested inside it.
+	# The bin only crafts flat recipes (components, the head, the hand) — limbs are built
+	# in the assembly area. If several are satisfied, the biggest recipe wins.
 	var best_id: String = ""
 	var best_weight: int = -1
 	for part_id in CRAFTABLE_PARTS:
 		if _part_consumption(counts, String(part_id)).is_empty():
 			continue
-		var weight: int = _part_expanded_weight(String(part_id))
+		var weight: int = _recipe_weight(CRAFTABLE_PARTS[part_id].get("recipe", {}))
 		if weight > best_weight:
 			best_weight = weight
 			best_id = String(part_id)
 	return best_id
 
 
-## True when `counts` can satisfy `part_id` (flat recipe or composite with substitution).
+## True when `counts` holds at least every quantity in `recipe`.
 func _counts_contain_recipe(counts: Dictionary, recipe: Dictionary) -> bool:
 	for id_key in recipe:
 		if int(counts.get(String(id_key), 0)) < int(recipe[id_key]):
@@ -2037,95 +2548,16 @@ func _counts_contain_recipe(counts: Dictionary, recipe: Dictionary) -> bool:
 	return true
 
 
-## Works out exactly what crafting `part_id` would consume from `counts`, or returns an
-## empty dict if the bin can't satisfy it. For a flat part that's just its recipe; for a
-## composite limb each segment slot is paid with the finished segment ITEM when present,
-## otherwise folded into the summed raw-ingredient cost (substitution). Because segment
-## items and raw ingredients are distinct ids, greedily preferring the item is optimal.
+## What crafting `part_id` in the bin would consume from `counts` (its flat recipe), or an
+## empty dict if the bin can't satisfy it. Composite limbs never craft in the bin.
 func _part_consumption(counts: Dictionary, part_id: String) -> Dictionary:
 	var data: Dictionary = CRAFTABLE_PARTS.get(part_id, {})
-	if data.is_empty():
+	if data.is_empty() or data.has("segments"):
 		return {}
-
-	var segments: Array = data.get("segments", [])
-	if segments.is_empty():
-		var recipe: Dictionary = data.get("recipe", {})
-		if recipe.is_empty() or not _counts_contain_recipe(counts, recipe):
-			return {}
-		return recipe.duplicate()
-
-	# Composite: consume one of each segment, item-first then raw fallback.
-	var consume: Dictionary = {}
-	for seg_id in segments:
-		var seg := String(seg_id)
-		var have: int = int(counts.get(seg, 0)) - int(consume.get(seg, 0))
-		if have >= 1:
-			consume[seg] = int(consume.get(seg, 0)) + 1
-			continue
-		var seg_recipe: Dictionary = CRAFTABLE_PARTS.get(seg, {}).get("recipe", {})
-		if seg_recipe.is_empty():
-			return {}  # a segment with no raw recipe can only be paid as an item
-		for ing in seg_recipe:
-			consume[String(ing)] = int(consume.get(String(ing), 0)) + int(seg_recipe[ing])
-
-	for id_key in consume:
-		if int(counts.get(String(id_key), 0)) < int(consume[id_key]):
-			return {}
-	return consume
-
-
-## Which of a composite's segments `counts` pays for with a finished ITEM (rather than raw
-## ingredients), mirroring _part_consumption's item-first choice. Empty for a flat part.
-func _item_segments_used(counts: Dictionary, part_id: String) -> Array[StringName]:
-	var used: Array[StringName] = []
-	var segments: Array = CRAFTABLE_PARTS.get(part_id, {}).get("segments", [])
-	var taken: Dictionary = {}
-	for seg_id in segments:
-		var seg := String(seg_id)
-		if int(counts.get(seg, 0)) - int(taken.get(seg, 0)) >= 1:
-			taken[seg] = int(taken.get(seg, 0)) + 1
-			used.append(StringName(seg))
-	return used
-
-
-## The assembly-slot groups to spawn pre-assembled this craft — one per component supplied as
-## a finished item. Chest is special (no per-segment slots): only when ALL its segments are
-## items does the whole chest come pre-assembled.
-func _prebuilt_slot_groups() -> Array:
-	var groups: Array = []
-	for seg in _crafted_item_segments:
-		if COMPONENT_SLOT_GROUPS.has(seg):
-			groups.append(COMPONENT_SLOT_GROUPS[seg])
-	if _crafted_part_id == "chest":
-		var all_chest := true
-		for s in [&"ribcage", &"upper_plating", &"lower_plating"]:
-			if not _crafted_item_segments.has(s):
-				all_chest = false
-				break
-		if all_chest and not _chest_assembly_slot_ids.is_empty():
-			groups.append(_chest_assembly_slot_ids)
-	elif _crafted_part_id == "stomach":
-		var all_stomach := true
-		for s in [&"tank", &"pump", &"huge_battery"]:
-			if not _crafted_item_segments.has(s):
-				all_stomach = false
-				break
-		if all_stomach and not _stomach_assembly_slot_ids.is_empty():
-			groups.append(_stomach_assembly_slot_ids)
-	return groups
-
-
-## The fully-expanded raw weight of a part: a flat recipe's quantities, or the sum of every
-## segment's raw quantities for a composite. Used to rank a composite above its segments.
-func _part_expanded_weight(part_id: String) -> int:
-	var data: Dictionary = CRAFTABLE_PARTS.get(part_id, {})
-	var segments: Array = data.get("segments", [])
-	if segments.is_empty():
-		return _recipe_weight(data.get("recipe", {}))
-	var total: int = 0
-	for seg_id in segments:
-		total += _recipe_weight(CRAFTABLE_PARTS.get(String(seg_id), {}).get("recipe", {}))
-	return total
+	var recipe: Dictionary = data.get("recipe", {})
+	if recipe.is_empty() or not _counts_contain_recipe(counts, recipe):
+		return {}
+	return recipe.duplicate()
 
 
 ## Total number of ingredients a flat recipe requires (sum of its quantities).
@@ -2144,22 +2576,33 @@ func _part_display_name(part_id: String) -> String:
 func _on_craft_pressed() -> void:
 	if _crafted:
 		return
+	var limb_id := _disassemble_target()
+	if limb_id != "":
+		_disassemble_limb(limb_id)
+		return
+	if _limb_mode():
+		return
 	var part_id := _matching_recipe_part_id()
 	if part_id == "":
 		return
 	_crafted = true
 	_crafted_part_id = part_id
 
-	# Consume exactly what this craft used — for a composite limb that's whichever mix of
-	# finished segment items and raw ingredients satisfied it (see _part_consumption), not a
-	# fixed recipe. Read the bin counts once, before consuming, so we also know which segments
-	# came in as finished items (those spawn pre-assembled below).
-	var counts: Dictionary = craft_bin.count_items()
-	_crafted_item_segments = _item_segments_used(counts, _crafted_part_id)
-	var consumption: Dictionary = _part_consumption(counts, _crafted_part_id)
+	var consumption: Dictionary = _part_consumption(craft_bin.count_items(), _crafted_part_id)
 	_consume_recipe_pieces(consumption)
 	craft_bin.output_mode = true
 	_configure_assembly_for_part(_crafted_part_id)
+
+	# A one-piece part (rib cage, tank, huge battery) has nothing to assemble: it goes
+	# straight into the inventory, ready to drop into the assembly with the rest of its limb.
+	if _active_assembly_slot_ids.size() == 1 and not _is_tutorial_workshop():
+		var yields: Dictionary = CRAFTABLE_PARTS.get(part_id, {}).get("yields", {part_id: 1})
+		for id in yields:
+			_add_to_inventory(String(id), int(yields[id]))
+		_play_place_sound()
+		_reset_workshop()
+		collected.emit(part_id)
+		return
 
 	_spawn_segments_stacked_at_bin_center()
 
@@ -2181,7 +2624,7 @@ func _consume_recipe_pieces(recipe: Dictionary) -> void:
 	for id_key in recipe:
 		var id: String = String(id_key)
 		var need: int = int(recipe[id_key])
-		GameState.ingredients[id] = max(0, int(GameState.ingredients.get(id, 0)) - need)
+		_add_to_inventory(id, -need)
 
 		var consumed: int = 0
 		for piece in craft_bin.pieces_with_id(StringName(id)):
@@ -2238,6 +2681,45 @@ func _slide_piece_to_bag_and_free(piece: WorkshopPiece) -> void:
 	tw.tween_callback(piece.queue_free)
 
 
+## A fresh draggable segment for `seg_id` (one piece per authored layer), sized to its
+## visible art; null when none of its pieces has a texture.
+func _build_segment(seg_id: StringName) -> WorkshopSegment:
+	var pieces_defs: Array = _segments.get(seg_id, {}).get("pieces", [])
+	var segment := WorkshopSegment.new()
+	segment.name = "Segment_" + String(seg_id)
+	segment.segment_id = seg_id
+	segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var bounds: Rect2 = Rect2()
+	var found_any: bool = false
+	for piece_def in pieces_defs:
+		var piece: WorkshopPiece = _make_segment_piece(seg_id, piece_def)
+		if piece == null:
+			continue
+		segment.add_child(piece)
+		piece.position = Vector2.ZERO
+
+		var tex_rect: Rect2 = _piece_visible_rect(piece)
+		if tex_rect.size.x > 0.0 and tex_rect.size.y > 0.0:
+			if not found_any:
+				bounds = tex_rect
+				found_any = true
+			else:
+				bounds = bounds.merge(tex_rect)
+
+	if not found_any:
+		push_warning("Workshop: segment '%s' has no pieces with textures — skipped spawn." % seg_id)
+		segment.queue_free()
+		return null
+
+	for child in segment.get_children():
+		if child is WorkshopPiece:
+			child.position -= bounds.position
+	segment.size = bounds.size
+	segment.placement_offset = bounds.position
+	return segment
+
+
 func _spawn_segments_stacked_at_bin_center() -> void:
 	var segments_by_id: Dictionary = {} 
 	var output_parent: Control = craft_bin
@@ -2246,42 +2728,9 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 	for seg_id in spawn_order:
 		if not _active_assembly_slot_ids.has(seg_id):
 			continue
-		var seg_data: Dictionary = _segments[seg_id]
-		var pieces_defs: Array = seg_data["pieces"]
-
-		var segment := WorkshopSegment.new()
-		segment.name = "Segment_" + String(seg_id)
-		segment.segment_id = seg_id
-		segment.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-		var bounds: Rect2 = Rect2()
-		var found_any: bool = false
-
-		for piece_def in pieces_defs:
-			var piece: WorkshopPiece = _make_segment_piece(seg_id, piece_def)
-			if piece == null:
-				continue
-			segment.add_child(piece)
-			piece.position = Vector2.ZERO
-
-			var tex_rect: Rect2 = _piece_visible_rect(piece)
-			if tex_rect.size.x > 0.0 and tex_rect.size.y > 0.0:
-				if not found_any:
-					bounds = tex_rect
-					found_any = true
-				else:
-					bounds = bounds.merge(tex_rect)
-
-		if not found_any:
-			push_warning("Workshop: segment '%s' has no pieces with textures — skipped spawn." % seg_id)
-			segment.queue_free()
+		var segment := _build_segment(seg_id)
+		if segment == null:
 			continue
-
-		for child in segment.get_children():
-			if child is WorkshopPiece:
-				child.position -= bounds.position
-		segment.size = bounds.size
-		segment.placement_offset = bounds.position
 		output_parent.add_child(segment)
 		segment.auto_fit_grab_hitbox = true
 		if _crafted_part_id == "head" and HEAD_EYE_SEGMENT_IDS.has(seg_id):
@@ -2297,8 +2746,6 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 		var other_seg: WorkshopSegment = segments_by_id.get(slot.paired_with)
 		if this_seg and other_seg and not this_seg.pair_partners.has(other_seg):
 			this_seg.pair_partners.append(other_seg)
-
-	_link_component_bundles(segments_by_id)
 
 	var positioned: Dictionary = {}
 	var group_index: int = 0
@@ -2353,9 +2800,7 @@ func _spawn_segments_stacked_at_bin_center() -> void:
 				- primary_slot_local - primary.placement_offset
 			positioned[member] = true
 
-	_position_upper_arm_bundle_at_bottom()
 	_enforce_axle_cap_order()
-	_enforce_component_bundle_order()
 	craft_bin.contents_changed.emit()
 
 
@@ -2377,83 +2822,6 @@ func _enforce_axle_cap_order() -> void:
 				continue
 			if axel.get_index() > partner.get_index():
 				craft_bin.move_child(axel, partner.get_index())
-
-
-## Fuse the just-spawned upper-arm segments into a single bundle by fully
-## connecting their pair_partners. The existing pair machinery then lays them out
-## in assembled relative positions, drags them as one, and — because non-leg drop
-## scoring matches each segment against its own slot by overlap — drops the whole
-## bundle at once, filling every upper-arm slot. The forearm segments are left
-## loose. No-op unless an arm was crafted.
-## The bundle's segments overlap in their pre-assembled layout, but they spawn in
-## a shuffled order. Re-stack them in ARM_SEGMENT_IDS (authored back-to-front)
-## order so the pre-built upper arm overlaps correctly in the bin and while
-## dragged; placement into slots restores each part's authored slot order anyway.
-## Drop the whole pre-assembled upper-arm bundle down so its bottom sits just
-## above the bottom of the crafting area (the framed scene image), keeping its
-## internal layout intact. The forearm pieces are untouched. No-op unless an arm
-## was crafted.
-func _position_upper_arm_bundle_at_bottom() -> void:
-	if _crafted_part_id != "arm":
-		return
-	var segs: Array = []
-	for child in craft_bin.get_children():
-		if child is WorkshopSegment and UPPER_ARM_SEGMENT_IDS.has(child.segment_id):
-			segs.append(child)
-	if segs.is_empty():
-		return
-
-	# Union of the bundle's visible rects in craft_bin-local space.
-	var bounds: Rect2 = Rect2()
-	var found: bool = false
-	for seg in segs:
-		var hb: Rect2 = seg.grab_hitbox_rect
-		if hb.size.x <= 0.0 or hb.size.y <= 0.0:
-			hb = Rect2(Vector2.ZERO, seg.size)
-		var seg_rect: Rect2 = Rect2(seg.position + hb.position, hb.size)
-		if not found:
-			bounds = seg_rect
-			found = true
-		else:
-			bounds = bounds.merge(seg_rect)
-	if not found:
-		return
-
-	const BOTTOM_MARGIN: float = 8.0
-	var delta_y: float = (craft_bin.size.y - BOTTOM_MARGIN) - bounds.end.y
-	for seg in segs:
-		seg.position.y += delta_y
-
-
-## Re-stack every pre-assembled bundle's segments in the crafted part's authored
-## back-to-front order, so each pre-built component overlaps correctly in the bin and while
-## dragged (segments spawn shuffled). Placement into slots restores authored order anyway.
-func _enforce_component_bundle_order() -> void:
-	var groups: Array = _prebuilt_slot_groups()
-	if groups.is_empty():
-		return
-	var bundled: Dictionary = {}
-	for group in groups:
-		for seg_id in group:
-			bundled[seg_id] = true
-	for seg_id in _crafted_part_segment_order():
-		if not bundled.has(seg_id):
-			continue
-		for child in craft_bin.get_children():
-			if child is WorkshopSegment and child.segment_id == seg_id:
-				craft_bin.move_child(child, craft_bin.get_child_count() - 1)
-				break
-
-
-## Authored back-to-front segment order for the crafted composite (arm from ARM_SEGMENT_IDS,
-## leg / chest from their harvested slot order), used to restack pre-assembled bundles.
-func _crafted_part_segment_order() -> Array[StringName]:
-	match _crafted_part_id:
-		"arm": return ARM_SEGMENT_IDS
-		"leg": return _leg_assembly_slot_ids
-		"chest": return _chest_assembly_slot_ids
-		"stomach": return _stomach_assembly_slot_ids
-	return _active_assembly_slot_ids
 
 
 func _setup_place_audio() -> void:
@@ -2480,28 +2848,6 @@ func _play_place_sound() -> void:
 	var percent := _place_rng.randi_range(-PLACE_PITCH_VARIATION_PERCENT, PLACE_PITCH_VARIATION_PERCENT)
 	_place_audio_player.pitch_scale = 1.0 + float(percent) / 100.0
 	_place_audio_player.play()
-
-
-## Fuse each pre-made component's segments into one bundle by fully connecting their
-## pair_partners, so the existing pair machinery lays them out in assembled relative
-## positions, drags them as one, and drops the whole component at once — the player never
-## reassembles a component they already crafted. One bundle per component supplied as an item
-## (upper arm, forearm, thigh, shin, foot, or the whole chest); raw-built segments stay loose.
-func _link_component_bundles(segments_by_id: Dictionary) -> void:
-	for group in _prebuilt_slot_groups():
-		var bundle: Array = []
-		for seg_id in group:
-			var seg: WorkshopSegment = segments_by_id.get(seg_id)
-			if seg != null:
-				bundle.append(seg)
-		for i in bundle.size():
-			var a: WorkshopSegment = bundle[i]
-			for j in bundle.size():
-				if i == j:
-					continue
-				var b: WorkshopSegment = bundle[j]
-				if not a.pair_partners.has(b):
-					a.pair_partners.append(b)
 
 
 func _segment_spawn_center(index: int, total: int) -> Vector2:
@@ -2543,6 +2889,9 @@ func _spawn_segment_order() -> Array[StringName]:
 	if _crafted_part_id == "head":
 		order.erase(&"metal_head")
 		order.append(&"metal_head")
+	elif _crafted_part_id == "outer_plating":
+		order.erase(OUTER_PLATING_SHELL_SLOT)
+		order.append(OUTER_PLATING_SHELL_SLOT)
 	return order
 
 
@@ -2581,6 +2930,8 @@ func _make_segment_piece(seg_id: StringName, piece_def: Dictionary) -> WorkshopP
 	piece.persistent_outline = bool(piece_def.get("persistent_outline", false)) \
 		or ARM_PERSISTENT_OUTLINE_IDS.has(seg_id)
 	piece.unified_outline = bool(piece_def.get("unified_outline", false))
+	if piece_def.get("installed") != null:
+		piece.set_meta(&"installed_texture", piece_def.get("installed"))
 
 	piece.piece_offset = Vector2.ZERO
 	piece.visual_offset = Vector2.ZERO
@@ -2598,9 +2949,14 @@ func _refresh_collect_button() -> void:
 	collect_button.disabled = not _is_assembly_complete()
 
 
-## True once every active assembly slot is filled — the limb is fully built and
-## just waiting on COLLECT.
+## True once the part is fully built and just waiting on COLLECT: every active slot filled
+## for a crafted part, or every required component in for a limb being built.
 func _is_assembly_complete() -> bool:
+	if _limb_mode():
+		for seg_id in CRAFTABLE_PARTS[_crafted_part_id].get("segments", []):
+			if not _limb_components.has(StringName(seg_id)):
+				return false
+		return true
 	if _active_assembly_slot_ids.is_empty():
 		return false
 	for slot_id in _active_assembly_slot_ids:
@@ -2610,10 +2966,424 @@ func _is_assembly_complete() -> bool:
 	return true
 
 
+## Puts the finished part in the inventory and stays in the workshop, ready for the next
+## build. (The guided intro instead hands the head to the location, which ends it.)
 func _on_collect_pressed() -> void:
-	if _crafted_part_id == "":
+	if _crafted_part_id == "" or not _is_assembly_complete():
 		return
-	collected.emit(_crafted_part_id)
+	var part_id := _crafted_part_id
+	if _is_tutorial_workshop():
+		collected.emit(part_id)
+		return
+	if _limb_mode():
+		# Noted so disassembling it gives back exactly these (see _disassemble_limb).
+		var components: Array[String] = []
+		for key in _limb_components:
+			var item_id := _component_item_id(key)
+			_add_to_inventory(item_id, -1)
+			components.append(item_id)
+		GameState.record_limb_build(part_id, components)
+		_add_to_inventory(part_id, 1)
+	else:
+		var yields: Dictionary = CRAFTABLE_PARTS.get(part_id, {}).get("yields", {part_id: 1})
+		for id in yields:
+			_add_to_inventory(String(id), int(yields[id]))
+	_play_place_sound()
+	_reset_workshop()
+	collected.emit(part_id)
+
+
+## Clears the assembly area and the craft output so the next part can be built.
+func _reset_workshop() -> void:
+	_clear_placement_hints()
+	for slot_id in _assembly_slots:
+		var slot: WorkshopAssemblySlot = _assembly_slots[slot_id]
+		if slot.filled:
+			slot.filled = false
+			slot.queue_redraw()
+	var segments: Array = []
+	_collect_segments(self, segments)
+	for segment in segments:
+		_remove_and_free(segment)
+	_limb_components.clear()
+	_limb_component_nodes.clear()
+	_crafted = false
+	_crafted_part_id = ""
+	craft_bin.output_mode = false
+	_configure_assembly_for_part("")
+	collect_button.visible = false
+	collect_button.disabled = true
+	_rebuild_tray()
+
+
+func _remove_and_free(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	if node.get_parent() != null:
+		node.get_parent().remove_child(node)
+	node.queue_free()
+
+
+# --- inventory ---
+
+## How many of `id` the player owns: limbs are robot parts, everything else an ingredient.
+func _inventory_count(id: String) -> int:
+	if GameState.is_robot_part_id(id):
+		return GameState.get_robot_part_count(id)
+	return int(GameState.ingredients.get(id, 0))
+
+
+func _add_to_inventory(id: String, amount: int) -> void:
+	if GameState.is_robot_part_id(id):
+		GameState.add_robot_part(id, amount)
+		return
+	# Older saves lack the newer component ids; add_ingredient only takes known ones.
+	if not GameState.ingredients.has(id):
+		GameState.ingredients[id] = 0
+	GameState.add_ingredient(id, amount)
+
+
+func _rebuild_tray() -> void:
+	_populate_ingredients_tray()
+	_refresh_craft_button()
+
+
+# --- limb building ---
+
+## True while a limb is being built from components in the assembly area.
+func _limb_mode() -> bool:
+	return not _crafted and _crafted_part_id != ""
+
+
+## The limb a finished component belongs to ("" if it isn't one).
+func _limb_for_component(id: String) -> String:
+	for part_id in CRAFTABLE_PARTS:
+		var data: Dictionary = CRAFTABLE_PARTS[part_id]
+		if (data.get("segments", []) as Array).has(id) or (data.get("optional_segments", []) as Array).has(id):
+			return String(part_id)
+	return ""
+
+
+## The component a finished item dropped on the assembly area at `global_pos` would become
+## (&"" if it can't go in right now): only when nothing is being crafted there, only into the
+## limb already started (or any limb if it's empty), and only into a spot still free. Most
+## items are their own component; a tank becomes the stomach side it was dropped on.
+func _limb_component_key(id: String, global_pos: Vector2) -> StringName:
+	if _crafted or _is_tutorial_workshop():
+		return &""
+	var limb := _limb_for_component(id)
+	if limb == "" or (_crafted_part_id != "" and _crafted_part_id != limb):
+		return &""
+	var key := StringName(id)
+	if limb == "stomach" and key == &"tank":
+		key = _stomach_tank_side(global_pos)
+	if key == &"" or _limb_components.has(key):
+		return &""
+	if limb == "stomach" and not _stomach_component_fits(key):
+		return &""
+	return key
+
+
+## The stomach tank side (left_tank / right_tank) whose slot is nearest `global_pos`.
+func _stomach_tank_side(global_pos: Vector2) -> StringName:
+	var best: StringName = &""
+	var best_distance: float = INF
+	for side in STOMACH_TANK_SIDES:
+		var slot: WorkshopAssemblySlot = _assembly_slots.get(StringName(STOMACH_SLOT_PREFIX + String(side)))
+		if slot == null:
+			continue
+		var center: Vector2 = slot.get_global_transform() * slot.hitbox_rect.get_center()
+		var distance: float = global_pos.distance_squared_to(center)
+		if distance < best_distance:
+			best_distance = distance
+			best = side
+	return best
+
+
+## The inventory item a placed component stands for (a stomach tank side is a "tank").
+func _component_item_id(key: StringName) -> String:
+	return "tank" if STOMACH_TANK_SIDES.has(key) else String(key)
+
+
+## The pelvis (metal shell) goes in first. After it the outer plating can go on at any time,
+## and the internals fit only while the plating is still off (it would hide them).
+func _stomach_component_fits(id: StringName) -> bool:
+	if id == &"pelvis":
+		return true
+	if not _limb_components.has(&"pelvis"):
+		return false
+	return id == &"outer_plating" or not _limb_components.has(&"outer_plating")
+
+
+## Can this placed component be lifted back out? A stomach comes apart in reverse: the
+## plating first, then the internals, and the shell last.
+func _can_remove_limb_component(id: StringName) -> bool:
+	if _crafted_part_id != "stomach" or id == &"outer_plating":
+		return true
+	if _limb_components.has(&"outer_plating"):
+		return false
+	return id != &"pelvis" or _limb_components.size() == 1
+
+
+func _add_limb_component(id: StringName) -> void:
+	if _crafted_part_id == "":
+		_crafted_part_id = _limb_for_component(_component_item_id(id))
+		_configure_assembly_for_part(_crafted_part_id)
+		collect_button.visible = true
+		collect_button.text = "COLLECT %s" % _part_display_name(_crafted_part_id).to_upper()
+	_limb_components.append(id)
+	var nodes: Array = []
+	for slot_id in _component_slot_ids(id):
+		var segment := _place_segment_for_slot(StringName(slot_id))
+		if segment != null:
+			nodes.append(segment)
+	_limb_component_nodes[id] = nodes
+	_play_place_sound()
+	_after_limb_change()
+
+
+func _remove_limb_component(id: StringName) -> void:
+	for node in _limb_component_nodes.get(id, []):
+		_unplace(node)
+	_limb_component_nodes.erase(id)
+	_limb_components.erase(id)
+	if _limb_components.is_empty():
+		_crafted_part_id = ""
+		_configure_assembly_for_part("")
+		collect_button.visible = false
+	_after_limb_change()
+
+
+func _after_limb_change() -> void:
+	_refresh_collect_button()
+	_refresh_tray_counts()
+	_refresh_craft_button()
+	_queue_unified_outline_redraw()
+
+
+func _component_slot_ids(id: StringName) -> Array:
+	if _crafted_part_id == "stomach":
+		return (STOMACH_COMPONENT_SLOTS.get(id, []) as Array).filter(
+			func(slot_id): return not STOMACH_UNINSTALLED_ONLY_SLOTS.has(slot_id))
+	return COMPONENT_SLOT_GROUPS.get(id, [])
+
+
+## Builds the segment for `slot_id` and drops it straight into its slot, showing its
+## installed art where it has some (the stomach internals).
+func _place_segment_for_slot(slot_id: StringName) -> WorkshopSegment:
+	var slot: WorkshopAssemblySlot = _assembly_slots.get(slot_id)
+	if slot == null or slot.filled:
+		return null
+	var segment := _build_segment(slot_id)
+	if segment == null:
+		return null
+	slot.accept_segment(segment)
+	_clear_placed_part_outline(segment, slot)
+	_apply_installed_art(segment)
+	return segment
+
+
+## Swaps each piece to how it looks installed (its "_internals" layer), when it has one.
+func _apply_installed_art(segment: WorkshopSegment) -> void:
+	for child in segment.get_children():
+		var piece := child as WorkshopPiece
+		if piece != null and piece.has_meta(&"installed_texture"):
+			piece.texture = piece.get_meta(&"installed_texture")
+			piece.queue_redraw()
+
+
+## Takes a placed segment back out of the assembly area.
+func _unplace(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	var slot := node.get_parent() as WorkshopAssemblySlot
+	if slot != null:
+		slot.filled = false
+		slot.queue_redraw()
+	_remove_and_free(node)
+
+
+## The topmost placed component under `global_pos` (&"" if none) — checked newest first,
+## so a stomach's plating wins over what it covers.
+func _limb_component_at(global_pos: Vector2) -> StringName:
+	for i in range(_limb_components.size() - 1, -1, -1):
+		var id: StringName = _limb_components[i]
+		for node in _limb_component_nodes.get(id, []):
+			if node is WorkshopSegment and _segment_opaque_at(node, global_pos):
+				return id
+	return &""
+
+
+## True when any placed piece of the part being built has visible art under `global_pos`.
+func _assembly_opaque_at(global_pos: Vector2) -> bool:
+	if _limb_mode():
+		return _limb_component_at(global_pos) != &""
+	for slot_id in _active_assembly_slot_ids:
+		var slot: WorkshopAssemblySlot = _assembly_slots.get(slot_id)
+		if slot == null:
+			continue
+		for child in slot.get_children():
+			if child is WorkshopSegment and _segment_opaque_at(child, global_pos):
+				return true
+	return false
+
+
+func _segment_opaque_at(segment: WorkshopSegment, global_pos: Vector2) -> bool:
+	for child in segment.get_children():
+		var piece := child as WorkshopPiece
+		if piece == null or piece.texture == null or not piece.is_visible_in_tree():
+			continue
+		var local: Vector2 = piece.get_global_transform().affine_inverse() * global_pos
+		var tex_pos: Vector2 = (local - piece.texture_draw_position()) / maxf(0.001, piece.visual_scale)
+		var img: Image = piece.texture.get_image()
+		if img == null:
+			continue
+		if img.is_compressed():
+			img.decompress()
+		var px := Vector2i(tex_pos.floor())
+		if px.x < 0 or px.y < 0 or px.x >= img.get_width() or px.y >= img.get_height():
+			continue
+		if img.get_pixelv(px).a > 0.1:
+			return true
+	return false
+
+
+## Press in the assembly area: a finished part is lifted whole (drop it on the inventory to
+## collect it); while a limb is being built, the component under the cursor is lifted back
+## out instead.
+func _try_pick_up_from_assembly(global_pos: Vector2) -> bool:
+	if _is_tutorial_workshop() or _crafted_part_id == "":
+		return false
+	if not assembly.get_global_rect().has_point(global_pos):
+		return false
+	if _is_assembly_complete():
+		if not _assembly_opaque_at(global_pos):
+			return false
+		_start_carry(_crafted_part_id, global_pos, true)
+		return true
+	if not _limb_mode():
+		return false
+	var id := _limb_component_at(global_pos)
+	if id == &"":
+		return false
+	if not _can_remove_limb_component(id):
+		UI_SOUND.play_inaccessible_button(self)
+		return true
+	_remove_limb_component(id)
+	_start_carry(_component_item_id(id), global_pos, false)
+	return true
+
+
+func _start_carry(id: String, global_pos: Vector2, whole_part: bool) -> void:
+	var piece := _make_ingredient_piece(id)
+	if piece == null:
+		return
+	piece.size = Vector2(40, 40)
+	add_child(piece)
+	piece.global_position = global_pos - piece.size * 0.5
+	_carry_piece = piece
+	_carrying_limb = whole_part
+	piece.start_drag(global_pos)
+	if whole_part:
+		# The finished part fades while it's being carried off.
+		assembly.modulate.a = 0.45
+	_refresh_tray_counts()
+
+
+## Drop what's being carried out of the assembly area. A finished part collects when it
+## lands on the inventory. A lifted component goes back into the limb, into the craft bin,
+## or (anywhere else) back to the inventory.
+func _finish_carry(global_pos: Vector2) -> void:
+	var piece := _carry_piece
+	var id: String = String(piece.item_id)
+	var was_limb := _carrying_limb
+	_carry_piece = null
+	_carrying_limb = false
+	piece.end_drag()
+	assembly.modulate.a = 1.0
+	if was_limb:
+		_remove_and_free(piece)
+		if ingredients_tray.get_global_rect().has_point(global_pos):
+			_on_collect_pressed()
+		return
+	var key: StringName = &""
+	if assembly.get_global_rect().has_point(global_pos):
+		key = _limb_component_key(id, global_pos)
+	if key != &"":
+		_remove_and_free(piece)
+		_add_limb_component(key)
+		return
+	if craft_bin.accepts_point(global_pos):
+		piece.home_parent = ingredients_tray.get_node_or_null("Tray_" + id) as Control
+		_drop_into_bin(piece, global_pos)
+		_refresh_tray_counts()
+		return
+	_remove_and_free(piece)
+	_refresh_tray_counts()
+
+
+# --- disassembly ---
+
+## Finished limbs that can be taken apart in the craft bin (not the head, yet).
+const DISASSEMBLABLE_PARTS: Array[String] = ["arm", "leg", "chest", "stomach"]
+## How far the parts of a disassembled limb spread out from the middle of the bin.
+const DISASSEMBLE_SPREAD_RADIUS: float = 52.0
+const DISASSEMBLE_POP_DURATION: float = 0.18
+
+
+## The limb in the craft bin waiting to be disassembled ("" if none).
+func _disassemble_target() -> String:
+	if _crafted or _is_tutorial_workshop():
+		return ""
+	var counts: Dictionary = craft_bin.count_items()
+	for id in DISASSEMBLABLE_PARTS:
+		if int(counts.get(id, 0)) >= 1:
+			return id
+	return ""
+
+
+## Breaks a finished limb in the bin back into the components it was built from, which pop
+## out into the bin ready to rebuild in the assembly area (or drag back to the inventory).
+## What comes back is the limb's build list (see GameState.limb_builds), so a stomach only
+## returns the tanks / pump / battery / external that were really in it. A limb with no
+## list (bought, rewarded, or built before lists were kept) returns its required segments.
+func _disassemble_limb(limb_id: String) -> void:
+	var pieces: Array = craft_bin.pieces_with_id(StringName(limb_id))
+	if pieces.is_empty():
+		return
+	var limb_piece: WorkshopPiece = pieces[0]
+	var origin: Vector2 = limb_piece.position + limb_piece.size * 0.5
+	var components: Array[String] = GameState.take_limb_build(limb_id)
+	if components.is_empty():
+		components.assign(CRAFTABLE_PARTS[limb_id].get("segments", []))
+	_remove_and_free(limb_piece)
+	_add_to_inventory(limb_id, -1)
+	for i in components.size():
+		_add_to_inventory(components[i], 1)
+		_spawn_disassembled_piece(components[i], origin, i, components.size())
+	_play_place_sound()
+	craft_bin.contents_changed.emit()
+	_rebuild_tray()
+
+
+## One component of a disassembled limb, popping out of where the limb sat (`origin`, bin
+## local) to its place in a ring around the middle of the bin.
+func _spawn_disassembled_piece(id: String, origin: Vector2, index: int, total: int) -> void:
+	var piece := _make_ingredient_piece(id)
+	if piece == null:
+		return
+	piece.size = TRAY_SLOT_SIZE
+	craft_bin.add_child(piece)
+	var target: Vector2 = craft_bin.local_center()
+	if total > 1:
+		target += Vector2.UP.rotated(TAU * float(index) / float(total)) * DISASSEMBLE_SPREAD_RADIUS
+	target -= piece.size * 0.5
+	target.x = clampf(target.x, 0.0, maxf(0.0, craft_bin.size.x - piece.size.x))
+	target.y = clampf(target.y, 0.0, maxf(0.0, craft_bin.size.y - piece.size.y))
+	piece.position = origin - piece.size * 0.5
+	var tw: Tween = piece.create_tween()
+	tw.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(piece, "position", target, DISASSEMBLE_POP_DURATION)
 
 
 # --- EDITOR HARVESTING ---
