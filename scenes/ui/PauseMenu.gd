@@ -495,3 +495,131 @@ class QuitPrompt extends Control:
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return spacer
+
+
+## The main menu's LOAD GAME window: the pause menu's window with a header, one row per save
+## slot (GameState.list_save_slots) with a LOAD button on each slot that holds a save, and a
+## BACK button. `back_requested` means "close": the header's back button, BACK, and a click
+## off the window all emit it. `load_requested(slot)` is a LOAD press - whoever opened the
+## window does the loading, and calls show_error() if it fails.
+class LoadPrompt extends Control:
+	signal back_requested
+	signal load_requested(slot: int)
+
+	const PROMPT_SIZE: Vector2 = Vector2(320.0, 156.0)
+	const PAD: int = 6
+	const ROW_HEIGHT: float = 20.0
+	const NAME_WIDTH: float = 52.0
+
+	var _message: Label = null
+
+	static func open_on(layer: CanvasLayer) -> LoadPrompt:
+		var prompt := LoadPrompt.new()
+		PauseMenu.open_window(layer, PROMPT_SIZE, prompt, func() -> void: prompt.back_requested.emit())
+		return prompt
+
+	## Puts `text` up in red under the slots.
+	func show_error(text: String) -> void:
+		_message.text = "> " + text
+		_message.add_theme_color_override("font_color", LaptopUI.ERR)
+
+	func _ready() -> void:
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		add_child(PauseMenu.window_background())
+
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 5)
+		col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var margin := LaptopUI.screen_margin(self, PAD)
+		margin.add_child(col)
+
+		# The same header as the pause menu: back button, glowing title, dim tag.
+		var header := LaptopUI.box()
+		var head_row := HBoxContainer.new()
+		head_row.add_theme_constant_override("separation", 6)
+		head_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		header.add_child(head_row)
+		var back := LaptopUI.button("‹", 11)
+		back.pressed.connect(func() -> void: back_requested.emit())
+		head_row.add_child(back)
+		head_row.add_child(LaptopUI.glow_title("LOAD GAME"))
+		head_row.add_child(PauseMenu._expander())
+		var tag := LaptopUI.label("MAIN MENU", 9, LaptopUI.DIM)
+		tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		head_row.add_child(tag)
+		col.add_child(header)
+
+		var body := LaptopUI.box()
+		body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var rows := VBoxContainer.new()
+		rows.add_theme_constant_override("separation", 1)
+		rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		body.add_child(rows)
+		for save in GameState.list_save_slots():
+			rows.add_child(_slot_row(save))
+		_message = LaptopUI.label("> pick a save to pick up where you left off.", 9, LaptopUI.DIM)
+		rows.add_child(_message)
+		col.add_child(body)
+
+		var footer := HBoxContainer.new()
+		footer.add_theme_constant_override("separation", 6)
+		footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var esc := LaptopUI.label("[ESC] BACK", 9, LaptopUI.DIM)
+		esc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		footer.add_child(esc)
+		footer.add_child(PauseMenu._expander())
+		var back_btn := PauseMenu._footer_button("BACK", LaptopUI.GREEN)
+		back_btn.pressed.connect(func() -> void: back_requested.emit())
+		footer.add_child(back_btn)
+		col.add_child(footer)
+
+	## One slot: "SAVE n", what's in it, its money and anger, and LOAD (when there's a save).
+	## Underlined with the settings rows' dotted line.
+	func _slot_row(save: Dictionary) -> HBoxContainer:
+		var empty := bool(save["empty"])
+		var readable := bool(save["readable"])
+		var row := HBoxContainer.new()
+		row.custom_minimum_size = Vector2(0, ROW_HEIGHT)
+		row.add_theme_constant_override("separation", 6)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.draw.connect(func() -> void:
+			var x := 0.0
+			while x < row.size.x:
+				row.draw_rect(Rect2(x, row.size.y - 1.0, 1.0, 1.0), Color(LaptopUI.DIM, 0.35))
+				x += 3.0)
+
+		var name_lbl := LaptopUI.label(String(save["name"]), 11, LaptopUI.GREEN if readable else LaptopUI.DIM)
+		name_lbl.custom_minimum_size = Vector2(NAME_WIDTH, 0)
+		name_lbl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(name_lbl)
+
+		var summary_text := "- empty -" if empty else String(save["summary"])
+		var summary_color := LaptopUI.DIM if empty else (LaptopUI.GREEN if readable else LaptopUI.ERR)
+		var summary := LaptopUI.label(summary_text, 10, summary_color)
+		summary.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		summary.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		summary.clip_text = true
+		summary.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		row.add_child(summary)
+
+		if empty or not readable:
+			return row
+		var stats := LaptopUI.label("$%d  ANG %d" % [int(save["money"]), int(save["anger"])], 9, LaptopUI.DIM)
+		stats.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(stats)
+		var load_btn := LaptopUI.button("LOAD ›", 11)
+		load_btn.name = "LoadButton%d" % int(save["slot"])
+		for state in ["normal", "hover", "pressed"]:
+			var sb := load_btn.get_theme_stylebox(state) as StyleBoxFlat
+			sb.content_margin_top = 0
+			sb.content_margin_bottom = 0
+			sb.content_margin_left = 5
+			sb.content_margin_right = 5
+		load_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var slot := int(save["slot"])
+		# Deferred so the button's click sound starts while the menu is still up - the
+		# scene change the load sets off would otherwise cut it off.
+		load_btn.pressed.connect(func() -> void: load_requested.emit(slot), CONNECT_DEFERRED)
+		row.add_child(load_btn)
+		return row

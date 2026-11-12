@@ -629,7 +629,7 @@ func _focusable_menu_buttons() -> Array[Button]:
 func _is_menu_item_disabled(id: String) -> bool:
 	match id:
 		"load":
-			return true
+			return _list_saves().is_empty()
 		"endless":
 			return not _debug_mode_enabled
 		_:
@@ -866,7 +866,7 @@ func _activate(id: String) -> void:
 	match id:
 		"new":      _start_new_game()
 		"endless":  _start_endless()
-		"load":     _open_overlay(_build_load_panel())
+		"load":     _open_load_prompt()
 		"settings": _open_pause_menu()
 		"quit":     _open_quit_prompt()
 		_:          push_warning("MainMenu: unknown menu id '%s'" % id)
@@ -875,6 +875,8 @@ func _activate(id: String) -> void:
 func _start_new_game() -> void:
 	if get_node_or_null("/root/GameState") != null:
 		GameState.reset_for_new_game()
+		# A new run starts with a blank post-it note (each save slot keeps its own).
+		GameState.clear_post_it()
 	if get_node_or_null("/root/DayCycle") != null and DayCycle.has_method("reset_for_new_game"):
 		DayCycle.reset_for_new_game()
 
@@ -899,6 +901,8 @@ func _start_new_game() -> void:
 func _start_endless() -> void:
 	if get_node_or_null("/root/GameState") != null:
 		GameState.reset_for_new_game()
+		# A new run starts with a blank post-it note (each save slot keeps its own).
+		GameState.clear_post_it()
 		GameState.complete_intro()
 		# Endless skips the intro entirely, so the one-time "first school/work
 		# after the intro" scripted robot-call cutscenes have no narrative setup.
@@ -1142,135 +1146,38 @@ func _close_overlay() -> void:
 		_current_overlay.queue_free()
 	_current_overlay = null
 	_reset_menu_option_button_textures()
+	# Settings' RESET tab can delete saves, so LOAD GAME may have just lost its last one.
+	_refresh_menu_item_availability()
 
 
-## Shared backdrop + panel skeleton. Returns {back, content} so callers can
-## stuff things into the content VBox. When `ornate` is true the panel uses the
-## double golden border (OrnateFrameOuter shell + OrnateFrameInner line), the
-## same look the DialogueBox uses.
-func _build_overlay_shell(title: String, ornate: bool = false) -> Dictionary:
-	var back := ColorRect.new()
-	back.name = "OverlayBack"
-	back.color = Color(0.008, 0.012, 0.039, 0.7)
-	back.anchor_right = 1.0
-	back.anchor_bottom = 1.0
-	back.mouse_filter = Control.MOUSE_FILTER_STOP
-	back.gui_input.connect(func(ev):
-		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-			_close_overlay()
-	)
-
-	var center := CenterContainer.new()
-	center.anchor_right = 1.0
-	center.anchor_bottom = 1.0
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	back.add_child(center)
-
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(560, 0)
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	center.add_child(panel)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
-
-	if ornate:
-		# OrnateFrameOuter (dark fill + gold border) wrapping an
-		# OrnateFrameInner (inner gold line) gives the double golden border.
-		# The inner frame already carries generous content margins, so the
-		# VBox is parented straight into it without an extra MarginContainer.
-		panel.theme_type_variation = &"OrnateFrameOuter"
-		var inner_frame := PanelContainer.new()
-		inner_frame.name = "InnerFrame"
-		inner_frame.theme_type_variation = &"OrnateFrameInner"
-		panel.add_child(inner_frame)
-		inner_frame.add_child(vbox)
-	else:
-		panel.theme_type_variation = &"HUDPanel"
-		var margin := MarginContainer.new()
-		margin.add_theme_constant_override("margin_left", 28)
-		margin.add_theme_constant_override("margin_top", 24)
-		margin.add_theme_constant_override("margin_right", 28)
-		margin.add_theme_constant_override("margin_bottom", 24)
-		panel.add_child(margin)
-		margin.add_child(vbox)
-
-	var title_label := Label.new()
-	title_label.text = title
-	title_label.add_theme_font_size_override("font_size", 32)
-	vbox.add_child(title_label)
-
-	return {"back": back, "content": vbox}
+## LOAD GAME is a pause-menu-style window (PauseMenu.LoadPrompt) listing the save slots,
+## the same green-terminal look as SETTINGS. Its BACK, Esc and a click off it close it.
+func _open_load_prompt() -> void:
+	var prompt := PauseMenu.LoadPrompt.open_on(_open_overlay_layer())
+	prompt.back_requested.connect(_close_overlay)
+	prompt.load_requested.connect(func(slot: int) -> void:
+		if not _load_save(slot):
+			prompt.show_error("couldn't load save %d." % slot))
 
 
-func _build_load_panel() -> Control:
-	var shell: Dictionary = _build_overlay_shell("LOAD GAME")
-	var content: VBoxContainer = shell["content"]
-
-	var sub := Label.new()
-	sub.text = "SELECT A SAVE SLOT  //  ESC TO CANCEL"
-	sub.theme_type_variation = &"HUDLabel"
-	content.add_child(sub)
-
-	# Placeholder save slots. Wire to a real save system later —
-	# GameState.to_dict() already exists.
-	var saves := [
-		{"n": 1, "name": "RUN 03", "info": "Day 12  ·  Night  ·  Bedroom",  "money": 247, "anger": 71, "empty": false},
-		{"n": 2, "name": "RUN 02", "info": "Day 5   ·  Evening · Workshop", "money": 88,  "anger": 30, "empty": false},
-		{"n": 3, "empty": true},
-	]
-	for s in saves:
-		content.add_child(_build_save_slot(s))
-
-	return shell["back"]
+## GameState.list_saves(), or [] when GameState isn't loaded (scene run on its own).
+func _list_saves() -> Array:
+	var state := get_node_or_null("/root/GameState")
+	return state.list_saves() if state != null else []
 
 
-func _build_save_slot(data: Dictionary) -> Control:
-	var slot := PanelContainer.new()
-	slot.theme_type_variation = &"HUDPanel"
-	slot.custom_minimum_size = Vector2(0, 56)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
-	slot.add_child(margin)
-
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 16)
-	margin.add_child(hbox)
-
-	var slot_no := Label.new()
-	slot_no.text = "0%d" % int(data.get("n", 0))
-	slot_no.add_theme_font_size_override("font_size", 32)
-	slot_no.add_theme_color_override("font_color", accent_soft_color)
-	slot_no.custom_minimum_size = Vector2(48, 0)
-	hbox.add_child(slot_no)
-
-	if data.get("empty", false):
-		var empty := Label.new()
-		empty.text = "—  EMPTY SLOT  —"
-		empty.theme_type_variation = &"HUDLabel"
-		empty.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		hbox.add_child(empty)
-	else:
-		var meta_vbox := VBoxContainer.new()
-		meta_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var name_lbl := Label.new()
-		name_lbl.text = String(data.get("name", ""))
-		var info_lbl := Label.new()
-		info_lbl.text = String(data.get("info", ""))
-		info_lbl.theme_type_variation = &"HUDLabel"
-		meta_vbox.add_child(name_lbl)
-		meta_vbox.add_child(info_lbl)
-		hbox.add_child(meta_vbox)
-
-		var stats := Label.new()
-		stats.text = "$%d   ANG %d" % [int(data.get("money", 0)), int(data.get("anger", 0))]
-		stats.theme_type_variation = &"HUDLabel"
-		hbox.add_child(stats)
-	return slot
+## Restores save slot `slot` and drops straight into the game where it left off (Main picks
+## up the loaded phase, or the intro at its saved step) - no intro wipe. False if the save
+## couldn't be loaded, in which case nothing changes.
+func _load_save(slot: int) -> bool:
+	if get_node_or_null("/root/GameState") == null or not GameState.load_game(slot):
+		return false
+	var intro: Node = get_node_or_null("/root/IntroTransition")
+	if intro:
+		intro.pending_intro = false
+	_fade_out_menu_music()
+	get_tree().change_scene_to_file(game_scene_path)
+	return true
 
 
 ## Settings is the in-game pause menu (PauseMenu): the same green-terminal window, opened

@@ -458,8 +458,14 @@ var stress_test_history: Array = []
 ## Keep the log from growing without bound.
 const STRESS_TEST_HISTORY_MAX: int = 60
 
-# --- save file ---
+# --- save files ---
+## Slot 1's file. It keeps the name the single save always had, so an older save shows up
+## as slot 1; slot n > 1 is "savegame_<n>.json" beside it (see save_slot_path).
 const SAVE_PATH: String = "user://savegame.json"
+const SAVE_SLOT_COUNT: int = 3
+## The slot this run was last loaded from or saved to (1..SAVE_SLOT_COUNT), or 0 for a run
+## that hasn't touched one yet (a fresh new game). Not saved: it's which file the run is in.
+var current_save_slot: int = 0
 
 
 func _ready() -> void:
@@ -546,6 +552,7 @@ func _emit_initial_state() -> void:
 
 
 func reset_for_new_game() -> void:
+	current_save_slot = 0
 	_day = 1
 	yesterday_stats = _zero_stats()
 	today_start_stats = _zero_stats()
@@ -1538,49 +1545,79 @@ func record_stress_test_result(entry: Dictionary) -> void:
 
 # --- save / load (JSON snapshot on disk) ---
 
-## Writes the full to_dict() snapshot to SAVE_PATH as JSON. Returns true on success.
-func save_game() -> bool:
-	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if f == null:
-		push_warning("save_game: could not open %s (err %d)" % [SAVE_PATH, FileAccess.get_open_error()])
+## The file behind save slot `slot` (1..SAVE_SLOT_COUNT).
+func save_slot_path(slot: int) -> String:
+	if slot <= 1:
+		return SAVE_PATH
+	return SAVE_PATH.get_base_dir().path_join("%s_%d.json" % [SAVE_PATH.get_file().get_basename(), slot])
+
+
+## Writes the full to_dict() snapshot to save slot `slot` as JSON, and makes it the run's
+## current slot. Returns true on success.
+func save_game(slot: int) -> bool:
+	if slot < 1 or slot > SAVE_SLOT_COUNT:
+		push_warning("save_game: no save slot %d" % slot)
 		return false
-	f.store_string(JSON.stringify(to_dict(), "\t"))
+	var path := save_slot_path(slot)
+	var data := to_dict()
+	data["post_it_ink"] = _post_it_ink_for_save()
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		push_warning("save_game: could not open %s (err %d)" % [path, FileAccess.get_open_error()])
+		return false
+	f.store_string(JSON.stringify(data, "\t"))
 	f.close()
+	current_save_slot = slot
 	return true
 
 
-## True if a save file exists on disk.
+## True if any save slot holds a file.
 func has_save() -> bool:
-	return FileAccess.file_exists(SAVE_PATH)
+	return not list_saves().is_empty()
 
 
-## Every save file on disk (SAVE_PATH, plus any "savegame_*.json" slots beside it), sorted
-## by path. Each entry: {path, name ("SAVE 1", ...), summary ("DAY 3 · NIGHT · NOAH", or
-## "UNREADABLE")}.
+## Every save slot, empty or not, in slot order. Each entry: {slot, path, name ("SAVE 1",
+## ...), empty, readable, summary ("DAY 3 · NIGHT · NOAH", "UNREADABLE", or "" when empty),
+## money, anger}.
+func list_save_slots() -> Array[Dictionary]:
+	var slots: Array[Dictionary] = []
+	for slot in range(1, SAVE_SLOT_COUNT + 1):
+		var path := save_slot_path(slot)
+		var empty := not FileAccess.file_exists(path)
+		var data := {} if empty else _read_save_file(path)
+		slots.append({
+			"slot": slot,
+			"path": path,
+			"name": "SAVE %d" % slot,
+			"empty": empty,
+			"readable": not data.is_empty(),
+			"summary": "" if empty else _save_summary(data),
+			"money": int(data.get("money", 0)),
+			"anger": int(data.get("anger", 0)),
+		})
+	return slots
+
+
+## The save slots that hold a file (see list_save_slots for the entries).
 func list_saves() -> Array[Dictionary]:
-	var paths: Array[String] = []
-	var dir := DirAccess.open(SAVE_PATH.get_base_dir())
-	if dir != null:
-		var prefix := SAVE_PATH.get_file().get_basename()
-		for file in dir.get_files():
-			if file.get_extension() == "json" and file.get_basename().begins_with(prefix):
-				paths.append(SAVE_PATH.get_base_dir().path_join(file))
-	paths.sort()
-	var saves: Array[Dictionary] = []
-	for i in paths.size():
-		saves.append({"path": paths[i], "name": "SAVE %d" % (i + 1), "summary": _save_summary(paths[i])})
-	return saves
+	return list_save_slots().filter(func(s: Dictionary) -> bool: return not bool(s["empty"]))
 
 
-func _save_summary(path: String) -> String:
+## The parsed JSON of one save file, or {} if it is missing or unreadable.
+func _read_save_file(path: String) -> Dictionary:
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
-		return "UNREADABLE"
+		return {}
 	var parsed = JSON.parse_string(f.get_as_text())
 	f.close()
 	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	return parsed
+
+
+func _save_summary(data: Dictionary) -> String:
+	if data.is_empty():
 		return "UNREADABLE"
-	var data: Dictionary = parsed
 	var phase_names: Array[String] = ["MORNING", "EVENING", "NIGHT"]
 	var p := clampi(int(data.get("phase", 0)), 0, phase_names.size() - 1)
 	var summary := "DAY %d · %s" % [int(data.get("day", 1)), phase_names[p]]
@@ -1592,9 +1629,15 @@ func _save_summary(path: String) -> String:
 
 ## Deletes one save file. Only paths list_saves() returns are accepted. True on success.
 func delete_save(path: String) -> bool:
-	if not list_saves().any(func(s: Dictionary) -> bool: return String(s["path"]) == path):
+	var match := list_saves().filter(func(s: Dictionary) -> bool: return String(s["path"]) == path)
+	if match.is_empty():
 		return false
-	return DirAccess.remove_absolute(ProjectSettings.globalize_path(path)) == OK
+	if DirAccess.remove_absolute(ProjectSettings.globalize_path(path)) != OK:
+		return false
+	# The run is no longer in that file, so the next save has to pick a slot again.
+	if int(match[0]["slot"]) == current_save_slot:
+		current_save_slot = 0
+	return true
 
 
 ## Puts every setting back to its default (debug off, and locked again).
@@ -1611,14 +1654,13 @@ func reset_settings_to_defaults() -> void:
 	debug_unlocked = false
 
 
-## The full wipe: every save file, the post-it note's writing, the current run, and every
-## setting. Returns true if every file that existed was deleted.
+## The full wipe: every save file (each slot's note goes with it), the current note, the
+## current run, and every setting. Returns true if every file that existed was deleted.
 func reset_all_data() -> bool:
 	var ok := true
 	for save in list_saves():
 		ok = delete_save(String(save["path"])) and ok
-	if FileAccess.file_exists(PostItNote.ink_save_path):
-		ok = DirAccess.remove_absolute(ProjectSettings.globalize_path(PostItNote.ink_save_path)) == OK and ok
+	ok = clear_post_it() and ok
 	reset_settings_to_defaults()
 	reset_for_new_game()
 	var day_cycle := get_node_or_null("/root/DayCycle")
@@ -1627,21 +1669,61 @@ func reset_all_data() -> bool:
 	return ok
 
 
-## Loads and applies the saved snapshot. Returns true on success.
-func load_game() -> bool:
-	if not has_save():
+## Loads and applies save slot `slot`, and makes it the run's current slot. The run is
+## reset first, so nothing from before the load leaks in. Returns true on success; on
+## failure the current state is left as it was.
+func load_game(slot: int) -> bool:
+	if slot < 1 or slot > SAVE_SLOT_COUNT:
+		push_warning("load_game: no save slot %d" % slot)
 		return false
-	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if f == null:
+	var path := save_slot_path(slot)
+	var data := _read_save_file(path)
+	if data.is_empty():
+		push_warning("load_game: %s is missing or not valid JSON" % path)
 		return false
-	var text := f.get_as_text()
-	f.close()
-	var parsed = JSON.parse_string(text)
-	if typeof(parsed) != TYPE_DICTIONARY:
-		push_warning("load_game: save file is not valid JSON")
-		return false
-	from_dict(parsed)
+	reset_for_new_game()
+	from_dict(data)
+	_restore_post_it_ink(data)
+	current_save_slot = slot
 	return true
+
+
+# --- post-it note (one per save slot) ---
+# The note itself only ever reads and writes its one file, PostItNote.ink_save_path: the
+# current run's note. Each save carries a copy of it (a base64 PNG under "post_it_ink", ""
+# for a blank note), and loading that save puts the copy back.
+
+## The current note as base64 PNG for a save, or "" when it's blank. Any open note writes
+## out its latest strokes first.
+func _post_it_ink_for_save() -> String:
+	get_tree().call_group(PostItNote.GROUP, "flush")
+	if not FileAccess.file_exists(PostItNote.ink_save_path):
+		return ""
+	return Marshalls.raw_to_base64(FileAccess.get_file_as_bytes(PostItNote.ink_save_path))
+
+
+## Puts a loaded save's note back. Saves from before notes were per slot have no
+## "post_it_ink" and leave the current note as it is.
+func _restore_post_it_ink(data: Dictionary) -> void:
+	if not data.has("post_it_ink"):
+		return
+	clear_post_it()
+	var ink := String(data["post_it_ink"])
+	if ink == "":
+		return
+	var f := FileAccess.open(PostItNote.ink_save_path, FileAccess.WRITE)
+	if f == null:
+		push_warning("load_game: could not restore the post-it note")
+		return
+	f.store_buffer(Marshalls.base64_to_raw(ink))
+	f.close()
+
+
+## Blanks the current run's note (a new game starts with an empty one). True on success.
+func clear_post_it() -> bool:
+	if not FileAccess.file_exists(PostItNote.ink_save_path):
+		return true
+	return DirAccess.remove_absolute(ProjectSettings.globalize_path(PostItNote.ink_save_path)) == OK
 
 
 # --- serialization stubs for future save system ---
@@ -1703,7 +1785,30 @@ func to_dict() -> Dictionary:
 		"easy_workshop_enabled": _easy_workshop_enabled,
 		"camera_roll_enabled": camera_roll_enabled,
 		"camera_mouse_follow_enabled": camera_mouse_follow_enabled,
+		"day_cycle": _day_cycle_to_dict(),
 	}
+
+
+## DayCycle's tonight-only state (it lives there, but a save mid-day has to keep it).
+func _day_cycle_to_dict() -> Dictionary:
+	var day_cycle := get_node_or_null("/root/DayCycle")
+	if day_cycle == null:
+		return {}
+	return {
+		"nightly_wakes": day_cycle.nightly_wakes,
+		"nightly_stress_test_completed": day_cycle.nightly_stress_test_completed,
+		"uncle_out_for_the_night": day_cycle.uncle_out_for_the_night,
+	}
+
+
+## Restores _day_cycle_to_dict(); saves from before it was kept start the night fresh.
+func _day_cycle_from_dict(data: Dictionary) -> void:
+	var day_cycle := get_node_or_null("/root/DayCycle")
+	if day_cycle == null:
+		return
+	day_cycle.nightly_wakes = maxi(0, int(data.get("nightly_wakes", 0)))
+	day_cycle.nightly_stress_test_completed = bool(data.get("nightly_stress_test_completed", false))
+	day_cycle.uncle_out_for_the_night = bool(data.get("uncle_out_for_the_night", false))
 
 
 ## Saves from before equipped_parts counted every owned part (on her or not) in robot_parts,
@@ -1873,4 +1978,6 @@ func from_dict(data: Dictionary) -> void:
 	_easy_workshop_enabled = bool(data.get("easy_workshop_enabled", false))
 	camera_roll_enabled = bool(data.get("camera_roll_enabled", true))
 	camera_mouse_follow_enabled = bool(data.get("camera_mouse_follow_enabled", true))
+	var day_cycle_data = data.get("day_cycle", {})
+	_day_cycle_from_dict(day_cycle_data if day_cycle_data is Dictionary else {})
 	_emit_initial_state()

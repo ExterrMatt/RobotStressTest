@@ -171,7 +171,7 @@ func _build_tabs() -> Control:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(spacer)
-	col.add_child(LaptopUI.label("ROBO-OS v0.2", 8, Color(LaptopUI.DIM, 0.7)))
+	col.add_child(LaptopUI.label("ROBO-OS v0.3", 8, Color(LaptopUI.DIM, 0.7)))
 	return col
 
 
@@ -399,28 +399,32 @@ func _build_profile() -> void:
 
 
 func _build_system() -> void:
-	var row := _add_row("SAVE GAME", "write your progress to disk")
+	# Quick-save into the slot this run is in; a run that hasn't picked one yet does that in
+	# the SAVE app, which shows every slot.
+	var slot: int = GameState.current_save_slot
+	var desc := "write your progress to save %d" % slot if slot > 0 else "pick a save slot in the SAVE app first"
+	var row := _add_row("SAVE GAME", desc)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(spacer)
-	var status := LaptopUI.label("", 10, LaptopUI.DIM)
+	var status := LaptopUI.label("" if slot > 0 else "USE THE SAVE APP", 10, LaptopUI.DIM)
 	status.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(status)
 	var save_btn := _arrow_button("SAVE", Callable())
+	save_btn.disabled = slot <= 0
 	row.add_child(save_btn)
 
-	var save_file := _info_row("SAVE FILE", "FOUND" if GameState.has_save() else "NONE")
+	_info_row("SAVE SLOT", "SAVE %d" % slot if slot > 0 else "NONE YET")
 	_info_row("OPERATOR", GameState.get_player_name().to_upper())
 	var phase: int = clampi(int(GameState.phase), 0, PHASE_NAMES.size() - 1)
 	_info_row("SESSION", "DAY %d · %s" % [int(GameState.day), PHASE_NAMES[phase]])
-	_info_row("SYSTEM", "ROBO-OS v0.2")
+	_info_row("SYSTEM", "ROBO-OS v0.3")
 
 	save_btn.pressed.connect(func() -> void:
-		if GameState.save_game():
+		if GameState.save_game(slot):
 			status.add_theme_color_override("font_color", LaptopUI.OK)
 			status.text = "SAVED"
-			save_file.text = "FOUND"
 		else:
 			status.add_theme_color_override("font_color", LaptopUI.ERR)
 			status.text = "SAVE FAILED")

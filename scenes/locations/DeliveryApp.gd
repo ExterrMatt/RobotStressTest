@@ -378,7 +378,7 @@ func _build_tabs() -> void:
 	else:
 		# Only claims a changing stock while something in the catalogue actually rotates.
 		var rotates: bool = ITEMS.any(func(item: Dictionary) -> bool: return bool(item.get("rotating", false)))
-		_tab_column.add_child(_label("STOCK CHANGES DAILY" if rotates else "ROBO-OS v0.2", 8, Color(LaptopUI.DIM, 0.7)))
+		_tab_column.add_child(_label("STOCK CHANGES DAILY" if rotates else "ROBO-OS v0.3", 8, Color(LaptopUI.DIM, 0.7)))
 
 
 func _on_tab_pressed(id: String) -> void:

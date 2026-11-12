@@ -9,8 +9,9 @@ class_name PostItNote
 ## The red X on its corner (or Escape) slides it back down. It comes first for the mouse:
 ## a click on the note (or a stroke or drag begun on it) never reaches anything behind it,
 ## while clicks on the empty space around it go through to the game as usual. What's
-## written is kept in its own file, so it survives every scene, quitting and reloading,
-## independent of the save game.
+## written is kept in its own file (ink_save_path), so it survives every scene and quitting.
+## That file is the current run's note: each save slot keeps a copy of it, which loading
+## the slot puts back, and a new game starts it blank (see GameState's post-it section).
 ##
 ## It belongs to the scene it was opened in: scene transitions draw over it (the in-frame
 ## wipe by taking the note into the picture frame just beneath it; the full-screen wipes sit
@@ -92,7 +93,17 @@ static func open_in(node: Node) -> PostItNote:
 	return note
 
 
+## Open notes are in this group, so a save can have them write their ink out first (flush).
+const GROUP: StringName = &"post_it_note"
+
+
+## Writes any unsaved writing to ink_save_path now (it is otherwise written on close).
+func flush() -> void:
+	_save_ink()
+
+
 func _ready() -> void:
+	add_to_group(GROUP)
 	# Above the scene (fullscreen locations sit on layer 20, the scanlines on 10) but under
 	# the inventory and the full-screen scene transitions (layer 100).
 	layer = 99

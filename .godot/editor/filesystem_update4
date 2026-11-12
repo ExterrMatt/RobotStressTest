@@ -1,5 +1,7 @@
 res://autoload/GameState.gd
-res://scenes/locations/LaptopScreen.gd
-res://scenes/locations/StressTest.gd
-res://scenes/locations/WorkshopMinigame.gd
-res://scenes/Main.gd
+res://scenes/locations/DeliveryApp.gd
+res://scenes/locations/LaptopHome.gd
+res://scenes/locations/SaveApp.gd
+res://scenes/locations/SettingsApp.gd
+res://scenes/ui/MainMenu.gd
+res://scenes/ui/PauseMenu.gd

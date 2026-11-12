@@ -31,7 +31,7 @@ var session: String = "home"
 var play_intro: bool = false
 
 ## The shell's output, kept for the whole run so it's still there next time the laptop opens.
-static var _shell_lines: PackedStringArray = PackedStringArray(["robo-os v0.2 ready. type 'help'."])
+static var _shell_lines: PackedStringArray = PackedStringArray(["robo-os v0.3 ready. type 'help'."])
 static var _shell_commands: PackedStringArray = PackedStringArray()
 
 var _tiles: Array[HomeTile] = []
@@ -158,7 +158,7 @@ func _build_header() -> Control:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(title)
 
-	var version := LaptopUI.label("v0.2", 10, LaptopUI.DIM)
+	var version := LaptopUI.label("v0.3", 10, LaptopUI.DIM)
 	version.size_flags_vertical = Control.SIZE_SHRINK_END
 	row.add_child(version)
 
@@ -498,7 +498,7 @@ func _run_intro() -> void:
 		return
 	var label := _boot_overlay.get_node("BootLines") as Label
 	var boot := [
-		"ROBO-OS v0.2 BIOS",
+		"ROBO-OS v0.3 BIOS",
 		"memory check ........ 640K OK",
 		"mount /dev/robo0 .... OK",
 		"link ................ LOCAL",
