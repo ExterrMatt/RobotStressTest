@@ -3,10 +3,14 @@ class_name WorkshopMinigame
 
 signal collected(part_id: String)
 signal ended()
-## Emitted once, after the player has spent EASY_MODE_OFFER_SECONDS in a normal
-## (non-tutorial) workshop with Easy Workshop Mode still off, so the location can
-## offer to switch it on.
+## Emitted once the player has spent EASY_MODE_OFFER_SECONDS with unassembled pieces
+## in the assembly area of a normal (non-tutorial) workshop and Easy Workshop Mode
+## still off, so the location can offer to switch it on. Re-emitted whenever pieces
+## need assembling again after the offer was withdrawn.
 signal easy_mode_offered()
+## Emitted when a shown offer stops being useful: nothing in the assembly area needs
+## assembling (empty, or the part is finished), so the location should hide it.
+signal easy_mode_offer_withdrawn()
 
 ## How long the player struggles before the Easy Workshop Mode offer appears.
 const EASY_MODE_OFFER_SECONDS: float = 60.0
@@ -555,10 +559,12 @@ var _place_audio_player: AudioStreamPlayer = null
 ## where everything goes" reveal) and then clears itself, instead of the
 ## continuous drag-time flash.
 var _hint_pulse_once: bool = false
-## Wall-clock time spent in this workshop session, used to time the Easy Workshop
-## Mode offer. The offer fires once when it crosses EASY_MODE_OFFER_SECONDS.
+## Time spent in this workshop session with pieces waiting to be assembled, used to
+## time the Easy Workshop Mode offer. It only counts while there's something to
+## assemble; the offer shows once it crosses EASY_MODE_OFFER_SECONDS.
 var _workshop_elapsed: float = 0.0
-var _easy_mode_offer_made: bool = false
+## True while the location is showing the offer (between offered and withdrawn).
+var _easy_mode_offer_showing: bool = false
 
 
 func _enter_tree() -> void:
@@ -662,23 +668,41 @@ func _process(_delta: float) -> void:
 	_sync_passenger_segments_to_active_drag()
 	_update_placement_hint_flash(_delta)
 	_update_easy_mode_offer(_delta)
-	if _debug_mode_enabled() and _enter_held():
+	# Held-Enter speedrun: debug mode or the skip cheat (GameState.skip_cheat_enabled).
+	if GameState.enter_speedrun_allowed() and _enter_held():
 		_auto_progress_with_enter()
 
 
-## Time the workshop session and, once the player has been at it for a while with
-## Easy Workshop Mode still off (and outside the guided intro), offer it once.
+## Time how long the player has had pieces to assemble and, once they've been at it
+## for a while with Easy Workshop Mode still off (and outside the guided intro), offer
+## it. The offer is only shown while the assembly area holds pieces that still need
+## placing; it's withdrawn when the area empties or the part is finished.
 func _update_easy_mode_offer(delta: float) -> void:
-	if _easy_mode_offer_made or _is_tutorial_workshop() or _easy_workshop_enabled():
+	if _is_tutorial_workshop() or _easy_workshop_enabled():
 		return
-	# A finished limb (all slots filled, just not collected yet) doesn't need any
-	# placement help — don't pop the offer.
-	if _is_assembly_complete():
+	if not _has_pieces_to_assemble():
+		_set_easy_mode_offer_showing(false)
 		return
 	_workshop_elapsed += delta
 	if _workshop_elapsed >= EASY_MODE_OFFER_SECONDS:
-		_easy_mode_offer_made = true
+		_set_easy_mode_offer_showing(true)
+
+
+## True while a part is in the assembly area with slots still to fill: a crafted
+## part's segments laid out, or a limb partway built. False when the area is empty
+## or the part is complete and just waiting on COLLECT.
+func _has_pieces_to_assemble() -> bool:
+	return _crafted_part_id != "" and not _is_assembly_complete()
+
+
+func _set_easy_mode_offer_showing(showing: bool) -> void:
+	if showing == _easy_mode_offer_showing:
+		return
+	_easy_mode_offer_showing = showing
+	if showing:
 		easy_mode_offered.emit()
+	else:
+		easy_mode_offer_withdrawn.emit()
 
 
 ## The intro/tutorial workshop keeps its guiding hints on regardless of the Easy

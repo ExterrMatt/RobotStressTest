@@ -2,16 +2,34 @@ extends LocationBase
 
 const ED_SHOP_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/ed_shop.png"
 const LIVING_ROOM_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/living_room_evening.png"
-const ROBOT_EYES_SHUT_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/robot_eyes_shut.png"
-const ROBOT_EYES_OPEN_BACKGROUND_TEXTURE_PATH := "res://assets/textures/backgrounds/robot_eyes_open.png"
 const UNCLE_PORTRAIT_SCALE: float = 1.1
 const STORE_OUTRO_HOME_PAGE_INDEX: int = 2
-## Fallback only. The page where the robot first says "hello" (and her eyes open)
-## is found from the dialogue at runtime - see _compute_robot_hello_page_index -
-## so the eyes stay in sync with her line no matter how many lines are added or
-## removed before it. This constant is used only if that lookup finds nothing.
-const ROBOT_FIRST_TALK_HELLO_PAGE_INDEX: int = 5
-const ROBOT_FIRST_TALK_HELLO_MATCH: String = "hello"
+## The robot's head on the shed table for robot_first_talk: an Aseprite packed
+## sheet whose "Background" layer is her with eyes shut, plus one overlay layer
+## per expression. Each expression is the background with just that layer on top.
+const TABLE_ROBOT_SHEET_PATH: String = "res://assets/textures/backgrounds/table_robot.png"
+const TABLE_ROBOT_SHEET_JSON_PATH: String = "res://assets/textures/backgrounds/table_robot.json"
+const TABLE_ROBOT_EXPRESSION_LAYERS: Array[String] = ["open_eyes", "left_eyes", "right_eyes", "bite_lip"]
+const ROBOT_EXPRESSION_SHUT: String = ""
+const ROBOT_EXPRESSION_OPEN: String = "open_eyes"
+const ROBOT_EXPRESSION_LEFT: String = "left_eyes"
+const ROBOT_EXPRESSION_RIGHT: String = "right_eyes"
+const ROBOT_EXPRESSION_BITE_LIP: String = "bite_lip"
+## Her expression through robot_first_talk, cued off the (lower-cased) prose: the
+## first page containing a cue switches to its expression, which then holds until
+## the next cue. Cues fire in this order, and pages before the first one show her
+## with eyes shut. Matching on text (not page numbers) keeps this in sync when
+## lines are added or removed. Looking around alternates sides line to line.
+const ROBOT_FIRST_TALK_EXPRESSION_CUES: Array[Dictionary] = [
+	{"cue": "hello", "expression": ROBOT_EXPRESSION_OPEN},
+	{"cue": "eyes scan the room", "expression": ROBOT_EXPRESSION_RIGHT},
+	{"cue": "where am i", "expression": ROBOT_EXPRESSION_LEFT},
+	{"cue": "her: a shed", "expression": ROBOT_EXPRESSION_LEFT},
+	{"cue": "silent for a few seconds", "expression": ROBOT_EXPRESSION_RIGHT},
+	{"cue": "who are you", "expression": ROBOT_EXPRESSION_OPEN},
+	{"cue": "bites her lip", "expression": ROBOT_EXPRESSION_BITE_LIP},
+	{"cue": "help me", "expression": ROBOT_EXPRESSION_OPEN},
+]
 ## Intro steps that show the uncle at home in his blue shirt (a random one of the
 ## two blue-shirt variants is picked each time — see _apply_intro_visuals). The
 ## living-room store_outro scene uses the Hawaiian outfit instead.
@@ -44,6 +62,25 @@ const STORE_OUTRO_SOUND_CUES: Array[Dictionary] = [
 	{"cue": "reaches over to the backpack", "sounds": [ZIP_OPENING_SOUND_PATH]},
 ]
 
+## The drone reveal that closes robot_first_talk (see DroneRevealCutscene): the
+## player lifts her up in front of the shed window, spots the patrol drone behind
+## her and drives it off with the emergency button. Dialogue keys, in order:
+const DRONE_REVEAL_LIFT_KEY: String = "robot_first_talk_lift"
+const DRONE_REVEAL_DRONE_KEY: String = "robot_first_talk_drone"
+const DRONE_REVEAL_OUTRO_KEY: String = "robot_first_talk_outro"
+## Beat between lowering her head and the drone drawing its guns.
+const DRONE_REVEAL_LOWER_HOLD_SECONDS: float = 0.25
+## Ease-in-out pan back down to her face as the post-drone talk starts.
+const DRONE_REVEAL_SETTLE_PAN_SECONDS: float = 0.3
+## How long the hand stays on the button before dropping back down.
+const DRONE_REVEAL_PRESS_HOLD_SECONDS: float = 1.0
+## Same clips and levels as the stress test's emergency button and drone zap.
+const EMERGENCY_POWER_BUTTON_SOUND_PATH: String = "res://assets/sounds/emergency_button/emergency_power_button.mp3"
+const DRONE_ZAP_SOUND_PATH: String = "res://assets/sounds/zap/zap_3.mp3"
+const DRONE_ZAP_VOLUME_SCALE: float = 0.25
+
+enum DroneReveal { NONE, LIFT, PANNING, SHOUT, PRESSING, OUTRO }
+
 ## Fluorescent-light buzz kept running through the store_outro's Ed's-shop pages
 ## (it started back in the Store scene) and stopped only once the scene actually
 ## leaves Ed's for the walk home. Mirrors Store.gd's constants — keep in sync.
@@ -62,8 +99,12 @@ var _intro_pages: Array = []
 ## Cues from STORE_OUTRO_SOUND_CUES that have already fired, so each plays once.
 var _store_outro_cues_played: Dictionary = {}
 var _store_outro_home_visual_applied: bool = false
-var _robot_eyes_open_applied: bool = false
-var _robot_hello_page_index: int = ROBOT_FIRST_TALK_HELLO_PAGE_INDEX
+## robot_first_talk: the expression each page shows (see
+## ROBOT_FIRST_TALK_EXPRESSION_CUES), the one currently up, and the full-cell
+## texture for each expression.
+var _robot_page_expressions: Array[String] = []
+var _robot_expression: String = ROBOT_EXPRESSION_SHUT
+var _robot_expression_textures: Dictionary = {}
 var _name_prompt_panel: Control = null
 var _name_line_edit: LineEdit = null
 ## A random name from GameState.DEFAULT_PLAYER_NAMES, chosen once when the prompt
@@ -79,6 +120,11 @@ var _awaiting_name_confirmation: bool = false
 ## door-open beat). The confirmation prompt is left hidden-but-active during this
 ## window; the flag stops a stray advance on it from ending the intro early.
 var _pending_intro_dialogue: bool = false
+## Where the robot_first_talk drone reveal is up to (DroneReveal).
+var _drone_reveal_stage: int = DroneReveal.NONE
+## The shed-window overlay laid over the picture frame for the drone reveal. It is
+## parented to Main's scene image, so it is freed with this location in _exit_tree.
+var _drone_reveal: DroneRevealCutscene = null
 
 
 func _ready() -> void:
@@ -413,14 +459,89 @@ func _on_dialogue_finished() -> void:
 		# door-open beat). Ignore a stray finish on the leftover confirmation prompt
 		# so the intro isn't ended before it has really begun.
 		return
+	if _intro_key == "robot_first_talk" and _advance_drone_reveal():
+		return
 	finish(0, 0, 0, {}, false)
+
+
+## Steps the robot_first_talk drone reveal on each dialogue finish. Returns true while
+## the reveal still has beats to play (so the intro must not finish yet).
+func _advance_drone_reveal() -> bool:
+	match _drone_reveal_stage:
+		DroneReveal.NONE:
+			# "I can't hide you anywhere else..." - cut straight (no wipe) to the shed
+			# window with her head held up, then the few words before leaving.
+			_drone_reveal_stage = DroneReveal.LIFT
+			_show_drone_reveal()
+			return true
+		DroneReveal.LIFT:
+			_drone_reveal_stage = DroneReveal.PANNING
+			dialogue_box.hide_advance_arrow()
+			_play_drone_reveal_pan()
+			return true
+		DroneReveal.SHOUT:
+			# The player clicks past the shout: only now do they hit the button.
+			_drone_reveal_stage = DroneReveal.PRESSING
+			dialogue_box.hide_advance_arrow()
+			_play_drone_reveal_button_press()
+			return true
+		DroneReveal.OUTRO:
+			return false
+	# PANNING / PRESSING: a beat is still animating; nothing to advance.
+	return true
+
+
+func _show_drone_reveal() -> void:
+	var main := get_tree().current_scene
+	var frame: Control = main.get("scene_image") if main != null and "scene_image" in main else null
+	if frame != null:
+		_drone_reveal = DroneRevealCutscene.new()
+		_drone_reveal.name = "DroneRevealCutscene"
+		frame.add_child(_drone_reveal)
+	_play_intro_pages(DRONE_REVEAL_LIFT_KEY)
+
+
+## Lower her head (the camera holds still), hold a beat, then the drone deploys its
+## guns as the player shouts.
+func _play_drone_reveal_pan() -> void:
+	if _drone_reveal != null:
+		_drone_reveal.lower_head()
+	await get_tree().create_timer(DRONE_REVEAL_LOWER_HOLD_SECONDS).timeout
+	if not is_inside_tree():
+		return
+	if _drone_reveal != null:
+		_drone_reveal.show_drone_guns()
+	_drone_reveal_stage = DroneReveal.SHOUT
+	_play_intro_pages(DRONE_REVEAL_DRONE_KEY)
+
+
+## Slam the emergency button (zapping the drone), hold it for a beat, bring the hand
+## back down, then pan down to her face as the rest of the night's talk plays.
+func _play_drone_reveal_button_press() -> void:
+	if _drone_reveal != null:
+		_drone_reveal.press_button()
+	play_oneshot_sound(EMERGENCY_POWER_BUTTON_SOUND_PATH, GameState.DEFAULT_SFX_VOLUME_SCALE)
+	play_oneshot_sound(DRONE_ZAP_SOUND_PATH, DRONE_ZAP_VOLUME_SCALE)
+	await get_tree().create_timer(DRONE_REVEAL_PRESS_HOLD_SECONDS).timeout
+	if not is_inside_tree():
+		return
+	if _drone_reveal != null:
+		_drone_reveal.release_button()
+		_drone_reveal.pan_to_settle(DRONE_REVEAL_SETTLE_PAN_SECONDS)
+	_drone_reveal_stage = DroneReveal.OUTRO
+	_play_intro_pages(DRONE_REVEAL_OUTRO_KEY)
+
+
+func _play_intro_pages(key: String) -> void:
+	_intro_pages = Dialogue.get_pages("intro", key, _intro_format_vars())
+	dialogue_box.play_pages(_intro_pages)
 
 
 func _on_page_advanced(index: int) -> void:
 	if _intro_key == "robot_first_talk":
-		if not _robot_eyes_open_applied and index >= _robot_hello_page_index:
-			_robot_eyes_open_applied = true
-			_set_scene_image(ROBOT_EYES_OPEN_BACKGROUND_TEXTURE_PATH)
+		# Only the main talk drives her face; the drone reveal plays over it.
+		if _drone_reveal_stage == DroneReveal.NONE and index < _robot_page_expressions.size():
+			_set_robot_expression(_robot_page_expressions[index])
 		return
 	if _intro_key != "store_outro":
 		return
@@ -471,6 +592,9 @@ func _fire_store_outro_cue(entry: Dictionary) -> void:
 
 func _exit_tree() -> void:
 	stop_ambient_loop()
+	if is_instance_valid(_drone_reveal):
+		_drone_reveal.queue_free()
+	_drone_reveal = null
 
 
 func _apply_intro_visuals(key: String) -> void:
@@ -483,8 +607,8 @@ func _apply_intro_visuals(key: String) -> void:
 			main.hide_teacher_portrait()
 		return
 	if key == "robot_first_talk":
-		_robot_hello_page_index = _compute_robot_hello_page_index()
-		_set_scene_image(ROBOT_EYES_SHUT_BACKGROUND_TEXTURE_PATH)
+		_build_robot_expressions()
+		_set_robot_expression(ROBOT_EXPRESSION_SHUT, true)
 		if main.has_method("hide_teacher_portrait"):
 			main.hide_teacher_portrait()
 		return
@@ -497,17 +621,43 @@ func _apply_intro_visuals(key: String) -> void:
 		main.hide_teacher_portrait()
 
 
-## Finds the page of robot_first_talk on which she first says "hello", so her
-## eyes open exactly on that line. Scanning the dialogue (instead of hardcoding a
-## page number) keeps the eyes in sync when lines are added or removed above it.
-## Falls back to the authored constant if the line can't be found.
-func _compute_robot_hello_page_index() -> int:
-	var pages := Dialogue.get_pages("intro", "robot_first_talk")
-	for i in pages.size():
-		for line in pages[i]:
-			if String(line).to_lower().contains(ROBOT_FIRST_TALK_HELLO_MATCH):
-				return i
-	return ROBOT_FIRST_TALK_HELLO_PAGE_INDEX
+## Builds her expression textures from the table_robot sheet and works out which
+## expression each page of robot_first_talk shows (from the prose cues).
+func _build_robot_expressions() -> void:
+	var layers := PackedSpriteSheet.layer_textures(TABLE_ROBOT_SHEET_PATH, TABLE_ROBOT_SHEET_JSON_PATH)
+	_robot_expression_textures[ROBOT_EXPRESSION_SHUT] = PackedSpriteSheet.flattened_texture(
+		TABLE_ROBOT_SHEET_PATH, TABLE_ROBOT_SHEET_JSON_PATH, TABLE_ROBOT_EXPRESSION_LAYERS)
+	for layer in TABLE_ROBOT_EXPRESSION_LAYERS:
+		if not layers.has(layer):
+			push_warning("IntroDialogue: no '%s' layer on the table_robot sheet." % layer)
+			continue
+		var skip: Array = TABLE_ROBOT_EXPRESSION_LAYERS.duplicate()
+		skip.erase(layer)
+		_robot_expression_textures[layer] = PackedSpriteSheet.flattened_texture(
+			TABLE_ROBOT_SHEET_PATH, TABLE_ROBOT_SHEET_JSON_PATH, skip)
+
+	_robot_page_expressions.clear()
+	var expression := ROBOT_EXPRESSION_SHUT
+	var next_cue := 0
+	for page in Dialogue.get_pages("intro", "robot_first_talk"):
+		var text := page_to_text(page).to_lower()
+		while next_cue < ROBOT_FIRST_TALK_EXPRESSION_CUES.size() \
+				and text.contains(String(ROBOT_FIRST_TALK_EXPRESSION_CUES[next_cue]["cue"])):
+			expression = ROBOT_FIRST_TALK_EXPRESSION_CUES[next_cue]["expression"]
+			next_cue += 1
+		_robot_page_expressions.append(expression)
+
+
+func _set_robot_expression(expression: String, force: bool = false) -> void:
+	if expression == _robot_expression and not force:
+		return
+	_robot_expression = expression
+	var tex := _robot_expression_textures.get(expression) as Texture2D
+	if tex == null:
+		return
+	var main := get_tree().current_scene
+	if main != null and "scene_image" in main:
+		main.scene_image.texture = tex
 
 
 func _show_store_outro_home_visuals() -> void:

@@ -105,7 +105,7 @@ const GYM_BACKGROUND_TEXTURE_PATH: String = "res://assets/textures/backgrounds/g
 const GYM_TEACHER_ID: String = "gym"
 const DEFAULT_DIALOGUE_FRAME_SIZE: Vector2 = Vector2(900.0, 225.0)
 const HISTORY_TEXTURE_DIR: String = "res://assets/textures/characters/teachers"
-const HISTORY_TEXTURE_MAX_VARIANT: int = 15
+const HISTORY_TEXTURE_VARIANTS: Array[int] = [3, 14, 16, 26]
 const INTRO_HISTORY_TEACHER: Dictionary = {
 	"id": "history_intro",
 	"name": "Ms. Vey",
@@ -172,6 +172,12 @@ const PHONE_RING_SOUND_PATH: String = "res://assets/sounds/ringtone/ringtone.mp3
 const PHONE_RING_VOLUME_SCALE: float = 0.5
 ## Lower-cased fragment marking the lecture line where the phone starts ringing.
 const PHONE_RING_CUE: String = "buzz"
+## The phone (PhoneOverlay) comes up front-side over the classroom on the lecture
+## line where the player answers, goes away when the teacher's question comes up,
+## and comes back front-side on the feedback line where they look down at it
+## again (she's hung up). Cleared before the post-class cabinet scene.
+const PHONE_ANSWER_CUE: String = "you answer the call"
+const PHONE_LOOK_BACK_CUE: String = "look back down at your phone"
 
 # --- Scene refs ---
 @onready var dialogue_box: DialogueBox = %DialogueBox
@@ -191,6 +197,8 @@ var _chalk_audio_player: AudioStreamPlayer = null
 ## Looping phone ringtone for the class-disruption call. Loops itself and can be
 ## told to end its loop gracefully (current pass rings out) — see LoopingSfxPlayer.
 var _phone_ring_player: LoopingSfxPlayer = null
+## The phone held up during the class-disruption call (null on other days).
+var _phone_overlay: PhoneOverlay = null
 ## The pages fed to the dialogue box for the current lecture, so a page_advanced
 ## index can be mapped back to its text to spot "writes on the board" moments.
 var _lecture_pages: Array = []
@@ -380,9 +388,7 @@ func _teacher_texture_path(teacher: Dictionary) -> String:
 
 func _random_history_texture_path() -> String:
 	var candidates: Array[String] = []
-	for n in range(1, HISTORY_TEXTURE_MAX_VARIANT + 1):
-		if n == 2:
-			continue
+	for n in HISTORY_TEXTURE_VARIANTS:
 		var candidate := _history_texture_path(n)
 		if ResourceLoader.exists(candidate):
 			candidates.append(candidate)
@@ -414,6 +420,8 @@ func _enter_lecture() -> void:
 	# Remember the exact pages so page_advanced indices can be matched back to the
 	# board-writing stage directions that cue the chalk sounds.
 	_lecture_pages = pages
+	if _scenario == SchoolScenario.CLASS_DISRUPTION:
+		_setup_phone_overlay()
 	dialogue_box.play_pages(pages)
 
 
@@ -421,6 +429,7 @@ func _enter_lecture() -> void:
 
 func _enter_question_prompt() -> void:
 	_scene_phase = SchoolPhase.QUESTION_PROMPT
+	_hide_phone()
 	_clear_choice_buttons()
 	_hide_choice_grid()
 
@@ -523,6 +532,7 @@ func _enter_post_class_intro() -> void:
 	_stop_class_clock()
 	_play_chair_scrape_sound()
 	_hide_choice_grid()
+	_hide_phone()
 	# Both the class disruption and an ordinary school day end on the same steal
 	# opportunity: switch to the supply-cabinet background and play the [post_class]
 	# lines before the "what do you do?" steal-or-leave prompt.
@@ -563,7 +573,7 @@ func _show_post_class_choices() -> void:
 	_hide_corner()
 	# The gym class has no supply cabinet to raid, so it offers no steal option —
 	# only the leave button, laid out full-width on its own.
-	var allow_steal := String(_current_teacher.get("id", "")) != GYM_TEACHER_ID
+	var allow_steal := _offers_steal()
 	_animate_layout_change(func():
 		_clear_choice_buttons()
 		choice_grid.visible = true
@@ -611,11 +621,11 @@ func _on_dialogue_finished() -> void:
 			if _is_intro_school_first():
 				_finish_school()
 				return
-			# The gym class has no supply cabinet to raid, so it gets no
-			# post-class steal opportunity at all — end the day straight from
-			# feedback instead of playing the cabinet beat that would offer
-			# nothing to steal.
-			if _is_gym_class():
+			# No steal opportunity today (gym has no supply cabinet, and the
+			# nanobots aren't on offer until the chest has been stolen) - end the
+			# day straight from feedback instead of playing the cabinet beat that
+			# would offer nothing to steal.
+			if not _offers_steal():
 				_finish_school()
 				return
 			_enter_post_class_intro()
@@ -819,13 +829,38 @@ func _on_school_page_advanced(index: int) -> void:
 		# Loop the ringtone while the "phone buzzes in your pocket" line is up;
 		# any other line ends the loop (the current ring pass finishes on its own).
 		_update_phone_ring(text)
+		if text.to_lower().contains(PHONE_ANSWER_CUE):
+			_show_phone_front()
 		if _is_chalkboard_writing_line(text):
 			_play_chalk(_chalk_stream_for_line(text))
 	elif _scene_phase == SchoolPhase.FEEDBACK:
 		if index < 0 or index >= _feedback_pages.size():
 			return
-		if _is_bell_interruption_line(_page_text(_feedback_pages[index])):
+		var feedback_text := _page_text(_feedback_pages[index])
+		if feedback_text.to_lower().contains(PHONE_LOOK_BACK_CUE):
+			_show_phone_front()
+		if _is_bell_interruption_line(feedback_text):
 			_play_bell()
+
+
+## The class-disruption call's phone, drawn over the classroom picture and hidden
+## until the player answers.
+func _setup_phone_overlay() -> void:
+	var main: Node = get_tree().current_scene
+	if main == null or not main.has_method("show_scene_overlay"):
+		return
+	_phone_overlay = PhoneOverlay.new()
+	main.show_scene_overlay(_phone_overlay)
+
+
+func _show_phone_front() -> void:
+	if _phone_overlay != null and is_instance_valid(_phone_overlay):
+		_phone_overlay.show_view(PhoneOverlay.View.FRONT)
+
+
+func _hide_phone() -> void:
+	if _phone_overlay != null and is_instance_valid(_phone_overlay):
+		_phone_overlay.hide_phone()
 
 
 ## True when a line's prose has the bell ringing and interrupting the player's
@@ -900,10 +935,18 @@ func _is_gym_class() -> bool:
 	return String(_current_teacher.get("id", "")) == GYM_TEACHER_ID
 
 
-## The scripted class-disruption lesson plays exactly once: the first class the
-## player attends after the intro has ended.
+## Whether this class ends on the post-class nanobot steal opportunity: never
+## before the chest-steal dialogue has played (GameState.has_stolen_robot_chest),
+## and never in gym, which has no supply cabinet.
+func _offers_steal() -> bool:
+	return GameState.has_stolen_robot_chest() and not _is_gym_class()
+
+
+## The scripted class-disruption lesson plays exactly once after the intro: a
+## 50/50 on the first class, guaranteed on the next if that one missed (see
+## GameState.roll_story_beat). Rolls, so call it once per class.
 func _should_play_class_disruption() -> bool:
-	return GameState.intro_completed and not GameState.robot_class_disruption_seen
+	return GameState.intro_completed and not GameState.robot_class_disruption_seen 			and GameState.roll_story_beat("class")
 
 
 func _school_format_vars() -> Dictionary:

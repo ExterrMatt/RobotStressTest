@@ -1,9 +1,11 @@
 # First-time maintenance cutscene.
 # Format: see data/dialogue/school.dlg. One line = one page (click to advance).
 #
-# Plays once, the first time the player picks Maintenance, over the
-# maintenance_hallway background before the maintenance scene itself loads
-# (MaintenanceIntro.gd).
+# Plays once, the first time the player picks Maintenance, before the
+# maintenance scene itself loads (MaintenanceIntro.gd). Backgrounds:
+# factory_outside on the first page, maintenance_stairs from the second page
+# (MaintenanceIntro.STAIRS_PAGE_INDEX, whatever it says), then maintenance_hallway
+# from the page containing "peer around the corner" (HALLWAY_CUE) to the end.
 # The player sneaks into his uncle's factory without clocking in, so the
 # cleaning robots won't recognise him as authorised personnel. One is cleaning
 # right outside the PERSONNEL ONLY door he needs, until the head in his bag
@@ -11,36 +13,51 @@
 #
 # The cleaning robot is drawn over the hallway. The page containing "stops
 # mid-scrub" (MaintenanceIntro.ROBOT_HACKED_CUE) turns its head, and the page
-# containing "rolls down the hall" (MaintenanceIntro.ROBOT_LEAVES_CUE) hides it.
+# containing "down the hall" (MaintenanceIntro.ROBOT_LEAVES_CUE) hides it. Keep
+# those phrases in the lines if you reword them.
 
 [intro]
-[i]You slip in through the back of your uncle's factory. You didn't clock in today.[/i]
-Thoughts: No badge scan means I'm not on the system. As far as the cleaning bots know, I'm not supposed to be here.
-Thoughts: If one of them spots me, it'll flag me as unauthorized personnel. Then it's my uncle's problem. Then it's my problem.
+[i]You arrive at your Uncle's factory.[/i]
+Thoughts: There's a old room no one ever goes in where I can work on the bot.
+Thoughts: I'll have go in from around back. But if I'm not clocked in, the cleaning bots will see me as an intruder.
+Thoughts: If one of them spots me, it'll flag me as unauthorized personnel. Then I'll have some serious explaining to do to my Uncle.
+No one seems to be in this part of the factory.
+It's a repurposed building. Some parts of it weren't made for manufacturing purposes...
 [i]You peer around the corner.[/i]
-[i]At the end of the hall, a cleaning robot is scrubbing the floor outside a door marked PERSONNEL ONLY.[/i]
-Thoughts: Of course. Of course it's cleaning right there.
+[i]There's a cleaning robot is scrubbing the floor outside a door.[/i]
+Thought: Damn it. Of course it's cleaning right there...
+Thoughts: That's literally the room I need to get into.
+Thoughts: I'll just wait it out.
 [i]You wait.[/i]
-[i]And wait.[/i]
-[i]The cleaning robot goes over the same tile for the third time.[/i]
-Thoughts: How long does it take to clean one spot of floor?
+[i]And wait...[/i]
+[i]And wait.....[/i]
+........
+[i]The cleaning robot loops back to scrubbing the same few tiles for the sixth time.[/i]
+Thoughts: How long does it take to clean one spot of floor??
 Thoughts: It's been ten minutes. That floor is clean. That floor has never been cleaner.
 A voice comes from inside your bag.
 Her: You know I can just move it.
 [i]You nearly jump out of your skin.[/i]
 You: Keep your voice down!
-Her: It can't hear me. Its microphones are listening for spills, not conversations.
-You: …What do you mean, move it?
+Her: It can't hear me. Its microphones are broken.
+You: You sure it's just the microphones? Look at it. Something's wrong with its brain.
+Her: It's as if it's made almost entirely out of spare parts.
+You: Maybe I can take it down?
+Her: "Take it down?" Are you serious?
+Have you ever even been in a fight?
+You: No, but I bet I could win if it came to it.
+Her: Sure... But save your breath, I'll move it myself.
+You: How? Youre just a head...
 Her: I can hack it. Give it somewhere else to be.
 You: From inside my bag?
 Her: Watch.
-[i]The cleaning robot stops mid-scrub. Its light flickers.[/i]
-[i]Then it turns, rolls down the hall, and disappears around the far corner.[/i]
-Thoughts: …She just did that. Just like that.
+[i]The cleaning robot stops mid-scrub. Its eye-lights flickers blue.[/i]
+[i]Then it turns and quickly strides down the hall, and disappears around the far corner.[/i]
+Thoughts: …Creepy.
 Thoughts: If one head in a backpack can do that… I'm starting to get why these things were such a problem for us during the war.
 You: Wait. How did you even reach it? Are you connected to the factory's wifi?
 Her: …I am.
 Her: That's odd. I don't remember connecting to it.
 Thoughts: That's not reassuring.
 You: We'll worry about that later.
-[i]You take a breath, lock in, and head for the maintenance room.[/i]
+[i]You head for the maintenance room.[/i]

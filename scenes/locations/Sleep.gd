@@ -533,8 +533,8 @@ func _on_bed_click_area_gui_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	if not _blanket_removed:
 		# With her in bed the blanket has to be eased down: dragged straight on the
-		# bed, or in the blanket minigame panel (a click opens it). An empty bed just
-		# pulls it straight off.
+		# bed, or (debug mode only) in the blanket minigame panel a click opens. An
+		# empty bed just pulls it straight off.
 		if _has_robot_in_bed:
 			if not _begin_blanket_press(mouse_event.global_position):
 				_open_blanket_minigame()
@@ -557,8 +557,11 @@ func _remove_blanket() -> void:
 
 
 ## Shows the close-up blanket panel on the left of the screen (with its tilt meter).
+## Debug mode only: outside it a click on the blanket does nothing and the blanket
+## is dragged straight on the bed. The panel's node still exists (hidden) either
+## way, since it holds the blanket's state for the on-bed drag.
 func _open_blanket_minigame() -> void:
-	if awareness_meter.is_waking():
+	if not _debug_mode_enabled() or awareness_meter.is_waking():
 		return
 	_ensure_blanket_minigame()
 	if _blanket_minigame != null:
@@ -896,6 +899,14 @@ func _initialize_awareness_meter() -> void:
 
 	awareness_meter.setup(bot_placeholder, _hud_root, _has_robot_in_bed)
 	_create_meter_labels(_hud_root)
+	# While Main's camera viewfinder records, each HUD piece (the eyes in the top-left,
+	# the readouts in the top-right) moves clear of its REC readout and corner brackets
+	# (see Main.register_camera_hud).
+	var main := get_tree().current_scene
+	if main != null and main.has_method("register_camera_hud"):
+		for hud in _hud_root.get_children():
+			if hud is Control:
+				main.call("register_camera_hud", hud)
 	if bot_placeholder.has_signal("body_part_moved"):
 		bot_placeholder.connect("body_part_moved", _on_body_part_moved)
 	awareness_meter.woke_up.connect(_on_robot_woke_up)
@@ -981,6 +992,9 @@ func _update_awareness_meter(delta: float) -> void:
 	if _woke_failed:
 		return
 	_ensure_blanket_minigame()
+	# The panel is debug-only: close it if debug mode was switched off while it was up.
+	if _blanket_minigame != null and _blanket_minigame.visible and not _debug_mode_enabled():
+		_blanket_minigame.visible = false
 	_update_blanket_stage()
 	_update_arms_over_blanket()
 	if awareness_meter.is_waking():

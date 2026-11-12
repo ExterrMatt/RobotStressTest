@@ -61,16 +61,17 @@ func style_corner_button(btn: Button) -> void:
 		btn.add_theme_stylebox_override(state, sb)
 
 
-## True when debug mode is on AND the player is currently holding Enter.
+## True when debug mode (or the skip cheat, see GameState.skip_cheat_enabled) is
+## on AND the player is currently holding Enter.
 ##
 ## The dialogue box already lets a held Enter fast-forward prose while debug
 ## mode is on. Intro obstacle minigames (the school question, Ed's shop, the
 ## sleep blanket, the work slots, the workshop craft, the stress test) break
 ## that flow because they need a manual click. Scenes poll this each frame so a
 ## held Enter can auto-resolve them too — letting a debug player speed through
-## the whole intro without ever releasing Enter. Non-debug play is untouched.
+## the whole intro without ever releasing Enter. Normal play is untouched.
 func debug_enter_held() -> bool:
-	return GameState.debug_mode_enabled \
+	return GameState.enter_speedrun_allowed() \
 		and (Input.is_key_pressed(KEY_ENTER) or Input.is_key_pressed(KEY_KP_ENTER))
 
 

@@ -40,7 +40,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (wall_hole).aseprite": {
-    "frame": { "x": 908, "y": 2004, "w": 173, "h": 155 },
+    "frame": { "x": 1432, "y": 2063, "w": 173, "h": 155 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 99, "y": 439, "w": 173, "h": 155 },
@@ -48,7 +48,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (horizontal_table).aseprite": {
-    "frame": { "x": 4131, "y": 1899, "w": 435, "h": 265 },
+    "frame": { "x": 2363, "y": 1947, "w": 435, "h": 265 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 0, "y": 590, "w": 435, "h": 265 },
@@ -64,7 +64,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (side_table).aseprite": {
-    "frame": { "x": 3045, "y": 1948, "w": 266, "h": 246 },
+    "frame": { "x": 4131, "y": 1529, "w": 266, "h": 246 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 1205, "y": 955, "w": 266, "h": 246 },
@@ -72,7 +72,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (side_table_2).aseprite": {
-    "frame": { "x": 4358, "y": 1511, "w": 446, "h": 388 },
+    "frame": { "x": 4407, "y": 1511, "w": 446, "h": 388 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 1166, "y": 916, "w": 446, "h": 388 },
@@ -88,7 +88,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (generator).aseprite": {
-    "frame": { "x": 3653, "y": 1982, "w": 196, "h": 217 },
+    "frame": { "x": 153, "y": 1984, "w": 196, "h": 217 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 1601, "y": 524, "w": 196, "h": 217 },
@@ -128,7 +128,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (gas_thing_5).aseprite": {
-    "frame": { "x": 4804, "y": 1511, "w": 153, "h": 330 },
+    "frame": { "x": 0, "y": 1984, "w": 153, "h": 330 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 556, "y": 450, "w": 153, "h": 330 },
@@ -136,7 +136,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (bottom_mechanicals).aseprite": {
-    "frame": { "x": 1252, "y": 2004, "w": 184, "h": 124 },
+    "frame": { "x": 4131, "y": 1775, "w": 184, "h": 124 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 600, "y": 654, "w": 184, "h": 124 },
@@ -168,7 +168,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (window).aseprite": {
-    "frame": { "x": 3311, "y": 1951, "w": 342, "h": 159 },
+    "frame": { "x": 3682, "y": 1982, "w": 342, "h": 159 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 722, "y": 430, "w": 342, "h": 159 },
@@ -208,7 +208,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (guns_shot).aseprite": {
-    "frame": { "x": 0, "y": 1984, "w": 224, "h": 136 },
+    "frame": { "x": 349, "y": 2049, "w": 224, "h": 136 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 779, "y": 459, "w": 224, "h": 136 },
@@ -240,7 +240,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (drone_dark_2).aseprite": {
-    "frame": { "x": 666, "y": 2049, "w": 219, "h": 100 },
+    "frame": { "x": 1997, "y": 2140, "w": 219, "h": 100 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 784, "y": 461, "w": 219, "h": 100 },
@@ -248,7 +248,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (drone_dark_3).aseprite": {
-    "frame": { "x": 224, "y": 2049, "w": 221, "h": 102 },
+    "frame": { "x": 1776, "y": 2063, "w": 221, "h": 102 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 782, "y": 459, "w": 221, "h": 102 },
@@ -256,7 +256,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (drone_dark_4).aseprite": {
-    "frame": { "x": 445, "y": 2049, "w": 221, "h": 102 },
+    "frame": { "x": 4633, "y": 2129, "w": 221, "h": 102 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 782, "y": 459, "w": 221, "h": 102 },
@@ -288,7 +288,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (light).aseprite": {
-    "frame": { "x": 1081, "y": 2004, "w": 171, "h": 138 },
+    "frame": { "x": 1605, "y": 2063, "w": 171, "h": 138 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 821, "y": 400, "w": 171, "h": 138 },
@@ -296,7 +296,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (engine_wall).aseprite": {
-    "frame": { "x": 2723, "y": 1947, "w": 322, "h": 254 },
+    "frame": { "x": 3158, "y": 1948, "w": 322, "h": 254 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 1445, "y": 400, "w": 322, "h": 254 },
@@ -360,7 +360,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (full_body_shadow).aseprite": {
-    "frame": { "x": 3849, "y": 1982, "w": 213, "h": 163 },
+    "frame": { "x": 1219, "y": 2004, "w": 213, "h": 163 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 758, "y": 1637, "w": 213, "h": 163 },
@@ -408,7 +408,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (right_leg).aseprite": {
-    "frame": { "x": 1436, "y": 2063, "w": 140, "h": 80 },
+    "frame": { "x": 4853, "y": 1751, "w": 140, "h": 80 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 740, "y": 1717, "w": 140, "h": 80 },
@@ -520,7 +520,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (lights_off_left).aseprite": {
-    "frame": { "x": 4358, "y": 963, "w": 588, "h": 548 },
+    "frame": { "x": 4407, "y": 963, "w": 588, "h": 548 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 0, "y": 362, "w": 588, "h": 548 },
@@ -584,7 +584,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (dark_front_gas).aseprite": {
-    "frame": { "x": 4131, "y": 1529, "w": 202, "h": 317 },
+    "frame": { "x": 3480, "y": 1951, "w": 202, "h": 317 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 570, "y": 493, "w": 202, "h": 317 },
@@ -616,10 +616,10 @@
     "duration": 100
    },
    "Stress Test Shed V4 (dark_left).aseprite": {
-    "frame": { "x": 3767, "y": 963, "w": 591, "h": 566 },
+    "frame": { "x": 3767, "y": 963, "w": 640, "h": 566 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 0, "y": 337, "w": 591, "h": 566 },
+    "spriteSourceSize": { "x": 0, "y": 337, "w": 640, "h": 566 },
     "sourceSize": { "w": 1800, "h": 1800 },
     "duration": 100
    },
@@ -632,7 +632,7 @@
     "duration": 100
    },
    "Stress Test Shed V4 (curtain_closed).aseprite": {
-    "frame": { "x": 2363, "y": 1947, "w": 360, "h": 230 },
+    "frame": { "x": 2798, "y": 1948, "w": 360, "h": 230 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 713, "y": 414, "w": 360, "h": 230 },
@@ -640,10 +640,42 @@
     "duration": 100
    },
    "Stress Test Shed V4 (curtain_opened).aseprite": {
-    "frame": { "x": 4566, "y": 1899, "w": 364, "h": 230 },
+    "frame": { "x": 4633, "y": 1899, "w": 364, "h": 230 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 711, "y": 414, "w": 364, "h": 230 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (head_up).aseprite": {
+    "frame": { "x": 4131, "y": 1899, "w": 502, "h": 253 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 639, "y": 457, "w": 502, "h": 253 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (head_down).aseprite": {
+    "frame": { "x": 908, "y": 2004, "w": 311, "h": 152 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 638, "y": 548, "w": 311, "h": 152 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_hand_down).aseprite": {
+    "frame": { "x": 573, "y": 2049, "w": 224, "h": 129 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 916, "y": 576, "w": 224, "h": 129 },
+    "sourceSize": { "w": 1800, "h": 1800 },
+    "duration": 100
+   },
+   "Stress Test Shed V4 (right_hand_button_press).aseprite": {
+    "frame": { "x": 4853, "y": 1511, "w": 148, "h": 240 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 1052, "y": 465, "w": 148, "h": 240 },
     "sourceSize": { "w": 1800, "h": 1800 },
     "duration": 100
    }
@@ -653,7 +685,7 @@
   "version": "1.3.18.1-x64",
   "image": "stress_test_shed.png",
   "format": "RGBA8888",
-  "size": { "w": 5001, "h": 2201 },
+  "size": { "w": 5001, "h": 2314 },
   "scale": "1",
   "frameTags": [
   ],
@@ -746,7 +778,11 @@
    { "name": "dark_left", "group": "darkness", "opacity": 255, "blendMode": "normal" },
    { "name": "curtain_bar", "opacity": 255, "blendMode": "normal" },
    { "name": "curtain_closed", "opacity": 255, "blendMode": "normal" },
-   { "name": "curtain_opened", "opacity": 255, "blendMode": "normal" }
+   { "name": "curtain_opened", "opacity": 255, "blendMode": "normal" },
+   { "name": "head_up", "opacity": 255, "blendMode": "normal" },
+   { "name": "head_down", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_hand_down", "opacity": 255, "blendMode": "normal" },
+   { "name": "right_hand_button_press", "opacity": 255, "blendMode": "normal" }
   ],
   "slices": [
   ]

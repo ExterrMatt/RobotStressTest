@@ -71,6 +71,7 @@ static func layer_textures(sheet_path: String, json_path: String) -> Dictionary:
 	if sheet_image.is_compressed():
 		sheet_image.decompress()
 	sheet_image.convert(Image.FORMAT_RGBA8)
+	_warn_if_sheet_mismatch(sheet_path, json_path, sheet_image.get_size())
 
 	var pieces := _pieces_for(json_path)
 	for key in pieces:
@@ -109,6 +110,22 @@ static func flattened_texture(sheet_path: String, json_path: String, skip_layers
 	var texture: Texture2D = ImageTexture.create_from_image(flat) if flat != null else null
 	_flattened_by_key[key] = texture
 	return texture
+
+
+## A sheet PNG that isn't the size its JSON says (e.g. a flat single-image save
+## overwrote the packed export) gets its layers cut from the wrong places and they
+## come out blank or garbled - say so instead of failing silently.
+static func _warn_if_sheet_mismatch(sheet_path: String, json_path: String, sheet_size: Vector2i) -> void:
+	var json := load(json_path) as JSON
+	if json == null or not (json.data is Dictionary):
+		return
+	var meta_size: Dictionary = json.data.get("meta", {}).get("size", {})
+	if meta_size.is_empty():
+		return
+	var expected := Vector2i(int(meta_size.get("w", 0)), int(meta_size.get("h", 0)))
+	if expected != sheet_size:
+		push_warning("PackedSpriteSheet: %s is %dx%d but %s describes a %dx%d sheet - re-export the packed sheet from Aseprite." % [
+			sheet_path, sheet_size.x, sheet_size.y, json_path, expected.x, expected.y])
 
 
 static func _pieces_for(json_path: String) -> Dictionary:

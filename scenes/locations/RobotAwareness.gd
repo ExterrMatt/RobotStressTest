@@ -135,6 +135,15 @@ var _eyes_atlas: AtlasTexture = null
 
 ## Hooks the meters up to the robot and builds the eyes HUD on `hud_parent` (a
 ## full-screen Control, so the eyes pin to the visible screen's corner).
+## The HUD pieces this meter added to its hud_parent (the eyes; their outline rides on
+## them), for scenes that move their HUD (Main.register_camera_hud).
+func hud_controls() -> Array[Control]:
+	var out: Array[Control] = []
+	if _eyes_rect != null and is_instance_valid(_eyes_rect):
+		out.append(_eyes_rect)
+	return out
+
+
 func setup(robot_node: Control, hud_parent: Control, show_hud: bool = true) -> void:
 	robot = robot_node
 	if robot != null and robot.has_signal("done_animation_finished"):

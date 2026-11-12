@@ -65,6 +65,9 @@ const TEXTURE_PATHS: Dictionary = {
 	"welding_gun": "res://assets/textures/icons/welding_gun.png",
 	"curtains": "res://assets/textures/icons/curtains.png",
 	"flashlight": "res://assets/textures/icons/flashlight.png",
+	"camera": "res://assets/textures/icons/camera.png",
+	"bad_laptop": "res://assets/textures/icons/bad_laptop.png",
+	"good_laptop": "res://assets/textures/icons/good_laptop.png",
 	"post_it": "res://assets/textures/icons/post-it.png",
 }
 
@@ -131,6 +134,9 @@ const DISPLAY_NAMES: Dictionary = {
 	"foam_spray": "Foam Spray",
 	"welding_gun": "Welding Gun",
 	"flashlight": "Flashlight",
+	"camera": "Camera",
+	"bad_laptop": "Beat-Up Laptop",
+	"good_laptop": "Good Laptop",
 	"post_it": "Post-it Note",
 }
 
@@ -142,7 +148,7 @@ const RIGHT_MARGIN: int = 24
 const BOTTOM_MARGIN: int = 24
 ## Opening: the screen dims and the INVENTORY sign (hanging from the top edge) slides down
 ## into place, both over OPEN_SECONDS, easing out, while the bag rises from below the bottom
-## edge (see BAG_EXTRA_SECONDS). Closing runs it backwards over CLOSE_SECONDS, easing in:
+## edge (see BAG_OPEN_SECONDS). Closing runs it backwards over CLOSE_SECONDS, easing in:
 ## the dim lifts, the sign rises away off the top and the bag sinks back below the bottom.
 const OPEN_SECONDS: float = 0.3
 const CLOSE_SECONDS: float = 0.15
@@ -150,8 +156,16 @@ const CLOSE_SECONDS: float = 0.15
 ## finishing with it. Closing, they fade out with the rest, no delay.
 const TILE_FADE_DELAY: float = 0.09
 ## The bag rises from below the bottom edge into its corner (and sinks back out) with the
-## sign's easing, but this much slower than the sign.
-const BAG_EXTRA_SECONDS: float = 0.1
+## sign's easing, taking these long - its frames included.
+const BAG_OPEN_SECONDS: float = 0.3
+const BAG_CLOSE_SECONDS: float = 0.25
+## The bag's art: a packed Aseprite sheet with one layer per frame. It pops straight open as
+## it rises and closes open -> half open -> closed as it sinks, the frames spread evenly over
+## its slide. Names are the Aseprite layer names.
+const BAG_SHEET_PATH: String = "res://assets/textures/icons/inventory_bag.png"
+const BAG_SHEET_JSON_PATH: String = "res://assets/textures/icons/inventory_bag.json"
+const BAG_OPENING_FRAMES: Array[String] = ["closed", "open"]
+const BAG_CLOSING_FRAMES: Array[String] = ["open", "half open", "closed"]
 
 
 @onready var dim_background: ColorRect = $DimBackground
@@ -166,6 +180,8 @@ const BAG_EXTRA_SECONDS: float = 0.1
 var _dim_alpha: float = 0.55
 ## The bag's top offset from the bottom edge where it rests (the scene's own placement).
 var _bag_rest_offset_top: float = 0.0
+## The bag's frames by layer name (BAG_OPENING_FRAMES), each at the full sheet cell.
+var _bag_frames: Dictionary = {}
 var _open_tween: Tween = null
 ## True while the close animation plays: the overlay is still drawn but counts as shut (it
 ## leaves GROUP and takes no clicks), and opening again picks up from where it's got to.
@@ -205,6 +221,8 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	_dim_alpha = dim_background.color.a
 	_bag_rest_offset_top = inventory_bag.offset_top
+	_bag_frames = PackedSpriteSheet.layer_textures(BAG_SHEET_PATH, BAG_SHEET_JSON_PATH)
+	_set_bag_frame(BAG_OPENING_FRAMES[0])
 
 	# Repaint whenever the inventory state changes. We don't poll.
 	# (Hooked once at _ready and freed with the node.)
@@ -287,11 +305,13 @@ func _play_open(from_current: bool = false) -> void:
 		dim_background.color.a = 0.0
 		inventory_label.position.y = -inventory_label.size.y
 		inventory_bag.position.y = _bag_hidden_y()
+		_set_bag_frame(BAG_OPENING_FRAMES[0])
 		_set_tiles_alpha(0.0)
 	_open_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_open_tween.tween_property(dim_background, "color:a", _dim_alpha, OPEN_SECONDS)
 	_open_tween.tween_property(inventory_label, "position:y", 0.0, OPEN_SECONDS)
-	_open_tween.tween_property(inventory_bag, "position:y", _bag_rest_y(), OPEN_SECONDS + BAG_EXTRA_SECONDS)
+	_open_tween.tween_property(inventory_bag, "position:y", _bag_rest_y(), BAG_OPEN_SECONDS)
+	_tween_bag_frames(BAG_OPENING_FRAMES, BAG_OPEN_SECONDS)
 	_tween_tiles_alpha(1.0, OPEN_SECONDS, TILE_FADE_DELAY)
 
 
@@ -301,7 +321,8 @@ func _play_close() -> void:
 	_open_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	_open_tween.tween_property(dim_background, "color:a", 0.0, CLOSE_SECONDS)
 	_open_tween.tween_property(inventory_label, "position:y", -inventory_label.size.y, CLOSE_SECONDS)
-	_open_tween.tween_property(inventory_bag, "position:y", _bag_hidden_y(), CLOSE_SECONDS + BAG_EXTRA_SECONDS)
+	_open_tween.tween_property(inventory_bag, "position:y", _bag_hidden_y(), BAG_CLOSE_SECONDS)
+	_tween_bag_frames(BAG_CLOSING_FRAMES, BAG_CLOSE_SECONDS)
 	_tween_tiles_alpha(0.0, CLOSE_SECONDS)
 	_open_tween.chain().tween_callback(func() -> void:
 		_closing = false
@@ -314,6 +335,31 @@ func _tween_tiles_alpha(alpha: float, seconds: float, delay: float = 0.0) -> voi
 	var fade := maxf(0.01, seconds - delay)
 	for node in [tile_area, empty_label]:
 		_open_tween.tween_property(node, "modulate:a", alpha, fade).set_delay(delay)
+
+
+## Adds the bag's frame steps to the running tween: from the frame it's showing now through
+## the rest of `frames`, each step an even share of `seconds` (so a reopen mid-close carries
+## on from half-open).
+func _tween_bag_frames(frames: Array, seconds: float) -> void:
+	var at := maxi(0, frames.find(_bag_frame_name()))
+	var steps := frames.size() - 1 - at
+	for i in steps:
+		var frame: String = frames[at + 1 + i]
+		_open_tween.tween_callback(_set_bag_frame.bind(frame)).set_delay(seconds * float(i + 1) / float(steps + 1))
+
+
+func _set_bag_frame(frame: String) -> void:
+	var tex: Texture2D = _bag_frames.get(frame)
+	if tex != null:
+		inventory_bag.texture = tex
+
+
+## The frame the bag is showing ("" if it isn't one of them).
+func _bag_frame_name() -> String:
+	for frame in _bag_frames:
+		if _bag_frames[frame] == inventory_bag.texture:
+			return String(frame)
+	return ""
 
 
 func _set_tiles_alpha(alpha: float) -> void:
@@ -542,6 +588,11 @@ func _on_tile_gui_input(event: InputEvent, entry: Dictionary) -> void:
 		get_viewport().set_input_as_handled()
 		_open_post_it()
 		return
+	# The camera isn't held: clicking it starts or stops recording (Main's viewfinder).
+	if String(entry.get("id", "")) == CAMERA_ID and not mb.shift_pressed:
+		get_viewport().set_input_as_handled()
+		_toggle_camera_recording()
+		return
 	var grabber := _grabber()
 	if grabber != null and not mb.shift_pressed and bool(grabber.call("grab_inventory_item", entry)):
 		_claimed_buttons.erase(mb.button_index)
@@ -560,6 +611,33 @@ func _on_tile_gui_input(event: InputEvent, entry: Dictionary) -> void:
 func _open_post_it() -> void:
 	hide_overlay()
 	PostItNote.open_in(get_parent())
+
+
+## The camera tool's id. Its tile toggles recording instead of being held.
+const CAMERA_ID: String = "camera"
+const CAMERA_RECORDING_DOT: Color = Color(0.85, 0.11, 0.11)
+
+
+## Main owns the viewfinder; the inventory is always opened inside Main.
+func _camera_main() -> Node:
+	var main := get_tree().current_scene
+	if main != null and main.has_method("set_camera_recording"):
+		return main
+	return null
+
+
+func _camera_recording() -> bool:
+	var main := _camera_main()
+	return main != null and bool(main.call("is_camera_recording"))
+
+
+func _toggle_camera_recording() -> void:
+	var main := _camera_main()
+	if main == null:
+		return
+	main.call("set_camera_recording", not _camera_recording())
+	# Redraw the tile's recording dot and tooltip.
+	_refresh()
 
 
 func _debug_remove_entry(entry: Dictionary) -> void:
@@ -608,6 +686,11 @@ func _build_tile(entry: Dictionary) -> Panel:
 	tile.mouse_filter = Control.MOUSE_FILTER_STOP
 	if String(entry.get("kind", "")) == "note":
 		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var is_camera: bool = String(entry.get("id", "")) == CAMERA_ID
+	if is_camera:
+		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tile.tooltip_text = "%s (recording - click to stop)" % entry["name"] if _camera_recording() \
+				else "%s (click to record)" % entry["name"]
 	var is_head_segments: bool = String(entry.get("id", "")) == "head_segments"
 
 	# Sprite.
@@ -637,6 +720,23 @@ func _build_tile(entry: Dictionary) -> Panel:
 		sprite.offset_right = sprite_size.x * 0.5
 		sprite.offset_top = 0.0
 		sprite.offset_bottom = sprite_size.y
+
+	# While the camera records, a red dot in its tile's top-right corner says so.
+	if is_camera and _camera_recording():
+		var dot := Panel.new()
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var dot_style := StyleBoxFlat.new()
+		dot_style.bg_color = CAMERA_RECORDING_DOT
+		dot_style.set_corner_radius_all(6)
+		dot_style.anti_aliasing = false
+		dot.add_theme_stylebox_override("panel", dot_style)
+		dot.anchor_left = 1.0
+		dot.anchor_right = 1.0
+		dot.offset_left = -18.0
+		dot.offset_top = 6.0
+		dot.offset_right = -6.0
+		dot.offset_bottom = 18.0
+		tile.add_child(dot)
 
 	# Count badge in the bottom-right of the tile (Minecraft style).
 	# Hidden when count is 1 AND the entry is a tool (looks cleaner that way),

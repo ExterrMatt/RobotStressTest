@@ -104,6 +104,14 @@ func remove_zap(zap_id: int) -> void:
 			return
 
 
+## Removes every zap at once (the emergency power-off kills the current that feeds them).
+func clear_all() -> void:
+	if zaps.is_empty():
+		return
+	zaps.clear()
+	queue_redraw()
+
+
 func get_zap(zap_id: int) -> Dictionary:
 	for z in zaps:
 		if int(z["id"]) == zap_id:

@@ -59,11 +59,11 @@ region = Rect2(372, 1762, 536, 287)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_wall_hole"]
 atlas = ExtResource("shed_v4")
-region = Rect2(908, 2004, 173, 155)
+region = Rect2(1432, 2063, 173, 155)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_horizontal_table"]
 atlas = ExtResource("shed_v4")
-region = Rect2(4131, 1899, 435, 265)
+region = Rect2(2363, 1947, 435, 265)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_roof"]
 atlas = ExtResource("shed_v4")
@@ -71,11 +71,11 @@ region = Rect2(0, 773, 1250, 398)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_side_table"]
 atlas = ExtResource("shed_v4")
-region = Rect2(3045, 1948, 266, 246)
+region = Rect2(4131, 1529, 266, 246)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_side_table_2"]
 atlas = ExtResource("shed_v4")
-region = Rect2(4358, 1511, 446, 388)
+region = Rect2(4407, 1511, 446, 388)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_side_table_3"]
 atlas = ExtResource("shed_v4")
@@ -83,7 +83,7 @@ region = Rect2(3063, 1574, 426, 374)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_generator"]
 atlas = ExtResource("shed_v4")
-region = Rect2(3653, 1982, 196, 217)
+region = Rect2(153, 1984, 196, 217)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_generator_gauge"]
 atlas = ExtResource("shed_v4")
@@ -103,11 +103,11 @@ region = Rect2(3489, 1574, 263, 377)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_gas_thing_5"]
 atlas = ExtResource("shed_v4")
-region = Rect2(4804, 1511, 153, 330)
+region = Rect2(0, 1984, 153, 330)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_bottom_mechanicals"]
 atlas = ExtResource("shed_v4")
-region = Rect2(1252, 2004, 184, 124)
+region = Rect2(4131, 1775, 184, 124)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_lights_off_front"]
 atlas = ExtResource("shed_v4")
@@ -127,7 +127,7 @@ region = Rect2(372, 1551, 342, 159)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_window"]
 atlas = ExtResource("shed_v4")
-region = Rect2(3311, 1951, 342, 159)
+region = Rect2(3682, 1982, 342, 159)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_window_light_on"]
 atlas = ExtResource("shed_v4")
@@ -151,15 +151,15 @@ region = Rect2(2295, 833, 219, 100)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_2"]
 atlas = ExtResource("shed_v4")
-region = Rect2(666, 2049, 219, 100)
+region = Rect2(1997, 2140, 219, 100)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_3"]
 atlas = ExtResource("shed_v4")
-region = Rect2(224, 2049, 221, 102)
+region = Rect2(1776, 2063, 221, 102)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_drone_dark_4"]
 atlas = ExtResource("shed_v4")
-region = Rect2(445, 2049, 221, 102)
+region = Rect2(4633, 2129, 221, 102)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_lens_glow"]
 atlas = ExtResource("shed_v4")
@@ -167,7 +167,7 @@ region = Rect2(4932, 577, 64, 64)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine_wall"]
 atlas = ExtResource("shed_v4")
-region = Rect2(2723, 1947, 322, 254)
+region = Rect2(3158, 1948, 322, 254)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_engine_wires"]
 atlas = ExtResource("shed_v4")
@@ -203,7 +203,7 @@ region = Rect2(780, 1250, 512, 512)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_lights_off_left"]
 atlas = ExtResource("shed_v4")
-region = Rect2(4358, 963, 588, 548)
+region = Rect2(4407, 963, 588, 548)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark_top"]
 atlas = ExtResource("shed_v4")
@@ -219,7 +219,7 @@ region = Rect2(1804, 1371, 576, 441)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark_front_gas"]
 atlas = ExtResource("shed_v4")
-region = Rect2(4131, 1529, 202, 317)
+region = Rect2(3480, 1951, 202, 317)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark_right"]
 atlas = ExtResource("shed_v4")
@@ -231,7 +231,7 @@ region = Rect2(2574, 0, 1667, 513)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_dark_left"]
 atlas = ExtResource("shed_v4")
-region = Rect2(3767, 963, 591, 566)
+region = Rect2(3767, 963, 640, 566)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_shed_background_bottom"]
 atlas = ExtResource("shed_v4")
@@ -239,7 +239,7 @@ region = Rect2(0, 1171, 780, 380)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_full_body_shadow"]
 atlas = ExtResource("shed_v4")
-region = Rect2(3849, 1982, 213, 163)
+region = Rect2(1219, 2004, 213, 163)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_evil_right_upperarm"]
 atlas = ExtResource("shed_v4")
@@ -263,7 +263,7 @@ region = Rect2(3063, 1371, 94, 101)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_evil_right_leg"]
 atlas = ExtResource("shed_v4")
-region = Rect2(1436, 2063, 140, 80)
+region = Rect2(4853, 1751, 140, 80)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_evil_right_forearm"]
 atlas = ExtResource("shed_v4")
@@ -331,11 +331,11 @@ region = Rect2(4241, 471, 403, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_curtain_closed"]
 atlas = ExtResource("shed_v4")
-region = Rect2(2363, 1947, 360, 230)
+region = Rect2(2798, 1948, 360, 230)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_curtain_opened"]
 atlas = ExtResource("shed_v4")
-region = Rect2(4566, 1899, 364, 230)
+region = Rect2(4633, 1899, 364, 230)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_bulb_on"]
 atlas = ExtResource("shed_v4")
@@ -347,7 +347,7 @@ region = Rect2(4967, 0, 31, 76)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_light"]
 atlas = ExtResource("shed_v4")
-region = Rect2(1081, 2004, 171, 138)
+region = Rect2(1605, 2063, 171, 138)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_shed_button"]
 atlas = ExtResource("shed_v4")
@@ -977,7 +977,7 @@ expand_mode = 1
 layout_mode = 1
 offset_left = -600.0
 offset_top = -63.0
-offset_right = -9.0
+offset_right = 40.0
 offset_bottom = 503.0
 mouse_filter = 2
 texture = SubResource("AtlasTexture_shed_dark_left")

@@ -48,7 +48,7 @@ const WORK_LOCATION_ID: StringName = &"work"
 const STRESS_TEST_LOCATION_ID: StringName = &"stress_test"
 const SLEEP_LOCATION_ID: StringName = &"sleep"
 ## Fatigue gained for each night the player spends on something other than sleep.
-const SKIPPED_SLEEP_FATIGUE_DELTA: int = 40
+const SKIPPED_SLEEP_FATIGUE_DELTA: int = 30
 const LAPTOP_SCENE_PATH: String = "res://scenes/locations/Laptop.tscn"
 const SKIPPED_STRESS_TEST_ANGER_DELTA: int = 15
 ## Placeholder shown in the selection subtitle when nothing is selected yet,
@@ -70,7 +70,7 @@ const INTRO_STEPS: Array[Dictionary] = [
 	{"step": "pre_stress_test", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/large_workshop.png", "preview_region": Rect2(0, 0, 500, 125)},
 	{"step": "pre_stress_test_bedroom", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/bedroom_night.png"},
 	{"step": "stress_test", "kind": "location", "phase": 2, "location_id": &"stress_test"},
-	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/robot_eyes_shut.png"},
+	{"step": "robot_first_talk", "kind": "dialogue", "phase": 2, "preview": "res://assets/textures/backgrounds/table_robot.png", "preview_region": Rect2(0, 0, 500, 125)},
 	{"step": "free_reign", "kind": "dialogue", "phase": 0, "preview": "res://assets/textures/backgrounds/bedroom_morning.png"},
 ]
 
@@ -133,8 +133,10 @@ const POST_ACTIVITY_DRONE_LOCATION_IDS: Array[StringName] = [&"school", &"work"]
 const DRONE_ENCOUNTER_LOCATION: LocationData = preload("res://resources/locations/drone_encounter.tres")
 const DRONE_ENCOUNTER_LOCATION_ID: StringName = &"drone_encounter"
 ## One-time robot phone call on the walk home through the park: the first school
-## or work run finished on a day after the work-disruption call (the chest steal).
-## Loaded like the drone encounter; the drone stays locked until it has played.
+## or work run, after the chest steal, on which the player steals something (the
+## nanobots or the scrap). Loaded like the drone encounter; the drone stays locked
+## until it has played.
+const PARK_CALL_CHEST_CONTRABAND: String = "robot chest"
 const PARK_CALL_LOCATION: LocationData = preload("res://resources/locations/park_call.tres")
 
 ## Optional hang-out with the uncle on the way into Night: he shares some drinks,
@@ -188,7 +190,16 @@ const FULLBLEED_UI_MARGINS: Vector4 = Vector4(20, 16, 20, 24)
 const PICTURE_FRAME_BG: Color = Color(0.063, 0.075, 0.133, 1.0)
 const PICTURE_FRAME_OUTER_GOLD: Color = Color(0.725, 0.604, 0.306, 1.0)
 const PICTURE_FRAME_INNER_GOLD: Color = Color(0.91, 0.784, 0.471, 1.0)
-const CHOICE_FONT_SIZE: int = 40
+const CHOICE_FONT_SIZE: int = 46
+## The selected choice button's lettering gets the Maintenance INVENTORY button's
+## look: a dark pixel under every stroke (the question above has it too, set on
+## NarrationLabel in Main.tscn). Its shadow is half a stroke deep, and Jersey10's strokes are
+## ~10.5% of the font size, so the drop is ~5% of it (2.4 px at size 46, rounded up
+## so it reads as a full pixel).
+const CHOICE_TEXT_SHADOW_OFFSET: int = 3
+## Width of each location button on the hub's choice row (they grow past it only
+## if a word needs more room).
+const CHOICE_BUTTON_WIDTH: float = 245.0
 const CHOICE_SELECTED_TEXT: Color = Color(0.984, 0.953, 0.875)
 const CHOICE_UNSELECTED_TEXT: Color = Color(0.478, 0.447, 0.353)
 const CHOICE_SELECTED_BORDER: Color = Color(0.91, 0.784, 0.471)
@@ -351,6 +362,14 @@ var _debug_actions_layer: CanvasLayer = null
 ## Universal punch-animation preview overlay (a debug toy). Lives on its own canvas layer
 ## as a child of Main so it works in every scene, not just maintenance.
 var _punch_overlay: CanvasLayer = null
+## Camcorder viewfinder overlay (corner brackets + REC readout), see set_camera_recording.
+## Above the scenes, their HUDs, tooltips and transitions; below the debug menus.
+const CAMERA_CANVAS_LAYER: int = 3990
+var _camera_layer: CanvasLayer = null
+var _camera_viewfinder: CameraViewfinder = null
+## Emitted when the camera viewfinder comes or goes. Scenes that draw their own HUD
+## near the screen edges register it with register_camera_hud instead of listening.
+signal camera_recording_changed(recording: bool)
 ## Layer hosting a debug-opened repair minigame (see _debug_open_minigame).
 var _debug_minigame_layer: CanvasLayer = null
 
@@ -359,12 +378,14 @@ var _debug_minigame_layer: CanvasLayer = null
 ## clicked off), so always guard with is_instance_valid.
 var _debug_laptop_overlay: Node = null
 
-## Debug reset chord: three Shift+Tab presses within this window wipe all progress
-## and return to the main menu (also available as the last debug-menu button).
+## Debug reset chord: hold Shift down and tap Tab three times, all within this
+## window measured from the first tap, to wipe all progress and return to the main
+## menu (also available as the last debug-menu button). Releasing Shift between
+## taps cancels the chord, so three separate Shift+Tab presses never trigger it.
 const DEBUG_RESET_CHORD_PRESSES: int = 3
-const DEBUG_RESET_CHORD_WINDOW_SECONDS: float = 2.0
+const DEBUG_RESET_CHORD_WINDOW_SECONDS: float = 3.0
 const RESET_TO_MAIN_MENU_SCENE_PATH: String = "res://scenes/ui/MainMenu.tscn"
-## Timestamps (seconds) of recent Shift+Tab presses, kept only within the window.
+## Timestamps (seconds) of Tab taps made during the current continuous Shift hold.
 var _reset_chord_press_times: Array[float] = []
 
 ## Base texture path of the currently-shown teacher portrait (no "2" suffix),
@@ -597,18 +618,28 @@ func _process(_delta: float) -> void:
 ## actions panel holds focus - otherwise the panel's buttons swallow Tab for focus
 ## navigation and it could never be closed with the keyboard.
 func _input(event: InputEvent) -> void:
-	if not (event is InputEventKey) or not event.pressed or event.echo:
+	if not (event is InputEventKey):
 		return
 	var key_event: InputEventKey = event
+	# Letting go of Shift ends the reset chord: the three Tab taps must all happen
+	# during a single continuous Shift hold.
+	if key_event.keycode == KEY_SHIFT and not key_event.pressed:
+		_reset_chord_press_times.clear()
+		return
+	if not key_event.pressed or key_event.echo:
+		return
 	if key_event.keycode != KEY_TAB and key_event.keycode != KEY_BACKTAB:
 		return
 	if not _debug_mode_enabled():
 		return
 	# Shift+Tab arrives as Backtab on some platforms, so accept either.
 	var want_actions := key_event.keycode == KEY_BACKTAB or key_event.shift_pressed
-	# Three Shift+Tabs in quick succession trigger a full reset instead of the
-	# usual open/close toggle.
-	if want_actions and _register_reset_chord_press():
+	if not want_actions:
+		# A plain Tab means Shift isn't held, so any chord in progress is over.
+		_reset_chord_press_times.clear()
+	# Holding Shift and tapping Tab three times triggers a full reset instead of
+	# the usual open/close toggle.
+	elif _register_reset_chord_press():
 		get_viewport().set_input_as_handled()
 		_reset_game_to_main_menu()
 		return
@@ -616,15 +647,27 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
-## Records a Shift+Tab press and reports whether DEBUG_RESET_CHORD_PRESSES of them
-## have now landed inside DEBUG_RESET_CHORD_WINDOW_SECONDS.
+## Losing window focus means we may never see the Shift release, so drop any
+## half-finished reset chord.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_reset_chord_press_times.clear()
+
+
+## Records a Tab tap made while Shift is held and reports whether
+## DEBUG_RESET_CHORD_PRESSES of them have now landed within
+## DEBUG_RESET_CHORD_WINDOW_SECONDS of the first tap of this Shift hold.
 func _register_reset_chord_press() -> bool:
 	var now := float(Time.get_ticks_msec()) / 1000.0
-	_reset_chord_press_times.append(now)
-	# Drop presses that have aged out of the rolling window.
-	while not _reset_chord_press_times.is_empty() \
+	# Shift can be released while the window is unfocused (no release event), so
+	# double-check it's physically held; if not, this tap starts a fresh chord.
+	if not Input.is_key_pressed(KEY_SHIFT):
+		_reset_chord_press_times.clear()
+	# Window expired since the first tap: this tap becomes the new first tap.
+	if not _reset_chord_press_times.is_empty() \
 			and now - _reset_chord_press_times[0] > DEBUG_RESET_CHORD_WINDOW_SECONDS:
-		_reset_chord_press_times.pop_front()
+		_reset_chord_press_times.clear()
+	_reset_chord_press_times.append(now)
 	if _reset_chord_press_times.size() >= DEBUG_RESET_CHORD_PRESSES:
 		_reset_chord_press_times.clear()
 		return true
@@ -713,14 +756,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 
-	if not debug_mode_active:
-		return
-
 	# 6 auto-solves the current location's minigame: fills the work slots with
-	# their matching shapes, or clicks the correct school answer.
-	if key_event.keycode == KEY_6 or key_event.keycode == KEY_KP_6:
+	# their matching shapes, or clicks the correct school answer. Also works with
+	# the skip cheat on (GameState.skip_cheat_enabled), outside debug mode.
+	if (key_event.keycode == KEY_6 or key_event.keycode == KEY_KP_6) \
+			and (debug_mode_active or GameState.skip_cheat_enabled):
 		_debug_auto_solve_current_location()
 		get_viewport().set_input_as_handled()
+		return
+
+	if not debug_mode_active:
 		return
 
 	if _handle_debug_number_shortcut(key_event):
@@ -752,205 +797,18 @@ func _open_runtime_settings_overlay() -> void:
 	_settings_overlay_layer = layer
 	add_child(layer)
 
-	var back := ColorRect.new()
-	back.name = "RuntimeSettingsOverlayBack"
-	back.color = Color(0.008, 0.012, 0.039, 0.72)
-	back.anchor_right = 1.0
-	back.anchor_bottom = 1.0
-	back.mouse_filter = Control.MOUSE_FILTER_STOP
-	back.gui_input.connect(func(ev):
-		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-			_close_runtime_settings_overlay()
-	)
-	layer.add_child(back)
-
-	var center := CenterContainer.new()
-	center.anchor_right = 1.0
-	center.anchor_bottom = 1.0
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	back.add_child(center)
-
-	# Double golden border to match the main-menu SETTINGS panel: an
-	# OrnateFrameOuter shell (dark fill + gold border) wrapping an
-	# OrnateFrameInner (inner gold hairline). The inner frame already carries
-	# generous content margins, so the VBox is parented straight into it.
-	var panel := PanelContainer.new()
-	panel.theme_type_variation = &"OrnateFrameOuter"
-	panel.custom_minimum_size = Vector2(560, 0)
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	center.add_child(panel)
-
-	var inner_frame := PanelContainer.new()
-	inner_frame.theme_type_variation = &"OrnateFrameInner"
-	panel.add_child(inner_frame)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
-	inner_frame.add_child(vbox)
-
-	var title := Label.new()
-	title.text = "SETTINGS"
-	title.add_theme_font_size_override("font_size", 32)
-	vbox.add_child(title)
-	# Display mode is a player-facing comfort setting, not a debug toggle, so it
-	# belongs in the mid-game menu just like it does in the main menu. DEBUG MODE
-	# can be turned OFF from here (see below) but never ON - the row only appears
-	# while debug is already active, so it can't be enabled mid-run.
-	# Each row gets its own single golden border, mirroring the main menu.
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_option_row("DISPLAY MODE", \
-		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], GameState.window_mode, _on_runtime_window_mode_selected)))
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("BRIGHTNESS", GameState.brightness_value, _on_runtime_brightness_changed)))
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("VOLUME", GameState.volume_value, _on_runtime_volume_changed)))
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_slider_row("MUSIC", GameState.music_volume_value, _on_runtime_music_volume_changed)))
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("SCANLINES", GameState.scanlines_enabled, _on_runtime_scanlines_toggled)))
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("EASY WORKSHOP", GameState.easy_workshop_enabled, _on_runtime_easy_workshop_toggled)))
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("CAMERA TILT", GameState.camera_roll_enabled, _on_runtime_camera_roll_toggled)))
-	vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("CAMERA SWAY", GameState.camera_mouse_follow_enabled, _on_runtime_camera_mouse_follow_toggled)))
-	# Only offered while debug is on, so the player can switch it off but never on.
-	if GameState.debug_mode_enabled:
-		vbox.add_child(_wrap_runtime_setting_in_gold_panel(_build_runtime_toggle_row("DEBUG MODE", true, _on_runtime_debug_mode_toggled)))
-
-	var button_row := HBoxContainer.new()
-	button_row.alignment = BoxContainer.ALIGNMENT_END
-	button_row.add_theme_constant_override("separation", 12)
-	var close_btn := Button.new()
-	close_btn.text = "CLOSE"
-	# Gold-bordered buttons to match the LEAVE / END buttons used across the game.
-	close_btn.theme_type_variation = &"GoldHudButton"
-	close_btn.pressed.connect(_close_runtime_settings_overlay)
-	# The CLOSE button uses the main-menu click, not the settings scene-select.
-	UI_SOUND.mark_has_custom_sound(close_btn)
-	close_btn.pressed.connect(func() -> void: UI_SOUND.play_button_click(self))
-	button_row.add_child(close_btn)
-	var quit_btn := Button.new()
-	quit_btn.text = "QUIT"
-	quit_btn.theme_type_variation = &"GoldHudButton"
-	quit_btn.pressed.connect(_quit_game)
-	button_row.add_child(quit_btn)
-	vbox.add_child(button_row)
-
-	# Every button in the pause-menu settings uses the scene-select sound.
-	_wire_settings_button_sounds(vbox)
-
-
-## Connects every button in the runtime settings overlay to the scene-select
-## sound, except buttons already assigned one (e.g. CLOSE, which uses the menu click).
-func _wire_settings_button_sounds(node: Node) -> void:
-	if node is BaseButton and not node.has_meta(UI_SOUND.CUSTOM_META):
-		UI_SOUND.mark_has_custom_sound(node)
-		(node as BaseButton).pressed.connect(func() -> void:
-			UI_SOUND.play_scene_select(self)
-		)
-	for child in node.get_children():
-		_wire_settings_button_sounds(child)
-
-
-## Wrap a runtime settings control in a single-gold-border panel so each row
-## reads as its own framed element inside the double-bordered settings shell,
-## exactly like the main-menu settings panel.
-func _wrap_runtime_setting_in_gold_panel(inner: Control) -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.theme_type_variation = &"GoldPanel"
-	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_child(inner)
-	return panel
+	# The laptop settings app's green-terminal look, adapted into a pause menu
+	# (see PauseMenu). The header's back button, RESUME, Esc and a click off the
+	# window all close it.
+	var menu := PauseMenu.open_on(layer)
+	menu.back_requested.connect(_close_runtime_settings_overlay)
+	menu.quit_requested.connect(_quit_game)
 
 
 func _close_runtime_settings_overlay() -> void:
 	if _settings_overlay_layer != null and is_instance_valid(_settings_overlay_layer):
 		_settings_overlay_layer.queue_free()
 	_settings_overlay_layer = null
-
-
-func _build_runtime_slider_row(label_text: String, initial: float, changed_callback: Callable) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(160, 0)
-	row.add_child(lbl)
-	var slider := HSlider.new()
-	slider.min_value = 0.0
-	slider.max_value = 100.0
-	slider.value = initial
-	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.value_changed.connect(changed_callback)
-	row.add_child(slider)
-	return row
-
-
-func _build_runtime_toggle_row(label_text: String, initial: bool, toggled_callback: Callable) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(160, 0)
-	row.add_child(lbl)
-	var toggle := CheckButton.new()
-	toggle.button_pressed = initial
-	toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	toggle.toggled.connect(toggled_callback)
-	row.add_child(toggle)
-	return row
-
-
-func _build_runtime_option_row(label_text: String, options: Array, selected_index: int, selected_callback: Callable) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(160, 0)
-	row.add_child(lbl)
-	var option := OptionButton.new()
-	for i in options.size():
-		option.add_item(String(options[i]), i)
-	option.selected = clampi(selected_index, 0, options.size() - 1)
-	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	option.item_selected.connect(selected_callback)
-	row.add_child(option)
-	return row
-
-
-func _on_runtime_brightness_changed(value: float) -> void:
-	GameState.brightness_value = value
-
-
-func _on_runtime_volume_changed(value: float) -> void:
-	GameState.volume_value = value
-
-
-func _on_runtime_music_volume_changed(value: float) -> void:
-	GameState.music_volume_value = value
-
-
-func _on_runtime_scanlines_toggled(enabled: bool) -> void:
-	GameState.scanlines_enabled = enabled
-
-
-func _on_runtime_easy_workshop_toggled(enabled: bool) -> void:
-	GameState.easy_workshop_enabled = enabled
-
-
-func _on_runtime_camera_roll_toggled(enabled: bool) -> void:
-	GameState.camera_roll_enabled = enabled
-
-
-func _on_runtime_camera_mouse_follow_toggled(enabled: bool) -> void:
-	GameState.camera_mouse_follow_enabled = enabled
-
-
-## The pause-menu DEBUG MODE row only exists while debug is on, so this only ever
-## turns it off. (It can't be re-enabled from here - reopening the settings drops
-## the row once debug is off.)
-func _on_runtime_debug_mode_toggled(enabled: bool) -> void:
-	GameState.debug_mode_enabled = enabled
-
-
-func _on_runtime_window_mode_selected(index: int) -> void:
-	# GameState.window_mode's setter clamps, persists, and notifies WindowManager,
-	# which applies the DisplayServer change - works mid-game and while paused.
-	GameState.window_mode = index
-
 
 
 func _quit_game() -> void:
@@ -1021,6 +879,7 @@ func _debug_number_for_keycode(keycode: Key) -> int:
 
 func _debug_jump_for_phase_number(number: int, shift_held: bool, ctrl_held: bool) -> void:
 	_cancel_active_transitions()
+	_debug_detach_intro_driver()
 
 	if shift_held and ctrl_held:
 		match number:
@@ -1059,7 +918,10 @@ func _debug_jump_for_phase_number(number: int, shift_held: bool, ctrl_held: bool
 	_debug_jump_to_bedroom_phase(number)
 
 
+## Every caller opens a scene (or the bedroom) right after, so the phase change must not
+## start its own selection-screen wipe: that wipe would make the scene pick bail.
 func _debug_set_phase_for_number(number: int) -> void:
+	_suppress_phase_selection_refresh = true
 	match number:
 		1:
 			GameState.phase = DayCycle.Phase.MORNING
@@ -1067,6 +929,8 @@ func _debug_set_phase_for_number(number: int) -> void:
 			GameState.phase = DayCycle.Phase.EVENING
 		3:
 			GameState.phase = DayCycle.Phase.NIGHT
+	_suppress_phase_selection_refresh = false
+	_refresh_hud()
 
 
 func _debug_jump_to_bedroom_phase(number: int) -> void:
@@ -1291,28 +1155,113 @@ func _complete_intro_sequence() -> void:
 	_intro_sequence_enabled = false
 	GameState.complete_intro()
 	_set_phase_for_intro_step(DayCycle.Phase.MORNING)
-	GameState.day = 1
+	# The day counter carries on from the intro (which spans several days): free
+	# days start on the day the intro ended, not back on Day 1.
 	DayCycle.nightly_wakes = 0
 	DayCycle.nightly_stress_test_completed = false
 	GameState.reset_daily_purchases()
 	_show_selection_screen()
 
 
-## Debug: skip the intro ahead to the moment the player has just passed the first
-## (30-second wake-up) stress test - i.e. the step right after "stress_test", the
-## robot's first-talk dialogue on the night of day 2. The rest of the intro then
-## plays out normally from there. Works from anywhere, even after the intro ended.
-func _debug_skip_to_after_first_stress_test() -> void:
+## Debug ("Skip to..." menu): land on story point `index` of DebugStoryPoints - an
+## intro step or a later one-off scene. GameState and DayCycle are rebuilt as a
+## fresh game plus every earlier point's effects (see DebugStoryPoints.prepare), so
+## the story state matches a natural playthrough that just reached the point. Then
+## the point's scene opens and plays. Works from anywhere, even mid-scene.
+func _debug_skip_to_story_point(index: int) -> void:
+	var all_points: Array[Dictionary] = DEBUG_STORY_POINTS.points(INTRO_STEPS)
+	if index < 0 or index >= all_points.size():
+		return
 	_cancel_active_transitions()
-	GameState.intro_completed = false
-	GameState.set_intro_step("robot_first_talk")
-	GameState.day = 2
-	# The intro workshop builds her head; it goes straight on (see GameState._keep_head_on).
-	if not GameState.equipped_parts.has("head") and GameState.get_robot_part_count("head") < 1:
-		GameState.add_robot_part("head", 1)
-	_intro_sequence_enabled = true
-	_log("[color=#88aaff]Debug: skipped to after the first stress test[/color]")
-	_open_intro_current_step()
+	_debug_close_scene_tools()
+	# A scene that shows a portrait (School's teacher) hides it on its own way out; a
+	# skip can cut it off before then, and not every scene hides it on the way in.
+	hide_teacher_portrait()
+	_stop_movie()
+	_intro_sequence_enabled = false
+	# The rebuild walks the phase through every earlier point; don't let each change
+	# swap in the selection screen.
+	_suppress_phase_selection_refresh = true
+	var landing: Dictionary = DEBUG_STORY_POINTS.prepare(all_points, index)
+	_suppress_phase_selection_refresh = false
+	# The reset re-emits every GameState signal; debug_mode_changed refreshes a
+	# visible selection screen with a wipe, which would block the scene opened below.
+	_cancel_active_transitions()
+	_refresh_hud()
+	_log("[color=#88aaff]Debug: skipped to %s[/color]" % _debug_story_point_label(landing))
+
+	match String(landing.get("open", "")):
+		"intro":
+			# The uncle's TV starts in the store outro and carries into that night.
+			if String(landing.get("intro_step", "")) in ["bedroom_night", "sleep"]:
+				start_living_room_movie()
+			_intro_sequence_enabled = true
+			_open_intro_current_step()
+		"selection":
+			_show_selection_screen()
+		"park_call":
+			_pending_park_place = String(landing.get("place", "work"))
+			_on_location_picked(PARK_CALL_LOCATION, false)
+		"drone_encounter":
+			_pending_drone_place = String(landing.get("place", "work"))
+			_pending_drone_contraband = String(landing.get("contraband", ""))
+			_on_location_picked(DRONE_ENCOUNTER_LOCATION, false)
+		"uncle_hangout":
+			_on_location_picked(UNCLE_HANGOUT_LOCATION, false)
+		var location_id:
+			var loc := _location_by_id(StringName(location_id))
+			if loc == null:
+				push_warning("Debug: no location '%s' for story point '%s'." % [location_id, landing.get("id", "")])
+				_show_selection_screen()
+				return
+			# Maintenance detours through its one-time intro on its own (see _on_location_picked).
+			_on_location_picked(loc, false)
+			if loc.id == WORK_LOCATION_ID:
+				_debug_finish_story_shift()
+
+
+## The chest-steal call plays once the upper-arm shift is done: once the shift has
+## loaded, finish its assembly so the skip lands on the call itself.
+func _debug_finish_story_shift() -> void:
+	for i in 600:
+		await get_tree().process_frame
+		if _current_location_id == WORK_LOCATION_ID and not _is_any_transition_playing() \
+				and _current_location_node != null and is_instance_valid(_current_location_node):
+			break
+	await get_tree().process_frame
+	if _current_location_id == WORK_LOCATION_ID:
+		_debug_auto_solve_current_location()
+
+
+func _debug_story_point_label(point: Dictionary) -> String:
+	return "Day %d %s · %s" % [
+		int(point.get("day", 1)),
+		DayCycle.phase_name(int(point.get("phase", 0))),
+		String(point.get("label", point.get("id", ""))),
+	]
+
+
+## Closes the debug tools that float over a scene (a debug-opened minigame or
+## laptop, the inventory) before a skip swaps the scene out from under them.
+func _debug_close_scene_tools() -> void:
+	if _debug_minigame_layer != null and is_instance_valid(_debug_minigame_layer):
+		_debug_minigame_layer.queue_free()
+	_debug_minigame_layer = null
+	_debug_close_laptop_overlay()
+	if _player_inventory_overlay != null and is_instance_valid(_player_inventory_overlay) \
+			and _player_inventory_overlay.visible:
+		_player_inventory_overlay.toggle()
+
+
+## Go To jumps are free scene jumps, not story skips. While the intro is running,
+## one detaches the intro driver first, so finishing the jumped-to scene can't
+## advance the intro a step it never played. GameState keeps the intro step, so
+## "Skip to..." (or reloading the save) picks the story back up from there.
+func _debug_detach_intro_driver() -> void:
+	if not _intro_sequence_enabled:
+		return
+	_intro_sequence_enabled = false
+	_log("[color=#ffcc88]Debug: intro paused at '%s' (use Skip to... to resume)[/color]" % GameState.intro_step)
 
 
 func is_intro_sequence_location_active(location_id: StringName) -> bool:
@@ -1350,6 +1299,7 @@ func _debug_give_all_items(equip: bool = true) -> void:
 	# but granted through the same owned_tools ledger so debug can hand it out.
 	GameState.unlock_tool("curtains")
 	GameState.unlock_tool("flashlight")
+	GameState.unlock_tool("camera")
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: inventory set to 99 of all items%s[/color]" % (", full robot equipped" if equip else ""))
@@ -1373,6 +1323,7 @@ func _debug_give_non_part_items() -> void:
 	GameState.unlock_tool("welding_gun")
 	GameState.unlock_tool("sneaky_shoes")
 	GameState.unlock_tool("flashlight")
+	GameState.unlock_tool("camera")
 	if _player_inventory_overlay and is_instance_valid(_player_inventory_overlay) and _player_inventory_overlay.visible:
 		_player_inventory_overlay.call("_refresh")
 	_log("[color=#88ff88]Debug: all ingredients + tools granted (no robot parts)[/color]")
@@ -1407,7 +1358,7 @@ func _debug_give_robot_parts() -> void:
 ## Unlockable tools handed out by "Give All Tools" and listed individually under
 ## "Give Specific Item". The always-owned mouth/hand aren't included. Add new
 ## tools here as they're introduced.
-const DEBUG_GIVE_TOOL_IDS: Array[String] = ["taser", "screwdriver", "welding_gun", "sneaky_shoes", "curtains", "flashlight"]
+const DEBUG_GIVE_TOOL_IDS: Array[String] = ["taser", "screwdriver", "welding_gun", "sneaky_shoes", "curtains", "flashlight", "camera", "bad_laptop", "good_laptop"]
 
 ## Ingredient ids that are really pre-made limb sub-assemblies (crafted in the workshop and
 ## dropped into the craft bin as substitutes for a limb's raw ingredients). They're grouped
@@ -1487,17 +1438,10 @@ func _refresh_open_inventory_overlay() -> void:
 		_player_inventory_overlay.call("_refresh")
 
 
-## Replaces the whole debug button column with a "Give <item>" button per item in
-## the game (grouped by kind), plus a Back button that restores the normal menu.
-## Because it iterates the live GameState collections, items added there in future
-## show up here automatically.
-func _show_give_specific_item_menu(vbox: VBoxContainer) -> void:
-	if vbox == null or not is_instance_valid(vbox):
-		return
-	_clear_debug_vbox(vbox)
-	_add_debug_action_button(vbox, "< Back", func():
-		call_deferred("_reopen_debug_action_menu", vbox)
-	)
+## The "Give Specific Item" category: a "Give <item>" button per item in the game,
+## grouped by kind. Because it iterates the live GameState collections, items added
+## there in future show up here automatically.
+func _build_debug_give_item_category(vbox: VBoxContainer) -> void:
 	_add_debug_section(vbox, "GIVE SPECIFIC ITEM")
 
 	_add_debug_section(vbox, "Ingredients")
@@ -1540,12 +1484,15 @@ func _add_give_specific_item_button(vbox: VBoxContainer, id: String, kind: Strin
 	)
 
 
-## Back out of the "Give Specific Item" list to the normal debug button column.
+## Back out of a category to the category list.
 func _reopen_debug_action_menu(vbox: VBoxContainer) -> void:
 	if vbox == null or not is_instance_valid(vbox):
 		return
 	_clear_debug_vbox(vbox)
 	_build_debug_action_buttons(vbox)
+	var scroll := vbox.get_parent() as ScrollContainer
+	if scroll != null:
+		scroll.scroll_vertical = 0
 
 
 func _clear_debug_vbox(vbox: VBoxContainer) -> void:
@@ -1694,11 +1641,12 @@ func _refresh_debug_info_if_visible() -> void:
 # --- Shift+Tab quick-actions panel ---------------------------------------------
 #
 # A scrollable column of buttons, one per debug hotkey, so the shortcuts don't
-# have to be memorised. Lives on its own canvas layer above everything, is only
-# reachable in debug mode (the Shift+Tab handler is already debug-gated), and is
-# rebuilt from the current scene each time it opens so scene-only buttons (stress
-# test robot toggles, summon drone/uncle, teacher portrait, auto-solve) appear
-# only where they apply.
+# have to be memorised. It opens on a list of categories (DEBUG_MENU_CATEGORIES);
+# picking one swaps the column for that category's options, led by a Back button.
+# Lives on its own canvas layer above everything, is only reachable in debug mode
+# (the Shift+Tab handler is already debug-gated), and is rebuilt from the current
+# scene each time it opens so scene-only buttons (stress test robot toggles,
+# summon drone/uncle, teacher portrait, auto-solve) appear only where they apply.
 
 ## One above the Tab debug overlay so it draws over that too.
 const DEBUG_ACTIONS_CANVAS_LAYER: int = 4097
@@ -1756,10 +1704,7 @@ func _open_debug_actions_panel() -> void:
 	panel.anchor_right = 0.0
 	panel.anchor_top = 0.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = 24.0
-	panel.offset_right = 384.0
-	panel.offset_top = 24.0
-	panel.offset_bottom = -24.0
+	_place_debug_actions_panel(panel)
 	# Tag so other scenes (e.g. the stress test) can tell the pointer is over this
 	# menu and suppress their own wheel handling while the player scrolls it.
 	panel.add_to_group(DEBUG_POINTER_BLOCK_GROUP)
@@ -1815,6 +1760,8 @@ func _add_debug_action_button(vbox: VBoxContainer, label: String, action: Callab
 	btn.text = label
 	btn.theme_type_variation = &"GoldHudButton"
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Long labels (the story points) wrap instead of widening the panel.
+	btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	btn.pressed.connect(func():
 		action.call()
 		if close_after:
@@ -1882,6 +1829,258 @@ func _debug_toggle_punch() -> void:
 		punch.visible = true
 
 
+## Shows or hides the camcorder viewfinder: pixel-art corner brackets and a REC readout
+## (record button, flashing dot, REC) inside the top-left bracket, and the time recorded
+## inside the bottom-left one. Not
+## tied to debug mode - the Shift+Tab "Toggle Camera" button is just one caller. While
+## it is up, every HUD keeps camera_safe_margin() from the screen edges and stays out
+## from under the readout and the timer, so nothing sits under them or a bracket:
+## Main's own (the picture frame - a full-bleed one shrinks to fit between them - and its pills,
+## the large-scene HUD panels and corner buttons, the Tab debug overlay, the Shift+Tab
+## menu) and the corner HUDs scenes register (register_camera_hud). Turning it back on
+## restarts the clock.
+func set_camera_recording(on: bool) -> void:
+	if on == is_camera_recording():
+		return
+	if on:
+		_camera_layer = CanvasLayer.new()
+		_camera_layer.name = "CameraLayer"
+		_camera_layer.layer = CAMERA_CANVAS_LAYER
+		add_child(_camera_layer)
+		_camera_viewfinder = CameraViewfinder.new()
+		_camera_viewfinder.name = "CameraViewfinder"
+		_camera_layer.add_child(_camera_viewfinder)
+	else:
+		_camera_layer.queue_free()
+		_camera_layer = null
+		_camera_viewfinder = null
+	_apply_camera_hud_inset()
+	camera_recording_changed.emit(on)
+
+
+func is_camera_recording() -> bool:
+	return _camera_layer != null and is_instance_valid(_camera_layer)
+
+
+func _debug_toggle_camera() -> void:
+	set_camera_recording(not is_camera_recording())
+
+
+## How far, in screen pixels, every HUD stays from each screen edge while the camera
+## records: the same gap clear of the corner brackets on both axes (0 when it isn't).
+func camera_safe_margin() -> float:
+	return CameraViewfinder.SAFE_MARGIN if is_camera_recording() else 0.0
+
+
+## The screen area a top-left HUD has to stay out of while the camera records: the
+## REC readout plus its gap (an empty rect when it isn't).
+func camera_readout_clearance() -> Rect2:
+	return CameraViewfinder.readout_clearance_rect() if is_camera_recording() else Rect2()
+
+
+## How far down from the top a HUD in the top-left corner sits while recording: just
+## below the REC readout (0 when not recording).
+func camera_top_left_clearance() -> float:
+	return camera_readout_clearance().end.y
+
+
+## The screen area a bottom-left HUD has to stay out of while the camera records: the
+## timer plus its gap (an empty rect when it isn't).
+func camera_timer_clearance() -> Rect2:
+	if not is_camera_recording():
+		return Rect2()
+	return CameraViewfinder.timer_clearance_rect(get_viewport_rect().size)
+
+
+## How far up from the bottom a HUD in the bottom-left corner sits while recording:
+## just above the timer (0 when not recording).
+func camera_bottom_left_clearance() -> float:
+	var timer := camera_timer_clearance()
+	return get_viewport_rect().size.y - timer.position.y if timer.has_area() else 0.0
+
+
+## Scene HUD controls moved clear of the camera (see register_camera_hud).
+var _camera_huds: Array[Control] = []
+
+
+## For scenes that draw their own HUD on their own canvas layers (the stress test's
+## readouts and END button, Maintenance's corner buttons, ...): while the camera
+## records, `control` moves in to camera_safe_margin() from any screen edge it is closer
+## than that to, so every corner piece gets the same space from both arms of its
+## bracket; one that would then still overlap the REC readout moves down below it, and
+## one over the timer in the bottom-left moves up above it. It
+## goes back when recording stops. `follow` makes it move up/down by however much
+## another registered control does instead (a piece stacked against that one).
+## Offsets are in the control's parent space, so a HUD inside a scaled scene moves by
+## the right amount on screen. Register anchored controls only (not children of a
+## container), once their layout is set.
+func register_camera_hud(control: Control, follow: Control = null) -> void:
+	if control == null or _camera_huds.has(control):
+		return
+	_camera_huds.append(control)
+	control.set_meta(&"camera_hud_base_offsets", Vector4(
+		control.offset_left, control.offset_top, control.offset_right, control.offset_bottom))
+	if follow != null:
+		control.set_meta(&"camera_hud_follow", follow)
+	if is_camera_recording():
+		_apply_all_camera_huds.call_deferred()
+
+
+func _apply_all_camera_huds() -> void:
+	var live: Array[Control] = []
+	for control in _camera_huds:
+		if is_instance_valid(control):
+			live.append(control)
+	_camera_huds = live
+	# Leaders first, so a follower can copy how far its leader moved.
+	for control in _camera_huds:
+		if not control.has_meta(&"camera_hud_follow"):
+			_apply_camera_hud_offsets(control)
+	for control in _camera_huds:
+		if control.has_meta(&"camera_hud_follow"):
+			_apply_camera_hud_offsets(control)
+
+
+func _apply_camera_hud_offsets(control: Control) -> void:
+	if control == null or not is_instance_valid(control) or not control.has_meta(&"camera_hud_base_offsets"):
+		return
+	var base: Vector4 = control.get_meta(&"camera_hud_base_offsets")
+	# Back where the scene put it; then measure that on screen.
+	control.offset_left = base.x
+	control.offset_top = base.y
+	control.offset_right = base.z
+	control.offset_bottom = base.w
+	control.set_meta(&"camera_hud_shift", Vector2.ZERO)
+	var margin := camera_safe_margin()
+	if margin <= 0.0:
+		return
+	var xf := control.get_global_transform_with_canvas()
+	var screen := Rect2(xf.origin, control.size * xf.get_scale()).abs()
+	var view := control.get_viewport_rect().size
+	# A piece parked off-screen until it's needed (the stress test's WAKE button) stays
+	# where the scene keeps it.
+	if not screen.intersects(Rect2(Vector2.ZERO, view)):
+		return
+	var stretched_x := control.anchor_left < control.anchor_right
+	var stretched_y := control.anchor_top < control.anchor_bottom
+	# Screen-pixel moves of each side: +x/+y is right/down.
+	var left := maxf(0.0, margin - screen.position.x)
+	var right := -maxf(0.0, screen.end.x - (view.x - margin))
+	# Text's empty line space above its capitals counts as part of the gap, so a readout
+	# sits the same visible distance from the top as from the side.
+	var top := maxf(0.0, margin - (screen.position.y + _camera_hud_text_top_pad(control)))
+	var bottom := -maxf(0.0, screen.end.y - (view.y - margin))
+	# A stretched control gives up each side on its own; any other slides whole.
+	var shift_x := 0.0 if stretched_x else left + right
+	var shift_y := 0.0 if stretched_y else top + bottom
+	var follow = control.get_meta(&"camera_hud_follow") if control.has_meta(&"camera_hud_follow") else null
+	if follow is Control and is_instance_valid(follow):
+		shift_y = (follow as Control).get_meta(&"camera_hud_shift", Vector2.ZERO).y
+	elif not stretched_y:
+		# Still under the REC readout? Then below it. Over the timer? Then above it.
+		var moved := Rect2(screen.position + Vector2(shift_x, shift_y), screen.size)
+		var readout := camera_readout_clearance()
+		var timer := camera_timer_clearance()
+		if moved.intersects(readout):
+			shift_y += readout.end.y - moved.position.y
+		elif moved.intersects(timer):
+			shift_y -= moved.end.y - timer.position.y
+	control.set_meta(&"camera_hud_shift", Vector2(shift_x, shift_y))
+	# Screen pixels -> the control's parent space.
+	var to_screen := xf.get_scale() / control.scale
+	var sx := maxf(absf(to_screen.x), 0.001)
+	var sy := maxf(absf(to_screen.y), 0.001)
+	if stretched_x:
+		control.offset_left = base.x + left / sx
+		control.offset_right = base.z + right / sx
+	else:
+		control.offset_left = base.x + shift_x / sx
+		control.offset_right = base.z + shift_x / sx
+	if stretched_y:
+		control.offset_top = base.y + top / sy
+		control.offset_bottom = base.w + bottom / sy
+	else:
+		control.offset_top = base.y + shift_y / sy
+		control.offset_bottom = base.w + shift_y / sy
+
+
+## Screen pixels between `control`'s top edge and the top of its topmost text's capital
+## letters (the empty line space a Label leaves above them); 0 when it shows no text.
+func _camera_hud_text_top_pad(control: Control) -> float:
+	var label := _topmost_label(control)
+	if label == null:
+		return 0.0
+	var font := label.get_theme_font(&"font")
+	var font_size := label.get_theme_font_size(&"font_size")
+	if font == null or font.get_rids().is_empty():
+		return 0.0
+	var ts := TextServerManager.get_primary_interface()
+	var rid: RID = font.get_rids()[0]
+	var glyph := ts.font_get_glyph_index(rid, font_size, "H".unicode_at(0), 0)
+	var cap_top := font.get_ascent(font_size) + ts.font_get_glyph_offset(rid, Vector2i(font_size, 0), glyph).y
+	var label_xf := label.get_global_transform_with_canvas()
+	var control_top := control.get_global_transform_with_canvas().origin.y
+	return maxf(0.0, label_xf.origin.y - control_top + cap_top * label_xf.get_scale().y)
+
+
+## `control` itself if it is a visible Label with text, else its visible Label nearest
+## the top (null when there is none).
+func _topmost_label(control: Control) -> Label:
+	if control is Label and control.visible and not (control as Label).text.is_empty():
+		return control
+	var best: Label = null
+	for child in control.find_children("*", "Label", true, false):
+		var label := child as Label
+		if label == null or not label.is_visible_in_tree() or label.text.is_empty():
+			continue
+		if best == null or label.get_global_rect().position.y < best.get_global_rect().position.y:
+			best = label
+	return best
+
+
+## The Tab overlay's offsets as authored in Main.tscn, before the camera moves it.
+var _log_overlay_base_offsets: Vector4 = Vector4(NAN, NAN, NAN, NAN)
+
+
+## Re-lays out everything that keeps clear of the camera, after it comes or goes. The
+## bedroom pills and large-scene panels follow on their own (positioned every frame
+## from the picture frame / the camera margins).
+func _apply_camera_hud_inset() -> void:
+	var margin := camera_safe_margin()
+	_apply_scene_presentation_mode()
+	# Resize a full-bleed picture now (it only re-sizes itself on texture changes).
+	if _fullbleed_active and not _current_location_fullscreen and scene_image != null:
+		var fullbleed_size := _fullbleed_frame_size()
+		_set_frame_size_immediate(fullbleed_size, _outer_width_for_frame_size(fullbleed_size))
+	_position_large_scene_hud_panels()
+	if log_overlay != null:
+		if is_nan(_log_overlay_base_offsets.x):
+			_log_overlay_base_offsets = Vector4(log_overlay.offset_left, log_overlay.offset_top,
+				log_overlay.offset_right, log_overlay.offset_bottom)
+		# Anchored to the right edge and stretched down it.
+		var base := _log_overlay_base_offsets
+		log_overlay.offset_top = maxf(base.y, margin)
+		log_overlay.offset_right = minf(base.z, -margin)
+		log_overlay.offset_left = base.x + (log_overlay.offset_right - base.z)
+		log_overlay.offset_bottom = minf(base.w, -margin)
+	if _debug_actions_open():
+		var back := _debug_actions_layer.get_node_or_null("DebugActionsBack")
+		if back != null and back.get_child_count() > 0:
+			_place_debug_actions_panel(back.get_child(0) as Control)
+	_apply_all_camera_huds()
+
+
+## The Shift+Tab panel down the left side, kept clear of the camera's readout and
+## brackets while it records.
+func _place_debug_actions_panel(panel: Control) -> void:
+	var margin := camera_safe_margin()
+	var left := maxf(24.0, margin)
+	panel.offset_left = left
+	panel.offset_right = left + 360.0
+	panel.offset_top = maxf(24.0, camera_top_left_clearance())
+	panel.offset_bottom = -maxf(maxf(24.0, margin), camera_bottom_left_clearance())
+
+
 ## Opens one of the repair minigames (a Minigame subclass script) centred over the
 ## current scene. Replaces any minigame already open; it closes itself via its X
 ## button or Esc.
@@ -1905,11 +2104,16 @@ func _debug_open_minigame(minigame_script: GDScript) -> void:
 	layer.add_child(game)
 
 
-## Opens the laptop as an overlay on top of the current location (used by the debug menu to
-## bring the laptop up during the stress test). The laptop closes itself when clicked off.
+## Opens the laptop as an overlay on top of whatever is on screen: the current location, or
+## Main itself on the bedroom screen (debug menu: Overlays, and the stress test's own
+## section). It draws on its own canvas layer and closes itself when clicked off. Only one
+## at a time.
 func _debug_open_laptop_overlay() -> void:
-	if _current_location_node == null or not is_instance_valid(_current_location_node):
+	if _debug_laptop_overlay != null and is_instance_valid(_debug_laptop_overlay) 			and not _debug_laptop_overlay.is_queued_for_deletion():
 		return
+	var host: Node = self
+	if _current_location_node != null and is_instance_valid(_current_location_node):
+		host = _current_location_node
 	var packed := load(LAPTOP_SCENE_PATH) as PackedScene
 	if packed == null:
 		return
@@ -1917,7 +2121,7 @@ func _debug_open_laptop_overlay() -> void:
 	laptop.set("overlay_mode", true)
 	# Debug-opened laptop has admin privileges: the full app grid, not the restricted menu.
 	laptop.set("desktop_context", "admin")
-	_current_location_node.add_child(laptop)
+	host.add_child(laptop)
 	_debug_laptop_overlay = laptop
 
 
@@ -2011,9 +2215,100 @@ func _debug_anim_sound_label() -> String:
 	return "Anim Sound: Default"
 
 
+## The Shift+Tab menu opens on these category names; picking one shows only its
+## options, under a Back button that returns here. "scene" is listed only while the
+## current scene has debug actions of its own.
+const DEBUG_MENU_CATEGORIES: Array[Dictionary] = [
+	{"id": "skip", "label": "Skip to..."},
+	{"id": "goto", "label": "Go To Scene"},
+	{"id": "inventory", "label": "Inventory & Money"},
+	{"id": "give_item", "label": "Give Specific Item"},
+	{"id": "scene", "label": "This Scene"},
+	{"id": "minigames", "label": "Minigames"},
+	{"id": "overlays", "label": "Overlays"},
+	{"id": "reset", "label": "Reset"},
+]
+const DEBUG_STORY_POINTS := preload("res://scenes/DebugStoryPoints.gd")
+
+
+## The category list: the menu's top level.
 func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
+	for category in DEBUG_MENU_CATEGORIES:
+		var id := String(category["id"])
+		var label := String(category["label"])
+		if id == "scene":
+			if not _debug_scene_has_actions():
+				continue
+			label = "This Scene: %s" % String(_current_location_id).capitalize()
+		_add_debug_action_button(vbox, label, func():
+			call_deferred("_show_debug_category", vbox, id)
+		)
+
+
+## Swaps the menu column for one category's options, led by a Back button.
+func _show_debug_category(vbox: VBoxContainer, id: String) -> void:
+	if vbox == null or not is_instance_valid(vbox):
+		return
+	_clear_debug_vbox(vbox)
+	_add_debug_action_button(vbox, "< Back", func():
+		call_deferred("_reopen_debug_action_menu", vbox)
+	)
+	match id:
+		"skip":
+			_build_debug_skip_category(vbox)
+		"goto":
+			_build_debug_goto_category(vbox)
+		"inventory":
+			_build_debug_inventory_category(vbox)
+		"give_item":
+			_build_debug_give_item_category(vbox)
+		"scene":
+			_build_debug_scene_category(vbox)
+		"minigames":
+			_build_debug_minigames_category(vbox)
+		"overlays":
+			_build_debug_overlays_category(vbox)
+		"reset":
+			_build_debug_reset_category(vbox)
+	var scroll := vbox.get_parent() as ScrollContainer
+	if scroll != null:
+		scroll.scroll_vertical = 0
+
+
+## A dim, wrapping explanatory line inside a category.
+func _add_debug_note(vbox: VBoxContainer, text: String) -> void:
+	var label := Label.new()
+	label.text = text
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("font_size", 14)
+	label.modulate = Color(1, 1, 1, 0.55)
+	vbox.add_child(label)
+
+
+## One button per story point (DebugStoryPoints), grouped by intro day.
+func _build_debug_skip_category(vbox: VBoxContainer) -> void:
+	_add_debug_section(vbox, "SKIP TO...")
+	_add_debug_note(vbox, "Restarts the story at that point, in the state a playthrough reaching it would have. Inventory and stats are rebuilt too.")
+	var all_points: Array[Dictionary] = DEBUG_STORY_POINTS.points(INTRO_STEPS)
+	var current_section := ""
+	for i in all_points.size():
+		var point: Dictionary = all_points[i]
+		var section := "AFTER THE INTRO"
+		if String(point.get("open", "")) == "intro":
+			section = "INTRO · DAY %d" % int(point.get("day", 1))
+		if section != current_section:
+			_add_debug_section(vbox, section)
+			current_section = section
+		var label := "%s · %s" % [DayCycle.phase_name(int(point.get("phase", 0))), String(point.get("label", ""))]
+		if section == "AFTER THE INTRO":
+			label = "Day %d %s" % [int(point.get("day", 1)), label]
+		_add_debug_action_button(vbox, label, _debug_skip_to_story_point.bind(i), true)
+
+
+func _build_debug_goto_category(vbox: VBoxContainer) -> void:
 	# Navigation (closes the panel — the scene changes underneath it).
-	_add_debug_section(vbox, "GO TO")
+	_add_debug_section(vbox, "GO TO SCENE")
+	_add_debug_note(vbox, "Free scene jumps: story flags stay as they are. During the intro this pauses it; use Skip to... to resume.")
 	_add_debug_action_button(vbox, "Room — Morning", _debug_jump_for_phase_number.bind(1, false, false), true)
 	_add_debug_action_button(vbox, "Room — Evening", _debug_jump_for_phase_number.bind(2, false, false), true)
 	_add_debug_action_button(vbox, "Room — Night", _debug_jump_for_phase_number.bind(3, false, false), true)
@@ -2025,10 +2320,11 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 	_add_debug_action_button(vbox, "Sleep", _debug_jump_for_phase_number.bind(3, false, true), true)
 	_add_debug_action_button(vbox, "Maintenance", _debug_jump_for_phase_number.bind(1, true, true), true)
 	_add_debug_action_button(vbox, "Laptop", _debug_jump_for_phase_number.bind(2, true, true), true)
-	_add_debug_action_button(vbox, "Skip → First Stress Test Passed", _debug_skip_to_after_first_stress_test, true)
 
+
+func _build_debug_inventory_category(vbox: VBoxContainer) -> void:
 	# Inventory / money (stay open).
-	_add_debug_section(vbox, "INVENTORY")
+	_add_debug_section(vbox, "INVENTORY & MONEY")
 	_add_debug_action_button(vbox, "Give All Items", func():
 		_debug_give_all_items()
 		_debug_recalibrate_current_location()
@@ -2051,12 +2347,22 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 		_debug_clear_inventory()
 		_debug_recalibrate_current_location()
 	)
-	# Swaps the whole panel out for a per-item "Give <item>" list (and a Back button).
-	_add_debug_action_button(vbox, "Give Specific Item...", func():
-		call_deferred("_show_give_specific_item_menu", vbox)
-	)
 
-	# Scene-only actions.
+
+## Whether the current scene adds any options of its own (the "This Scene" category).
+func _debug_scene_has_actions() -> bool:
+	var node := _current_location_node
+	if node == null or not is_instance_valid(node):
+		return _current_location_id == &"school"
+	if node.has_method("debug_setting_keys") and not (node.call("debug_setting_keys") as Array).is_empty():
+		return true
+	return node.has_method("debug_auto_solve") \
+			or node.has_method("debug_anim_sound_label") \
+			or _current_location_id in [&"school", STRESS_TEST_LOCATION_ID, SLEEP_LOCATION_ID]
+
+
+## Scene-only actions: only the ones the current scene supports.
+func _build_debug_scene_category(vbox: VBoxContainer) -> void:
 	var has_auto_solve := _current_location_node != null and is_instance_valid(_current_location_node) \
 			and _current_location_node.has_method("debug_auto_solve")
 	if has_auto_solve or _current_location_id == &"school":
@@ -2113,6 +2419,8 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 		# head): Default -> each sound -> Default. Relabels itself on each press.
 		_add_debug_anim_sound_cycle_button(vbox)
 
+
+func _build_debug_minigames_category(vbox: VBoxContainer) -> void:
 	# Repair minigames, opened standalone over the current scene for testing.
 	_add_debug_section(vbox, "MINIGAMES")
 	_add_debug_action_button(vbox, "Lever Sequence", _debug_open_minigame.bind(LeverSequenceMinigame), true)
@@ -2123,18 +2431,24 @@ func _build_debug_action_buttons(vbox: VBoxContainer) -> void:
 	_add_debug_action_button(vbox, "Steady Hand", _debug_open_minigame.bind(RouteDragMinigame), true)
 	_add_debug_action_button(vbox, "Slide Route", _debug_open_minigame.bind(RouteSlideMinigame), true)
 
-	# Overlays.
+
+func _build_debug_overlays_category(vbox: VBoxContainer) -> void:
 	_add_debug_section(vbox, "OVERLAYS")
 	# Universal punch-animation preview - available in every scene, not just maintenance.
 	_add_debug_action_button(vbox, "Toggle Punch Anim", _debug_toggle_punch)
+	_add_debug_action_button(vbox, "Toggle Camera", _debug_toggle_camera)
+	# The admin laptop over the current scene (or the bedroom); click off it to close.
+	_add_debug_action_button(vbox, "Open Laptop", _debug_open_laptop_overlay, true)
 	_add_debug_action_button(vbox, "Toggle Debug Info (Tab)", func():
 		log_overlay.visible = not log_overlay.visible
 		if log_overlay.visible:
 			_refresh_debug_info()
 	)
 
-	# Full reset — always the last option. Wipes all progress and returns to the
-	# main menu (same as tapping Shift+Tab three times within two seconds).
+
+func _build_debug_reset_category(vbox: VBoxContainer) -> void:
+	# Full reset. Wipes all progress and returns to the main menu (same as tapping
+	# Shift+Tab three times within two seconds).
 	_add_debug_section(vbox, "RESET")
 	_add_debug_action_button(vbox, "Reset Game → Main Menu  (Shift+Tab ×3)", _reset_game_to_main_menu, true)
 
@@ -2153,11 +2467,12 @@ func _debug_clear_inventory() -> void:
 		GameState.set_robot_part_count("head", head_count)
 	for cosmetic_id in GameState.COSMETIC_ITEM_IDS:
 		GameState.set_cosmetic_item(cosmetic_id, 0)
-	GameState.owned_tools = ["mouth", "hand"]
+	# Back to the starting tools (the beat-up laptop included).
+	GameState.owned_tools = GameState.DEFAULT_TOOLS.duplicate()
 	GameState.tool_counts.clear()
 	GameState.purchased_today.clear()
 	GameState.purchased_today_changed.emit(GameState.purchased_today)
-	_log("[color=#ffcc88]Debug: inventory cleared (HEAD kept)[/color]")
+	_log("[color=#ffcc88]Debug: inventory cleared (HEAD and starting tools kept)[/color]")
 
 func _load_locations() -> void:
 	if _locations_loaded:
@@ -2634,8 +2949,9 @@ func _apply_large_scene_frame_centering(use_large_hud: bool) -> void:
 		frame_wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		if ui_margin != null:
 			var v := int(FULLBLEED_UI_MARGINS.w)
+			# Large framed scenes keep their top: the frame sits right of the REC readout.
 			ui_margin.add_theme_constant_override("margin_top", v)
-			ui_margin.add_theme_constant_override("margin_bottom", v)
+			ui_margin.add_theme_constant_override("margin_bottom", int(maxf(v, camera_safe_margin())))
 	else:
 		_apply_presentation_layout(_fullbleed_active)
 
@@ -2647,37 +2963,46 @@ func _position_large_scene_hud_panels() -> void:
 	var image_rect := _current_scene_image_global_rect()
 	var left_space := maxf(0.0, image_rect.position.x)
 	var right_space := maxf(0.0, viewport_width - image_rect.end.x)
-	var left_outer_gap := _large_scene_hud_outer_gap(left_space)
-	var right_outer_gap := _large_scene_hud_outer_gap(right_space)
+	# While the camera records, everything keeps camera_safe_margin() from the screen
+	# edges (the same gap from both arms of each corner bracket), and the top-left
+	# panel drops below the REC readout.
+	var margin := camera_safe_margin()
+	var left_outer_gap := maxf(_large_scene_hud_outer_gap(left_space), margin)
+	var right_outer_gap := maxf(_large_scene_hud_outer_gap(right_space), margin)
+	var left_top := maxf(maxf(LARGE_SCENE_HUD_MARGIN.y, margin), camera_top_left_clearance())
+	var right_top := maxf(LARGE_SCENE_HUD_MARGIN.y, margin)
+	var bottom := maxf(LARGE_SCENE_HUD_MARGIN.y, margin)
 
 	_large_scene_left_panel.offset_left = left_outer_gap
-	_large_scene_left_panel.offset_top = LARGE_SCENE_HUD_MARGIN.y
+	_large_scene_left_panel.offset_top = left_top
 	_large_scene_left_panel.offset_right = left_outer_gap + LARGE_SCENE_HUD_PANEL_WIDTH
-	_large_scene_left_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT
+	_large_scene_left_panel.offset_bottom = left_top + LARGE_SCENE_HUD_LEFT_PANEL_HEIGHT
 
 	_large_scene_right_panel.offset_left = -right_outer_gap - LARGE_SCENE_HUD_PANEL_WIDTH
-	_large_scene_right_panel.offset_top = LARGE_SCENE_HUD_MARGIN.y
+	_large_scene_right_panel.offset_top = right_top
 	_large_scene_right_panel.offset_right = -right_outer_gap
 	var right_height := LARGE_SCENE_HUD_RIGHT_PANEL_WORK_HEIGHT \
 		if _large_scene_timer_section_visible() \
 		else LARGE_SCENE_HUD_RIGHT_PANEL_HEIGHT
-	_large_scene_right_panel.offset_bottom = LARGE_SCENE_HUD_MARGIN.y + right_height
+	_large_scene_right_panel.offset_bottom = right_top + right_height
 
 	# Slot the margin END button into the bottom-right corner, mirroring the
 	# right panel's gap from the right edge but measured from the bottom.
 	if _large_scene_end_button != null:
 		_large_scene_end_button.offset_right = -right_outer_gap
-		_large_scene_end_button.offset_bottom = -LARGE_SCENE_HUD_MARGIN.y
+		_large_scene_end_button.offset_bottom = -bottom
 		_large_scene_end_button.offset_left = -right_outer_gap
-		_large_scene_end_button.offset_top = -LARGE_SCENE_HUD_MARGIN.y
+		_large_scene_end_button.offset_top = -bottom
 
 	# The bottom-left twin mirrors the END button across the frame, using the
 	# left panel's gap from the left edge and the same bottom margin.
+	# While recording it also stays above the timer in that corner.
 	if _large_scene_left_button != null:
+		var left_bottom := maxf(bottom, camera_bottom_left_clearance())
 		_large_scene_left_button.offset_left = left_outer_gap
-		_large_scene_left_button.offset_bottom = -LARGE_SCENE_HUD_MARGIN.y
+		_large_scene_left_button.offset_bottom = -left_bottom
 		_large_scene_left_button.offset_right = left_outer_gap
-		_large_scene_left_button.offset_top = -LARGE_SCENE_HUD_MARGIN.y
+		_large_scene_left_button.offset_top = -left_bottom
 
 
 func _large_scene_hud_outer_gap(side_space: float) -> float:
@@ -2724,9 +3049,11 @@ func _apply_presentation_layout(fullbleed: bool) -> void:
 	var margins := FULLBLEED_UI_MARGINS if fullbleed else FRAMED_UI_MARGINS
 	if ui_margin != null:
 		ui_margin.add_theme_constant_override("margin_left", int(margins.x))
-		ui_margin.add_theme_constant_override("margin_top", int(margins.y))
+		# The picture frame spans the top, so it drops below the REC readout while recording.
+		ui_margin.add_theme_constant_override("margin_top", int(maxf(margins.y, camera_top_left_clearance())))
 		ui_margin.add_theme_constant_override("margin_right", int(margins.z))
-		ui_margin.add_theme_constant_override("margin_bottom", int(margins.w))
+		# ...and stops above the timer in the bottom-left corner.
+		ui_margin.add_theme_constant_override("margin_bottom", int(maxf(margins.w, camera_bottom_left_clearance())))
 	if frame_wrap != null:
 		frame_wrap.size_flags_vertical = \
 			Control.SIZE_SHRINK_BEGIN if fullbleed else Control.SIZE_EXPAND_FILL
@@ -3165,8 +3492,12 @@ func _build_choice_button(loc: LocationData) -> Button:
 	btn.text = loc.display_name.to_upper()
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	# A fixed width, centered as a group by LocationGrid; buttons stretch to the
+	# row's height, and the row grows to fill the choice box (see Main.tscn).
+	btn.custom_minimum_size.x = CHOICE_BUTTON_WIDTH
 	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	btn.add_theme_font_size_override("font_size", CHOICE_FONT_SIZE)
+	_add_choice_text_label(btn)
 	if loc.icon:
 		btn.icon = loc.icon
 		btn.expand_icon = true
@@ -3182,11 +3513,35 @@ func _build_disabled_bedroom_button(label: String) -> Button:
 	var btn := Button.new()
 	btn.text = label.to_upper()
 	btn.focus_mode = Control.FOCUS_NONE
+	# A fixed width, centered as a group by LocationGrid; buttons stretch to the
+	# row's height, and the row grows to fill the choice box (see Main.tscn).
+	btn.custom_minimum_size.x = CHOICE_BUTTON_WIDTH
 	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	btn.add_theme_font_size_override("font_size", CHOICE_FONT_SIZE)
+	_add_choice_text_label(btn)
 	btn.disabled = true
 	_apply_choice_button_style(btn, false)
 	return btn
+
+
+## Buttons can't draw a text shadow, so the visible lettering is a centered Label
+## child (which can), showing the INVENTORY button's dark under-stroke pixel while
+## the button is selected. The
+## button keeps its own text, drawn fully transparent by _apply_choice_button_style,
+## so it still sizes itself to the word.
+func _add_choice_text_label(btn: Button) -> void:
+	var label := Label.new()
+	label.name = "ChoiceText"
+	label.text = btn.text
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	label.add_theme_font_size_override("font_size", CHOICE_FONT_SIZE)
+	label.add_theme_constant_override("shadow_offset_x", 0)
+	label.add_theme_constant_override("shadow_offset_y", CHOICE_TEXT_SHADOW_OFFSET)
+	label.add_theme_constant_override("shadow_outline_size", 0)
+	btn.add_child(label)
 
 
 ## Paint a choice button in its selected (bright gold frame + navy fill + glow)
@@ -3217,9 +3572,16 @@ func _apply_choice_button_style(btn: Button, selected: bool) -> void:
 	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
 		btn.add_theme_stylebox_override(state, box)
 	var text_col := CHOICE_SELECTED_TEXT if selected else CHOICE_UNSELECTED_TEXT
+	# The button's own text only sizes it; the ChoiceText label shows the word.
 	for color_slot in ["font_color", "font_hover_color", "font_pressed_color",
 			"font_focus_color", "font_hover_pressed_color", "font_disabled_color"]:
-		btn.add_theme_color_override(color_slot, text_col)
+		btn.add_theme_color_override(color_slot, Color.TRANSPARENT)
+	var label := btn.get_node_or_null("ChoiceText") as Label
+	if label != null:
+		label.add_theme_color_override("font_color", text_col)
+		# Only the selected choice gets the dark under-stroke pixel.
+		label.add_theme_color_override("font_shadow_color",
+				InventoryButton.SHADOW_COLOR if selected else Color.TRANSPARENT)
 
 
 ## Enter the selection screen with nothing highlighted and no consequence line.
@@ -3231,15 +3593,19 @@ func _init_choice_highlight() -> void:
 	for i in _choice_entries.size():
 		_apply_choice_button_style(_choice_entries[i]["button"], false)
 	if consequence_label != null:
-		# Reserve the height the label will have once a consequence line shows,
-		# so the choice box never resizes on first selection. Measure it by
-		# rendering a real sample line and reading the resulting content height
-		# back, rather than predicting it from font metrics.
-		consequence_label.text = "[center]Ag[/center]"
-		consequence_label.custom_minimum_size.y = maxf(
-			consequence_label.custom_minimum_size.y,
-			float(consequence_label.get_content_height())
-		)
+		# Reserve exactly one line of height, so the buttons above (which
+		# stretch to fill the box) never resize when the line changes. Measure
+		# a real sample line that includes a stat arrow - the arrow comes from
+		# a taller fallback font, so lines with one are taller than lines
+		# without. Wrapping is switched off while measuring: this can run
+		# before the label has its final width, and a wrapped sample used to
+		# reserve two lines, leaving a tall empty band under the text.
+		var wrap_mode := consequence_label.autowrap_mode
+		consequence_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		consequence_label.custom_minimum_size.y = 0.0
+		consequence_label.text = "[center]Ag ↑↓[/center]"
+		consequence_label.custom_minimum_size.y = float(consequence_label.get_content_height())
+		consequence_label.autowrap_mode = wrap_mode
 		consequence_label.text = NO_SELECTION_SUBTITLE
 
 
@@ -3437,10 +3803,10 @@ func _is_location_disabled(loc: LocationData) -> bool:
 
 
 ## Locations left off the selection screen entirely until the story opens them.
-## Maintenance appears once the stolen chest is home (debug mode can go early).
+## Maintenance stays hidden until the chest-steal dialogue has played, debug mode
+## included (debug can still jump there from the Shift+Tab menu / Shift+Ctrl+1).
 func _is_location_locked(loc: LocationData) -> bool:
-	return loc.id == MAINTENANCE_LOCATION_ID and not GameState.maintenance_unlocked \
-			and not _debug_mode_enabled()
+	return loc.id == MAINTENANCE_LOCATION_ID and not GameState.has_stolen_robot_chest()
 
 
 func _disabled_bedroom_options_for_phase(phase: int) -> Array[String]:
@@ -3635,6 +4001,17 @@ func _sync_scene_image_frame_to_texture() -> void:
 	_animate_frame_to(normalized_size, outer_target)
 
 
+## While the camera records, the full-bleed picture shrinks (same 4:1 shape) so it and
+## the panel under it fit between the REC readout and the timer.
+const CAMERA_FULLBLEED_FRAME_SCALE: float = 0.8
+
+
+func _fullbleed_frame_size() -> Vector2:
+	if is_camera_recording():
+		return (STANDARD_FULLBLEED_FRAME_SIZE * CAMERA_FULLBLEED_FRAME_SCALE).round()
+	return STANDARD_FULLBLEED_FRAME_SIZE
+
+
 func _normalized_frame_size_for_texture(requested_size: Vector2, texture: Texture2D) -> Vector2:
 	var size_value := requested_size if requested_size != Vector2.ZERO else DEFAULT_FRAME_SIZE
 	if texture == null:
@@ -3645,7 +4022,7 @@ func _normalized_frame_size_for_texture(requested_size: Vector2, texture: Textur
 	if _is_standard_scene_texture_size(texture_size):
 		# Standard 500x125 art renders full-bleed (chrome hidden). The enlarged
 		# size is what gives the refurbished day-planner its big top image.
-		return STANDARD_FULLBLEED_FRAME_SIZE
+		return _fullbleed_frame_size()
 
 	var texture_aspect := texture_size.x / texture_size.y
 	var size_aspect := size_value.x / size_value.y if size_value.y > 0.0 else texture_aspect
@@ -4515,7 +4892,7 @@ func _on_location_finished(result: Dictionary, source: Node = null) -> void:
 
 	if result.get("skip_advance", false):
 		_show_selection_screen()
-	elif _maybe_show_park_call():
+	elif _maybe_show_park_call(result):
 		# She calls on the walk home. The call advances the phase itself once it
 		# finishes, so we don't advance here.
 		return
@@ -4561,16 +4938,19 @@ func _maybe_show_post_activity_drone_encounter(result: Dictionary) -> bool:
 
 # --- post-school/work park call ----------------------------------------------
 
-## The robot's one-time park call: wipes in after the first school or work run
-## finished on a later day than the work-disruption call. Returns true when the
-## call was loaded (the caller must NOT advance the phase - the call finishes
+## The robot's one-time park call: wipes in on the walk home from the first
+## school or work run, after the chest-steal dialogue, on which the player stole
+## something (nanobots or scrap - `result.contraband`). The chest shift itself
+## doesn't count. Gated on that dialogue, not on owning a chest. Returns true when
+## the call was loaded (the caller must NOT advance the phase - the call finishes
 ## into _on_location_finished, which then advances).
-func _maybe_show_park_call() -> bool:
+func _maybe_show_park_call(result: Dictionary) -> bool:
 	if not POST_ACTIVITY_DRONE_LOCATION_IDS.has(_current_location_id):
 		return false
-	if not GameState.robot_work_disruption_seen or GameState.robot_park_call_seen:
+	if not GameState.has_stolen_robot_chest() or GameState.robot_park_call_seen:
 		return false
-	if GameState.day <= GameState.robot_work_disruption_day:
+	var contraband := String(result.get("contraband", ""))
+	if contraband.is_empty() or contraband == PARK_CALL_CHEST_CONTRABAND:
 		return false
 	var packed := _load_location_scene(PARK_CALL_LOCATION)
 	if packed == null:

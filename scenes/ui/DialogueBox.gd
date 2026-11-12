@@ -497,9 +497,11 @@ func _reset_advance_hold() -> void:
 	_hold_skip_timer = 0.0
 
 
+## Hold-skip is a debug feature, also unlocked by the skip cheat (see
+## GameState.skip_cheat_enabled) without turning debug mode on.
 func _debug_mode_enabled() -> bool:
 	var settings := get_node_or_null("/root/GameState")
-	return settings != null and settings.debug_mode_enabled
+	return settings != null and settings.enter_speedrun_allowed()
 
 
 ## Suppress the debug enter-hold carry-over for the next play_pages call. Use

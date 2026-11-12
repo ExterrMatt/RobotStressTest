@@ -142,7 +142,7 @@ func _draw_game() -> void:
 		board.draw_rect(e, Color(COL_BAD, blink), false, 3.0)
 		draw_text_centered("!!!", e.get_center() + Vector2(0, 10), 34, Color(COL_BAD, blink))
 		if _show_help:
-			var msg := "BUY %s FROM THE STORE APP" % PART_NAMES[ingredient]
+			var msg := "BUY %s FROM THE ONLINE STORE" % PART_NAMES[ingredient]
 			if delivery_pending:
 				msg = "%s IS ON ITS WAY - GUIDE THE DELIVERY DRONE ON PATROL" % PART_NAMES[ingredient]
 			var box := Rect2(area.position.x + 6.0, slot.end.y + 40.0, area.size.x - 12.0, 28.0)

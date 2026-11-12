@@ -186,6 +186,8 @@ var _audio: AudioStreamPlayer = null
 func _ready() -> void:
 	# It plays while the game is paused behind it.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Main's camera viewfinder (REC readout, corner brackets) hides while it's up.
+	add_to_group(CameraViewfinder.HIDE_GROUP)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST

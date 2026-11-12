@@ -177,12 +177,12 @@ const BOOT_DIAGNOSTIC_SEQUENCE: Array[Dictionary] = [
 @onready var subtitle_label: Label       = %SubtitleLabel
 @onready var title_image: TextureRect    = %TitleImage
 
-# Overlay panels — built on demand by _open_overlay().
-var _current_overlay: Control = null
+# Overlay panels — built on demand by _open_overlay(). The settings overlay is the
+# in-game pause menu on its own CanvasLayer, hence Node rather than Control.
+var _current_overlay: Node = null
 
 var _brightness_value: float = 50.0
 var _debug_mode_enabled: bool = false
-var _window_mode: int = 0
 var _keyboard_menu_navigation_active: bool = false
 var _subject_status_rng := RandomNumberGenerator.new()
 var _subject_status_phase: String = "idle"
@@ -219,7 +219,11 @@ func _ready() -> void:
 		_brightness_value = settings.brightness_value
 		show_scanlines = settings.scanlines_enabled
 		_debug_mode_enabled = settings.debug_mode_enabled
-		_window_mode = settings.window_mode
+		# The settings overlay (the in-game PauseMenu) writes straight to GameState, so
+		# follow the settings this screen draws itself.
+		settings.brightness_changed.connect(_on_brightness_changed)
+		settings.scanlines_enabled_changed.connect(_on_scanlines_changed)
+		settings.debug_mode_changed.connect(_on_debug_mode_changed)
 
 	scanline_layer.visible = show_scanlines
 	embers_layer.visible   = show_embers
@@ -289,6 +293,33 @@ func _apply_title_image_offset() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
 		_deactivate_keyboard_menu_navigation()
+		return
+	# Shift+Tab on the main menu switches debug mode on. Handled here in _input
+	# (ahead of the GUI) because a focused menu button would otherwise consume
+	# Shift+Tab for focus navigation before _unhandled_input ever sees it.
+	if event is InputEventKey and event.pressed and not event.echo \
+			and _is_shift_tab(event as InputEventKey) and not _is_overlay_open():
+		get_viewport().set_input_as_handled()
+		_enable_debug_mode_from_shortcut()
+
+
+## Shift+Tab arrives as Backtab on some platforms, so accept either form.
+func _is_shift_tab(key_event: InputEventKey) -> bool:
+	return key_event.keycode == KEY_BACKTAB \
+		or (key_event.keycode == KEY_TAB and key_event.shift_pressed)
+
+
+func _is_overlay_open() -> bool:
+	return _current_overlay != null and is_instance_valid(_current_overlay)
+
+
+## Turns debug mode on (never off) and saves it, same as ticking the DEBUG MODE
+## toggle in Settings. Does nothing if it's already on.
+func _enable_debug_mode_from_shortcut() -> void:
+	if _debug_mode_enabled:
+		return
+	_on_debug_mode_toggled(true)
+	UI_SOUND.play_button_click(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -300,7 +331,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var key_event: InputEventKey = event
 
-	# ESC backs out of overlays. On the base menu there is nothing to back out of.
+	# ESC backs out of overlays; on the base menu it opens the pause menu, same as in game.
 	if _current_overlay and is_instance_valid(_current_overlay):
 		if key_event.keycode == KEY_ESCAPE:
 			_close_overlay()
@@ -312,6 +343,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if key_event.keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
+		UI_SOUND.play_button_click(self)
+		_open_pause_menu()
 		return
 
 	var debug_number := _debug_number_for_keycode(key_event.keycode)
@@ -834,8 +867,8 @@ func _activate(id: String) -> void:
 		"new":      _start_new_game()
 		"endless":  _start_endless()
 		"load":     _open_overlay(_build_load_panel())
-		"settings": _open_overlay(_build_settings_panel(), true)
-		"quit":     _open_overlay(_build_quit_confirm())
+		"settings": _open_pause_menu()
+		"quit":     _open_quit_prompt()
 		_:          push_warning("MainMenu: unknown menu id '%s'" % id)
 
 
@@ -1240,132 +1273,35 @@ func _build_save_slot(data: Dictionary) -> Control:
 	return slot
 
 
-func _build_settings_panel() -> Control:
-	# Double golden border on the larger container; each inner setting row gets
-	# its own single golden border via _wrap_in_gold_panel.
-	var shell: Dictionary = _build_overlay_shell("SETTINGS", true)
-	var content: VBoxContainer = shell["content"]
-
-	content.add_child(_wrap_in_gold_panel(_build_option_row("DISPLAY MODE", \
-		["WINDOWED", "WINDOWED FULLSCREEN", "FULLSCREEN"], _window_mode, _on_window_mode_selected)))
-	content.add_child(_wrap_in_gold_panel(_build_slider_row("BRIGHTNESS", _brightness_value, _on_brightness_changed)))
-	content.add_child(_wrap_in_gold_panel(_build_slider_row("VOLUME", _current_volume_value(), _on_volume_changed)))
-	content.add_child(_wrap_in_gold_panel(_build_slider_row("MUSIC", _current_music_volume_value(), _on_music_volume_changed_from_slider)))
-	content.add_child(_wrap_in_gold_panel(_build_toggle_row("SCANLINES", show_scanlines, _on_scanlines_toggled)))
-	content.add_child(_wrap_in_gold_panel(_build_toggle_row("EASY WORKSHOP", _current_easy_workshop_enabled(), _on_easy_workshop_toggled)))
-	content.add_child(_wrap_in_gold_panel(_build_toggle_row("DEBUG MODE", _debug_mode_enabled, _on_debug_mode_toggled)))
-
-	var apply_row := HBoxContainer.new()
-	apply_row.alignment = BoxContainer.ALIGNMENT_END
-	var apply_btn := Button.new()
-	apply_btn.text = "CLOSE"
-	# Match the gold-bordered LEAVE / END buttons used across the locations.
-	apply_btn.theme_type_variation = &"GoldHudButton"
-	apply_btn.pressed.connect(_close_overlay)
-	# The CLOSE button uses the main-menu click, not the settings scene-select.
-	UI_SOUND.mark_has_custom_sound(apply_btn)
-	apply_btn.pressed.connect(func() -> void: UI_SOUND.play_button_click(self))
-	apply_row.add_child(apply_btn)
-	content.add_child(apply_row)
-
-	return shell["back"]
+## Settings is the in-game pause menu (PauseMenu): the same green-terminal window, opened
+## from the main menu (without its QUIT GAME - this menu has its own QUIT row, and with
+## the red RESET tab). Its BACK, Esc and a click off it close it.
+func _open_pause_menu() -> void:
+	var menu := PauseMenu.open_on(_open_overlay_layer(), true)
+	menu.back_requested.connect(_close_overlay)
 
 
-## Wrap a settings control in a single-gold-border panel so each inner row
-## reads as its own framed element inside the double-bordered settings shell.
-func _wrap_in_gold_panel(inner: Control) -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.theme_type_variation = &"GoldPanel"
-	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_child(inner)
-	return panel
+## The QUIT row's prompt: the pause menu's window, cut down to QUIT and STAY.
+func _open_quit_prompt() -> void:
+	var prompt := PauseMenu.QuitPrompt.open_on(_open_overlay_layer())
+	prompt.back_requested.connect(_close_overlay)
+	prompt.quit_requested.connect(_quit_after_goodbye)
 
 
-func _build_slider_row(label_text: String, initial: float, changed_callback: Callable) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(160, 0)
-	row.add_child(lbl)
-	var slider := HSlider.new()
-	slider.min_value = 0
-	slider.max_value = 100
-	slider.value = initial
-	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.value_changed.connect(changed_callback)
-	row.add_child(slider)
-	return row
+## A CanvasLayer for a pause-menu-style window, set as the current overlay.
+func _open_overlay_layer() -> CanvasLayer:
+	var layer := CanvasLayer.new()
+	layer.name = "PauseMenuLayer"
+	# Above the scanline layer, the same as in game.
+	layer.layer = 300
+	_close_overlay()
+	_current_overlay = layer
+	add_child(layer)
+	return layer
 
 
-func _build_toggle_row(label_text: String, initial: bool, toggled_callback: Callable) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(160, 0)
-	row.add_child(lbl)
-
-	var toggle := CheckButton.new()
-	toggle.button_pressed = initial
-	toggle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	toggle.toggled.connect(toggled_callback)
-	row.add_child(toggle)
-	return row
-
-
-## Dropdown row for multi-choice settings. Item indices are used as the value,
-## so `selected_index` and the callback argument map directly onto the option
-## enum (e.g. GameState.WindowMode).
-func _build_option_row(label_text: String, options: Array, selected_index: int, selected_callback: Callable) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(160, 0)
-	row.add_child(lbl)
-
-	var option := OptionButton.new()
-	for i in options.size():
-		option.add_item(String(options[i]), i)
-	option.selected = clampi(selected_index, 0, options.size() - 1)
-	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	option.item_selected.connect(selected_callback)
-	row.add_child(option)
-	return row
-
-
-func _build_quit_confirm() -> Control:
-	var shell: Dictionary = _build_overlay_shell("QUIT GAME")
-	var content: VBoxContainer = shell["content"]
-
-	var body := Label.new()
-	body.text = "Unsaved progress will be lost."
-	body.theme_type_variation = &"HUDLabel"
-	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	content.add_child(body)
-
-	var btn_row := HBoxContainer.new()
-	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 12)
-
-	var stay := Button.new()
-	stay.text = "STAY"
-	stay.pressed.connect(_close_overlay)
-	btn_row.add_child(stay)
-
-	var quit := Button.new()
-	quit.text = "QUIT"
-	quit.pressed.connect(_flash_message_then_quit.bind(body))
-	btn_row.add_child(quit)
-
-	content.add_child(btn_row)
-	return shell["back"]
-
-
-func _flash_message_then_quit(body: Label) -> void:
-	if body and is_instance_valid(body):
-		body.text = "I'll be waiting."
+## The prompt has just put up its goodbye line; give it a frame to show, then quit.
+func _quit_after_goodbye() -> void:
 	await get_tree().create_timer(0.05).timeout
 	get_tree().quit()
 
@@ -1376,66 +1312,27 @@ func _flash_message_then_quit(body: Label) -> void:
 
 func _on_brightness_changed(value: float) -> void:
 	_brightness_value = value
-	var settings := get_node_or_null("/root/GameState")
-	if settings:
-		settings.brightness_value = value
 	_apply_brightness()
 	if show_flicker:
 		_start_flicker()
 
 
-func _current_volume_value() -> float:
-	var settings := get_node_or_null("/root/GameState")
-	return settings.volume_value if settings else GameState.DEFAULT_VOLUME_VALUE
-
-
-func _on_volume_changed(value: float) -> void:
-	var settings := get_node_or_null("/root/GameState")
-	if settings:
-		settings.volume_value = value
-
-
-func _current_music_volume_value() -> float:
-	var settings := get_node_or_null("/root/GameState")
-	return settings.music_volume_value if settings else GameState.DEFAULT_MUSIC_VOLUME_VALUE
-
-
-func _on_music_volume_changed_from_slider(value: float) -> void:
-	var settings := get_node_or_null("/root/GameState")
-	if settings:
-		settings.music_volume_value = value
-
-
-func _on_scanlines_toggled(enabled: bool) -> void:
+func _on_scanlines_changed(enabled: bool) -> void:
 	show_scanlines = enabled
-	var settings := get_node_or_null("/root/GameState")
-	if settings:
-		settings.scanlines_enabled = enabled
 
 
-func _current_easy_workshop_enabled() -> bool:
-	var settings := get_node_or_null("/root/GameState")
-	return settings.easy_workshop_enabled if settings else false
-
-
-func _on_easy_workshop_toggled(enabled: bool) -> void:
-	var settings := get_node_or_null("/root/GameState")
-	if settings:
-		settings.easy_workshop_enabled = enabled
-
-
-func _on_window_mode_selected(index: int) -> void:
-	_window_mode = index
-	var settings := get_node_or_null("/root/GameState")
-	if settings:
-		settings.window_mode = index
-
-
+## Shift+Tab turns debug on from here; the pause menu can turn it off. Either way the
+## debug-only rows (ENDLESS) follow via _on_debug_mode_changed.
 func _on_debug_mode_toggled(enabled: bool) -> void:
-	_debug_mode_enabled = enabled
 	var settings := get_node_or_null("/root/GameState")
 	if settings:
 		settings.debug_mode_enabled = enabled
+	else:
+		_on_debug_mode_changed(enabled)
+
+
+func _on_debug_mode_changed(enabled: bool) -> void:
+	_debug_mode_enabled = enabled
 	_refresh_menu_item_availability()
 
 

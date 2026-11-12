@@ -902,7 +902,9 @@ const ASSEMBLY_PARTS: Array = [
 ## Laptop-context top-level order for the recycled limb menu (three tiles per row).
 const ASSEMBLY_LAPTOP_ORDER: Array[String] = ["LEG", "ARM", "HAND", "CHEST", "STOMACH", "HEAD"]
 ## Laptop-menu tiles that can always be opened. The rest are greyed out until the player
-## has that part (in the inventory or on her, whole or part-built).
+## has that part (in the inventory or on her, whole or part-built), or until another part
+## has permanently opened them (GameState.MAINTENANCE_PART_UNLOCKS: the chest opens the
+## stomach and arm, an arm the hand, a stomach the leg).
 const ASSEMBLY_LAPTOP_ENABLED: Array[String] = ["HEAD", "CHEST"]
 
 ## A part's RECIPE list with at most this many segments shows their names at the DETACH
@@ -1042,11 +1044,11 @@ func _menu_tile(index: int) -> Button:
 	return btn
 
 
-## Greys out (and disables) a part button whose part isn't in ASSEMBLY_LAPTOP_ENABLED and
-## that the player doesn't have - the same in the laptop and in maintenance.
+## Greys out (and disables) a part button whose part isn't in ASSEMBLY_LAPTOP_ENABLED,
+## that the player doesn't have and that no part has permanently opened - the same in the
+## laptop and in maintenance.
 func _grey_out_if_unavailable(btn: Button, index: int) -> void:
-	var part_name := String(ASSEMBLY_PARTS[index].get("name", ""))
-	if ASSEMBLY_LAPTOP_ENABLED.has(part_name) or _player_has_part(part_name.to_lower()):
+	if _part_available(String(ASSEMBLY_PARTS[index].get("name", ""))):
 		return
 	btn.disabled = true
 	btn.mouse_default_cursor_shape = Control.CURSOR_ARROW
@@ -1054,14 +1056,16 @@ func _grey_out_if_unavailable(btn: Button, index: int) -> void:
 	btn.modulate = UNLOCK_UNAVAILABLE_TINT
 
 
+## Whether part `part_name`'s button (and, for a paired part, both its side cards) can be
+## clicked: always-open parts, parts the player has, and parts another part has opened.
+func _part_available(part_name: String) -> bool:
+	var part_id := part_name.to_lower()
+	return ASSEMBLY_LAPTOP_ENABLED.has(part_name) or _player_has_part(part_id) 			or GameState.is_maintenance_part_unlocked(part_id)
+
+
 ## Whether the player has part `part_id`: in the inventory, or on her whole or part-built.
 func _player_has_part(part_id: String) -> bool:
-	if GameState.get_owned_part_count(part_id) > 0:
-		return true
-	for side in GameState.PART_SIDES:
-		if not GameState.get_limb_segments(part_id, side).is_empty():
-			return true
-	return false
+	return GameState.has_part_anywhere(part_id)
 
 
 func _add_vexpand_spacer(col: VBoxContainer) -> void:
@@ -1144,7 +1148,8 @@ const SIDE_CARD_HOT_FILL: Color = Color(0.03, 0.16, 0.08, 0.75)
 ## One side's card on the side-select: its letter in the top corner, the part's picture
 ## (mirrored on the right, so the pair reads like a body), "LEFT ARM" and whether the robot
 ## has that side's part on right now. It lights up under the mouse; a click opens the part.
-## A side with nothing of the part on her is greyed out like the menu tiles.
+## Both sides can be opened whenever the part's own button can (_part_available), whether
+## or not anything is on that side yet.
 func _side_card(index: int, side: String) -> Button:
 	var part: Dictionary = ASSEMBLY_PARTS[index]
 	var part_name := String(part.get("name", "?"))
@@ -1201,19 +1206,12 @@ func _side_card(index: int, side: String) -> Button:
 		icon.modulate = Color.WHITE if hot else Color(0.78, 0.82, 0.78)
 		tag.add_theme_color_override("font_color", OK_GREEN if hot else SCREEN_DIM))
 
-	if not _part_on_side(part_name.to_lower(), side.to_lower()):
+	if not _part_available(part_name):
 		card.disabled = true
 		card.mouse_default_cursor_shape = Control.CURSOR_ARROW
 		card.add_theme_stylebox_override("disabled", _panel_style())
 		card.modulate = UNLOCK_UNAVAILABLE_TINT
 	return card
-
-
-## Whether any of part `part_id` is on her on `side`, whole or part-built. A spare in the
-## inventory doesn't count - the side is still missing its limb.
-func _part_on_side(part_id: String, side: String) -> bool:
-	return GameState.is_part_attached_on(part_id, side) \
-			or not GameState.get_limb_segments(part_id, side).is_empty()
 
 
 ## One body part: its name slot (top-left) + picture (bottom-left), and RECIPE = its list of

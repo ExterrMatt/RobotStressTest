@@ -262,6 +262,8 @@ func _on_pan_complete() -> void:
 		_minigame.ended.connect(_on_end_button_pressed)
 	if _minigame.has_signal("easy_mode_offered"):
 		_minigame.easy_mode_offered.connect(_on_easy_mode_offered)
+	if _minigame.has_signal("easy_mode_offer_withdrawn"):
+		_minigame.easy_mode_offer_withdrawn.connect(_hide_easy_mode_button)
 	_configure_minigame_end_button()
 	if main and main.has_method("show_scene_overlay"):
 		main.show_scene_overlay(_minigame, true)
@@ -315,6 +317,11 @@ func _on_easy_mode_offered() -> void:
 func _on_easy_mode_button_pressed() -> void:
 	if get_node_or_null("/root/GameState") != null:
 		GameState.easy_workshop_enabled = true
+	_hide_easy_mode_button()
+
+
+## The minigame withdrew the offer (nothing left to assemble), or it was accepted.
+func _hide_easy_mode_button() -> void:
 	var main: Node = get_tree().current_scene
 	if main != null and main.has_method("hide_large_scene_left_button"):
 		main.call("hide_large_scene_left_button")
@@ -357,7 +364,8 @@ func _on_dialogue_finished() -> void:
 		WorkshopPhase.PROCEED_DIALOGUE:
 			_enter_minigame()
 		WorkshopPhase.TINKER_DIALOGUE:
-			finish(0, 0, 0, {}, true)
+			# Leaving after tinkering still uses up the phase.
+			finish(0, 0, 0, {}, false)
 		_:
 			pass
 func _build_choice_button(label: String) -> Button:

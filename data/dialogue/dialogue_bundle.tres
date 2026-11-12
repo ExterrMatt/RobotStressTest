@@ -53,7 +53,7 @@ DRONE: 3... 2...
 [i]You rip the {contraband} out of your pocket and present it to the drone.[/i]
 DRONE: THIS IS ILLEGAL CONTRABAND.
 DRONE: YOU WILL BE FINED AND THIS INCIDENT WILL BE CATALOGUED IN YOUR RECORD.
-[i]It drops your id at your feet on the sidewalk.[/i]
+[i]It drops your id at your feet on the dirt.[/i]
 DRONE: THANK YOU FOR YOUR COOPERATION, CRIMINAL.
 [i]The drone flies away.[/i]
 Thoughts: ...Damn.
@@ -230,17 +230,39 @@ Thoughts: I'll definitely have to keep her in the house- but I can't keep her in
 You let out a sigh.
 You: Alright. I guess you're coming with me.
 Her: I am?
-You: I can’t hide you anywhere else.
-Her: I understand.
+You: I can’t hide you anywhere else...
+
+# The drone reveal (see DroneRevealCutscene). The player lifts her up in front of
+# the shed window (head_up) and says a few words before leaving...
+[robot_first_talk_lift]
+You: Alright. Up you go.
+You: Stay quiet until we're inside, okay?
+Thoughts: ...Wait. What's that behind her?
+
+# ...lowers her head, revealing the patrol drone at the window as it draws its
+# guns. Clicking past this line slams the emergency button.
+[robot_first_talk_drone]
+You: Shit!
+
+# The rest of the night, after the drone has been zapped away (the view eases back
+# down to her face).
+[robot_first_talk_outro]
+Her: What was that?
+You: A patrol drone. That the generator's emergency shut-off button. 
+You: It fries anything that gets too close to the window.
+Her: I don't want to stay in this shed anymore...
+You: Then let's go.
 
 [free_reign]
 Thoughts: Stress Tests are now more difficult.",
 "maintenance_intro": "# First-time maintenance cutscene.
 # Format: see data/dialogue/school.dlg. One line = one page (click to advance).
 #
-# Plays once, the first time the player picks Maintenance, over the
-# maintenance_hallway background before the maintenance scene itself loads
-# (MaintenanceIntro.gd).
+# Plays once, the first time the player picks Maintenance, before the
+# maintenance scene itself loads (MaintenanceIntro.gd). Backgrounds:
+# factory_outside on the first page, maintenance_stairs from the second page
+# (MaintenanceIntro.STAIRS_PAGE_INDEX, whatever it says), then maintenance_hallway
+# from the page containing \"peer around the corner\" (HALLWAY_CUE) to the end.
 # The player sneaks into his uncle's factory without clocking in, so the
 # cleaning robots won't recognise him as authorised personnel. One is cleaning
 # right outside the PERSONNEL ONLY door he needs, until the head in his bag
@@ -248,47 +270,63 @@ Thoughts: Stress Tests are now more difficult.",
 #
 # The cleaning robot is drawn over the hallway. The page containing \"stops
 # mid-scrub\" (MaintenanceIntro.ROBOT_HACKED_CUE) turns its head, and the page
-# containing \"rolls down the hall\" (MaintenanceIntro.ROBOT_LEAVES_CUE) hides it.
+# containing \"down the hall\" (MaintenanceIntro.ROBOT_LEAVES_CUE) hides it. Keep
+# those phrases in the lines if you reword them.
 
 [intro]
-[i]You slip in through the back of your uncle's factory. You didn't clock in today.[/i]
-Thoughts: No badge scan means I'm not on the system. As far as the cleaning bots know, I'm not supposed to be here.
-Thoughts: If one of them spots me, it'll flag me as unauthorized personnel. Then it's my uncle's problem. Then it's my problem.
+[i]You arrive at your Uncle's factory.[/i]
+Thoughts: There's a old room no one ever goes in where I can work on the bot.
+Thoughts: I'll have go in from around back. But if I'm not clocked in, the cleaning bots will see me as an intruder.
+Thoughts: If one of them spots me, it'll flag me as unauthorized personnel. Then I'll have some serious explaining to do to my Uncle.
+No one seems to be in this part of the factory.
+It's a repurposed building. Some parts of it weren't made for manufacturing purposes...
 [i]You peer around the corner.[/i]
-[i]At the end of the hall, a cleaning robot is scrubbing the floor outside a door marked PERSONNEL ONLY.[/i]
-Thoughts: Of course. Of course it's cleaning right there.
+[i]There's a cleaning robot is scrubbing the floor outside a door.[/i]
+Thought: Damn it. Of course it's cleaning right there...
+Thoughts: That's literally the room I need to get into.
+Thoughts: I'll just wait it out.
 [i]You wait.[/i]
-[i]And wait.[/i]
-[i]The cleaning robot goes over the same tile for the third time.[/i]
-Thoughts: How long does it take to clean one spot of floor?
+[i]And wait...[/i]
+[i]And wait.....[/i]
+........
+[i]The cleaning robot loops back to scrubbing the same few tiles for the sixth time.[/i]
+Thoughts: How long does it take to clean one spot of floor??
 Thoughts: It's been ten minutes. That floor is clean. That floor has never been cleaner.
 A voice comes from inside your bag.
 Her: You know I can just move it.
 [i]You nearly jump out of your skin.[/i]
 You: Keep your voice down!
-Her: It can't hear me. Its microphones are listening for spills, not conversations.
-You: …What do you mean, move it?
+Her: It can't hear me. Its microphones are broken.
+You: You sure it's just the microphones? Look at it. Something's wrong with its brain.
+Her: It's as if it's made almost entirely out of spare parts.
+You: Maybe I can take it down?
+Her: \"Take it down?\" Are you serious?
+Have you ever even been in a fight?
+You: No, but I bet I could win if it came to it.
+Her: Sure... But save your breath, I'll move it myself.
+You: How? Youre just a head...
 Her: I can hack it. Give it somewhere else to be.
 You: From inside my bag?
 Her: Watch.
-[i]The cleaning robot stops mid-scrub. Its light flickers.[/i]
-[i]Then it turns, rolls down the hall, and disappears around the far corner.[/i]
-Thoughts: …She just did that. Just like that.
+[i]The cleaning robot stops mid-scrub. Its eye-lights flickers blue.[/i]
+[i]Then it turns and quickly strides down the hall, and disappears around the far corner.[/i]
+Thoughts: …Creepy.
 Thoughts: If one head in a backpack can do that… I'm starting to get why these things were such a problem for us during the war.
 You: Wait. How did you even reach it? Are you connected to the factory's wifi?
 Her: …I am.
 Her: That's odd. I don't remember connecting to it.
 Thoughts: That's not reassuring.
 You: We'll worry about that later.
-[i]You take a breath, lock in, and head for the maintenance room.[/i]
+[i]You head for the maintenance room.[/i]
 ",
 "park": "# Park phone-call dialogue.
 # Format: see data/dialogue/school.dlg. One line = one page (click to advance).
 # Placeholders {place} {player_name} are filled in by ParkCall.gd via
 # Dialogue.get_pages(..., fmt).
 #
-# Plays once, on the walk home from school or work, on a later day than the
-# work-disruption call where the player stole the robot chest. She calls,
+# Plays once, on the walk home from the first school or work run, after the
+# work-disruption call where the player stole the robot chest, on which the
+# player steals something (nanobots or scrap) - see Main._maybe_show_park_call. She calls,
 # admits she can still track the player's phone, warns that patrol drones route
 # through the park, and pushes the player to connect the chest to her head.
 # The patrol-drone encounter can't happen until this call has played (see
@@ -296,55 +334,53 @@ You: We'll worry about that later.
 #
 # Plays: [call] + ([chest.unattached] or [chest.attached]) + [closing].
 # The line containing \"buzzes\" loops the ringtone (ParkCall.PHONE_RING_CUE).
+# The line containing \"up at the sky\" cuts to park_sky (the bird, phone hidden),
+# and the next line cuts back to the park with the phone back up
+# (ParkCall.PARK_SKY_CUE). Keep that phrase if you reword it.
 
 [call]
 [i]You cut through the park on the walk home from {place}. It's quiet out here.[/i]
 Your phone buzzes in your pocket. Unknown number again.
-Thoughts: Of course it's her.
 You answer the call.
 You: …Hello?
-Her: You're in the park.
-You: How do you know that? I turned my GPS off.
+Her: I hope you're enjoying your little walk through the park.
+You: What? How do you know where I am? I turned my GPS off.
+You double-check and confirm that your location is still hidden.
 Her: You turned the GPS off. Not the phone.
-Her: I can still find you through it. Cell towers, wifi, all the little apps you never close.
-Her: It's even easier while we're on a call together. You're practically shouting where you are.
-Thoughts: That's… not comforting.
-You: So if I hang up…
-Her: Then it's harder. Not impossible.
-Thoughts: Great.
-You: What do you want?
+Her: I can still find you through it. Cell towers, wifi.
+Her: You were easier to find than I thought you'd be.
+Thoughts: That's comforting...
+You: Should I hang up?
+Her: That'd only make tracking you slightly harder. 
+Her: Plus, as far as I know, a phone call isn't illegal.
+You: You'd be surprised what's illegal nowadays.
 Her: I can see the patrol drones' routes from here. A few of them pass right through this park.
-[i]You glance up at the sky above the trees. Nothing yet.[/i]
-Her: So watch out for them around here. Especially when you're carrying something you shouldn't be.
-You: Like a stolen robot chest?
-Her: Exactly like that.
+[i]You glance up at the sky above the trees. Nothing yet, just a bird.[/i]
+Her: So watch out for them around here in the mornings. [color=#df7f7f]Especially when you're carrying something you shouldn't be.[/color]
+You: Good thing I'm not carrying anything illegal...
+Her: Right.
 
 [chest.unattached]
-Her: Speaking of which… you still haven't put it on me.
-You: I've been a little busy, getting you parts and not getting arrested.
-Her: There's an app on your laptop that can connect the chest to my head.
-Her: It does the hard part. You just have to open it.
+Her: Hey listen… you still haven't attached me to the chest you stole...
+You: I've been a little busy, you know. Getting you parts, not getting arrested.
+Her: There's an app on your laptop that can help connect the chest to my head.
+Her: It'll do the hard part for you.
 You: Why the rush?
 Her: Do you know what it's like being just a head?
-Her: No neck. No shoulders. Nothing to hold me up. I just sit wherever you leave me.
-Her: It's uncomfortable. All the time.
+She raises her voice.
+Her: So-rry, Mr. Head-and-shoulders! Forgive me for wanting a body!
+You:...
+Her: It's uncomfortable. All the time. Being stuck in this stupid backpack.
 Thoughts: I never really thought about it like that.
 Her: A chest is a start. Please, {player_name}.
-You: …I'll think about it.
-Her: That means yes.
+You: …I'll see what I can do.
 
 [chest.attached]
-Her: Speaking of which… thank you. For putting it on me.
-Her: You don't know what it's like being just a head. No neck. Nothing to hold me up.
-Her: It was uncomfortable. All the time.
-Thoughts: I never really thought about it like that.
-You: Don't get used to me doing favours.
-Her: Too late.
+Her: Get home soon.
 
 [closing]
 [i]She hangs up before you can say anything else.[/i]
-Thoughts: I should get out of this park before a drone shows up.
-",
+Thoughts: I'm risking a lot for her...",
 "school": "# =============================================================================
 # School dialogue file.
 #
@@ -496,9 +532,9 @@ What event originally started the first Automaton War?
 What Caused The First Automaton War?
 
 [history.automaton_war.choices]
-* A military automaton refused an order
-Factory automatons demanded payment
-A household unit refused shutdown
+* A pleasure automaton installed with incorrect software
+Factory automatons demanding better conditions
+A household unit defended itself from its abusive owner
 
 [history.automaton_war.feedback]
 You: A pleasure automaton was given the wrong personality mode. It was able to bypass normal restrictions that usually kept their personalitys in check.

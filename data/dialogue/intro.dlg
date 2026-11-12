@@ -145,8 +145,28 @@ Thoughts: I'll definitely have to keep her in the house- but I can't keep her in
 You let out a sigh.
 You: Alright. I guess you're coming with me.
 Her: I am?
-You: I can’t hide you anywhere else.
-Her: I understand.
+You: I can’t hide you anywhere else...
+
+# The drone reveal (see DroneRevealCutscene). The player lifts her up in front of
+# the shed window (head_up) and says a few words before leaving...
+[robot_first_talk_lift]
+You: Alright. Up you go.
+You: Stay quiet until we're inside, okay?
+Thoughts: ...Wait. What's that behind her?
+
+# ...lowers her head, revealing the patrol drone at the window as it draws its
+# guns. Clicking past this line slams the emergency button.
+[robot_first_talk_drone]
+You: Shit!
+
+# The rest of the night, after the drone has been zapped away (the view eases back
+# down to her face).
+[robot_first_talk_outro]
+Her: What was that?
+You: A patrol drone. That the generator's emergency shut-off button. 
+You: It fries anything that gets too close to the window.
+Her: I don't want to stay in this shed anymore...
+You: Then let's go.
 
 [free_reign]
 Thoughts: Stress Tests are now more difficult.

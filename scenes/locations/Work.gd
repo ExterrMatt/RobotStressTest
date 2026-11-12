@@ -42,6 +42,18 @@ const WORK_TABLE_SHEET_JSON_PATH: String = "res://assets/textures/backgrounds/wo
 const WORK_TABLE_BACKGROUND_LAYER: String = "Background"
 ## Drawn over the table in this order (shadow under the chest).
 const WORK_TABLE_CHEST_LAYERS: Array[String] = ["shadow", "chest"]
+## The player's phone (PhoneOverlay) is held up in the corner of the table view
+## from the moment they answer: front-side by default, turned over for the flash.
+## Lower-cased fragment of the disruption line where the player answers the call
+## ("You: Hello?"): the phone comes up, front-side. Hidden before that.
+const PHONE_ANSWER_CUE: String = "hello?"
+## Lower-cased fragment of the disruption line where the player turns the phone
+## over and finds the flash on: show the lit back.
+const PHONE_FLASH_ON_CUE: String = "turn the phone over"
+## Lower-cased fragment of the line where the flash goes off: swap to the unlit
+## back, which stays up until the player looks up at the camera (CAMERA_ABOVE_CUE).
+## Looking back down (LOOK_BACK_DOWN_CUE) brings the phone back front-side.
+const PHONE_FLASH_OFF_CUE: String = "flash suddenly turns off"
 ## Shown (same 500x125 footprint) while the player looks up at the robot's camera
 ## and the ceiling lights flash blue — see CAMERA_ABOVE_CUE — until they look back
 ## down to pack the chest (WORK_CHEST_PACKED_CUE).
@@ -132,6 +144,8 @@ var _arm_minigame: WorkArmMinigame = null
 ## the pages driving that call (so a page index maps back to its text).
 var _work_chest_overlay: Control = null
 var _work_disruption_pages: Array = []
+## The phone (and its lit-flash variant) over the work table during the call.
+var _work_phone_overlay: PhoneOverlay = null
 ## Metal-footsteps player for the intro hallway walk (cut on the box-trip line).
 var _footsteps_player: AudioStreamPlayer = null
 ## Fluorescent-light buzz layered under the shift (same sound as Ed's shop).
@@ -172,7 +186,13 @@ func _ready() -> void:
 
 	# A normal shift randomly runs either the shape-sorting minigame or the
 	# upper-arm assembly minigame. The intro shift always uses the shapes.
-	_arm_variant = randi() % 2 == 0
+	# Until the upper-arm shift's story call (the chest steal) has played, the
+	# arm shift comes up 50/50 on the first shift and for certain on the next
+	# (GameState.roll_story_beat), so bad luck can't stall the story.
+	if GameState.intro_completed and not GameState.robot_work_disruption_seen:
+		_arm_variant = GameState.roll_story_beat("work")
+	else:
+		_arm_variant = randi() % 2 == 0
 	_show_work_minigame()
 
 
@@ -424,6 +444,14 @@ func _on_dialogue_page_advanced(index: int) -> void:
 			# Loop the ringtone while the "phone buzzing in your pocket" line is
 			# up; any other line ends the loop (the current ring pass rings out).
 			_update_phone_ring(text)
+			# The player answers: the phone comes up, front-side.
+			if lower.contains(PHONE_ANSWER_CUE):
+				_show_work_phone(PhoneOverlay.View.FRONT)
+			# The player turns the phone over and finds the flash on, then it goes off.
+			if lower.contains(PHONE_FLASH_ON_CUE):
+				_show_work_phone(PhoneOverlay.View.FLASH)
+			if lower.contains(PHONE_FLASH_OFF_CUE):
+				_show_work_phone(PhoneOverlay.View.BACK)
 			# Look up at the robot's camera: the ceiling lights flash blue.
 			if lower.contains(CAMERA_ABOVE_CUE):
 				_look_up_at_camera()
@@ -490,6 +518,11 @@ func _enter_completion_screen() -> void:
 	if _is_intro_work_scene():
 		_intro_work = true
 		_enter_intro_head_box()
+		return
+	# The scrap steal isn't on offer until the chest-steal dialogue has played,
+	# so before then the shift just ends without the steal-or-finish screen.
+	if not GameState.has_stolen_robot_chest():
+		_finish_work(false)
 		return
 
 	_disable_work_hud_timer()
@@ -573,8 +606,9 @@ func _apply_work_disruption_screen() -> void:
 	if main and main.has_method("_apply_scene_presentation_mode"):
 		main._apply_scene_presentation_mode()
 
-	# Draw the chest on the table; it stays until the player pockets it.
-	_show_work_chest_overlay()
+	# Draw the chest on the table (it stays until the player pockets it), with the
+	# phone layered above it, hidden until the player turns it over.
+	_show_work_table_overlay()
 
 	_set_node_visible(choice_grid, false)
 	_set_node_visible(dialogue_box, true)
@@ -596,34 +630,64 @@ func _show_work_table() -> void:
 	)
 
 
-## Shows the chest (and its shadow) as a full-frame overlay over the work table
-## (every sheet layer is 500x125, so it lines up exactly with the background).
-func _show_work_chest_overlay() -> void:
+## Shows the work-table props as one full-frame overlay (Main holds a single scene
+## overlay at a time). Every sheet layer is 500x125, so they line up exactly with
+## the background. Two groups inside it, toggled separately: the chest (+ shadow),
+## visible until the player pockets it, and the phone, hidden until the player
+## answers (PHONE_ANSWER_CUE).
+func _show_work_table_overlay() -> void:
 	var main: Node = get_tree().current_scene
 	if main == null or not main.has_method("show_scene_overlay"):
 		return
-	_work_chest_overlay = Control.new()
-	_work_chest_overlay.name = "WorkChestOverlay"
-	_work_chest_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var root := _new_full_rect_control("WorkTableOverlay")
+	_work_chest_overlay = _new_full_rect_control("Chest")
+	root.add_child(_work_chest_overlay)
 	for layer in WORK_TABLE_CHEST_LAYERS:
-		var texture := _work_table_layer(layer)
-		if texture == null:
-			continue
-		var rect := TextureRect.new()
-		rect.name = layer.capitalize()
-		rect.texture = texture
-		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		rect.stretch_mode = TextureRect.STRETCH_SCALE
-		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-		_work_chest_overlay.add_child(rect)
-	main.show_scene_overlay(_work_chest_overlay)
+		_add_work_table_layer_rect(_work_chest_overlay, layer)
+	_work_phone_overlay = PhoneOverlay.new()
+	root.add_child(_work_phone_overlay)
+	main.show_scene_overlay(root)
+
+
+func _new_full_rect_control(node_name: String) -> Control:
+	var control := Control.new()
+	control.name = node_name
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	control.set_anchors_preset(Control.PRESET_FULL_RECT)
+	return control
+
+
+## Adds one work-table sheet layer to `parent` as a full-frame TextureRect.
+func _add_work_table_layer_rect(parent: Control, layer: String) -> TextureRect:
+	var texture := _work_table_layer(layer)
+	if texture == null:
+		return null
+	var rect := TextureRect.new()
+	rect.name = layer.capitalize()
+	rect.texture = texture
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(rect)
+	return rect
 
 
 func _hide_work_chest_overlay() -> void:
 	if _work_chest_overlay != null and is_instance_valid(_work_chest_overlay):
 		_work_chest_overlay.visible = false
+
+
+## Shows the phone over the table as `view` (front, back, or back with flash).
+func _show_work_phone(view: PhoneOverlay.View) -> void:
+	if _work_phone_overlay != null and is_instance_valid(_work_phone_overlay):
+		_work_phone_overlay.show_view(view)
+
+
+func _hide_work_phone() -> void:
+	if _work_phone_overlay != null and is_instance_valid(_work_phone_overlay):
+		_work_phone_overlay.hide_phone()
 
 
 ## The player looks up at the robot's ceiling camera: show the blue factory-lights
@@ -636,14 +700,17 @@ func _look_up_at_camera() -> void:
 		WORK_DISRUPTION_FRAME_SIZE.x
 	)
 	_hide_work_chest_overlay()
+	_hide_work_phone()
 
 
 ## Look back down at the work table (restores the disruption background) with the
-## chest still on it — the player hasn't pocketed it yet.
+## chest still on it — the player hasn't pocketed it yet — and the phone back up,
+## front-side again.
 func _look_back_down_from_camera() -> void:
 	_show_work_table()
 	if _work_chest_overlay != null and is_instance_valid(_work_chest_overlay):
 		_work_chest_overlay.visible = true
+	_show_work_phone(PhoneOverlay.View.FRONT)
 
 
 func _start_hallway_footsteps() -> void:

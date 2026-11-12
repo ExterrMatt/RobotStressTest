@@ -10,8 +10,6 @@ signal back_requested
 ## A different category was picked (the desktop keeps these for its BACK button).
 signal category_changed(category: String)
 
-const GlowingLabelScript: GDScript = preload("res://scenes/ui/GlowingLabel.gd")
-
 const CATEGORIES: Array = [
 	{"id": "display", "name": "DISPLAY", "desc": "window, brightness and scanlines. changes apply instantly."},
 	{"id": "audio", "name": "AUDIO", "desc": "master and music volume. changes apply instantly."},
@@ -42,7 +40,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	if _category_info(category).is_empty():
-		category = String(CATEGORIES[0]["id"])
+		category = String(_categories()[0]["id"])
 
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 5)
@@ -84,7 +82,49 @@ func _ready() -> void:
 	_hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	inner.add_child(_hint)
 
+	var footer := _build_footer()
+	if footer != null:
+		col.add_child(footer)
+
 	_show_category(category)
+
+
+# --- what a variant of this screen (the pause menu) changes ---
+
+## The categories offered, in tab order (entries of CATEGORIES).
+func _categories() -> Array:
+	return CATEGORIES
+
+
+func _title_text() -> String:
+	return "SETTINGS"
+
+
+## The small dim tag at the right of the header.
+func _tag_text() -> String:
+	return "CFG.SYS"
+
+
+## Whether the DEBUG MODE row is shown even before debug has ever been switched on (only
+## the main menu's settings). Elsewhere it appears once GameState.debug_unlocked, and then
+## stays, toggling both ways - but a game started without debug never gets it.
+func _debug_toggle_always_offered() -> bool:
+	return false
+
+
+## Extra buttons under the category tabs (the main menu's RESET). None here.
+func _add_extra_tabs(_col: VBoxContainer) -> void:
+	pass
+
+
+## Fills the rows for a page that isn't one of the standard categories.
+func _build_extra_category(_id: String) -> void:
+	pass
+
+
+## An optional strip under the tabs and rows (null for none).
+func _build_footer() -> Control:
+	return null
 
 
 ## The name slot up top, like the maintenance app's: back button, title, and the section.
@@ -98,22 +138,13 @@ func _build_header() -> Control:
 	back.pressed.connect(func() -> void: back_requested.emit())
 	row.add_child(back)
 
-	var title := Label.new()
-	title.set_script(GlowingLabelScript)
-	title.text = "SETTINGS"
-	title.add_theme_font_size_override("font_size", 16)
-	title.add_theme_color_override("font_color", LaptopUI.GREEN)
-	title.set("glow_color", Color(0.15, 1.0, 0.35, 1.0))
-	title.set("glow_radius_px", 20.0)
-	title.set("glow_strength", 1.4)
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(title)
+	row.add_child(LaptopUI.glow_title(_title_text()))
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(spacer)
-	var tag := LaptopUI.label("CFG.SYS", 9, LaptopUI.DIM)
+	var tag := LaptopUI.label(_tag_text(), 9, LaptopUI.DIM)
 	tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(tag)
 	return box
@@ -124,7 +155,7 @@ func _build_tabs() -> Control:
 	col.custom_minimum_size = Vector2(TAB_WIDTH, 0)
 	col.add_theme_constant_override("separation", 3)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for cat in CATEGORIES:
+	for cat in _categories():
 		var id := String(cat["id"])
 		var tab := Button.new()
 		tab.text = String(cat["name"])
@@ -135,6 +166,7 @@ func _build_tabs() -> Control:
 		tab.pressed.connect(_on_tab_pressed.bind(id))
 		col.add_child(tab)
 		_tabs[id] = tab
+	_add_extra_tabs(col)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -182,6 +214,7 @@ func _show_category(id: String) -> void:
 		_rows.remove_child(child)
 		child.queue_free()
 	_section_title.text = "// " + String(_category_info(id).get("name", ""))
+	_section_title.add_theme_color_override("font_color", LaptopUI.GREEN)
 	_set_hint("")
 	match id:
 		"display":
@@ -208,21 +241,18 @@ func _show_category(id: String) -> void:
 			_add_toggle_row("EASY WORKSHOP", GameState.easy_workshop_enabled,
 					func(on: bool) -> void: GameState.easy_workshop_enabled = on,
 					"the workshop flashes where each piece goes")
-			# Like the pause menu: only offered while debug is on, so it can be turned off
-			# but never on from here.
-			if GameState.debug_mode_enabled:
-				_add_toggle_row("DEBUG MODE", true, _on_debug_toggled, "turn off debug mode (can't be turned back on here)")
+			# Always on the main menu; anywhere else only once debug has been switched on
+			# (from the main menu) - then it stays, both ways.
+			if _debug_toggle_always_offered() or GameState.debug_unlocked:
+				_add_toggle_row("DEBUG MODE", GameState.debug_mode_enabled,
+						func(on: bool) -> void: GameState.debug_mode_enabled = on,
+						"debug shortcuts, cheats and the endless mode")
 		"profile":
 			_build_profile()
 		"system":
 			_build_system()
-
-
-func _on_debug_toggled(on: bool) -> void:
-	GameState.debug_mode_enabled = on
-	if not on:
-		# The row goes once debug is off.
-		_show_category.call_deferred("gameplay")
+		_:
+			_build_extra_category(id)
 
 
 func _set_hint(desc: String) -> void:
@@ -232,7 +262,7 @@ func _set_hint(desc: String) -> void:
 
 
 func _category_info(id: String) -> Dictionary:
-	for cat in CATEGORIES:
+	for cat in _categories():
 		if String(cat["id"]) == id:
 			return cat
 	return {}
@@ -487,8 +517,12 @@ class ToggleSwitch extends Button:
 
 	var _knob: float = 0.0
 
-	func _ready() -> void:
+	func _init() -> void:
+		# Must be a toggle before anyone sets button_pressed: a Button that isn't one yet
+		# silently drops it, which drew every ON setting as OFF.
 		toggle_mode = true
+
+	func _ready() -> void:
 		focus_mode = Control.FOCUS_NONE
 		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		var empty := StyleBoxEmpty.new()

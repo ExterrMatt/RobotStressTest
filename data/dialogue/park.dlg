@@ -3,8 +3,9 @@
 # Placeholders {place} {player_name} are filled in by ParkCall.gd via
 # Dialogue.get_pages(..., fmt).
 #
-# Plays once, on the walk home from school or work, on a later day than the
-# work-disruption call where the player stole the robot chest. She calls,
+# Plays once, on the walk home from the first school or work run, after the
+# work-disruption call where the player stole the robot chest, on which the
+# player steals something (nanobots or scrap) - see Main._maybe_show_park_call. She calls,
 # admits she can still track the player's phone, warns that patrol drones route
 # through the park, and pushes the player to connect the chest to her head.
 # The patrol-drone encounter can't happen until this call has played (see
@@ -12,51 +13,50 @@
 #
 # Plays: [call] + ([chest.unattached] or [chest.attached]) + [closing].
 # The line containing "buzzes" loops the ringtone (ParkCall.PHONE_RING_CUE).
+# The line containing "up at the sky" cuts to park_sky (the bird, phone hidden),
+# and the next line cuts back to the park with the phone back up
+# (ParkCall.PARK_SKY_CUE). Keep that phrase if you reword it.
 
 [call]
 [i]You cut through the park on the walk home from {place}. It's quiet out here.[/i]
 Your phone buzzes in your pocket. Unknown number again.
-Thoughts: Of course it's her.
 You answer the call.
 You: …Hello?
-Her: You're in the park.
-You: How do you know that? I turned my GPS off.
+Her: I hope you're enjoying your little walk through the park.
+You: What? How do you know where I am? I turned my GPS off.
+You double-check and confirm that your location is still hidden.
 Her: You turned the GPS off. Not the phone.
-Her: I can still find you through it. Cell towers, wifi, all the little apps you never close.
-Her: It's even easier while we're on a call together. You're practically shouting where you are.
-Thoughts: That's… not comforting.
-You: So if I hang up…
-Her: Then it's harder. Not impossible.
-Thoughts: Great.
-You: What do you want?
+Her: I can still find you through it. Cell towers, wifi.
+Her: You were easier to find than I thought you'd be.
+Thoughts: That's comforting...
+You: Should I hang up?
+Her: That'd only make tracking you slightly harder. 
+Her: Plus, as far as I know, a phone call isn't illegal.
+You: You'd be surprised what's illegal nowadays.
 Her: I can see the patrol drones' routes from here. A few of them pass right through this park.
-[i]You glance up at the sky above the trees. Nothing yet.[/i]
-Her: So watch out for them around here. Especially when you're carrying something you shouldn't be.
-You: Like a stolen robot chest?
-Her: Exactly like that.
+[i]You glance up at the sky above the trees. Nothing yet, just a bird.[/i]
+Her: So watch out for them around here in the mornings. [color=#df7f7f]Especially when you're carrying something you shouldn't be.[/color]
+You: Good thing I'm not carrying anything illegal...
+Her: Right.
 
 [chest.unattached]
-Her: Speaking of which… you still haven't put it on me.
-You: I've been a little busy, getting you parts and not getting arrested.
-Her: There's an app on your laptop that can connect the chest to my head.
-Her: It does the hard part. You just have to open it.
+Her: Hey listen… you still haven't attached me to the chest you stole...
+You: I've been a little busy, you know. Getting you parts, not getting arrested.
+Her: There's an app on your laptop that can help connect the chest to my head.
+Her: It'll do the hard part for you.
 You: Why the rush?
 Her: Do you know what it's like being just a head?
-Her: No neck. No shoulders. Nothing to hold me up. I just sit wherever you leave me.
-Her: It's uncomfortable. All the time.
+She raises her voice.
+Her: So-rry, Mr. Head-and-shoulders! Forgive me for wanting a body!
+You:...
+Her: It's uncomfortable. All the time. Being stuck in this stupid backpack.
 Thoughts: I never really thought about it like that.
 Her: A chest is a start. Please, {player_name}.
-You: …I'll think about it.
-Her: That means yes.
+You: …I'll see what I can do.
 
 [chest.attached]
-Her: Speaking of which… thank you. For putting it on me.
-Her: You don't know what it's like being just a head. No neck. Nothing to hold me up.
-Her: It was uncomfortable. All the time.
-Thoughts: I never really thought about it like that.
-You: Don't get used to me doing favours.
-Her: Too late.
+Her: Get home soon.
 
 [closing]
 [i]She hangs up before you can say anything else.[/i]
-Thoughts: I should get out of this park before a drone shows up.
+Thoughts: I'm risking a lot for her...

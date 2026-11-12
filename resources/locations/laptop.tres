@@ -10,5 +10,5 @@ description = "Scan limbs and prepare them for assembly."
 allowed_phases = [1]
 scene_path = "res://scenes/locations/Laptop.tscn"
 fullscreen_scene = true
-free_action = true
-consequence_text = "Check parts and prep limbs. Costs nothing."
+free_action = false
+consequence_text = "Check parts and prep limbs."

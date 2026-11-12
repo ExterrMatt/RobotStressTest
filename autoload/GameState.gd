@@ -152,20 +152,24 @@ var drone_encounter_seen: bool = false
 ## (the robot phones during class) is shown the first time the player goes to
 ## class after the intro ends; every class after that is a normal random lesson.
 var robot_class_disruption_seen: bool = false
+## How many post-intro school / work visits have rolled for their story beat (the
+## class-disruption lesson / the upper-arm shift whose call steals the chest)
+## while it was still unseen. See roll_story_beat().
+var class_disruption_attempts: int = 0
+var work_disruption_attempts: int = 0
 ## True once the scripted work-disruption call has played. The robot phones the
 ## first time the player finishes the upper-arm assembly minigame after the intro
 ## and talks them into pocketing the chest; that shift skips the usual scrap steal.
 var robot_work_disruption_seen: bool = false
-## The day the work-disruption call played (0 = never). The park call waits for a
-## later day than this.
+## The day the work-disruption call played (0 = never).
 var robot_work_disruption_day: int = 0
-## True once the robot's park phone call has played (the first walk home from school
-## or work on a day after the work-disruption call). The patrol-drone encounter
-## can't happen until it has.
+## True once the robot's park phone call has played (the walk home from the first
+## school/work steal after the chest steal). The patrol-drone encounter can't
+## happen until it has.
 var robot_park_call_seen: bool = false
-## True once the player has brought home the robot chest pocketed during the
-## work-disruption shift. Maintenance stays locked on the location screen (outside
-## debug mode) until then, and its first-visit cutscene waits for it too.
+## True once the player has played through the work-disruption shift's chest-steal
+## dialogue to the end (see has_stolen_robot_chest). Set by that dialogue, NOT by
+## owning a chest - a chest crafted some other way must not open any of this.
 var maintenance_unlocked: bool = false
 ## True once the one-time cutscene before the first Maintenance visit (sneaking into
 ## the uncle's factory) has played.
@@ -243,10 +247,39 @@ var scanlines_enabled: bool:
 var debug_mode_enabled: bool:
 	get: return _debug_mode_enabled
 	set(value):
+		if value:
+			debug_unlocked = true
 		if value == _debug_mode_enabled:
 			return
 		_debug_mode_enabled = value
 		debug_mode_changed.emit(_debug_mode_enabled)
+
+## True once debug mode has been switched on (which can only start from the main menu).
+## From then on every settings screen offers the DEBUG MODE toggle both ways; until then
+## only the main menu's settings do, so cheats can't be turned on mid-game.
+var debug_unlocked: bool = false
+
+## Skip cheat, toggled by typing Up Up Down Down Left Right Left Right B A Enter
+## anywhere. NOT debug mode: it only borrows debug's held-Enter speedrun (dialogue
+## hold-skip with Shift/Ctrl to go faster, plus every scene's held-Enter auto-play
+## all the way through the intro stress test) and the 6 key's auto-solve. Every
+## other debug feature stays off. Session-only - never saved, survives New Game.
+var skip_cheat_enabled: bool = false
+const SKIP_CHEAT_SEQUENCE: Array[Key] = [
+	KEY_UP, KEY_UP, KEY_DOWN, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_LEFT, KEY_RIGHT,
+	KEY_B, KEY_A, KEY_ENTER,
+]
+var _skip_cheat_recent_keys: Array[Key] = []
+## Frame on which the sequence's final Enter landed, so _input can swallow that
+## press before it also clicks a menu button / advances dialogue.
+var _skip_cheat_swallow_frame: int = -1
+
+
+## The held-Enter speedrun (dialogue hold-skip and scenes auto-playing while Enter
+## is held) runs in debug mode or with the skip cheat on.
+func enter_speedrun_allowed() -> bool:
+	return _debug_mode_enabled or skip_cheat_enabled
+
 
 ## Easy Workshop Mode: when on, the workshop flashes a hint showing where each
 ## piece belongs. Off by default; the player can turn it on in Settings, or via
@@ -378,8 +411,13 @@ var ingredients: Dictionary = {
 # --- unlocked skills (string IDs from design doc) ---
 var skills: Array[String] = []
 
-# --- tools owned (default tools: mouth + hand are always available) ---
-var owned_tools: Array[String] = ["mouth", "hand"]
+# --- tools owned ---
+## What every new game starts with: mouth + hand (always available, never shown in the
+## inventory) and the beat-up laptop. The good laptop ("good_laptop") is the upgrade.
+const DEFAULT_TOOLS: Array[String] = ["mouth", "hand", "bad_laptop"]
+## The two laptops; a save that owns neither (from before they existed) gets the bad one.
+const LAPTOP_TOOL_IDS: Array[String] = ["bad_laptop", "good_laptop"]
+var owned_tools: Array[String] = DEFAULT_TOOLS.duplicate()
 
 # --- stackable tool quantities ---
 ## How many of each tool the player owns. Most tools are one-time unlocks and
@@ -430,6 +468,50 @@ func _ready() -> void:
 	# Emit initial values so any listeners attached at startup get a value.
 	# Deferred so listeners in other autoloads / Main have time to connect.
 	call_deferred("_emit_initial_state")
+	# Watch keys at the window level, ahead of every node's _input, so no scene or
+	# focused control can eat part of the skip-cheat sequence.
+	get_tree().root.window_input.connect(_on_window_input_for_skip_cheat)
+
+
+func _on_window_input_for_skip_cheat(event: InputEvent) -> void:
+	if not (event is InputEventKey):
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	var keycode: Key = key_event.keycode
+	match keycode:
+		KEY_SHIFT, KEY_CTRL, KEY_ALT, KEY_META:
+			return  # Modifiers don't break the sequence.
+		KEY_KP_ENTER:
+			keycode = KEY_ENTER
+	_skip_cheat_recent_keys.append(keycode)
+	while _skip_cheat_recent_keys.size() > SKIP_CHEAT_SEQUENCE.size():
+		_skip_cheat_recent_keys.pop_front()
+	if _skip_cheat_recent_keys != SKIP_CHEAT_SEQUENCE:
+		return
+	_skip_cheat_recent_keys.clear()
+	_skip_cheat_swallow_frame = Engine.get_process_frames()
+	skip_cheat_enabled = not skip_cheat_enabled
+	var ui_sound: GDScript = load("res://scenes/ui/UiSound.gd")
+	if skip_cheat_enabled:
+		ui_sound.play_scene_select(self)
+	else:
+		ui_sound.play_inaccessible_button(self)
+
+
+## Swallow the Enter that completed the skip cheat so it doesn't also act as a
+## normal Enter (GameState is an early autoload, so this runs after scene _input
+## handlers but still ahead of GUI and _unhandled_input).
+func _input(event: InputEvent) -> void:
+	if _skip_cheat_swallow_frame < 0 or not (event is InputEventKey):
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or (key_event.keycode != KEY_ENTER and key_event.keycode != KEY_KP_ENTER):
+		return
+	if Engine.get_process_frames() == _skip_cheat_swallow_frame:
+		get_viewport().set_input_as_handled()
+	_skip_cheat_swallow_frame = -1
 
 
 ## Push the current volume onto the master audio bus. 0% fully mutes the bus;
@@ -485,11 +567,12 @@ func reset_for_new_game() -> void:
 	for id in ingredients.keys():
 		ingredients[id] = 0
 	skills.clear()
-	owned_tools = ["mouth", "hand"]
+	owned_tools = DEFAULT_TOOLS.duplicate()
 	tool_counts.clear()
 	purchased_today.clear()
 	prepared_limbs.clear()
 	unlocked_segments.clear()
+	maintenance_unlocked_parts.clear()
 	arm_lock_open = false
 	torso_socket_lock_open = false
 	arm_connected = false
@@ -502,6 +585,8 @@ func reset_for_new_game() -> void:
 	uncle_hangout_seen = false
 	drone_encounter_seen = false
 	robot_class_disruption_seen = false
+	class_disruption_attempts = 0
+	work_disruption_attempts = 0
 	robot_work_disruption_seen = false
 	robot_work_disruption_day = 0
 	robot_park_call_seen = false
@@ -514,6 +599,30 @@ func reset_for_new_game() -> void:
 
 
 # --- money ---
+
+## Story-beat odds for a school / work visit whose beat hasn't played yet: the
+## first visit is a coin flip, every visit after that is guaranteed, so bad luck
+## can never hold the story up. `beat` is "class" (the class-disruption lesson) or
+## "work" (the upper-arm shift that leads into the chest-steal call). Counts the
+## attempt; the caller only asks while the beat is still unseen.
+func roll_story_beat(beat: String) -> bool:
+	var attempts: int = class_disruption_attempts if beat == "class" else work_disruption_attempts
+	var hit := attempts > 0 or randf() < 0.5
+	if beat == "class":
+		class_disruption_attempts += 1
+	else:
+		work_disruption_attempts += 1
+	return hit
+
+
+## True once the chest-steal dialogue (the robot's work-disruption call) has been
+## played through. Story beats that wait on it: the Maintenance option, the park
+## warning call (and so the patrol drone after it), and the nanobot steal at
+## school / scrap steal at work. Deliberately a dialogue flag, not an inventory
+## check: a chest could in principle be built before that dialogue is seen.
+func has_stolen_robot_chest() -> bool:
+	return maintenance_unlocked
+
 
 func add_money(amount: int) -> void:
 	money = _money + amount
@@ -853,6 +962,7 @@ func set_all_robot_parts(amount: int) -> void:
 func _robot_parts_updated() -> void:
 	_keep_head_on()
 	_sync_legacy_limb_count()
+	_update_maintenance_part_unlocks()
 	robot_parts_changed.emit(robot_parts.duplicate())
 
 
@@ -883,6 +993,51 @@ func _grant_torso_cosmetics() -> void:
 			changed = true
 	if changed:
 		cosmetic_items_changed.emit(cosmetic_items.duplicate())
+
+
+# --- maintenance app part unlocks ---
+
+## Having a whole part (in the inventory or on her - not part-built; the chest only once it's
+## on her, see MAINTENANCE_UNLOCK_ON_PLACING) permanently opens these parts' pages in the laptop's MAINTENANCE app, even if that part is later lost. The head
+## and chest pages are always open (LaptopScreen.ASSEMBLY_LAPTOP_ENABLED).
+const MAINTENANCE_PART_UNLOCKS: Dictionary = {
+	"chest": ["stomach", "arm"],
+	"arm": ["hand"],
+	"stomach": ["leg"],
+}
+## Triggers that only count once placed on her, not just owned: the stomach and arm pages
+## open the first time a chest goes on her in maintenance. Every other trigger counts a
+## whole part in the inventory too.
+const MAINTENANCE_UNLOCK_ON_PLACING: Array[String] = ["chest"]
+## Parts whose MAINTENANCE page has been permanently opened (see MAINTENANCE_PART_UNLOCKS).
+var maintenance_unlocked_parts: Array[String] = []
+
+
+## Whether the player has part `id` at all: in the inventory, or on her whole or part-built.
+func has_part_anywhere(id: String) -> bool:
+	if get_owned_part_count(id) > 0:
+		return true
+	for side in PART_SIDES:
+		if not get_limb_segments(id, side).is_empty():
+			return true
+	return false
+
+
+## Whether part `id`'s MAINTENANCE page has been permanently opened.
+func is_maintenance_part_unlocked(id: String) -> bool:
+	return maintenance_unlocked_parts.has(id)
+
+
+## Opens the MAINTENANCE pages that the parts the player has now unlock (never closes any).
+## Only a whole part counts - a limb still part-built on her doesn't open anything yet.
+func _update_maintenance_part_unlocks() -> void:
+	for trigger in MAINTENANCE_PART_UNLOCKS:
+		var have := get_attached_part_count(String(trigger)) 				if MAINTENANCE_UNLOCK_ON_PLACING.has(String(trigger)) 				else get_owned_part_count(String(trigger))
+		if have < 1:
+			continue
+		for id in MAINTENANCE_PART_UNLOCKS[trigger]:
+			if not maintenance_unlocked_parts.has(String(id)):
+				maintenance_unlocked_parts.append(String(id))
 
 
 # --- cosmetic chest items ---
@@ -1399,6 +1554,79 @@ func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 
+## Every save file on disk (SAVE_PATH, plus any "savegame_*.json" slots beside it), sorted
+## by path. Each entry: {path, name ("SAVE 1", ...), summary ("DAY 3 · NIGHT · NOAH", or
+## "UNREADABLE")}.
+func list_saves() -> Array[Dictionary]:
+	var paths: Array[String] = []
+	var dir := DirAccess.open(SAVE_PATH.get_base_dir())
+	if dir != null:
+		var prefix := SAVE_PATH.get_file().get_basename()
+		for file in dir.get_files():
+			if file.get_extension() == "json" and file.get_basename().begins_with(prefix):
+				paths.append(SAVE_PATH.get_base_dir().path_join(file))
+	paths.sort()
+	var saves: Array[Dictionary] = []
+	for i in paths.size():
+		saves.append({"path": paths[i], "name": "SAVE %d" % (i + 1), "summary": _save_summary(paths[i])})
+	return saves
+
+
+func _save_summary(path: String) -> String:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return "UNREADABLE"
+	var parsed = JSON.parse_string(f.get_as_text())
+	f.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return "UNREADABLE"
+	var data: Dictionary = parsed
+	var phase_names: Array[String] = ["MORNING", "EVENING", "NIGHT"]
+	var p := clampi(int(data.get("phase", 0)), 0, phase_names.size() - 1)
+	var summary := "DAY %d · %s" % [int(data.get("day", 1)), phase_names[p]]
+	var who := String(data.get("player_name", "")).strip_edges()
+	if who != "":
+		summary += " · " + who.to_upper()
+	return summary
+
+
+## Deletes one save file. Only paths list_saves() returns are accepted. True on success.
+func delete_save(path: String) -> bool:
+	if not list_saves().any(func(s: Dictionary) -> bool: return String(s["path"]) == path):
+		return false
+	return DirAccess.remove_absolute(ProjectSettings.globalize_path(path)) == OK
+
+
+## Puts every setting back to its default (debug off, and locked again).
+func reset_settings_to_defaults() -> void:
+	brightness_value = 50.0
+	volume_value = DEFAULT_VOLUME_VALUE
+	music_volume_value = DEFAULT_MUSIC_VOLUME_VALUE
+	scanlines_enabled = true
+	easy_workshop_enabled = false
+	window_mode = WindowMode.WINDOWED
+	camera_roll_enabled = true
+	camera_mouse_follow_enabled = true
+	debug_mode_enabled = false
+	debug_unlocked = false
+
+
+## The full wipe: every save file, the post-it note's writing, the current run, and every
+## setting. Returns true if every file that existed was deleted.
+func reset_all_data() -> bool:
+	var ok := true
+	for save in list_saves():
+		ok = delete_save(String(save["path"])) and ok
+	if FileAccess.file_exists(PostItNote.ink_save_path):
+		ok = DirAccess.remove_absolute(ProjectSettings.globalize_path(PostItNote.ink_save_path)) == OK and ok
+	reset_settings_to_defaults()
+	reset_for_new_game()
+	var day_cycle := get_node_or_null("/root/DayCycle")
+	if day_cycle != null and day_cycle.has_method("reset_for_new_game"):
+		day_cycle.reset_for_new_game()
+	return ok
+
+
 ## Loads and applies the saved snapshot. Returns true on success.
 func load_game() -> bool:
 	if not has_save():
@@ -1446,6 +1674,7 @@ func to_dict() -> Dictionary:
 		"purchased_today": purchased_today.duplicate(),
 		"prepared_limbs": prepared_limbs.duplicate(),
 		"unlocked_segments": unlocked_segments.duplicate(),
+		"maintenance_unlocked_parts": maintenance_unlocked_parts.duplicate(),
 		"arm_lock_open": arm_lock_open,
 		"torso_socket_lock_open": torso_socket_lock_open,
 		"arm_connected": arm_connected,
@@ -1457,6 +1686,8 @@ func to_dict() -> Dictionary:
 		"uncle_hangout_seen": uncle_hangout_seen,
 		"drone_encounter_seen": drone_encounter_seen,
 		"robot_class_disruption_seen": robot_class_disruption_seen,
+		"class_disruption_attempts": class_disruption_attempts,
+		"work_disruption_attempts": work_disruption_attempts,
 		"robot_work_disruption_seen": robot_work_disruption_seen,
 		"robot_work_disruption_day": robot_work_disruption_day,
 		"robot_park_call_seen": robot_park_call_seen,
@@ -1465,6 +1696,7 @@ func to_dict() -> Dictionary:
 		"drone_ever_caught": drone_ever_caught,
 		"drone_caught_last_inspection": drone_caught_last_inspection,
 		"debug_mode_enabled": _debug_mode_enabled,
+		"debug_unlocked": debug_unlocked,
 		"window_mode": _window_mode,
 		"volume_value": _volume_value,
 		"music_volume_value": _music_volume_value,
@@ -1583,8 +1815,11 @@ func from_dict(data: Dictionary) -> void:
 	var had_legacy_sneaky_shoes: bool = int(ingredients.get("sneaky_shoes", 0)) > 0
 	ingredients.erase("sneaky_shoes")
 	skills.assign(data.get("skills", []))
-	owned_tools.assign(data.get("owned_tools", ["mouth", "hand"]))
+	owned_tools.assign(data.get("owned_tools", DEFAULT_TOOLS))
 	_normalize_owned_tools()
+	# Saves from before the laptops existed own neither: they get the starting one.
+	if not owned_tools.any(func(id): return id in LAPTOP_TOOL_IDS):
+		owned_tools.append("bad_laptop")
 	tool_counts = _normalized_tool_counts(data.get("tool_counts", {}))
 	if had_legacy_sneaky_shoes:
 		unlock_tool("sneaky_shoes")
@@ -1600,6 +1835,12 @@ func from_dict(data: Dictionary) -> void:
 	for seg_key in data.get("unlocked_segments", []):
 		if not unlocked_segments.has(String(seg_key)):
 			unlocked_segments.append(String(seg_key))
+	maintenance_unlocked_parts.clear()
+	for part_id in data.get("maintenance_unlocked_parts", []):
+		if not maintenance_unlocked_parts.has(String(part_id)):
+			maintenance_unlocked_parts.append(String(part_id))
+	# Older saves (or parts already owned) open their pages straight away.
+	_update_maintenance_part_unlocks()
 	arm_lock_open = bool(data.get("arm_lock_open", false))
 	torso_socket_lock_open = bool(data.get("torso_socket_lock_open", false))
 	arm_connected = bool(data.get("arm_connected", false))
@@ -1611,6 +1852,8 @@ func from_dict(data: Dictionary) -> void:
 	uncle_hangout_seen = bool(data.get("uncle_hangout_seen", false))
 	drone_encounter_seen = bool(data.get("drone_encounter_seen", false))
 	robot_class_disruption_seen = bool(data.get("robot_class_disruption_seen", false))
+	class_disruption_attempts = int(data.get("class_disruption_attempts", 0))
+	work_disruption_attempts = int(data.get("work_disruption_attempts", 0))
 	robot_work_disruption_seen = bool(data.get("robot_work_disruption_seen", false))
 	robot_work_disruption_day = int(data.get("robot_work_disruption_day", 0))
 	robot_park_call_seen = bool(data.get("robot_park_call_seen", false))
@@ -1621,6 +1864,7 @@ func from_dict(data: Dictionary) -> void:
 	drone_ever_caught = bool(data.get("drone_ever_caught", false))
 	drone_caught_last_inspection = bool(data.get("drone_caught_last_inspection", false))
 	_debug_mode_enabled = bool(data.get("debug_mode_enabled", false))
+	debug_unlocked = bool(data.get("debug_unlocked", _debug_mode_enabled)) or _debug_mode_enabled
 	_window_mode = clampi(int(data.get("window_mode", WindowMode.WINDOWED)), WindowMode.WINDOWED, WindowMode.FULLSCREEN)
 	_volume_value = clampf(float(data.get("volume_value", DEFAULT_VOLUME_VALUE)), 0.0, 100.0)
 	_apply_volume()

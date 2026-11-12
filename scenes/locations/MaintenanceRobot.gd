@@ -18,8 +18,9 @@ extends Control
 ## Excluded: HUD and the shadow. The leg-out, stomach-crunch and battery layers exist
 ## but start hidden (interaction states). The look - shoulder style, smooth skin,
 ## coconut size, open eyes and eye tracking - is set from the Shift+Tab debug menu
-## (debug_cycle_setting); the lean pose has no art for the shoulders, smooth skin or
-## open eyes, and wears the medium coconuts whatever the size.
+## (debug_cycle_setting); eyes start open, tracking off. The lean pose has no art for the
+## shoulders, smooth skin or iris directions (its open eyes are the one eyes_lean layer),
+## and wears the medium coconuts whatever the size.
 ##
 ## Hair: matches the style the robot last wore in the stress test
 ## (GameState.robot_hair_style); defaults to hair_front_swing when unknown.
@@ -147,6 +148,8 @@ const LEAN_CHEST_COVER_LAYER := "chest_cover_lean"
 ## on) goes behind the chest, and the stomach in front of it.
 const LEAN_LAYERS: Array = [
 	["head_lean",                    "head"],
+	# Open eyes over the lean head's closed ones (no iris layers - she can't track here).
+	["eyes_lean",                    "eyes"],
 	[LEAN_ARM_SENTINEL["right"],     "arm_right"],
 	[LEAN_ARM_SENTINEL["left"],      "arm_left"],
 	["chest_lean",                   "chest"],
@@ -204,7 +207,8 @@ const DEBUG_SETTINGS: Array = ["shoulders", "smooth_skin", "coconuts", "open_eye
 static var shoulder_style: String = "pad"
 static var smooth_skin: bool = false
 static var coconut_size: String = "auto"
-static var open_eyes: bool = false
+## Eyes open by default (forward-looking iris); tracking the mouse is opt-in.
+static var open_eyes: bool = true
 static var eye_tracking: bool = false
 
 ## One-shot battery animation timing.

@@ -6,8 +6,8 @@ extends LocationBase
 ## it (immediate spend, no cart). One of each item per day.
 ##
 ## Visual layering, per item:
-##   shadow (50% darker when dimmed)
-##   sprite (50% darker when dimmed)
+##   shadow (75% darker when dimmed)
+##   sprite (75% darker when dimmed)
 ##
 ## Item catalog lives in the Inspector as the `items` array on the Store
 ## node — see StoreItemData.gd for the per-item fields, including the
@@ -107,9 +107,9 @@ const GRID_V_SPACING: float = 175.0
 const GRID_BOTTOM_OFFSET: float = 120.0
 
 ## Modulate applied to items the player can't currently click — either
-## already bought today or can't afford. Half RGB = visibly darker without
-## going transparent, so items still read as physically present.
-const ITEM_DIMMED_MODULATE: Color = Color(0.5, 0.5, 0.5, 1)
+## already bought today or can't afford. A quarter RGB (75% darker) = clearly
+## unavailable without going transparent, so items still read as physically present.
+const ITEM_DIMMED_MODULATE: Color = Color(0.25, 0.25, 0.25, 1)
 const ITEM_NORMAL_MODULATE: Color = Color(1, 1, 1, 1)
 
 var _store_active: bool = false
@@ -136,6 +136,11 @@ var _ed_overlay: TextureRect = null
 ## Pages of the currently-playing intro dialogue, so a page_advanced index can be
 ## mapped back to its prose (used to fire Ed's door on the "he walks in" line).
 var _intro_dialogue_pages: Array = []
+## Name/price tooltip for the hovered table item; created on first hover.
+var _tooltip_layer: CanvasLayer = null
+var _item_tooltip: MouseFollowTooltip = null
+
+const MOUSE_TOOLTIP_SCRIPT: GDScript = preload("res://scenes/ui/MouseFollowTooltip.gd")
 
 
 @onready var furniture_layer: Control = $FurnitureLayer
@@ -302,6 +307,7 @@ func _exit_tree() -> void:
 ## available items one per frame until all three are gathered (which finishes
 ## the visit), so the player can grab everything without releasing Enter.
 func _process(_delta: float) -> void:
+	_update_item_tooltip()
 	if not _store_active or not _intro_pickup_active:
 		return
 	if not debug_enter_held():
@@ -511,13 +517,6 @@ func _build_slot(item: StoreItemData, center: Vector2) -> Control:
 	slot.size = SLOT_SIZE
 	slot.position = center - SLOT_SIZE * 0.5
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.tooltip_text = "%s — $%d" % [
-		item.display_name if item.display_name != "" else String(item.id),
-		item.cost,
-	]
-	if _intro_pickup_active:
-		var item_name: String = item.display_name if item.display_name != "" else String(item.id)
-		slot.tooltip_text = "Collect %s" % item_name
 
 	# Shadow (optional).
 	var shadow_tex: Texture2D = _resolve_shadow_texture(item)
@@ -580,6 +579,64 @@ func _resolve_shadow_texture(item: StoreItemData) -> Texture2D:
 	if not ResourceLoader.exists(derived):
 		return null
 	return load(derived)
+
+
+# --- hover tooltip ---
+## Hovering an item on the table shows its name and price in the same tooltip box
+## used elsewhere (MouseFollowTooltip). Like clicks, hover is hit-tested by hand
+## against each slot's rect, since the slots ignore the mouse (see _input).
+
+func _create_item_tooltip() -> void:
+	_tooltip_layer = CanvasLayer.new()
+	_tooltip_layer.name = "StoreTooltipLayer"
+	_tooltip_layer.layer = 200
+	add_child(_tooltip_layer)
+	_item_tooltip = MOUSE_TOOLTIP_SCRIPT.new() as MouseFollowTooltip
+	_item_tooltip.show_delay_seconds = 0.0
+	_tooltip_layer.add_child(_item_tooltip)
+
+
+func _update_item_tooltip() -> void:
+	var item := _hovered_item()
+	if item == null:
+		if _item_tooltip != null:
+			_item_tooltip.hide_tooltip()
+		return
+	if _item_tooltip == null:
+		_create_item_tooltip()
+	_item_tooltip.show_text(_item_tooltip_text(item))
+
+
+## The item whose slot is under the mouse, or null when nothing is (or the store
+## isn't taking input: mid-transition, inventory/settings open).
+func _hovered_item() -> StoreItemData:
+	if not _store_active:
+		return null
+	var main: Node = get_tree().current_scene
+	if main != null:
+		if main.has_method("_is_any_transition_playing") and main._is_any_transition_playing():
+			return null
+		if "_player_inventory_overlay" in main:
+			var inv = main._player_inventory_overlay
+			if inv != null and is_instance_valid(inv) and inv.visible:
+				return null
+		if main.has_method("_runtime_settings_overlay_open") and main._runtime_settings_overlay_open():
+			return null
+	var mouse := get_viewport().get_mouse_position()
+	for hit in _slot_hits:
+		var slot: Control = hit["slot"]
+		if slot == null or not is_instance_valid(slot) or not slot.is_visible_in_tree():
+			continue
+		if slot.get_global_rect().has_point(mouse):
+			return hit["item"]
+	return null
+
+
+func _item_tooltip_text(item: StoreItemData) -> String:
+	var item_name: String = item.display_name if item.display_name != "" else String(item.id).capitalize()
+	if _intro_pickup_active:
+		return item_name
+	return "%s - $%d" % [item_name, item.cost]
 
 
 # --- interactivity refresh ---

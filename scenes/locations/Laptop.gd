@@ -512,5 +512,5 @@ func _on_leave_pressed() -> void:
 		closed.emit()
 		queue_free()
 	else:
-		# Free action - return to the bedroom without advancing the phase.
-		finish(0, 0, 0, {}, true)
+		# Closing the laptop uses up the phase, like any other activity.
+		finish(0, 0, 0, {}, false)

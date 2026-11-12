@@ -6,7 +6,15 @@ class_name MaintenanceIntro
 ## framed view, then hands off to the fullscreen Maintenance scene through
 ## Main.enter_maintenance_from_intro() - the same detour SleepPrompt makes in
 ## front of Sleep.
+##
+## Backgrounds, in order: the factory from outside (first page), the maintenance
+## stairs (up to the peek around the corner), then the hallway with the cleaning
+## robot for the rest.
 
+## Outside the factory, shown on the opening page.
+const OUTSIDE_BACKGROUND_PATH: String = "res://assets/textures/backgrounds/factory_outside.png"
+## The maintenance stairs, shown briefly on the fourth page, right before the peek around the corner.
+const STAIRS_BACKGROUND_PATH: String = "res://assets/textures/backgrounds/maintenance_stairs.png"
 ## The hallway outside the PERSONNEL ONLY door. Packed Aseprite sheet: the
 ## "background" layer is the framed picture, and the cleaning robot ("body") sits
 ## on top as a scene overlay until it leaves. Once she hacks it, "head_turn" is
@@ -16,14 +24,22 @@ const INTRO_SHEET_JSON_PATH: String = "res://assets/textures/backgrounds/mainten
 const INTRO_BACKGROUND_LAYER: String = "background"
 const CLEANING_ROBOT_BODY_LAYER: String = "body"
 const CLEANING_ROBOT_HEAD_TURN_LAYER: String = "head_turn"
+## The stairs take over from the outside on this page (the second one, 0-based 1),
+## whatever it says, until the hallway cue.
+const STAIRS_PAGE_INDEX: int = 1
+## The page where he peeks round the corner into the hallway.
+const HALLWAY_CUE: String = "peer around the corner"
 ## The page where her hack takes hold and the robot stops scrubbing.
 const ROBOT_HACKED_CUE: String = "stops mid-scrub"
-## The page where the hacked robot rolls off down the hall.
-const ROBOT_LEAVES_CUE: String = "rolls down the hall"
+## The page where the hacked robot heads off down the hall and out of sight.
+const ROBOT_LEAVES_CUE: String = "down the hall"
+
+enum Stage { OUTSIDE, STAIRS, HALLWAY }
 
 @onready var dialogue_box: DialogueBox = %DialogueBox
 
 var _pages: Array = []
+var _stage: Stage = Stage.OUTSIDE
 var _cleaning_robot_overlay: Control = null
 var _cleaning_robot_head_turn: TextureRect = null
 
@@ -34,9 +50,9 @@ func _ready() -> void:
 	if main != null and main.has_method("hide_teacher_portrait"):
 		main.hide_teacher_portrait()
 	# Deferred: Main applies the location's preview_texture (the placeholder)
-	# right after adding us, which would cover the hallway.
-	_show_background.call_deferred()
-	_show_cleaning_robot()
+	# right after adding us, which would cover our background.
+	_apply_background.call_deferred()
+	_build_cleaning_robot()
 
 	GameState.maintenance_intro_seen = true
 	_pages = Dialogue.get_pages("maintenance_intro", "intro")
@@ -50,18 +66,40 @@ func _intro_layer(layer: String) -> Texture2D:
 	return PackedSpriteSheet.layer_textures(INTRO_SHEET_PATH, INTRO_SHEET_JSON_PATH).get(layer) as Texture2D
 
 
-func _show_background() -> void:
+func _stage_texture(stage: Stage) -> Texture2D:
+	match stage:
+		Stage.OUTSIDE:
+			return load(OUTSIDE_BACKGROUND_PATH) as Texture2D
+		Stage.STAIRS:
+			return load(STAIRS_BACKGROUND_PATH) as Texture2D
+		_:
+			return _intro_layer(INTRO_BACKGROUND_LAYER)
+
+
+## Puts the current stage's picture in Main's frame. The cleaning robot is only
+## in the hallway, so its overlay follows the stage too.
+func _apply_background() -> void:
 	var main := get_tree().current_scene
-	if main == null or not ("scene_image" in main):
+	if main != null and ("scene_image" in main):
+		var tex := _stage_texture(_stage)
+		if tex != null:
+			main.scene_image.texture = tex
+	if _stage != Stage.HALLWAY:
+		_set_cleaning_robot_visible(false)
+
+
+func _set_stage(stage: Stage) -> void:
+	if stage == _stage:
 		return
-	var tex := _intro_layer(INTRO_BACKGROUND_LAYER)
-	if tex != null:
-		main.scene_image.texture = tex
+	_stage = stage
+	_apply_background()
+	if stage == Stage.HALLWAY:
+		_set_cleaning_robot_visible(true)
 
 
-## Shows the cleaning robot as a full-frame overlay over the hallway (every sheet
-## layer is 500x125, so it lines up exactly with the background).
-func _show_cleaning_robot() -> void:
+## Builds the cleaning robot as a full-frame overlay (every sheet layer is
+## 500x125, so it lines up exactly with the hallway). Hidden until the hallway.
+func _build_cleaning_robot() -> void:
 	var main: Node = get_tree().current_scene
 	if main == null or not main.has_method("show_scene_overlay"):
 		return
@@ -72,6 +110,7 @@ func _show_cleaning_robot() -> void:
 	_cleaning_robot_head_turn = _add_cleaning_robot_layer(CLEANING_ROBOT_HEAD_TURN_LAYER)
 	if _cleaning_robot_head_turn != null:
 		_cleaning_robot_head_turn.visible = false
+	_cleaning_robot_overlay.visible = false
 	main.show_scene_overlay(_cleaning_robot_overlay)
 
 
@@ -96,9 +135,9 @@ func _turn_cleaning_robot_head() -> void:
 		_cleaning_robot_head_turn.visible = true
 
 
-func _hide_cleaning_robot() -> void:
+func _set_cleaning_robot_visible(shown: bool) -> void:
 	if _cleaning_robot_overlay != null and is_instance_valid(_cleaning_robot_overlay):
-		_cleaning_robot_overlay.visible = false
+		_cleaning_robot_overlay.visible = shown
 
 
 func _on_page_advanced(index: int) -> void:
@@ -108,10 +147,14 @@ func _on_page_advanced(index: int) -> void:
 	for line in _pages[index]:
 		text += String(line) + " "
 	var lower := text.to_lower()
+	if index >= STAIRS_PAGE_INDEX and _stage == Stage.OUTSIDE:
+		_set_stage(Stage.STAIRS)
+	if lower.contains(HALLWAY_CUE):
+		_set_stage(Stage.HALLWAY)
 	if lower.contains(ROBOT_HACKED_CUE):
 		_turn_cleaning_robot_head()
 	if lower.contains(ROBOT_LEAVES_CUE):
-		_hide_cleaning_robot()
+		_set_cleaning_robot_visible(false)
 
 
 func _on_dialogue_finished() -> void:

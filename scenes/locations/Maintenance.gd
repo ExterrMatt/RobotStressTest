@@ -233,6 +233,7 @@ func _ready() -> void:
 	_spawn_stat_labels()
 	style_corner_button(end_button)
 	_create_laptop_bar()
+	_register_camera_huds()
 	_connect_inventory_signals()
 	call_deferred("_cache_oil_item")
 	# Pre-build the robot silhouette mask now (off the drop) so the first nanobot drop,
@@ -326,6 +327,22 @@ func _warm_nanobot_mask() -> void:
 ## The bar lives on its own canvas layer just above the laptop's, and each frame copies
 ## the placement of an invisible anchor laid out along the bottom of the full-screen root
 ## (not the camera window, which overflows the screen here), so it stays on screen.
+## Main's camcorder viewfinder (Main.set_camera_recording) draws a REC readout along the
+## top edge and brackets in the corners. While it is up, Main pushes the corner HUD
+## inward clear of it: the oil / stat readouts, LEAVE, and the inventory button and
+## laptop bar (through the anchors they copy their place from).
+func _register_camera_huds() -> void:
+	var main := get_tree().current_scene
+	if main == null or not main.has_method("register_camera_hud"):
+		return
+	for hud in [_oil_label, end_button, _inventory_button_anchor, _laptop_bar_anchor]:
+		if hud is Control:
+			main.call("register_camera_hud", hud)
+	# The stat readouts are stacked under the oil one: move down with it.
+	for label in _stat_labels.values():
+		main.call("register_camera_hud", label, _oil_label)
+
+
 func _create_laptop_bar() -> void:
 	var hud_root := get_node_or_null(^"FullscreenLayer/FullscreenRoot") as Control
 	if hud_root == null:

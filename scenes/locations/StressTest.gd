@@ -295,6 +295,8 @@ const ELECTRICITY_OVERLOAD_PERCENT: float = 120.0
 ## Awareness added per second for every screw currently loose on the robot
 ## (from when it loosens until it is repaired).
 @export var awareness_per_loose_screw_per_second: float = 1.5
+## Awareness removed each time a loose screw is repaired.
+@export var awareness_removed_per_screw_repair: float = 5.0
 
 @export_group("Loose Screws")
 ## Screws only loosen while the power is at or above this percent, one at a time.
@@ -307,6 +309,8 @@ const ELECTRICITY_OVERLOAD_PERCENT: float = 120.0
 @export var screw_interval_overload_seconds: float = 3.0
 @export var screw_interval_bonus_min_seconds: float = 1.0
 @export var screw_interval_bonus_max_seconds: float = 3.0
+## No new screws loosen during this many final seconds of the night.
+@export var screw_spawn_end_exclusion_seconds: float = 8.0
 @export_range(0.0, 1.0, 0.01) var screw_electrical_pull_chance: float = 0.25
 @export var screw_response_grace_seconds: float = 7.0
 @export var screw_late_penalty_percent: float = 5.0
@@ -984,7 +988,28 @@ func _ready() -> void:
 	_initialize_engine_lever()
 	_initialize_curtain()
 	_initialize_awareness_meter()
+	_hook_camera_viewfinder()
 	call_deferred("_initialize_zoom")
+
+
+## Main's camcorder viewfinder (Main.set_camera_recording) draws a REC readout in the
+## top-left corner and brackets in every corner. While it is up, Main moves these HUD
+## pieces clear of it: the readout in the top-right (time, electricity, and the extra
+## lines debug mode adds), the awareness eyes, the window alert, END, WAKE, and the
+## electricity meter (which rises with END, the button under it).
+func _hook_camera_viewfinder() -> void:
+	var main := _main_controller()
+	if main == null or not main.has_method("register_camera_hud"):
+		return
+	for hud_name in ["StressHud", "WindowAlertIndicator", "EndButton", "WakeButton"]:
+		var hud := camera_window.get_node_or_null(NodePath(hud_name)) as Control
+		if hud != null:
+			main.call("register_camera_hud", hud)
+	var meter := camera_window.get_node_or_null(^"ElectricityMeter") as Control
+	if meter != null:
+		main.call("register_camera_hud", meter, camera_window.get_node_or_null(^"EndButton"))
+	for hud in awareness_meter.hud_controls():
+		main.call("register_camera_hud", hud)
 
 
 func _process(delta: float) -> void:
@@ -3484,6 +3509,11 @@ func _initialize_stress_systems() -> void:
 	_drone_committed_to_fire = false
 	# Space the drone appearances around the uncle's so the two never overlap.
 	_drone_event_times = _deconflict_drone_schedule(_random_drone_event_times(), _window_alert_event_times)
+	# The intro (first-activation) stress test never has patrol drones: they are
+	# introduced in the cutscene that follows it (IntroDialogue's drone reveal),
+	# and every stress test after that rolls them as normal.
+	if _is_intro_tutorial_stress_test():
+		_drone_event_times.clear()
 	_build_drone_routes()
 	_apply_patrol_drone_visual()
 
@@ -4789,6 +4819,8 @@ func _is_screw_repair_on_raised_arm(repair: Node) -> bool:
 
 
 func _trigger_random_screw() -> bool:
+	if _in_screw_spawn_end_exclusion():
+		return false
 	# No screw art fits a raised arm or her back, so screws stay put on a raised
 	# arm, and anywhere while she lies face down.
 	if stress_test_robot != null and stress_test_robot.has_method("is_face_down") \
@@ -5137,6 +5169,13 @@ func _set_lever_stage(stage: int) -> void:
 	if stage == lever_stage:
 		return
 	lever_stage = stage
+	# The night's first power-up is meant to be just raising the lever, no rip cord.
+	# If the player poked the emergency button (or anything else stopped the
+	# generator) before it ever put out power, raising the lever still starts it.
+	# Once it has run once tonight, the normal rules apply (rip cord to restart).
+	if not _first_power_on_done and _lever_electricity_percent() > 0.0 \
+			and (not _generator_running or _emergency_power_shutoff_pressed):
+		_start_generator()
 	_update_electricity(0.0)
 	_refresh_stress_hud()
 	lever_stage_changed.emit(stage)
@@ -5172,6 +5211,12 @@ func _on_emergency_power_button_pressed() -> void:
 	# hack cut it) there's nothing to zap it with.
 	if _generator_running and not _emergency_power_shutoff_pressed and _electricity_percent > 0.001:
 		_zap_patrol_drone_if_active()
+	# Cutting the power kills every short on her too: a free way to clear the zaps, paid
+	# for with the awareness bump and the lost power instead of a part. The next one
+	# waits a full spawn interval.
+	if _robot_zaps != null:
+		_robot_zaps.clear_all()
+		_zap_spawn_timer = _next_zap_interval()
 	# The clunk of the button stirs her toward waking.
 	_add_awareness(awareness_emergency_button_gain)
 	_play_emergency_power_button_sound()
@@ -5781,6 +5826,7 @@ func _on_screw_repaired(index: int, repair: Node) -> void:
 		_screw_late_penalty_total += maxf(0.0, screw_late_penalty_percent)
 	_screw_repaired_count += 1
 	_screw_active_events.erase(key)
+	_add_awareness(-maxf(0.0, awareness_removed_per_screw_repair))
 
 
 func _set_repair_hand_hidden_for_screw(repair: Node, index: int, hidden: bool) -> void:
@@ -5803,8 +5849,11 @@ func _set_repair_hand_hidden_for_screw(repair: Node, index: int, hidden: bool) -
 
 ## Loosens one random screw each time the power has stayed high enough for the
 ## current gap (power-scaled interval plus the random bonus). Dropping below the
-## minimum power resets the countdown.
+## minimum power resets the countdown. Nothing loosens in the night's final
+## `screw_spawn_end_exclusion_seconds`.
 func _update_screw_spawns(delta: float) -> void:
+	if _in_screw_spawn_end_exclusion():
+		return
 	if _electricity_percent < screw_spawn_min_power_percent:
 		_screw_spawn_timer = 0.0
 		return
@@ -5814,6 +5863,12 @@ func _update_screw_spawns(delta: float) -> void:
 	_screw_spawn_timer = 0.0
 	_screw_spawn_bonus = _random_screw_bonus_seconds()
 	_trigger_random_screw()
+
+
+func _in_screw_spawn_end_exclusion() -> bool:
+	if _debug_infinite_time:
+		return false
+	return night_duration_seconds - _night_elapsed <= maxf(0.0, screw_spawn_end_exclusion_seconds)
 
 
 ## Gap between screws at the current power, before the random bonus.
@@ -6137,7 +6192,8 @@ func _predicted_total_screws() -> float:
 	var started := float(maxi(0, _screw_started_count))
 	if _electricity_percent < screw_spawn_min_power_percent or _active_screw_limb_count() <= 0:
 		return started
-	var remaining := maxf(0.0, night_duration_seconds - _night_elapsed)
+	var spawn_window_end := night_duration_seconds - maxf(0.0, screw_spawn_end_exclusion_seconds)
+	var remaining := maxf(0.0, spawn_window_end - _night_elapsed)
 	var avg_bonus := (maxf(0.0, screw_interval_bonus_min_seconds) + maxf(0.0, screw_interval_bonus_max_seconds)) * 0.5
 	return started + remaining / maxf(0.1, _screw_spawn_interval_seconds() + avg_bonus)
 

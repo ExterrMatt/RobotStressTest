@@ -25,11 +25,11 @@ const DESKTOP_BG: Color = Color(0.02, 0.06, 0.03, 1.0)
 ## The app catalog. `mode` is the LaptopScreen app_mode; "" means a native desktop app
 ## dispatched by id in _instantiate_app.
 const APPS: Array = [
-	{"id": "maintenance", "name": "MAINTENANCE", "icon": "screwdriver", "mode": "assembly",
+	{"id": "maintenance", "name": "MAINTENANCE", "icon": "maintenance_cross_icon", "mode": "assembly",
 			"desc": "browse limb recipes"},
 	{"id": "builder", "name": "BUILDER", "icon": "gear", "mode": "build",
 			"desc": "scan and unlock limbs"},
-	{"id": "delivery", "name": "DELIVERY", "icon": "store_example", "mode": "",
+	{"id": "delivery", "name": "ONLINE STORE", "icon": "online_store", "mode": "",
 			"desc": "order supplies for delivery"},
 	{"id": "thoughts", "name": "THOUGHTS", "icon": "brain", "mode": "",
 			"desc": "the robot's inner thoughts"},
@@ -178,13 +178,13 @@ func _admin_entries() -> Array:
 
 
 func _maintenance_entry() -> Dictionary:
-	return {"label": "MAINTENANCE", "icon": "screwdriver", "action": _open_maintenance,
+	return {"label": "MAINTENANCE", "icon": "maintenance_cross_icon", "action": _open_maintenance,
 			"desc": "browse limb recipes and scan parts",
 			"info": func() -> String: return "%d LIMBS READY" % GameState.prepared_limbs.size()}
 
 
 func _store_entry() -> Dictionary:
-	return {"label": "STORE", "icon": "store_example", "action": _open_store,
+	return {"label": "ONLINE STORE", "icon": "online_store", "action": _open_store,
 			"desc": "order supplies for delivery",
 			"info": func() -> String: return "BAL $%d" % int(GameState.money)}
 
@@ -217,7 +217,13 @@ func _open_patrol() -> void:
 ## The online store (DeliveryApp) — laptop scene only.
 func _open_store() -> void:
 	_record_page("app:STORE", _open_store)
-	_open_app_control("STORE", DeliveryApp.new())
+	_open_app_control("ONLINE STORE", _make_store())
+
+
+func _make_store() -> DeliveryApp:
+	var store := DeliveryApp.new()
+	store.back_requested.connect(_show_desktop)
+	return store
 
 
 ## Shows the ROBO-OS home screen with `entries` as its module tiles (see LaptopHome). The
@@ -268,7 +274,7 @@ func _instantiate_app(app: Dictionary) -> Control:
 		return _make_screen(mode)
 	match String(app.get("id", "")):
 		"thoughts": return ThoughtsApp.new()
-		"delivery": return DeliveryApp.new()
+		"delivery": return _make_store()
 		"profile":
 			var profile := ProfileApp.new()
 			profile.back_requested.connect(_show_desktop)

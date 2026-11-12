@@ -12,6 +12,7 @@ const BORDER: Color = Color(0.2, 0.85, 0.4, 0.75)
 const FILL: Color = Color(0.0, 0.04, 0.02, 0.55)
 const ICON_DIR: String = "res://assets/textures/icons/"
 const PLACEHOLDER_ICON: String = "res://assets/textures/icons/placeholder_item.png"
+const GLOWING_LABEL: GDScript = preload("res://scenes/ui/GlowingLabel.gd")
 
 
 static func label(text: String, size: int = 12, color: Color = GREEN) -> Label:
@@ -19,6 +20,21 @@ static func label(text: String, size: int = 12, color: Color = GREEN) -> Label:
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
+
+
+## An app's big glowing header title.
+static func glow_title(text: String, size: int = 16, color: Color = GREEN,
+		glow: Color = Color(0.15, 1.0, 0.35, 1.0)) -> Label:
+	var l := Label.new()
+	l.set_script(GLOWING_LABEL)
+	l.text = text
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", color)
+	l.set("glow_color", glow)
+	l.set("glow_radius_px", 20.0)
+	l.set("glow_strength", 1.4)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
 
